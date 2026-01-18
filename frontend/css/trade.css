@@ -1,0 +1,91 @@
+/* Trade Tab Styles */
+
+        .ea-panel {
+            background: var(--bg-primary);
+            border: 2px solid var(--accent-cyan);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 0 40px var(--accent-cyan-glow), 0 25px 60px rgba(0,0,0,0.6);
+        }
+        .ea-header {
+            padding: 15px 20px; text-align: center;
+            border-bottom: 2px solid var(--accent-cyan);
+            position: relative;
+        }
+        .ea-header::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
+        }
+        .ea-title { font-size: 20px; font-weight: 900; letter-spacing: 3px; text-shadow: 0 0 20px var(--accent-cyan-glow); }
+        .ea-content { padding: 15px; }
+        .ea-footer { padding: 10px; text-align: center; font-size: 11px; color: var(--text-dim); border-top: 1px solid var(--border-color); background: var(--bg-secondary); }
+        
+        /* Symbol Row */
+        .symbol-row {
+            position: relative; display: flex; align-items: center;
+            padding: 10px 50px 10px 15px; background: var(--bg-secondary);
+            border-radius: 10px; margin-bottom: 15px; border: 1px solid var(--border-color);
+        }
+        .symbol-info { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .symbol-icon { font-size: 24px; }
+        .symbol-text { font-size: 22px; font-weight: bold; }
+        .settings-btn { 
+            position: absolute; right: 12px; top: 50%; transform: translateY(-50%); 
+            background: transparent; border: none; color: var(--text-muted); 
+            width: 40px; height: 40px; padding: 0; border-radius: 6px; cursor: pointer; 
+            transition: all 0.2s; display: flex; align-items: center; justify-content: center; 
+        }
+        .settings-btn:hover { background: rgba(255,255,255,0.1); color: var(--text-primary); }
+        
+        /* Stats Bar */
+        .stats-bar { display: flex; background: var(--bg-secondary); border-radius: 10px; overflow: hidden; margin-bottom: 15px; border: 1px solid var(--border-color); }
+        .stat-item { flex: 1; text-align: center; padding: 12px 8px; }
+        .stat-item:not(:last-child) { border-right: 1px solid var(--border-color); }
+        .stat-label { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+        .stat-value { font-size: 16px; font-weight: bold; }
+        
+        /* Gauge */
+        .gauge-container { text-align: center; padding: 10px 0; margin-bottom: 15px; }
+        .gauge-status { font-size: 26px; font-weight: 900; letter-spacing: 2px; margin-top: 5px; transition: color 0.5s ease, text-shadow 0.5s ease; }
+        
+        /* Indicator Summary */
+        .indicator-summary { display: flex; background: var(--bg-secondary); border-radius: 10px; overflow: hidden; margin-bottom: 15px; border: 1px solid var(--border-color); }
+        .indicator-item { flex: 1; text-align: center; padding: 10px; }
+        .indicator-item:not(:last-child) { border-right: 1px solid var(--border-color); }
+        .indicator-count { font-size: 28px; font-weight: bold; margin-bottom: 2px; }
+        .indicator-count.sell { color: var(--sell-color); text-shadow: 0 0 10px rgba(220,50,70,0.5); }
+        .indicator-count.neutral { color: var(--neutral-color); }
+        .indicator-count.buy { color: var(--buy-color); text-shadow: 0 0 10px rgba(0,180,80,0.5); }
+        .indicator-label { font-size: 10px; color: var(--text-muted); }
+        
+        /* Target Section */
+        .target-section { margin-bottom: 15px; }
+        .target-label { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; font-weight: 600; }
+        .target-display { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 10px; }
+        .target-btn { width: 44px; height: 40px; border-radius: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary); font-size: 20px; font-weight: bold; cursor: pointer; transition: all 0.2s; }
+        .target-btn:hover { transform: scale(1.05); }
+        .target-btn:active { transform: scale(0.95); }
+        .target-value { font-size: 36px; font-weight: 300; min-width: 140px; text-align: center; }
+        .lot-display { text-align: center; font-size: 14px; color: var(--text-muted); margin-bottom: 12px; }
+        
+        /* Slider */
+        .position-card { border-radius: 10px; padding: 15px; margin-bottom: 15px; }
+        .position-card.buy-pos { background: var(--buy-bg); border: 1px solid rgba(0,180,80,0.4); }
+        .position-card.sell-pos { background: var(--sell-bg); border: 1px solid rgba(220,50,70,0.4); }
+        .position-row { display: flex; justify-content: space-between; }
+        .position-item { flex: 1; text-align: center; }
+        .position-label { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+        .position-value { font-size: 18px; font-weight: bold; }
+        
+        /* P/L Gauge */
+        .pl-gauge { margin-bottom: 15px; }
+        .pl-labels { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 11px; font-weight: bold; }
+        .pl-bar-container { position: relative; height: 12px; background: var(--bg-tertiary); border-radius: 6px; overflow: visible; }
+        .pl-bar-center { position: absolute; top: 0; left: 50%; width: 2px; height: 100%; background: var(--text-muted); transform: translateX(-50%); z-index: 5; }
+        .pl-bar-fill { position: absolute; top: 0; height: 100%; transition: all 0.3s; }
+        .pl-diamond { position: absolute; top: 50%; width: 14px; height: 14px; transform: translate(-50%, -50%) rotate(45deg); border-radius: 2px; z-index: 10; transition: all 0.3s; }
+        .pl-bottom { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+        .pl-percent { font-size: 16px; font-weight: bold; }
+        
+        /* Trade Buttons */
+        .trade-buttons { display: flex; gap: 12px; }

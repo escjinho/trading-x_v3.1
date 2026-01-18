@@ -1,0 +1,25 @@
+/* CSS Variables */
+
+        :root {
+            --bg-primary: #1a1d23;
+            --bg-secondary: #25282f;
+            --bg-tertiary: #2d3139;
+            --text-primary: #ffffff;
+            --text-muted: #9ca3af;
+            --text-dim: #6b7280;
+            --accent-cyan: #00d4ff;
+            --accent-cyan-glow: rgba(0, 212, 255, 0.3);
+            --buy-color: #00b450;
+            --buy-bg: rgba(0, 180, 80, 0.15);
+            --sell-color: #dc3246;
+            --sell-bg: rgba(220, 50, 70, 0.15);
+            --neutral-color: #646473;
+            --border-color: #3f4451;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0a0c10 0%, #151821 50%, #0a0c10 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+        

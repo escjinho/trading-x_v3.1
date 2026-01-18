@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading-X | 매매</title>
+    <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .logo h1 { color: #00d4ff; font-size: 24px; }
+        .logo span { color: #ff6b6b; }
+        
+        .nav { display: flex; gap: 20px; }
+        
+        .nav a {
+            color: #888;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+        
+        .nav a:hover, .nav a.active {
+            color: white;
+            background: rgba(0, 212, 255, 0.2);
+        }
+        
+        .main {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+            height: calc(100vh - 70px);
+        }
+        
+        @media (max-width: 1200px) {
+            .main { grid-template-columns: 1fr; height: auto; }
+        }
+        
+        .chart-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .symbol-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .symbol-selector select {
+            padding: 8px 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        .timeframe-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .tf-btn {
+            padding: 6px 12px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            color: #888;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .tf-btn:hover, .tf-btn.active {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: #00d4ff;
+            color: white;
+        }
+        
+        .current-price {
+            text-align: right;
+        }
+        
+        .current-price .price {
+            font-size: 28px;
+            font-weight: 700;
+            color: #00d4ff;
+        }
+        
+        .current-price .spread {
+            font-size: 12px;
+            color: #888;
+        }
+        
+        #chart-container {
+            flex: 1;
+            min-height: 350px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .positions-section {
+            margin-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .positions-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            position: sticky;
+            top: 0;
+            background: rgba(26, 26, 46, 0.9);
+            padding: 5px 0;
+        }
+        
+        .positions-title { font-size: 14px; font-weight: 600; }
+        
+        .positions-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        
+        .positions-table th {
+            text-align: left;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.2);
+            color: #888;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        .positions-table td {
+            padding: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .type-buy { color: #00ff88; }
+        .type-sell { color: #ff6b6b; }
+        .profit-positive { color: #00ff88; }
+        .profit-negative { color: #ff6b6b; }
+        
+        .btn-close-position {
+            padding: 4px 10px;
+            background: transparent;
+            border: 1px solid #ff6b6b;
+            color: #ff6b6b;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.3s;
+        }
+        
+        .btn-close-position:hover {
+            background: #ff6b6b;
+            color: white;
+        }
+        
+        .trade-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            height: fit-content;
+            overflow-y: auto;
+            max-height: calc(100vh - 110px);
+        }
+        
+        .panel-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .connection-status {
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 13px;
+        }
+        
+        .status-connected {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            color: #00ff88;
+        }
+        
+        .status-disconnected {
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            color: #ff6b6b;
+        }
+        
+        .status-connecting {
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            color: #ffc107;
+        }
+        
+        .account-select {
+            margin-bottom: 15px;
+        }
+        
+        .account-select label {
+            display: block;
+            color: #888;
+            font-size: 11px;
+            margin-bottom: 5px;
+        }
+        
+        .account-select select {
+            width: 100%;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: white;
+            font-size: 13px;
+        }
+        
+        .price-display {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .price-box {
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .price-box:hover {
+            transform: scale(1.02);
+        }
+        
+        .price-box.bid {
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+        }
+        
+        .price-box.ask {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+        }
+        
+        .price-box .label {
+            font-size: 11px;
+            color: #888;
+            margin-bottom: 3px;
+        }
+        
+        .price-box.bid .value { color: #ff6b6b; font-size: 18px; font-weight: 700; }
+        .price-box.ask .value { color: #00ff88; font-size: 18px; font-weight: 700; }
+        
+        .input-group {
+            margin-bottom: 12px;
+        }
+        
+        .input-group label {
+            display: block;
+            color: #888;
+            font-size: 11px;
+            margin-bottom: 5px;
+        }
+        
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .input-group input {
+            flex: 1;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            text-align: center;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #00d4ff;
+        }
+        
+        .btn-adjust {
+            width: 32px;
+            height: 32px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-adjust:hover {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: #00d4ff;
+        }
+        
+        .quick-lots {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+        }
+        
+        .quick-lot {
+            flex: 1;
+            padding: 6px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            color: #888;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .quick-lot:hover {
+            border-color: #00d4ff;
+            color: white;
+        }
+        
+        .divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 15px 0;
+        }
+        
+        .sl-tp-section h4 {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 10px;
+        }
+        
+        .trade-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .btn-trade {
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-sell {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+            color: white;
+        }
+        
+        .btn-buy {
+            background: linear-gradient(135deg, #00ff88, #00cc6a);
+            color: #1a1a2e;
+        }
+        
+        .btn-trade:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn-trade:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .no-positions {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 13px;
+        }
+        
+        .message {
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            text-align: center;
+            font-size: 13px;
+            display: none;
+        }
+        
+        .message.error {
+            display: block;
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+        }
+        
+        .message.success {
+            display: block;
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+        }
+        
+        .account-info {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 15px;
+            font-size: 12px;
+        }
+        
+        .account-info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        
+        .account-info-row:last-child {
+            margin-bottom: 0;
+        }
+        
+        .account-info-label { color: #888; }
+        .account-info-value { color: #00d4ff; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <h1>Trading<span>-X</span></h1>
+        </div>
+        <nav class="nav">
+            <a href="index.html">대시보드</a>
+            <a href="trade.html" class="active">매매</a>
+            <a href="#" onclick="alert('준비 중!')">EA 설정</a>
+            <a href="#" onclick="alert('준비 중!')">거래 내역</a>
+        </nav>
+    </header>
+    
+    <main class="main">
+        <div class="chart-section">
+            <div class="chart-header">
+                <div class="symbol-selector">
+                    <select id="symbolSelect" onchange="changeSymbol()">
+    <option value="EURUSD.r">EUR/USD</option>
+    <option value="GBPUSD.r">GBP/USD</option>
+    <option value="USDJPY.r">USD/JPY</option>
+    <option value="XAUUSD.r">XAU/USD (Gold)</option>
+    <option value="BTCUSD">BTC/USD</option>
+    <option value="ETHUSD">ETH/USD</option>
+    <option value="US100.">US100 (Nasdaq)</option>
+</select>
+                    <div class="timeframe-buttons">
+                        <button class="tf-btn" onclick="changeTimeframe('M1')">M1</button>
+                        <button class="tf-btn" onclick="changeTimeframe('M5')">M5</button>
+                        <button class="tf-btn active" onclick="changeTimeframe('M15')">M15</button>
+                        <button class="tf-btn" onclick="changeTimeframe('H1')">H1</button>
+                        <button class="tf-btn" onclick="changeTimeframe('H4')">H4</button>
+                        <button class="tf-btn" onclick="changeTimeframe('D1')">D1</button>
+                    </div>
+                </div>
+                <div class="current-price">
+                    <div class="price" id="currentPrice">--</div>
+                    <div class="spread" id="spreadInfo">스프레드: -- pips</div>
+                </div>
+            </div>
+            
+            <div id="chart-container"></div>
+            
+            <div class="positions-section">
+                <div class="positions-header">
+                    <span class="positions-title">📋 열린 포지션</span>
+                    <span style="color: #888; font-size: 12px;" id="positionCount">0개</span>
+                </div>
+                <table class="positions-table">
+                    <thead>
+                        <tr>
+                            <th>심볼</th>
+                            <th>타입</th>
+                            <th>랏</th>
+                            <th>진입가</th>
+                            <th>현재가</th>
+                            <th>손익</th>
+                            <th>액션</th>
+                        </tr>
+                    </thead>
+                    <tbody id="positionsBody">
+                        <tr>
+                            <td colspan="7" class="no-positions">열린 포지션이 없습니다</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="trade-panel">
+            <h3 class="panel-title">⚡ 신규 주문</h3>
+            
+            <div id="connectionStatus" class="connection-status status-disconnected">
+                MT5 연결 대기 중...
+            </div>
+            
+            <div id="tradeMessage" class="message"></div>
+            
+            <div class="account-select">
+                <label>거래 계정</label>
+                <select id="tradeAccount" onchange="connectToAccount()">
+                    <option value="">계정을 선택하세요</option>
+                </select>
+            </div>
+            
+            <div class="account-info" id="accountInfo" style="display: none;">
+                <div class="account-info-row">
+                    <span class="account-info-label">잔액</span>
+                    <span class="account-info-value" id="infoBalance">$0.00</span>
+                </div>
+                <div class="account-info-row">
+                    <span class="account-info-label">에쿼티</span>
+                    <span class="account-info-value" id="infoEquity">$0.00</span>
+                </div>
+                <div class="account-info-row">
+                    <span class="account-info-label">수익</span>
+                    <span class="account-info-value" id="infoProfit">$0.00</span>
+                </div>
+            </div>
+            
+            <div class="price-display">
+                <div class="price-box bid" onclick="placeTrade('sell')">
+                    <div class="label">SELL</div>
+                    <div class="value" id="bidPrice">--</div>
+                </div>
+                <div class="price-box ask" onclick="placeTrade('buy')">
+                    <div class="label">BUY</div>
+                    <div class="value" id="askPrice">--</div>
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label>거래량 (Lots)</label>
+                <div class="input-row">
+                    <button class="btn-adjust" onclick="adjustLot(-0.01)">−</button>
+                    <input type="number" id="lotSize" value="0.01" step="0.01" min="0.01">
+                    <button class="btn-adjust" onclick="adjustLot(0.01)">+</button>
+                </div>
+                <div class="quick-lots">
+                    <button class="quick-lot" onclick="setLot(0.01)">0.01</button>
+                    <button class="quick-lot" onclick="setLot(0.05)">0.05</button>
+                    <button class="quick-lot" onclick="setLot(0.1)">0.10</button>
+                    <button class="quick-lot" onclick="setLot(0.5)">0.50</button>
+                    <button class="quick-lot" onclick="setLot(1.0)">1.00</button>
+                </div>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <div class="sl-tp-section">
+                <h4>손절/익절 설정</h4>
+                <div class="input-group">
+                    <label>손절 (SL) - Pips</label>
+                    <input type="number" id="slPips" value="50" step="5">
+                </div>
+                <div class="input-group">
+                    <label>익절 (TP) - Pips</label>
+                    <input type="number" id="tpPips" value="100" step="5">
+                </div>
+            </div>
+            
+            <div class="trade-buttons">
+                <button class="btn-trade btn-sell" onclick="placeTrade('sell')" id="btnSell">
+                    SELL<br><span style="font-size: 11px; font-weight: normal;">매도</span>
+                </button>
+                <button class="btn-trade btn-buy" onclick="placeTrade('buy')" id="btnBuy">
+                    BUY<br><span style="font-size: 11px; font-weight: normal;">매수</span>
+                </button>
+            </div>
+        </div>
+    </main>
+    
+    <script>
+        const API_URL = 'http://127.0.0.1:8000/api';
+        
+        let chart = null;
+        let candleSeries = null;
+        let currentSymbol = 'EURUSD.r';
+        let currentTimeframe = 'M15';
+        let isConnected = false;
+        let priceUpdateInterval = null;
+        
+        // 인증 헤더
+        function getAuthHeaders() {
+            const token = localStorage.getItem('access_token');
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            };
+        }
+        
+        // 페이지 로드
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            initChart();
+            loadAccounts();
+            initMT5();
+        });
+        
+        // 차트 초기화
+        function initChart() {
+            const container = document.getElementById('chart-container');
+            
+            chart = LightweightCharts.createChart(container, {
+                width: container.offsetWidth,
+                height: container.offsetHeight || 400,
+                layout: {
+                    background: { type: 'solid', color: 'transparent' },
+                    textColor: '#888',
+                },
+                grid: {
+                    vertLines: { color: 'rgba(255, 255, 255, 0.05)' },
+                    horzLines: { color: 'rgba(255, 255, 255, 0.05)' },
+                },
+                crosshair: {
+                    mode: LightweightCharts.CrosshairMode.Normal,
+                },
+                rightPriceScale: {
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                },
+                timeScale: {
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    timeVisible: true,
+                    secondsVisible: false,
+                },
+            });
+            
+            candleSeries = chart.addCandlestickSeries({
+                upColor: '#00ff88',
+                downColor: '#ff6b6b',
+                borderDownColor: '#ff6b6b',
+                borderUpColor: '#00ff88',
+                wickDownColor: '#ff6b6b',
+                wickUpColor: '#00ff88',
+            });
+            
+            // 리사이즈 대응
+            window.addEventListener('resize', () => {
+                chart.applyOptions({
+                    width: container.offsetWidth,
+                    height: container.offsetHeight || 400
+                });
+            });
+        }
+        
+        // MT5 초기화
+        async function initMT5() {
+            try {
+                const response = await fetch(`${API_URL}/mt5/init`);
+                const result = await response.json();
+                console.log('MT5 초기화:', result);
+                loadChartData();
+            } catch (error) {
+                console.error('MT5 초기화 실패:', error);
+                showMessage('MT5 초기화 실패. MT5가 실행 중인지 확인하세요.', 'error');
+            }
+        }
+        
+        // 계정 목록 로드
+        async function loadAccounts() {
+            try {
+                const response = await fetch(`${API_URL}/accounts/`, {
+                    headers: getAuthHeaders()
+                });
+                
+                if (response.ok) {
+                    const accounts = await response.json();
+                    const select = document.getElementById('tradeAccount');
+                    select.innerHTML = '<option value="">계정을 선택하세요</option>';
+                    accounts.forEach(acc => {
+                        select.innerHTML += `<option value="${acc.id}">${acc.account_number} (${acc.broker_name || acc.server})</option>`;
+                    });
+                }
+            } catch (error) {
+                console.error('계정 로드 실패:', error);
+            }
+        }
+        
+        // MT5 계정 연결
+        async function connectToAccount() {
+            const accountId = document.getElementById('tradeAccount').value;
+            if (!accountId) {
+                updateConnectionStatus('disconnected', 'MT5 연결 대기 중...');
+                document.getElementById('accountInfo').style.display = 'none';
+                return;
+            }
+            
+            updateConnectionStatus('connecting', '연결 중...');
+            
+            try {
+                const response = await fetch(`${API_URL}/mt5/connect/${accountId}`, {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === 'connected') {
+                    isConnected = true;
+                    updateConnectionStatus('connected', 'MT5 연결됨');
+                    
+                    if (result.account_info) {
+                        document.getElementById('accountInfo').style.display = 'block';
+                        document.getElementById('infoBalance').textContent = `$${result.account_info.balance.toFixed(2)}`;
+                        document.getElementById('infoEquity').textContent = `$${result.account_info.equity.toFixed(2)}`;
+                        document.getElementById('infoProfit').textContent = `$${result.account_info.profit.toFixed(2)}`;
+                    }
+                    
+                    startPriceUpdates();
+                    loadPositions();
+                } else {
+                    updateConnectionStatus('disconnected', '연결 실패: ' + (result.message || '알 수 없는 오류'));
+                }
+            } catch (error) {
+                console.error('연결 실패:', error);
+                updateConnectionStatus('disconnected', '연결 실패');
+            }
+        }
+        
+        function updateConnectionStatus(status, text) {
+            const el = document.getElementById('connectionStatus');
+            el.className = 'connection-status status-' + status;
+            el.textContent = text;
+        }
+        
+        // 차트 데이터 로드
+        async function loadChartData() {
+            try {
+                const response = await fetch(`${API_URL}/mt5/candles/${currentSymbol}?timeframe=${currentTimeframe}&count=200`);
+                const data = await response.json();
+                
+                if (data.candles && data.candles.length > 0) {
+                    candleSeries.setData(data.candles);
+                    chart.timeScale().fitContent();
+                }
+            } catch (error) {
+                console.error('차트 데이터 로드 실패:', error);
+            }
+        }
+        
+        // 실시간 가격 업데이트 시작
+        function startPriceUpdates() {
+            if (priceUpdateInterval) {
+                clearInterval(priceUpdateInterval);
+            }
+            
+            updatePrice();
+            priceUpdateInterval = setInterval(updatePrice, 1000);
+        }
+        
+        // 가격 업데이트
+        async function updatePrice() {
+            try {
+                const response = await fetch(`${API_URL}/mt5/price/${currentSymbol}`);
+                const price = await response.json();
+                
+                if (price && !price.error) {
+                    const decimals = currentSymbol.includes('JPY') ? 3 : 
+                                   (currentSymbol.includes('XAU') || currentSymbol.includes('BTC')) ? 2 : 5;
+                    
+                    document.getElementById('bidPrice').textContent = price.bid.toFixed(decimals);
+                    document.getElementById('askPrice').textContent = price.ask.toFixed(decimals);
+                    document.getElementById('currentPrice').textContent = price.ask.toFixed(decimals);
+                    
+                    const spread = ((price.ask - price.bid) * (currentSymbol.includes('JPY') ? 100 : 10000)).toFixed(1);
+                    document.getElementById('spreadInfo').textContent = `스프레드: ${spread} pips`;
+                    
+                    // 실시간 캔들 업데이트
+                    const now = Math.floor(Date.now() / 1000);
+                    candleSeries.update({
+                        time: now,
+                        open: price.bid,
+                        high: price.ask,
+                        low: price.bid,
+                        close: price.ask
+                    });
+                }
+            } catch (error) {
+                console.error('가격 업데이트 실패:', error);
+            }
+        }
+        
+        // 심볼 변경
+        function changeSymbol() {
+            currentSymbol = document.getElementById('symbolSelect').value;
+            loadChartData();
+            if (isConnected) {
+                updatePrice();
+            }
+        }
+        
+        // 타임프레임 변경
+        function changeTimeframe(tf) {
+            currentTimeframe = tf;
+            document.querySelectorAll('.tf-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            loadChartData();
+        }
+        
+        // 랏 조절
+        function adjustLot(amount) {
+            const input = document.getElementById('lotSize');
+            let value = parseFloat(input.value) + amount;
+            if (value < 0.01) value = 0.01;
+            input.value = value.toFixed(2);
+        }
+        
+        function setLot(value) {
+            document.getElementById('lotSize').value = value.toFixed(2);
+        }
+        
+        // 메시지 표시
+        function showMessage(text, type) {
+            const msg = document.getElementById('tradeMessage');
+            msg.textContent = text;
+            msg.className = 'message ' + type;
+            setTimeout(() => { msg.className = 'message'; }, 5000);
+        }
+        
+        // 주문 실행
+        async function placeTrade(type) {
+            if (!isConnected) {
+                showMessage('MT5에 연결되지 않았습니다. 계정을 선택하세요.', 'error');
+                return;
+            }
+            
+            const lot = parseFloat(document.getElementById('lotSize').value);
+            const slPips = parseInt(document.getElementById('slPips').value) || 0;
+            const tpPips = parseInt(document.getElementById('tpPips').value) || 0;
+            
+            try {
+                const response = await fetch(`${API_URL}/mt5/order?symbol=${currentSymbol}&order_type=${type}&volume=${lot}&sl_pips=${slPips}&tp_pips=${tpPips}`, {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    showMessage(`${type.toUpperCase()} 주문 체결! ${currentSymbol} ${lot} lots`, 'success');
+                    loadPositions();
+                } else {
+                    showMessage(result.message || '주문 실패', 'error');
+                }
+            } catch (error) {
+                console.error('주문 실패:', error);
+                showMessage('주문 실행 중 오류 발생', 'error');
+            }
+        }
+        
+        // 포지션 로드
+        async function loadPositions() {
+            try {
+                const response = await fetch(`${API_URL}/mt5/positions`, {
+                    headers: getAuthHeaders()
+                });
+                
+                const data = await response.json();
+                renderPositions(data.positions || []);
+            } catch (error) {
+                console.error('포지션 로드 실패:', error);
+            }
+        }
+        
+        // 포지션 렌더링
+        function renderPositions(positions) {
+            const tbody = document.getElementById('positionsBody');
+            document.getElementById('positionCount').textContent = positions.length + '개';
+            
+            if (positions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="no-positions">열린 포지션이 없습니다</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = positions.map(pos => {
+                const decimals = pos.symbol.includes('JPY') ? 3 : 
+                               (pos.symbol.includes('XAU') || pos.symbol.includes('BTC')) ? 2 : 5;
+                const profitClass = pos.profit >= 0 ? 'profit-positive' : 'profit-negative';
+                
+                return `
+                    <tr>
+                        <td>${pos.symbol}</td>
+                        <td class="${pos.type === 'buy' ? 'type-buy' : 'type-sell'}">${pos.type.toUpperCase()}</td>
+                        <td>${pos.volume.toFixed(2)}</td>
+                        <td>${pos.open_price.toFixed(decimals)}</td>
+                        <td>${pos.current_price.toFixed(decimals)}</td>
+                        <td class="${profitClass}">$${pos.profit.toFixed(2)}</td>
+                        <td><button class="btn-close-position" onclick="closePosition(${pos.ticket})">청산</button></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        // 포지션 청산
+        async function closePosition(ticket) {
+            if (!confirm('이 포지션을 청산하시겠습니까?')) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/mt5/close/${ticket}`, {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    showMessage('포지션 청산 완료!', 'success');
+                    loadPositions();
+                } else {
+                    showMessage(result.message || '청산 실패', 'error');
+                }
+            } catch (error) {
+                console.error('청산 실패:', error);
+                showMessage('청산 중 오류 발생', 'error');
+            }
+        }
+    </script>
+</body>
+</html>

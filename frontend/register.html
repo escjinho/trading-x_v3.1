@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Trading-X - Register</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Rajdhani', sans-serif; }
+        .title-font { font-family: 'Orbitron', sans-serif; }
+        
+        :root {
+            --bg-primary: #1a1d23;
+            --bg-secondary: #25282f;
+            --bg-tertiary: #2d3139;
+            --text-primary: #ffffff;
+            --text-muted: #9ca3af;
+            --text-dim: #6b7280;
+            --accent-cyan: #00d4ff;
+            --accent-cyan-glow: rgba(0, 212, 255, 0.3);
+            --buy-color: #00b450;
+            --buy-bg: rgba(0, 180, 80, 0.15);
+            --sell-color: #dc3246;
+            --sell-bg: rgba(220, 50, 70, 0.15);
+            --border-color: #3f4451;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0a0c10 0%, #151821 50%, #0a0c10 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 0;
+        }
+        
+        .register-container {
+            width: 100%;
+            max-width: 420px;
+            padding: 20px;
+        }
+        
+        /* Logo Section */
+        .logo-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .logo svg {
+            filter: drop-shadow(0 0 20px var(--accent-cyan-glow));
+        }
+        
+        .logo-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 28px;
+            font-weight: 900;
+            color: var(--text-primary);
+            letter-spacing: 2px;
+        }
+        
+        .logo-subtitle {
+            font-size: 13px;
+            color: var(--text-muted);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+        
+        /* Register Card */
+        .register-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5), 0 0 40px var(--accent-cyan-glow);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .register-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
+        }
+        
+        .register-title {
+            font-size: 24px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+        
+        .register-desc {
+            font-size: 14px;
+            color: var(--text-muted);
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        
+        /* Form */
+        .form-group {
+            margin-bottom: 18px;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 12px;
+            color: var(--accent-cyan);
+            margin-bottom: 8px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        
+        .input-wrapper {
+            position: relative;
+        }
+        
+        .input-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 20px;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 14px 14px 14px 48px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 0 3px var(--accent-cyan-glow);
+        }
+        
+        .form-input::placeholder {
+            color: var(--text-dim);
+        }
+        
+        .form-input.error {
+            border-color: var(--sell-color);
+        }
+        
+        .form-hint {
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-top: 6px;
+        }
+        
+        .form-hint.error {
+            color: var(--sell-color);
+        }
+        
+        .password-toggle {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px;
+        }
+        
+        .password-toggle:hover {
+            color: var(--accent-cyan);
+        }
+        
+        /* Password Strength */
+        .password-strength {
+            display: flex;
+            gap: 4px;
+            margin-top: 8px;
+        }
+        
+        .strength-bar {
+            flex: 1;
+            height: 3px;
+            background: var(--border-color);
+            border-radius: 2px;
+            transition: background 0.3s;
+        }
+        
+        .strength-bar.weak { background: var(--sell-color); }
+        .strength-bar.medium { background: #f59e0b; }
+        .strength-bar.strong { background: var(--buy-color); }
+        
+        /* Terms */
+        .terms-group {
+            margin: 20px 0;
+        }
+        
+        .terms-checkbox {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            cursor: pointer;
+        }
+        
+        .terms-checkbox input {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent-cyan);
+            cursor: pointer;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+        
+        .terms-checkbox span {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+        
+        .terms-checkbox a {
+            color: var(--accent-cyan);
+            text-decoration: none;
+        }
+        
+        .terms-checkbox a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Register Button */
+        .register-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--accent-cyan), #0099cc);
+            border: none;
+            border-radius: 10px;
+            color: #0a0c10;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            box-shadow: 0 4px 20px var(--accent-cyan-glow);
+        }
+        
+        .register-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px var(--accent-cyan-glow);
+        }
+        
+        .register-btn:active {
+            transform: translateY(0);
+        }
+        
+        .register-btn:disabled {
+            background: var(--bg-tertiary);
+            color: var(--text-muted);
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+        
+        /* Divider */
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 25px 0;
+        }
+        
+        .divider-line {
+            flex: 1;
+            height: 1px;
+            background: var(--border-color);
+        }
+        
+        .divider-text {
+            padding: 0 15px;
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        /* Login Link */
+        .login-section {
+            text-align: center;
+        }
+        
+        .login-text {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+        
+        .login-link {
+            color: var(--accent-cyan);
+            text-decoration: none;
+            font-weight: 600;
+            margin-left: 5px;
+        }
+        
+        .login-link:hover {
+            text-decoration: underline;
+        }
+        
+        /* Error/Success Message */
+        .message {
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .message.show {
+            display: flex;
+        }
+        
+        .message.error {
+            background: var(--sell-bg);
+            border: 1px solid var(--sell-color);
+        }
+        
+        .message.success {
+            background: var(--buy-bg);
+            border: 1px solid var(--buy-color);
+        }
+        
+        .message .material-icons-round {
+            font-size: 20px;
+        }
+        
+        .message.error .material-icons-round,
+        .message.error span {
+            color: var(--sell-color);
+        }
+        
+        .message.success .material-icons-round,
+        .message.success span {
+            color: var(--buy-color);
+        }
+        
+        .message span {
+            font-size: 14px;
+        }
+        
+        /* Loading Spinner */
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid transparent;
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .register-btn.loading .spinner {
+            display: inline-block;
+        }
+        
+        .register-btn.loading .btn-text {
+            opacity: 0.7;
+        }
+        
+        /* Responsive */
+        @media (max-width: 480px) {
+            .register-container {
+                padding: 15px;
+            }
+            
+            .register-card {
+                padding: 25px 20px;
+            }
+            
+            .logo-text {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <!-- Logo -->
+        <div class="logo-section">
+            <div class="logo">
+                <svg width="42" height="34" viewBox="0 0 28 22">
+                    <rect x="1" y="1" width="26" height="20" rx="3" fill="none" stroke="#00d4ff" stroke-width="2"/>
+                    <text x="14" y="16" font-size="14" font-weight="900" fill="#00d4ff" font-family="Arial" text-anchor="middle">TX</text>
+                </svg>
+                <span class="logo-text">Trading-X</span>
+            </div>
+            <p class="logo-subtitle">Create Your Account</p>
+        </div>
+        
+        <!-- Register Card -->
+        <div class="register-card">
+            <h1 class="register-title">회원가입</h1>
+            <p class="register-desc">Trading-X와 함께 트레이딩을 시작하세요</p>
+            
+            <!-- Message -->
+            <div class="message" id="messageBox">
+                <span class="material-icons-round" id="messageIcon">error</span>
+                <span id="messageText"></span>
+            </div>
+            
+            <!-- Register Form -->
+            <form id="registerForm" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label class="form-label">Name</label>
+                    <div class="input-wrapper">
+                        <span class="material-icons-round input-icon">person</span>
+                        <input type="text" class="form-input" id="name" placeholder="이름을 입력하세요" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <div class="input-wrapper">
+                        <span class="material-icons-round input-icon">email</span>
+                        <input type="email" class="form-input" id="email" placeholder="your@email.com" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <div class="input-wrapper">
+                        <span class="material-icons-round input-icon">lock</span>
+                        <input type="password" class="form-input" id="password" placeholder="8자 이상 입력" required minlength="8" oninput="checkPasswordStrength()">
+                        <button type="button" class="password-toggle" onclick="togglePassword('password')">
+                            <span class="material-icons-round" id="passwordIcon">visibility_off</span>
+                        </button>
+                    </div>
+                    <div class="password-strength">
+                        <div class="strength-bar" id="strength1"></div>
+                        <div class="strength-bar" id="strength2"></div>
+                        <div class="strength-bar" id="strength3"></div>
+                        <div class="strength-bar" id="strength4"></div>
+                    </div>
+                    <p class="form-hint" id="strengthText">8자 이상, 영문/숫자/특수문자 포함 권장</p>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Confirm Password</label>
+                    <div class="input-wrapper">
+                        <span class="material-icons-round input-icon">lock</span>
+                        <input type="password" class="form-input" id="confirmPassword" placeholder="비밀번호 확인" required oninput="checkPasswordMatch()">
+                        <button type="button" class="password-toggle" onclick="togglePassword('confirmPassword')">
+                            <span class="material-icons-round" id="confirmPasswordIcon">visibility_off</span>
+                        </button>
+                    </div>
+                    <p class="form-hint" id="matchHint"></p>
+                </div>
+                
+                <div class="terms-group">
+                    <label class="terms-checkbox">
+                        <input type="checkbox" id="terms" required>
+                        <span><a href="#">이용약관</a> 및 <a href="#">개인정보처리방침</a>에 동의합니다.</span>
+                    </label>
+                </div>
+                
+                <button type="submit" class="register-btn" id="registerBtn">
+                    <span class="spinner"></span>
+                    <span class="btn-text">회원가입</span>
+                </button>
+            </form>
+            
+            <div class="divider">
+                <div class="divider-line"></div>
+                <span class="divider-text">또는</span>
+                <div class="divider-line"></div>
+            </div>
+            
+            <div class="login-section">
+                <span class="login-text">이미 계정이 있으신가요?</span>
+                <a href="login.html" class="login-link">로그인</a>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://127.0.0.1:8000/api';
+        
+        // 이미 로그인되어 있으면 앱으로 이동
+        if (localStorage.getItem('access_token')) {
+            window.location.href = 'index.html';
+        }
+        
+        function togglePassword(fieldId) {
+            const passwordInput = document.getElementById(fieldId);
+            const passwordIcon = document.getElementById(fieldId + 'Icon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                passwordIcon.textContent = 'visibility';
+            } else {
+                passwordInput.type = 'password';
+                passwordIcon.textContent = 'visibility_off';
+            }
+        }
+        
+        function showMessage(message, type) {
+            const messageBox = document.getElementById('messageBox');
+            const messageIcon = document.getElementById('messageIcon');
+            const messageText = document.getElementById('messageText');
+            
+            messageBox.className = 'message show ' + type;
+            messageIcon.textContent = type === 'error' ? 'error' : 'check_circle';
+            messageText.textContent = message;
+        }
+        
+        function hideMessage() {
+            document.getElementById('messageBox').className = 'message';
+        }
+        
+        function checkPasswordStrength() {
+            const password = document.getElementById('password').value;
+            const bars = [
+                document.getElementById('strength1'),
+                document.getElementById('strength2'),
+                document.getElementById('strength3'),
+                document.getElementById('strength4')
+            ];
+            const strengthText = document.getElementById('strengthText');
+            
+            // Reset
+            bars.forEach(bar => bar.className = 'strength-bar');
+            
+            let strength = 0;
+            
+            if (password.length >= 8) strength++;
+            if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++;
+            if (password.match(/[0-9]/)) strength++;
+            if (password.match(/[^a-zA-Z0-9]/)) strength++;
+            
+            for (let i = 0; i < strength; i++) {
+                if (strength <= 1) {
+                    bars[i].classList.add('weak');
+                } else if (strength <= 2) {
+                    bars[i].classList.add('medium');
+                } else {
+                    bars[i].classList.add('strong');
+                }
+            }
+            
+            if (password.length === 0) {
+                strengthText.textContent = '8자 이상, 영문/숫자/특수문자 포함 권장';
+                strengthText.className = 'form-hint';
+            } else if (strength <= 1) {
+                strengthText.textContent = '약한 비밀번호';
+                strengthText.className = 'form-hint error';
+            } else if (strength <= 2) {
+                strengthText.textContent = '보통 비밀번호';
+                strengthText.className = 'form-hint';
+            } else {
+                strengthText.textContent = '강한 비밀번호';
+                strengthText.className = 'form-hint';
+                strengthText.style.color = 'var(--buy-color)';
+            }
+        }
+        
+        function checkPasswordMatch() {
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const matchHint = document.getElementById('matchHint');
+            const confirmInput = document.getElementById('confirmPassword');
+            
+            if (confirmPassword.length === 0) {
+                matchHint.textContent = '';
+                confirmInput.classList.remove('error');
+            } else if (password === confirmPassword) {
+                matchHint.textContent = '✓ 비밀번호가 일치합니다';
+                matchHint.style.color = 'var(--buy-color)';
+                confirmInput.classList.remove('error');
+            } else {
+                matchHint.textContent = '비밀번호가 일치하지 않습니다';
+                matchHint.className = 'form-hint error';
+                confirmInput.classList.add('error');
+            }
+        }
+        
+        async function handleRegister(event) {
+            event.preventDefault();
+            hideMessage();
+            
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const terms = document.getElementById('terms').checked;
+            const registerBtn = document.getElementById('registerBtn');
+            
+            // Validation
+            if (password !== confirmPassword) {
+                showMessage('비밀번호가 일치하지 않습니다.', 'error');
+                return;
+            }
+            
+            if (password.length < 8) {
+                showMessage('비밀번호는 8자 이상이어야 합니다.', 'error');
+                return;
+            }
+            
+            if (!terms) {
+                showMessage('이용약관에 동의해주세요.', 'error');
+                return;
+            }
+            
+            // 버튼 로딩 상태
+            registerBtn.classList.add('loading');
+            registerBtn.disabled = true;
+            
+            try {
+                const response = await fetch(`${API_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        password: password,
+                        name: name
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showMessage('회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 2000);
+                } else {
+                    showMessage(data.detail || '회원가입에 실패했습니다.', 'error');
+                }
+            } catch (error) {
+                console.error('Register error:', error);
+                showMessage('서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.', 'error');
+            } finally {
+                registerBtn.classList.remove('loading');
+                registerBtn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

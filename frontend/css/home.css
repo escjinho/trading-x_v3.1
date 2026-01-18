@@ -1,0 +1,406 @@
+/* Home Tab Styles */
+
+        .welcome-banner {
+            background: linear-gradient(135deg, #1e3a5f 0%, #0d1421 100%);
+            border-radius: 12px; padding: 20px; margin-bottom: 15px; text-align: center;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+        }
+        .welcome-banner h2 { color: var(--accent-cyan); margin-bottom: 8px; font-size: 18px; }
+        .balance-display { font-size: 32px; font-weight: bold; color: var(--buy-color); }
+        
+        /* 차트 */
+        .notice-banner {
+            background: linear-gradient(135deg, #1e3a5f 0%, #0d1f33 100%);
+            border: 1px solid var(--accent-cyan);
+            border-radius: 10px;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        .notice-content {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .notice-icon {
+            font-size: 18px;
+        }
+        .notice-text {
+            font-size: 13px;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+        .notice-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 0 5px;
+            transition: color 0.2s;
+        }
+        .notice-close:hover {
+            color: var(--text-primary);
+        }
+        
+        /* 인사 섹션 */
+        .greeting-section {
+            margin-bottom: 15px;
+        }
+        .greeting-text {
+            display: block;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            margin-bottom: 4px;
+        }
+        .greeting-sub {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        
+        /* Today/Week 수익 */
+        .profit-summary {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-top: 15px;
+            padding: 12px 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+        .profit-box {
+            text-align: center;
+        }
+        .profit-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--buy-color);
+        }
+        .profit-value.negative {
+            color: var(--sell-color);
+        }
+        .profit-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        .profit-divider {
+            width: 1px;
+            height: 30px;
+            background: var(--border-color);
+        }
+        
+        /* 오늘 거래 요약 */
+        .today-summary {
+            margin-top: 12px;
+            padding: 8px 15px;
+            background: rgba(0, 212, 255, 0.1);
+            border-radius: 20px;
+            font-size: 12px;
+            color: var(--text-muted);
+            display: inline-block;
+        }
+        
+        /* 프로모션 슬라이더 */
+        .promo-slider-container {
+            margin-bottom: 15px;
+            position: relative;
+        }
+        .promo-slider {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            gap: 12px;
+            padding: 5px 2px;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .promo-slider::-webkit-scrollbar {
+            display: none;
+        }
+        .promo-card {
+            min-width: 100%;
+            scroll-snap-align: start;
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+        .promo-icon {
+            font-size: 32px;
+            flex-shrink: 0;
+        }
+        .promo-content {
+            flex: 1;
+        }
+        .promo-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        .promo-desc {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.3;
+        }
+        .promo-action {
+            flex-shrink: 0;
+        }
+        .promo-btn {
+            padding: 8px 14px;
+            background: var(--buy-color);
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+        .promo-btn:hover {
+            transform: scale(1.05);
+        }
+        .promo-btn:active {
+            transform: scale(0.95);
+        }
+        
+        /* 슬라이드 인디케이터 */
+        .promo-indicators {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .promo-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--border-color);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .promo-dot.active {
+            background: var(--accent-cyan);
+            width: 20px;
+            border-radius: 4px;
+        }
+        
+        /* Trading Mode 선택 */
+        .trading-mode-selector {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .mode-select-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px;
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+        .mode-select-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .mode-select-btn.active {
+            border-color: var(--accent-cyan);
+            background: rgba(0, 212, 255, 0.1);
+        }
+        .mode-select-btn.active.live-active {
+            border-color: #00ff88;
+            background: rgba(0, 255, 136, 0.1);
+        }
+        .mode-select-icon {
+            font-size: 24px;
+        }
+        .mode-select-info {
+            text-align: left;
+        }
+        .mode-select-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .mode-select-desc {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+        .mode-select-check {
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            width: 20px;
+            height: 20px;
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            color: #000;
+        }
+        .mode-select-btn.live-active .mode-select-check {
+            background: #00ff88;
+        }
+        .mode-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            background: rgba(0, 212, 255, 0.1);
+            border-radius: 8px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .mode-status.live {
+            background: rgba(0, 255, 136, 0.1);
+        }
+        .mode-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        .mt5-not-connected {
+            text-align: center;
+            padding: 20px 10px;
+        }
+        .mt5-empty-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            opacity: 0.7;
+        }
+        .mt5-empty-text {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+        .mt5-empty-sub {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+        }
+        .mt5-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .mt5-connect-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px;
+            background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+            border: none;
+            border-radius: 10px;
+            color: #000;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .mt5-connect-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
+        }
+        .mt5-guide-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .mt5-guide-btn:hover {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+        
+        /* MT5 연결됨 상태 */
+        .mt5-connected {
+            padding: 10px 0;
+        }
+        .mt5-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: rgba(0, 255, 136, 0.15);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #00ff88;
+            margin-bottom: 15px;
+        }
+        .mt5-status-dot {
+            width: 8px;
+            height: 8px;
+            background: #00ff88;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #00ff88;
+        .mt5-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        .mt5-info-item {
+            background: var(--bg-tertiary);
+            padding: 12px;
+            border-radius: 8px;
+        }
+        .mt5-info-label {
+            display: block;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+        .mt5-info-value {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .mt5-disconnect-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: 100%;
+            padding: 10px;
+            background: transparent;
+            border: 1px solid var(--sell-color);
+            border-radius: 8px;
+            color: var(--sell-color);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .mt5-disconnect-btn:hover {
+            background: rgba(220, 50, 70, 0.1);
+        }
+        
+        /* ========== 서브메뉴 (바텀시트) ========== */

@@ -1,0 +1,15 @@
+/* Account Tab Styles */
+
+        .account-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .summary-box { background: #1e2127; border-radius: 10px; padding: 15px; text-align: center; border: 1px solid var(--border-color); }
+        .summary-box .value { font-size: 20px; font-weight: bold; color: var(--accent-cyan); }
+        .summary-box .label { font-size: 11px; color: var(--text-muted); margin-top: 5px; }
+        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border-color); }
+        .history-item:last-child { border-bottom: none; }
+        .history-symbol { font-weight: 600; }
+        .history-time { font-size: 11px; color: var(--text-muted); }
+        .history-profit { font-weight: bold; }
+        .history-profit.positive { color: var(--buy-color); }
+        .history-profit.negative { color: var(--sell-color); }
+        
+        /* My */

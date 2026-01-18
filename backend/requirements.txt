@@ -1,0 +1,27 @@
+# FastAPI 핵심
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+python-multipart==0.0.6
+
+# 데이터베이스
+sqlalchemy==2.0.25
+psycopg2-binary==2.9.9
+asyncpg==0.29.0
+
+# 인증 & 보안
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.1.2
+
+# 환경 변수
+python-dotenv==1.0.0
+
+# 유효성 검사
+pydantic[email-validator]==2.5.3
+
+# MT5 연동
+MetaTrader5==5.0.45
+
+# 유틸리티
+httpx==0.26.0
+websockets==12.0

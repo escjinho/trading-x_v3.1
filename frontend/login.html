@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Trading-X - Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Rajdhani', sans-serif; }
+        .title-font { font-family: 'Orbitron', sans-serif; }
+        
+        :root {
+            --bg-primary: #1a1d23;
+            --bg-secondary: #25282f;
+            --bg-tertiary: #2d3139;
+            --text-primary: #ffffff;
+            --text-muted: #9ca3af;
+            --text-dim: #6b7280;
+            --accent-cyan: #00d4ff;
+            --accent-cyan-glow: rgba(0, 212, 255, 0.3);
+            --buy-color: #00b450;
+            --buy-bg: rgba(0, 180, 80, 0.15);
+            --sell-color: #dc3246;
+            --sell-bg: rgba(220, 50, 70, 0.15);
+            --border-color: #3f4451;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0a0c10 0%, #151821 50%, #0a0c10 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .login-container {
+            width: 100%;
+            max-width: 420px;
+            padding: 20px;
+        }
+        
+        /* Logo Section */
+        .logo-section {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .logo svg {
+            filter: drop-shadow(0 0 20px var(--accent-cyan-glow));
+        }
+        
+        .logo-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 32px;
+            font-weight: 900;
+            color: var(--text-primary);
+            letter-spacing: 2px;
+        }
+        
+        .logo-subtitle {
+            font-size: 14px;
+            color: var(--text-muted);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+        
+        /* Login Card */
+        .login-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5), 0 0 40px var(--accent-cyan-glow);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
+        }
+        
+        .login-title {
+            font-size: 24px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+        
+        .login-desc {
+            font-size: 14px;
+            color: var(--text-muted);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        /* Form */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 12px;
+            color: var(--accent-cyan);
+            margin-bottom: 8px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        
+        .input-wrapper {
+            position: relative;
+        }
+        
+        .input-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 20px;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 14px 14px 14px 48px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 0 3px var(--accent-cyan-glow);
+        }
+        
+        .form-input::placeholder {
+            color: var(--text-dim);
+        }
+        
+        .password-toggle {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px;
+        }
+        
+        .password-toggle:hover {
+            color: var(--accent-cyan);
+        }
+        
+        /* Remember & Forgot */
+        .form-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+        
+        .remember-me input {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent-cyan);
+            cursor: pointer;
+        }
+        
+        .remember-me span {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+        
+        .forgot-link {
+            font-size: 14px;
+            color: var(--accent-cyan);
+            text-decoration: none;
+            transition: opacity 0.3s;
+        }
+        
+        .forgot-link:hover {
+            opacity: 0.8;
+        }
+        
+        /* Login Button */
+        .login-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--accent-cyan), #0099cc);
+            border: none;
+            border-radius: 10px;
+            color: #0a0c10;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            box-shadow: 0 4px 20px var(--accent-cyan-glow);
+        }
+        
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px var(--accent-cyan-glow);
+        }
+        
+        .login-btn:active {
+            transform: translateY(0);
+        }
+        
+        .login-btn:disabled {
+            background: var(--bg-tertiary);
+            color: var(--text-muted);
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        
+        /* Divider */
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 25px 0;
+        }
+        
+        .divider-line {
+            flex: 1;
+            height: 1px;
+            background: var(--border-color);
+        }
+        
+        .divider-text {
+            padding: 0 15px;
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        /* Register Link */
+        .register-section {
+            text-align: center;
+        }
+        
+        .register-text {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+        
+        .register-link {
+            color: var(--accent-cyan);
+            text-decoration: none;
+            font-weight: 600;
+            margin-left: 5px;
+        }
+        
+        .register-link:hover {
+            text-decoration: underline;
+        }
+        
+        /* Error Message */
+        .error-message {
+            background: var(--sell-bg);
+            border: 1px solid var(--sell-color);
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .error-message.show {
+            display: flex;
+        }
+        
+        .error-message .material-icons-round {
+            color: var(--sell-color);
+            font-size: 20px;
+        }
+        
+        .error-message span {
+            font-size: 14px;
+            color: var(--sell-color);
+        }
+        
+        /* Footer */
+        .login-footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .footer-text {
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+        
+        .footer-links {
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        
+        .footer-links a {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-decoration: none;
+        }
+        
+        .footer-links a:hover {
+            color: var(--accent-cyan);
+        }
+        
+        /* Loading Spinner */
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid transparent;
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .login-btn.loading .spinner {
+            display: inline-block;
+        }
+        
+        .login-btn.loading .btn-text {
+            opacity: 0.7;
+        }
+        
+        /* Responsive */
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 15px;
+            }
+            
+            .login-card {
+                padding: 25px 20px;
+            }
+            
+            .logo-text {
+                font-size: 26px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <!-- Logo -->
+        <div class="logo-section">
+            <div class="logo">
+                <svg width="48" height="38" viewBox="0 0 28 22">
+                    <rect x="1" y="1" width="26" height="20" rx="3" fill="none" stroke="#00d4ff" stroke-width="2"/>
+                    <text x="14" y="16" font-size="14" font-weight="900" fill="#00d4ff" font-family="Arial" text-anchor="middle">TX</text>
+                </svg>
+                <span class="logo-text">Trading-X</span>
+            </div>
+            <p class="logo-subtitle">Professional Trading Platform</p>
+        </div>
+        
+        <!-- Login Card -->
+        <div class="login-card">
+            <h1 class="login-title">Welcome Back</h1>
+            <p class="login-desc">로그인하여 거래를 시작하세요</p>
+            
+            <!-- Error Message -->
+            <div class="error-message" id="errorMessage">
+                <span class="material-icons-round">error</span>
+                <span id="errorText">이메일 또는 비밀번호가 올바르지 않습니다.</span>
+            </div>
+            
+            <!-- Login Form -->
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <div class="input-wrapper">
+                        <span class="material-icons-round input-icon">email</span>
+                        <input type="email" class="form-input" id="email" placeholder="your@email.com" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <div class="input-wrapper">
+                        <span class="material-icons-round input-icon">lock</span>
+                        <input type="password" class="form-input" id="password" placeholder="••••••••" required>
+                        <button type="button" class="password-toggle" onclick="togglePassword()">
+                            <span class="material-icons-round" id="passwordIcon">visibility_off</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="form-options">
+                    <label class="remember-me">
+                        <input type="checkbox" id="remember">
+                        <span>로그인 유지</span>
+                    </label>
+                    <a href="#" class="forgot-link">비밀번호 찾기</a>
+                </div>
+                
+                <button type="submit" class="login-btn" id="loginBtn">
+                    <span class="spinner"></span>
+                    <span class="btn-text">로그인</span>
+                </button>
+            </form>
+            
+            <div class="divider">
+                <div class="divider-line"></div>
+                <span class="divider-text">또는</span>
+                <div class="divider-line"></div>
+            </div>
+            
+            <div class="register-section">
+                <span class="register-text">계정이 없으신가요?</span>
+                <a href="register.html" class="register-link">회원가입</a>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="login-footer">
+            <p class="footer-text">© 2025 Trading-X. All rights reserved.</p>
+            <div class="footer-links">
+                <a href="#">이용약관</a>
+                <a href="#">개인정보처리방침</a>
+                <a href="#">고객센터</a>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://localhost:8000/api';
+        
+        // 이미 로그인되어 있으면 앱으로 이동
+        if (localStorage.getItem('access_token')) {
+            window.location.href = 'index.html';
+        }
+        
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const passwordIcon = document.getElementById('passwordIcon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                passwordIcon.textContent = 'visibility';
+            } else {
+                passwordInput.type = 'password';
+                passwordIcon.textContent = 'visibility_off';
+            }
+        }
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            errorText.textContent = message;
+            errorDiv.classList.add('show');
+        }
+        
+        function hideError() {
+            document.getElementById('errorMessage').classList.remove('show');
+        }
+        
+        async function handleLogin(event) {
+            event.preventDefault();
+            hideError();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const loginBtn = document.getElementById('loginBtn');
+            
+            // 버튼 로딩 상태
+            loginBtn.classList.add('loading');
+            loginBtn.disabled = true;
+            
+            try {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        password: password
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.access_token) {
+                    // 토큰 저장
+                    localStorage.setItem('access_token', data.access_token);
+                    localStorage.setItem('user_email', email);
+                    
+                    // 앱 페이지로 이동
+                    window.location.href = 'index.html';
+                } else {
+                    // 에러 메시지 처리
+                    let errorMsg = '로그인에 실패했습니다.';
+                    if (data.detail) {
+                        if (typeof data.detail === 'string') {
+                            errorMsg = data.detail;
+                        } else if (Array.isArray(data.detail)) {
+                            errorMsg = data.detail[0]?.msg || '입력값을 확인해주세요.';
+                        } else if (typeof data.detail === 'object') {
+                            errorMsg = data.detail.msg || JSON.stringify(data.detail);
+                        }
+                    }
+                    showError(errorMsg);
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showError('서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.');
+            } finally {
+                loginBtn.classList.remove('loading');
+                loginBtn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,663 @@
+# app/api/mt5.py
+"""
+MT5 연동 API - 마틴게일, WebSocket 포함 완벽 버전
+Trading-X Backend
+"""
+
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, Query, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.responses import JSONResponse
+from sqlalchemy.orm import Session
+import MetaTrader5 as mt5
+import asyncio
+import json
+from datetime import datetime, timedelta
+
+from ..database import get_db
+from ..models.user import User
+from ..utils.security import decode_token
+from ..services.indicator_service import IndicatorService
+from ..services.martin_service import martin_service
+
+router = APIRouter(prefix="/mt5", tags=["MT5"])
+security = HTTPBearer()
+
+
+# ========== 인증 함수 ==========
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
+) -> User:
+    """JWT 토큰에서 현재 사용자 가져오기"""
+    token = credentials.credentials
+    payload = decode_token(token)
+    
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="유효하지 않은 토큰입니다"
+        )
+    
+    user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="유효하지 않은 토큰입니다"
+        )
+    
+    user = db.query(User).filter(User.id == int(user_id)).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="사용자를 찾을 수 없습니다"
+        )
+    
+    return user
+
+
+# ========== 계정 정보 ==========
+@router.get("/account-info")
+async def get_account_info(current_user: User = Depends(get_current_user)):
+    """MT5 계정 정보 + 인디케이터 + 포지션 조회"""
+    try:
+        if not mt5.initialize():
+            raise HTTPException(status_code=500, detail="MT5 초기화 실패")
+        
+        account = mt5.account_info()
+        if not account:
+            raise HTTPException(status_code=500, detail="계정 정보 없음")
+        
+        # 포지션 정보
+        positions = mt5.positions_get()
+        positions_count = len(positions) if positions else 0
+        
+        position_data = None
+        if positions and len(positions) > 0:
+            pos = positions[0]
+            position_data = {
+                "type": "BUY" if pos.type == 0 else "SELL",
+                "symbol": pos.symbol,
+                "volume": pos.volume,
+                "entry": pos.price_open,
+                "profit": pos.profit,
+                "ticket": pos.ticket
+            }
+        
+        # 인디케이터 계산
+        try:
+            indicators = IndicatorService.calculate_all_indicators("BTCUSD")
+            buy_count = indicators["buy"]
+            sell_count = indicators["sell"]
+            neutral_count = indicators["neutral"]
+            base_score = indicators["score"]
+        except Exception as e:
+            print(f"인디케이터 계산 오류: {e}")
+            buy_count = 33
+            sell_count = 33
+            neutral_count = 34
+            base_score = 50
+        
+        # 모든 심볼 가격
+        symbols_list = ["BTCUSD", "EURUSD.r", "USDJPY.r", "XAUUSD.r", "US100."]
+        prices = {}
+        for sym in symbols_list:
+            tick = mt5.symbol_info_tick(sym)
+            if tick:
+                prices[sym] = {"bid": tick.bid, "ask": tick.ask}
+        
+        return {
+            "broker": account.company,
+            "account": account.login,
+            "server": account.server,
+            "balance": account.balance,
+            "equity": account.equity,
+            "margin": account.margin,
+            "free_margin": account.margin_free,
+            "leverage": account.leverage,
+            "positions_count": positions_count,
+            "position": position_data,
+            "buy_count": buy_count,
+            "sell_count": sell_count,
+            "neutral_count": neutral_count,
+            "base_score": base_score,
+            "prices": prices,
+            "martin": martin_service.get_state()
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ========== 캔들 데이터 ==========
+@router.get("/candles/{symbol}")
+async def get_candles(
+    symbol: str,
+    timeframe: str = "M1",
+    count: int = 200
+):
+    """캔들 데이터 + 인디케이터 조회"""
+    if not mt5.initialize():
+        return {"candles": [], "indicators": {}}
+    
+    tf_map = {
+        "M1": mt5.TIMEFRAME_M1, "M5": mt5.TIMEFRAME_M5,
+        "M15": mt5.TIMEFRAME_M15, "H1": mt5.TIMEFRAME_H1,
+        "H4": mt5.TIMEFRAME_H4, "D1": mt5.TIMEFRAME_D1,
+    }
+    tf = tf_map.get(timeframe, mt5.TIMEFRAME_M1)
+    
+    if not mt5.symbol_select(symbol, True):
+        import time
+        time.sleep(0.5)
+        if not mt5.symbol_select(symbol, True):
+            return {"candles": [], "indicators": {}}
+    
+    rates = mt5.copy_rates_from_pos(symbol, tf, 0, count)
+    
+    if rates is None or len(rates) == 0:
+        return {"candles": [], "indicators": {}}
+    
+    candles = []
+    closes = []
+    highs = []
+    lows = []
+    
+    for r in rates:
+        candles.append({
+            "time": int(r['time']),
+            "open": float(r['open']),
+            "high": float(r['high']),
+            "low": float(r['low']),
+            "close": float(r['close']),
+            "volume": int(r['tick_volume'])
+        })
+        closes.append(r['close'])
+        highs.append(r['high'])
+        lows.append(r['low'])
+    
+    # 인디케이터 계산
+    indicators = IndicatorService.calculate_chart_indicators(candles, closes, highs, lows)
+    
+    return {"candles": candles, "indicators": indicators}
+
+
+# ========== 인디케이터 전용 (인증 불필요) ==========
+@router.get("/indicators/{symbol}")
+async def get_indicators(symbol: str = "BTCUSD"):
+    """인디케이터만 조회 (게스트 모드용)"""
+    if not mt5.initialize():
+        return {"buy": 0, "sell": 0, "neutral": 0, "score": 50}
+    
+    try:
+        indicators = IndicatorService.calculate_all_indicators(symbol)
+        return indicators
+    except Exception as e:
+        print(f"인디케이터 오류: {e}")
+        return {"buy": 33, "sell": 33, "neutral": 34, "score": 50}
+
+
+# ========== 주문 실행 ==========
+@router.post("/order")
+async def place_order(
+    symbol: str = "BTCUSD",
+    order_type: str = "BUY",
+    volume: float = 0.01,
+    target: int = 100,
+    current_user: User = Depends(get_current_user)
+):
+    """일반 주문 실행 (BUY/SELL)"""
+    tick = mt5.symbol_info_tick(symbol)
+    symbol_info = mt5.symbol_info(symbol)
+    
+    if not tick or not symbol_info:
+        return JSONResponse({"success": False, "message": "가격 정보 없음"})
+    
+    # TP/SL 계산
+    point_value = symbol_info.trade_tick_value if symbol_info.trade_tick_value > 0 else 1
+    tp_points = int(target / (volume * point_value)) if volume * point_value > 0 else 500
+    sl_points = tp_points
+    
+    if order_type.upper() == "BUY":
+        mt5_type = mt5.ORDER_TYPE_BUY
+        price = tick.ask
+        tp_price = tick.ask + (tp_points * symbol_info.point)
+        sl_price = tick.ask - (sl_points * symbol_info.point)
+    else:
+        mt5_type = mt5.ORDER_TYPE_SELL
+        price = tick.bid
+        tp_price = tick.bid - (tp_points * symbol_info.point)
+        sl_price = tick.bid + (sl_points * symbol_info.point)
+    
+    request = {
+        "action": mt5.TRADE_ACTION_DEAL,
+        "symbol": symbol,
+        "volume": volume,
+        "type": mt5_type,
+        "price": price,
+        "sl": sl_price,
+        "tp": tp_price,
+        "deviation": 20,
+        "magic": 123456,
+        "comment": f"Trading-X {order_type.upper()}",
+        "type_time": mt5.ORDER_TIME_GTC,
+        "type_filling": mt5.ORDER_FILLING_IOC,
+    }
+    
+    result = mt5.order_send(request)
+    
+    if result.retcode == mt5.TRADE_RETCODE_DONE:
+        return JSONResponse({
+            "success": True,
+            "message": f"{order_type.upper()} 성공! {volume} lot @ {result.price:,.2f}",
+            "ticket": result.order
+        })
+    else:
+        return JSONResponse({
+            "success": False,
+            "message": f"실패: {result.retcode} - {result.comment}"
+        })
+
+
+# ========== 포지션 청산 ==========
+@router.post("/close")
+async def close_position(
+    symbol: str = "BTCUSD",
+    current_user: User = Depends(get_current_user)
+):
+    """포지션 청산"""
+    positions = mt5.positions_get(symbol=symbol)
+    if not positions:
+        return JSONResponse({"success": False, "message": "열린 포지션 없음"})
+    
+    for pos in positions:
+        tick = mt5.symbol_info_tick(symbol)
+        close_type = mt5.ORDER_TYPE_SELL if pos.type == 0 else mt5.ORDER_TYPE_BUY
+        close_price = tick.bid if pos.type == 0 else tick.ask
+        
+        request = {
+            "action": mt5.TRADE_ACTION_DEAL,
+            "symbol": symbol,
+            "volume": pos.volume,
+            "type": close_type,
+            "position": pos.ticket,
+            "price": close_price,
+            "deviation": 20,
+            "magic": 123456,
+            "comment": "Trading-X CLOSE",
+            "type_time": mt5.ORDER_TIME_GTC,
+            "type_filling": mt5.ORDER_FILLING_IOC,
+        }
+        
+        result = mt5.order_send(request)
+        
+        if result.retcode == mt5.TRADE_RETCODE_DONE:
+            return JSONResponse({
+                "success": True,
+                "message": f"청산 성공! P/L: ${pos.profit:,.2f}",
+                "profit": pos.profit
+            })
+    
+    return JSONResponse({"success": False, "message": "청산 실패"})
+
+
+# ========== 거래 내역 ==========
+@router.get("/history")
+async def get_history(current_user: User = Depends(get_current_user)):
+    """거래 내역 조회"""
+    from_date = datetime.now() - timedelta(days=30)
+    to_date = datetime.now()
+    deals = mt5.history_deals_get(from_date, to_date)
+    
+    history = []
+    if deals:
+        for deal in deals[-20:]:
+            if deal.profit != 0:  # 실제 거래만
+                history.append({
+                    "ticket": deal.ticket,
+                    "time": datetime.fromtimestamp(deal.time).strftime("%m/%d %H:%M"),
+                    "symbol": deal.symbol,
+                    "type": "BUY" if deal.type == 0 else "SELL",
+                    "volume": deal.volume,
+                    "price": deal.price,
+                    "profit": deal.profit
+                })
+    
+    return {"history": history}
+
+
+# ========== 마틴게일 API ==========
+@router.post("/martin/enable")
+async def enable_martin(
+    base_lot: float = 0.01,
+    target: int = 50,
+    max_steps: int = 7,
+    current_user: User = Depends(get_current_user)
+):
+    """마틴게일 모드 활성화"""
+    result = martin_service.enable(base_lot, target, max_steps)
+    return JSONResponse(result)
+
+
+@router.post("/martin/disable")
+async def disable_martin(current_user: User = Depends(get_current_user)):
+    """마틴게일 모드 비활성화"""
+    result = martin_service.disable()
+    return JSONResponse(result)
+
+
+@router.get("/martin/state")
+async def get_martin_state(current_user: User = Depends(get_current_user)):
+    """마틴게일 상태 조회"""
+    return martin_service.get_state()
+
+
+@router.post("/martin/buy")
+async def martin_buy(
+    symbol: str = "BTCUSD",
+    current_user: User = Depends(get_current_user)
+):
+    """마틴게일 BUY 주문"""
+    result = martin_service.place_order(symbol, "BUY")
+    return JSONResponse(result)
+
+
+@router.post("/martin/sell")
+async def martin_sell(
+    symbol: str = "BTCUSD",
+    current_user: User = Depends(get_current_user)
+):
+    """마틴게일 SELL 주문"""
+    result = martin_service.place_order(symbol, "SELL")
+    return JSONResponse(result)
+
+
+@router.post("/martin/update")
+async def martin_update(
+    profit: float = 0,
+    current_user: User = Depends(get_current_user)
+):
+    """포지션 청산 후 마틴 상태 업데이트"""
+    result = martin_service.update_after_close(profit)
+    return JSONResponse(result)
+
+
+@router.post("/martin/update-state")
+async def martin_update_state(
+    step: int = 1,
+    accumulated_loss: float = 0,
+    current_user: User = Depends(get_current_user)
+):
+    """마틴 단계와 누적손실 업데이트"""
+    martin_service.state["step"] = step
+    martin_service.state["accumulated_loss"] = accumulated_loss
+    martin_service.state["current_lot"] = martin_service.state["base_lot"] * (2 ** (step - 1))
+    
+    return JSONResponse({
+        "success": True,
+        "message": f"마틴 상태 업데이트: Step {step}, 누적손실 ${accumulated_loss:,.2f}",
+        "step": step,
+        "accumulated_loss": accumulated_loss,
+        "current_lot": martin_service.state["current_lot"]
+    })
+
+
+@router.post("/martin/reset-full")
+async def martin_reset_full(
+    current_user: User = Depends(get_current_user)
+):
+    """마틴 완전 초기화 (1단계, 누적손실 0)"""
+    martin_service.state["step"] = 1
+    martin_service.state["accumulated_loss"] = 0
+    martin_service.state["current_lot"] = martin_service.state["base_lot"]
+    
+    return JSONResponse({
+        "success": True,
+        "message": "마틴 초기화 완료",
+        "step": 1,
+        "accumulated_loss": 0
+    })
+
+
+# ========== 종목 검색 API ==========
+def get_symbol_icon(symbol_name: str):
+    """심볼에 맞는 아이콘과 색상 반환"""
+    symbol_upper = symbol_name.upper()
+    
+    # 암호화폐
+    if "BTC" in symbol_upper:
+        return "₿", "#f7931a"
+    if "ETH" in symbol_upper:
+        return "Ξ", "#627eea"
+    if "XRP" in symbol_upper:
+        return "✕", "#00aae4"
+    if "LTC" in symbol_upper:
+        return "Ł", "#bfbbbb"
+    if "DOGE" in symbol_upper:
+        return "Ð", "#c2a633"
+    
+    # 귀금속
+    if "XAU" in symbol_upper or "GOLD" in symbol_upper:
+        return "✦", "#ffd700"
+    if "XAG" in symbol_upper or "SILVER" in symbol_upper:
+        return "✦", "#c0c0c0"
+    
+    # 통화
+    if "EUR" in symbol_upper:
+        return "€", "#0052cc"
+    if "GBP" in symbol_upper:
+        return "£", "#9c27b0"
+    if "JPY" in symbol_upper:
+        return "¥", "#dc143c"
+    if "AUD" in symbol_upper:
+        return "A$", "#00875a"
+    if "CAD" in symbol_upper:
+        return "C$", "#ff5722"
+    if "CHF" in symbol_upper:
+        return "₣", "#e91e63"
+    if "NZD" in symbol_upper:
+        return "NZ$", "#4caf50"
+    
+    # 지수
+    if "US100" in symbol_upper or "NAS" in symbol_upper or "NDX" in symbol_upper:
+        return "📈", "#00d4ff"
+    if "US500" in symbol_upper or "SPX" in symbol_upper:
+        return "◆", "#1976d2"
+    if "US30" in symbol_upper or "DJI" in symbol_upper:
+        return "◈", "#ff9800"
+    if "GER" in symbol_upper or "DAX" in symbol_upper:
+        return "▣", "#ffeb3b"
+    if "UK100" in symbol_upper:
+        return "▤", "#3f51b5"
+    if "JP225" in symbol_upper or "NIK" in symbol_upper:
+        return "◉", "#f44336"
+    
+    # 원유/에너지
+    if "OIL" in symbol_upper or "WTI" in symbol_upper or "BRENT" in symbol_upper:
+        return "🛢", "#795548"
+    if "GAS" in symbol_upper:
+        return "⛽", "#607d8b"
+    
+    # 기본값 (Forex)
+    return "$", "#9ca3af"
+
+
+def get_symbol_category(symbol_name: str):
+    """심볼 카테고리 분류"""
+    symbol_upper = symbol_name.upper()
+    
+    if any(x in symbol_upper for x in ["BTC", "ETH", "XRP", "LTC", "DOGE", "ADA", "SOL", "DOT"]):
+        return "crypto"
+    if any(x in symbol_upper for x in ["XAU", "XAG", "GOLD", "SILVER", "PLATINUM", "PALLADIUM"]):
+        return "metals"
+    if any(x in symbol_upper for x in ["US100", "US500", "US30", "GER", "UK100", "JP225", "NAS", "SPX", "DJI", "DAX"]):
+        return "indices"
+    if any(x in symbol_upper for x in ["OIL", "WTI", "BRENT", "GAS", "NATGAS"]):
+        return "energy"
+    
+    return "forex"
+
+
+@router.get("/symbols/search")
+def search_symbols(query: str = ""):
+    """MT5 종목 검색 API"""
+    if not mt5.initialize():
+        return {"success": False, "symbols": [], "message": "MT5 not connected"}
+    
+    try:
+        # 모든 심볼 가져오기
+        all_symbols = mt5.symbols_get()
+        
+        if all_symbols is None:
+            return {"success": False, "symbols": [], "message": "Failed to get symbols"}
+        
+        results = []
+        query_upper = query.upper()
+        
+        for symbol in all_symbols:
+            # 검색어가 심볼명 또는 설명에 포함되어 있는지 확인
+            if query_upper in symbol.name.upper() or query_upper in symbol.description.upper():
+                # 심볼 아이콘 및 색상 결정
+                icon, color = get_symbol_icon(symbol.name)
+                
+                results.append({
+                    "symbol": symbol.name,
+                    "name": symbol.description or symbol.name,
+                    "icon": icon,
+                    "color": color,
+                    "category": get_symbol_category(symbol.name)
+                })
+        
+        # 최대 20개까지만 반환
+        return {"success": True, "symbols": results[:20], "total": len(results)}
+        
+    except Exception as e:
+        return {"success": False, "symbols": [], "message": str(e)}
+
+
+@router.get("/symbols/all")
+def get_all_symbols():
+    """MT5 전체 종목 목록 API"""
+    if not mt5.initialize():
+        return {"success": False, "symbols": [], "message": "MT5 not connected"}
+    
+    try:
+        all_symbols = mt5.symbols_get()
+        
+        if all_symbols is None:
+            return {"success": False, "symbols": [], "message": "Failed to get symbols"}
+        
+        results = []
+        for symbol in all_symbols:
+            if symbol.visible:  # Market Watch에 있는 것만
+                icon, color = get_symbol_icon(symbol.name)
+                results.append({
+                    "symbol": symbol.name,
+                    "name": symbol.description or symbol.name,
+                    "icon": icon,
+                    "color": color,
+                    "category": get_symbol_category(symbol.name)
+                })
+        
+        return {"success": True, "symbols": results, "total": len(results)}
+        
+    except Exception as e:
+        return {"success": False, "symbols": [], "message": str(e)}
+
+
+# ========== WebSocket 실시간 데이터 ==========
+@router.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    """실시간 데이터 WebSocket"""
+    await websocket.accept()
+    
+    symbols_list = ["BTCUSD", "EURUSD.r", "USDJPY.r", "XAUUSD.r", "US100.", "GBPUSD.r", "AUDUSD.r", "USDCAD.r", "ETHUSD"]
+    
+    while True:
+        try:
+            if not mt5.initialize():
+                await asyncio.sleep(1)
+                continue
+            
+            account = mt5.account_info()
+            
+            # 모든 심볼 가격
+            all_prices = {}
+            for sym in symbols_list:
+                tick = mt5.symbol_info_tick(sym)
+                if tick:
+                    all_prices[sym] = {"bid": tick.bid, "ask": tick.ask}
+            
+            # 포지션 정보
+            positions = mt5.positions_get()
+            positions_count = len(positions) if positions else 0
+            
+            position_data = None
+            if positions and len(positions) > 0:
+                pos = positions[0]
+                position_data = {
+                    "type": "BUY" if pos.type == 0 else "SELL",
+                    "symbol": pos.symbol,
+                    "volume": pos.volume,
+                    "entry": pos.price_open,
+                    "profit": pos.profit,
+                    "ticket": pos.ticket
+                }
+            
+            # 인디케이터 계산
+            try:
+                indicators = IndicatorService.calculate_all_indicators("BTCUSD")
+                buy_count = indicators["buy"]
+                sell_count = indicators["sell"]
+                neutral_count = indicators["neutral"]
+                base_score = indicators["score"]
+            except Exception as e:
+                buy_count = 33
+                sell_count = 33
+                neutral_count = 34
+                base_score = 50
+            
+            # 모든 종목 마지막 캔들
+            all_candles = {}
+            for sym in symbols_list:
+                rates = mt5.copy_rates_from_pos(sym, mt5.TIMEFRAME_M1, 0, 1)
+                if rates is not None and len(rates) > 0:
+                    r = rates[0]
+                    all_candles[sym] = {
+                        "time": int(r['time']),
+                        "open": float(r['open']),
+                        "high": float(r['high']),
+                        "low": float(r['low']),
+                        "close": float(r['close'])
+                    }
+            
+            # 마틴 상태
+            martin_state = martin_service.get_state()
+            
+            data = {
+                "broker": account.company if account else "N/A",
+                "account": account.login if account else 0,
+                "balance": account.balance if account else 0,
+                "equity": account.equity if account else 0,
+                "margin": account.margin if account else 0,
+                "free_margin": account.margin_free if account else 0,
+                "leverage": account.leverage if account else 0,
+                "positions_count": positions_count,
+                "position": position_data,
+                "buy_count": buy_count,
+                "sell_count": sell_count,
+                "neutral_count": neutral_count,
+                "base_score": base_score,
+                "all_prices": all_prices,
+                "all_candles": all_candles,
+                "martin": martin_state
+            }
+            
+            await websocket.send_text(json.dumps(data))
+            await asyncio.sleep(1)
+            
+        except WebSocketDisconnect:
+            break
+        except Exception as e:
+            print(f"WebSocket Error: {e}")
+            await asyncio.sleep(1)

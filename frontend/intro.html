@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading-X Intro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            font-family: 'Orbitron', sans-serif;
+        }
+        
+        /* 시작 화면 (터치하여 시작) */
+        .start-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 300;
+            cursor: pointer;
+        }
+        
+        .start-screen.hidden {
+            display: none;
+        }
+        
+        .start-icon {
+            width: 100px;
+            height: 100px;
+            border: 3px solid #00d4ff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 30px;
+            animation: pulseStart 2s ease-in-out infinite;
+        }
+        
+        .start-icon svg {
+            width: 40px;
+            height: 40px;
+            fill: #00d4ff;
+            margin-left: 5px;
+        }
+        
+        @keyframes pulseStart {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(0, 212, 255, 0.3); }
+            50% { transform: scale(1.05); box-shadow: 0 0 40px rgba(0, 212, 255, 0.6); }
+        }
+        
+        .start-text {
+            font-size: 18px;
+            color: #00d4ff;
+            letter-spacing: 3px;
+            margin-bottom: 10px;
+        }
+        
+        .start-subtext {
+            font-size: 12px;
+            color: #666;
+            letter-spacing: 2px;
+        }
+        
+        .intro-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+        }
+        
+        .intro-container.playing {
+            opacity: 1;
+        }
+        
+        /* 배경 글로우 효과 */
+        .bg-glow {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(0, 212, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: pulseGlow 3s ease-in-out infinite;
+        }
+        
+        @keyframes pulseGlow {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.2); opacity: 0.8; }
+        }
+        
+        /* 메인 로고 컨테이너 */
+        .logo-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* T 글자 */
+        .letter-t {
+            position: absolute;
+            font-size: 300px;
+            font-weight: 900;
+            color: #00d4ff;
+            text-shadow: 
+                0 0 20px rgba(0, 212, 255, 0.8),
+                0 0 40px rgba(0, 212, 255, 0.6),
+                0 0 60px rgba(0, 212, 255, 0.4);
+            opacity: 0;
+        }
+        
+        .letter-t.animate {
+            animation: moveT 3s ease-out forwards;
+        }
+        
+        /* X 글자 */
+        .letter-x {
+            position: absolute;
+            font-size: 300px;
+            font-weight: 900;
+            color: #00d4ff;
+            text-shadow: 
+                0 0 20px rgba(0, 212, 255, 0.8),
+                0 0 40px rgba(0, 212, 255, 0.6),
+                0 0 60px rgba(0, 212, 255, 0.4);
+            opacity: 0;
+        }
+        
+        .letter-x.animate {
+            animation: moveX 3s ease-out forwards;
+        }
+        
+        /* Trading-X 전체 텍스트 */
+        .full-text {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            gap: 0;
+            opacity: 0;
+        }
+        
+        .full-text.animate {
+            animation: showFullText 1s ease-out 2.5s forwards;
+        }
+        
+        .trading-text {
+            font-size: 48px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 2px;
+        }
+        
+        .trading-text .t-char {
+            color: #00d4ff;
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.8);
+        }
+        
+        .dash {
+            font-size: 48px;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 0 2px;
+        }
+        
+        .x-text {
+            font-size: 48px;
+            font-weight: 900;
+            color: #00d4ff;
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.8);
+        }
+        
+        /* T 애니메이션 */
+        @keyframes moveT {
+            0% {
+                opacity: 1;
+                transform: translate(-50px, 0) scale(1);
+                font-size: 300px;
+            }
+            30% {
+                opacity: 1;
+                transform: translate(-50px, 0) scale(1);
+                font-size: 300px;
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-180px, 0) scale(0.16);
+                font-size: 300px;
+            }
+        }
+        
+        /* X 애니메이션 */
+        @keyframes moveX {
+            0% {
+                opacity: 1;
+                transform: translate(50px, 0) scale(1);
+                font-size: 300px;
+            }
+            30% {
+                opacity: 1;
+                transform: translate(50px, 0) scale(1);
+                font-size: 300px;
+            }
+            100% {
+                opacity: 0;
+                transform: translate(155px, 0) scale(0.16);
+                font-size: 300px;
+            }
+        }
+        
+        /* 전체 텍스트 표시 */
+        @keyframes showFullText {
+            0% {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        /* 하단 라인 효과 */
+        .bottom-line {
+            position: absolute;
+            bottom: -15px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #00d4ff, transparent);
+            transform: scaleX(0);
+        }
+        
+        .bottom-line.animate {
+            animation: expandLine 0.8s ease-out 3s forwards;
+        }
+        
+        @keyframes expandLine {
+            0% { transform: scaleX(0); }
+            100% { transform: scaleX(1); }
+        }
+        
+        /* 서브텍스트 */
+        .subtitle {
+            position: absolute;
+            bottom: -50px;
+            font-size: 12px;
+            letter-spacing: 4px;
+            color: #666;
+            opacity: 0;
+        }
+        
+        .subtitle.animate {
+            animation: fadeIn 1s ease-out 3.5s forwards;
+        }
+        
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* 스킵 버튼 */
+        .skip-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            color: rgba(255, 255, 255, 0.7);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s;
+            z-index: 100;
+            display: none;
+        }
+        
+        .skip-btn.show {
+            display: block;
+        }
+        
+        .skip-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .skip-btn .skip-progress {
+            display: inline-block;
+            margin-left: 8px;
+            font-size: 10px;
+            opacity: 0.7;
+        }
+        
+        /* 재시작 버튼 */
+        .replay-btn {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            padding: 12px 24px;
+            background: rgba(0, 212, 255, 0.2);
+            border: 1px solid #00d4ff;
+            border-radius: 8px;
+            color: #00d4ff;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            opacity: 0;
+            display: none;
+            z-index: 100;
+        }
+        
+        .replay-btn.show {
+            display: block;
+            animation: fadeIn 1s ease-out forwards;
+        }
+        
+        .replay-btn:hover {
+            background: rgba(0, 212, 255, 0.4);
+            transform: scale(1.05);
+        }
+        
+        /* 사운드 온/오프 버튼 */
+        .sound-btn {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            width: 44px;
+            height: 44px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        
+        .sound-btn.show {
+            display: flex;
+        }
+        
+        .sound-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+        
+        .sound-btn.muted {
+            color: rgba(255, 255, 255, 0.3);
+        }
+        
+        /* 파티클 효과 */
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #00d4ff;
+            border-radius: 50%;
+            opacity: 0;
+            animation: particleFloat 3s ease-out forwards;
+        }
+        
+        @keyframes particleFloat {
+            0% {
+                opacity: 1;
+                transform: translate(0, 0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(var(--tx), var(--ty)) scale(0);
+            }
+        }
+        
+        /* 화면 전환 효과 */
+        .fade-out {
+            animation: fadeOutScreen 0.5s ease-out forwards;
+        }
+        
+        @keyframes fadeOutScreen {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        
+        /* 메인 화면 (스킵/완료 후 표시) */
+        .main-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #0a0c10 0%, #151821 50%, #0a0c10 100%);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 200;
+        }
+        
+        .main-screen.show {
+            display: flex;
+            animation: fadeInScreen 0.5s ease-out forwards;
+        }
+        
+        @keyframes fadeInScreen {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+        
+        .main-logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        /* TX 박스 - 시안색 테두리 */
+        .main-logo-icon {
+            width: 60px;
+            height: 48px;
+            border: 2px solid #00d4ff;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 900;
+            color: #00d4ff;
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+        }
+        
+        .main-logo-text {
+            font-size: 32px;
+            font-weight: 700;
+            color: #fff;
+        }
+        
+        .main-logo-text span {
+            color: #00d4ff;
+        }
+        
+        .main-tagline {
+            font-size: 14px;
+            color: #666;
+            letter-spacing: 3px;
+            margin-bottom: 50px;
+        }
+        
+        .main-button {
+            padding: 16px 60px;
+            background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+            border: none;
+            border-radius: 30px;
+            color: #000;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.4);
+        }
+        
+        .main-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 50px rgba(0, 212, 255, 0.6);
+        }
+    </style>
+</head>
+<body>
+    <!-- 시작 화면 -->
+    <div class="start-screen" id="startScreen" onclick="startIntro()">
+        <div class="start-icon">
+            <svg viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z"/>
+            </svg>
+        </div>
+        <div class="start-text">TAP TO START</div>
+        <div class="start-subtext">터치하여 시작</div>
+    </div>
+    
+    <!-- 인트로 화면 -->
+    <div class="intro-container" id="introContainer">
+        <div class="bg-glow"></div>
+        
+        <div class="logo-container">
+            <span class="letter-t" id="letterT">T</span>
+            <span class="letter-x" id="letterX">X</span>
+            
+            <div class="full-text" id="fullText">
+                <span class="trading-text"><span class="t-char">T</span>rading</span>
+                <span class="dash">-</span>
+                <span class="x-text">X</span>
+                <div class="bottom-line" id="bottomLine"></div>
+                <div class="subtitle" id="subtitle">SMART TRADING PLATFORM</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 사운드 버튼 -->
+    <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+    
+    <!-- 스킵 버튼 -->
+    <button class="skip-btn" id="skipBtn" onclick="skipIntro()">
+        SKIP <span class="skip-progress" id="skipProgress">4s</span>
+    </button>
+    
+    <!-- 재시작 버튼 -->
+    <button class="replay-btn" id="replayBtn" onclick="replayAnimation()">▶ REPLAY</button>
+    
+    <!-- 메인 화면 -->
+    <div class="main-screen" id="mainScreen">
+        <div class="main-logo">
+            <div class="main-logo-icon">TX</div>
+            <div class="main-logo-text"><span>T</span>rading-<span>X</span></div>
+        </div>
+        <div class="main-tagline">SMART TRADING PLATFORM</div>
+        <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+    <button class="main-button" onclick="goToLogin()">로그인 / 가입</button>
+    <button class="main-button" onclick="guestMode()" style="background: transparent; border: 2px solid #00d4ff; color: #00d4ff;">둘러보기</button>
+</div>
+    </div>
+    
+    <script>
+        // ========== 전역 변수 ==========
+        let audioContext = null;
+        let isMuted = false;
+        let introTimer = null;
+        let countdownTime = 4;
+        let isIntroFinished = false;
+        let isStarted = false;
+        
+        // ========== 인트로 시작 ==========
+        function startIntro() {
+            if (isStarted) return;
+            isStarted = true;
+            
+            // 시작 화면 숨기기
+            document.getElementById('startScreen').classList.add('hidden');
+            
+            // 인트로 화면 보이기
+            document.getElementById('introContainer').classList.add('playing');
+            
+            // 버튼들 보이기
+            document.getElementById('soundBtn').classList.add('show');
+            document.getElementById('skipBtn').classList.add('show');
+            
+            // 애니메이션 시작
+            document.getElementById('letterT').classList.add('animate');
+            document.getElementById('letterX').classList.add('animate');
+            document.getElementById('fullText').classList.add('animate');
+            document.getElementById('bottomLine').classList.add('animate');
+            document.getElementById('subtitle').classList.add('animate');
+            
+            // 사운드 + 진동 시작
+            setTimeout(() => {
+                playNetflixSound();
+                triggerVibration();
+            }, 100);
+            
+            // 파티클 생성
+            setTimeout(createParticles, 500);
+            
+            // 카운트다운 시작
+            startCountdown();
+            
+            // 4초 후 리플레이 버튼 표시
+            setTimeout(() => {
+                document.getElementById('replayBtn').classList.add('show');
+            }, 4000);
+        }
+        
+        // ========== 사운드 효과 (Netflix "두둥" 스타일 - 개선된 버전) ==========
+        function playNetflixSound() {
+            if (isMuted) return;
+            
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // 리버브 생성
+                const convolver = createReverb(audioContext, 2.5);
+                const masterGain = audioContext.createGain();
+                masterGain.gain.value = 1.2;
+                masterGain.connect(audioContext.destination);
+                
+                // 첫 번째 "두" - 임팩트 있는 시작
+                playDeepBass(audioContext, masterGain, convolver, 0, 'first');
+                
+                // 두 번째 "둥" - 더 깊고 울림 있는 사운드
+                setTimeout(() => {
+                    playDeepBass(audioContext, masterGain, convolver, 0, 'second');
+                }, 380);
+                
+            } catch (e) {
+                console.log('Audio not supported:', e);
+            }
+        }
+        
+        // 깊은 베이스 사운드 생성
+        function playDeepBass(ctx, masterGain, convolver, delay, type) {
+            const now = ctx.currentTime + delay;
+            
+            // 메인 베이스 (사인파)
+            const bassOsc = ctx.createOscillator();
+            const bassGain = ctx.createGain();
+            bassOsc.type = 'sine';
+            bassOsc.frequency.setValueAtTime(type === 'first' ? 120 : 80, now);
+            bassOsc.frequency.exponentialRampToValueAtTime(type === 'first' ? 60 : 40, now + 0.8);
+            
+            bassGain.gain.setValueAtTime(0, now);
+            bassGain.gain.linearRampToValueAtTime(type === 'first' ? 0.7 : 0.9, now + 0.02);
+            bassGain.gain.exponentialRampToValueAtTime(0.001, now + (type === 'first' ? 0.6 : 1.2));
+            
+            bassOsc.connect(bassGain);
+            bassGain.connect(masterGain);
+            bassGain.connect(convolver);
+            
+            bassOsc.start(now);
+            bassOsc.stop(now + 1.5);
+            
+            // 서브 베이스 (더 낮은 주파수)
+            const subOsc = ctx.createOscillator();
+            const subGain = ctx.createGain();
+            subOsc.type = 'sine';
+            subOsc.frequency.setValueAtTime(type === 'first' ? 50 : 35, now);
+            subOsc.frequency.exponentialRampToValueAtTime(25, now + 1.0);
+            
+            subGain.gain.setValueAtTime(0, now);
+            subGain.gain.linearRampToValueAtTime(type === 'first' ? 0.5 : 0.8, now + 0.03);
+            subGain.gain.exponentialRampToValueAtTime(0.001, now + (type === 'first' ? 0.5 : 1.5));
+            
+            subOsc.connect(subGain);
+            subGain.connect(masterGain);
+            
+            subOsc.start(now);
+            subOsc.stop(now + 2);
+            
+            // 어택/임팩트 노이즈 (타격감)
+            const noiseBuffer = createNoiseBuffer(ctx, 0.1);
+            const noiseSource = ctx.createBufferSource();
+            const noiseGain = ctx.createGain();
+            const noiseFilter = ctx.createBiquadFilter();
+            
+            noiseSource.buffer = noiseBuffer;
+            noiseFilter.type = 'lowpass';
+            noiseFilter.frequency.value = 200;
+            noiseFilter.Q.value = 1;
+            
+            noiseGain.gain.setValueAtTime(0, now);
+            noiseGain.gain.linearRampToValueAtTime(type === 'first' ? 0.3 : 0.4, now + 0.01);
+            noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+            
+            noiseSource.connect(noiseFilter);
+            noiseFilter.connect(noiseGain);
+            noiseGain.connect(masterGain);
+            
+            noiseSource.start(now);
+            
+            // 하모닉 오버톤 (풍성한 사운드)
+            if (type === 'second') {
+                const harmOsc = ctx.createOscillator();
+                const harmGain = ctx.createGain();
+                harmOsc.type = 'triangle';
+                harmOsc.frequency.setValueAtTime(160, now);
+                harmOsc.frequency.exponentialRampToValueAtTime(80, now + 0.5);
+                
+                harmGain.gain.setValueAtTime(0, now);
+                harmGain.gain.linearRampToValueAtTime(0.15, now + 0.02);
+                harmGain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+                
+                harmOsc.connect(harmGain);
+                harmGain.connect(convolver);
+                
+                harmOsc.start(now);
+                harmOsc.stop(now + 1);
+            }
+        }
+        
+        // 노이즈 버퍼 생성 (임팩트용)
+        function createNoiseBuffer(ctx, duration) {
+            const sampleRate = ctx.sampleRate;
+            const length = sampleRate * duration;
+            const buffer = ctx.createBuffer(1, length, sampleRate);
+            const data = buffer.getChannelData(0);
+            
+            for (let i = 0; i < length; i++) {
+                data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (length * 0.1));
+            }
+            return buffer;
+        }
+        
+        // 리버브 생성 (공간감)
+        function createReverb(ctx, duration) {
+            const sampleRate = ctx.sampleRate;
+            const length = sampleRate * duration;
+            const impulse = ctx.createBuffer(2, length, sampleRate);
+            const leftChannel = impulse.getChannelData(0);
+            const rightChannel = impulse.getChannelData(1);
+            
+            for (let i = 0; i < length; i++) {
+                const decay = Math.exp(-i / (length * 0.2));
+                leftChannel[i] = (Math.random() * 2 - 1) * decay;
+                rightChannel[i] = (Math.random() * 2 - 1) * decay;
+            }
+            
+            const convolver = ctx.createConvolver();
+            convolver.buffer = impulse;
+            
+            const reverbGain = ctx.createGain();
+            reverbGain.gain.value = 0.3;
+            
+            convolver.connect(reverbGain);
+            reverbGain.connect(ctx.destination);
+            
+            return convolver;
+        }
+        
+        // ========== 진동 효과 (햅틱 피드백) ==========
+        function triggerVibration() {
+            if ('vibrate' in navigator) {
+                // 패턴: [진동, 멈춤, 진동, 멈춤, ...]
+                // Netflix "두둥" 느낌: 짧은 진동 → 멈춤 → 강한 진동
+                navigator.vibrate([100, 100, 200]);
+            }
+        }
+        
+        // ========== 사운드 토글 ==========
+        function toggleSound() {
+            isMuted = !isMuted;
+            const btn = document.getElementById('soundBtn');
+            btn.textContent = isMuted ? '🔇' : '🔊';
+            btn.classList.toggle('muted', isMuted);
+        }
+        
+        // ========== 스킵 기능 ==========
+        function skipIntro() {
+            clearInterval(introTimer);
+            goToMain();
+        }
+        
+        // ========== 메인 화면으로 이동 ==========
+        function goToMain() {
+            if (isIntroFinished) return;
+            isIntroFinished = true;
+            
+            // 인트로 페이드 아웃
+            document.getElementById('introContainer').classList.add('fade-out');
+            document.getElementById('skipBtn').style.display = 'none';
+            document.getElementById('replayBtn').style.display = 'none';
+            document.getElementById('soundBtn').style.display = 'none';
+            
+            // 메인 화면 표시
+            setTimeout(() => {
+                document.getElementById('mainScreen').classList.add('show');
+            }, 500);
+        }
+        
+        // ========== 앱 시작 (데모) ==========
+        // ========== 로그인 페이지로 ==========
+        function goToLogin() {
+            window.location.href = 'login.html';
+        }
+        
+        // ========== 게스트 모드로 앱 시작 ==========
+        function guestMode() {
+            sessionStorage.setItem('guest_mode', 'true');
+            window.location.href = 'index.html';
+        }
+        
+        // ========== 앱 시작 (기존 호환) ==========
+        function startApp() {
+            goToLogin();
+        }
+        
+        // ========== 파티클 생성 ==========
+        function createParticles() {
+            const container = document.getElementById('introContainer');
+            
+            for (let i = 0; i < 30; i++) {
+                setTimeout(() => {
+                    const particle = document.createElement('div');
+                    particle.className = 'particle';
+                    particle.style.left = '50%';
+                    particle.style.top = '50%';
+                    particle.style.setProperty('--tx', (Math.random() - 0.5) * 400 + 'px');
+                    particle.style.setProperty('--ty', (Math.random() - 0.5) * 400 + 'px');
+                    particle.style.animationDelay = (Math.random() * 0.5) + 's';
+                    container.appendChild(particle);
+                    
+                    setTimeout(() => particle.remove(), 3000);
+                }, 500 + i * 50);
+            }
+        }
+        
+        // ========== 카운트다운 타이머 ==========
+        function startCountdown() {
+            const progressEl = document.getElementById('skipProgress');
+            
+            introTimer = setInterval(() => {
+                countdownTime--;
+                progressEl.textContent = countdownTime + 's';
+                
+                if (countdownTime <= 0) {
+                    clearInterval(introTimer);
+                    // 자동으로 메인 화면으로 이동
+                    setTimeout(goToMain, 500);
+                }
+            }, 1000);
+        }
+        
+        // ========== 리플레이 ==========
+        function replayAnimation() {
+            location.reload();
+        }
+    </script>
+</body>
+</html>

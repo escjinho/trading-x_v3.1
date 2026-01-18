@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Trading-X</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    
+    <!-- LightweightCharts -->
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+    
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/header.css">
+    <link rel="stylesheet" href="css/nav.css">
+    <link rel="stylesheet" href="css/home.css">
+    <link rel="stylesheet" href="css/chart.css">
+    <link rel="stylesheet" href="css/trade.css">
+    <link rel="stylesheet" href="css/account.css">
+    <link rel="stylesheet" href="css/my.css">
+    <link rel="stylesheet" href="css/modals.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-title" style="font-size: 23px; font-weight: 700; display: flex; align-items: center; color: #ffffff;">
+                <svg width="32" height="23" viewBox="0 0 32 23" style="margin-right: 10px; vertical-align: middle;">
+                    <rect x="1" y="1" width="30" height="21" rx="3" fill="none" stroke="#00d4ff" stroke-width="2"/>
+                    <text x="16" y="16.5" font-size="14" font-weight="900" fill="#00d4ff" font-family="Arial" text-anchor="middle">TX</text>
+                </svg>
+                Trading-X
+            </div>
+            <div class="header-status">
+                <span id="modeBadge" style="display: none; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-right: 8px; letter-spacing: 0.5px;"></span>
+                <div class="status-dot disconnected" id="statusDot"></div>
+                <span id="headerStatus">Connecting...</span>
+            </div>
+        </header>
+        
+        <div class="content">
+            <!-- ========== Home Tab ========== -->
+            <div id="page-home" class="page active">
+                <!-- 공지 배너 -->
+                <div class="notice-banner" id="noticeBanner" style="display: none;">
+                    <div class="notice-content">
+                        <span class="notice-icon">📢</span>
+                        <span class="notice-text" id="noticeText"></span>
+                    </div>
+                    <button class="notice-close" onclick="closeNoticeBanner()">×</button>
+                </div>
+                
+                <!-- 인사 섹션 -->
+                <div class="welcome-banner">
+                    <div class="greeting-section">
+                        <div style="text-align: center;">
+                            <span class="greeting-text" id="greetingText" style="font-size: 24px; font-weight: 600; white-space: nowrap;">Good Evening, Trader! 🌙</span>
+                        </div>
+                        <span class="greeting-sub" id="greetingSub" style="font-size: 13px; font-weight: 600;">오늘 하루 수고하셨어요!</span>
+                    </div>
+
+                    <!-- 모드 표시 -->
+                    <div id="heroModeBadge" style="margin-top: 18px; font-size: 26px; font-weight: 700; color: #e0e0e0; letter-spacing: 3px;">
+                        Trading-X Demo
+                    </div>
+                </div>
+                
+                <!-- 프로모션 슬라이더 -->
+                <div class="promo-slider-container">
+                    <div class="promo-slider" id="promoSlider">
+                        <div class="promo-card" style="background: linear-gradient(135deg, #1e3a5f 0%, #0d1421 100%); border-color: rgba(0, 212, 255, 0.3);">
+                            <span class="promo-icon">🎁</span>
+                            <div class="promo-content">
+                                <div class="promo-title">Welcome Bonus</div>
+                                <div class="promo-desc">첫 입금 시 100% 보너스!</div>
+                            </div>
+                            <div class="promo-action"><button class="promo-btn">자세히</button></div>
+                        </div>
+                        <div class="promo-card" style="background: linear-gradient(135deg, #2d1f3d 0%, #1a1025 100%); border-color: rgba(156, 39, 176, 0.3);">
+                            <span class="promo-icon">🏆</span>
+                            <div class="promo-content">
+                                <div class="promo-title">Trading Contest</div>
+                                <div class="promo-desc">매주 상금 $10,000!</div>
+                            </div>
+                            <div class="promo-action"><button class="promo-btn" style="background: #9c27b0;">참여</button></div>
+                        </div>
+                        <div class="promo-card" style="background: linear-gradient(135deg, #1f3d2d 0%, #102518 100%); border-color: rgba(0, 180, 80, 0.3);">
+                            <span class="promo-icon">📚</span>
+                            <div class="promo-content">
+                                <div class="promo-title">Trading Academy</div>
+                                <div class="promo-desc">무료 교육 프로그램</div>
+                            </div>
+                            <div class="promo-action"><button class="promo-btn" style="background: var(--buy-color);">시작</button></div>
+                        </div>
+                    </div>
+                    <div class="promo-indicators">
+                        <span class="promo-dot active" onclick="scrollToPromo(0)"></span>
+                        <span class="promo-dot" onclick="scrollToPromo(1)"></span>
+                        <span class="promo-dot" onclick="scrollToPromo(2)"></span>
+                    </div>
+                </div>
+                
+                <!-- Trading Mode 선택 -->
+                <div class="card">
+                    <div class="card-title" style="font-size: 16px; font-weight: 700;">
+                        <span class="material-icons-round" style="color: #00d4ff; margin-right: 8px; font-size: 18px;">sync_alt</span>
+                        <span style="position: relative; top: -3px;">Trading Mode</span>
+                    </div>
+                    <div class="trading-mode-selector">
+                        <button class="mode-select-btn active" id="modeDemoBtn" onclick="switchTradingMode('demo')">
+                            <div class="mode-select-info" style="text-align: center; width: 100%;">
+                                <div class="mode-select-name">DEMO</div>
+                                <div class="mode-select-desc">Practice Trading</div>
+                            </div>
+                            <div class="mode-select-check" id="demoCheck">✓</div>
+                        </button>
+                        <button class="mode-select-btn" id="modeLiveBtn" onclick="switchTradingMode('live')">
+                            <div class="mode-select-info" style="text-align: center; width: 100%;">
+                                <div class="mode-select-name">LIVE</div>
+                                <div class="mode-select-desc">Real Trading</div>
+                            </div>
+                            <div class="mode-select-check" id="liveCheck" style="display: none;">✓</div>
+                        </button>
+                    </div>
+                    <div class="mode-status" id="modeStatus">
+                        <span class="mode-status-dot demo"></span>
+                        <span>Currently in <strong>Demo Mode</strong> - Practice with virtual $10,000</span>
+                    </div>
+                </div>
+                
+                <!-- Demo Control -->
+                <div class="card" id="demoControlCard" style="display: none;">
+                    <div class="card-title">🎮 Demo Control</div>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="topupDemo()" style="flex: 1; padding: 12px; background: var(--buy-color); border: none; border-radius: 8px; color: white; font-weight: 600; cursor: pointer;">💰 충전</button>
+                        <button onclick="resetDemo()" style="flex: 1; padding: 12px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-muted); font-weight: 600; cursor: pointer;">🔄 리셋</button>
+                    </div>
+                </div>
+                
+                <!-- Account Info -->
+                <div class="card">
+                    <div class="card-title">💰 Account Balance</div>
+                    <div class="balance-display" id="homeBalance">$10,000.00</div>
+                    <div class="profit-summary">
+                        <div class="profit-box">
+                            <div class="profit-value" id="homeTodayPL">+$0</div>
+                            <div class="profit-label">Today</div>
+                        </div>
+                        <div class="profit-divider"></div>
+                        <div class="profit-box">
+                            <div class="profit-value" id="homeWeekPL">+$0</div>
+                            <div class="profit-label">This Week</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-title">📊 Account Details</div>
+                    <div class="info-row"><span class="info-label">Broker</span><span class="info-value" id="homeBroker">-</span></div>
+                    <div class="info-row"><span class="info-label">Account</span><span class="info-value" id="homeAccount">-</span></div>
+                    <div class="info-row"><span class="info-label">Server</span><span class="info-value" id="homeServer">-</span></div>
+                    <div class="info-row"><span class="info-label">Leverage</span><span class="info-value" id="homeLeverage">-</span></div>
+                    <div class="info-row"><span class="info-label">Equity</span><span class="info-value" id="homeEquity">$0.00</span></div>
+                    <div class="info-row"><span class="info-label">Free Margin</span><span class="info-value" id="homeFreeMargin">$0.00</span></div>
+                    <div class="info-row"><span class="info-label">Open Positions</span><span class="info-value" id="homePositions">0</span></div>
+                </div>
+                
+                <!-- MT5 Account Section -->
+                <div class="card" id="mt5AccountSection">
+                    <div class="card-title">🔗 MT5 Account</div>
+                    <div id="mt5NotConnected" class="mt5-not-connected">
+                        <div class="mt5-empty-icon">🔌</div>
+                        <div class="mt5-empty-text">MT5 계좌가 연결되지 않았습니다</div>
+                        <div class="mt5-empty-sub">실제 거래를 위해 MT5 계좌를 연결하세요</div>
+                        <div class="mt5-buttons">
+                            <button class="mt5-connect-btn" onclick="openMT5ConnectModal()">
+                                <span class="material-icons-round">link</span>
+                                MT5 계좌 연결하기
+                            </button>
+                            <button class="mt5-guide-btn" onclick="openMT5GuideModal()">
+                                <span class="material-icons-round">help_outline</span>
+                                계좌 개설 방법 안내
+                            </button>
+                        </div>
+                    </div>
+                    <div id="mt5Connected" class="mt5-connected" style="display: none;">
+                        <div class="mt5-status-badge">
+                            <span class="mt5-status-dot"></span>
+                            Connected
+                        </div>
+                        <div class="mt5-info-grid">
+                            <div class="mt5-info-item"><span class="mt5-info-label">Broker</span><span class="mt5-info-value" id="mt5Broker">-</span></div>
+                            <div class="mt5-info-item"><span class="mt5-info-label">Account</span><span class="mt5-info-value" id="mt5Account">-</span></div>
+                            <div class="mt5-info-item"><span class="mt5-info-label">Server</span><span class="mt5-info-value" id="mt5Server">-</span></div>
+                            <div class="mt5-info-item"><span class="mt5-info-label">Leverage</span><span class="mt5-info-value" id="mt5Leverage">-</span></div>
+                        </div>
+                        <button class="mt5-disconnect-btn" onclick="disconnectMT5()">
+                            <span class="material-icons-round">link_off</span>
+                            연결 해제
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ========== Chart Tab ========== -->
+            <div id="page-chart" class="page">
+                <!-- Watchlist Container -->
+                <div class="watchlist-container" id="watchlistContainer">
+                    <div class="watchlist-header">
+                        <button class="watchlist-search" onclick="openSymbolSearch()">
+                            <span class="material-icons-round">search</span>
+                        </button>
+                        <div class="watchlist-tabs">
+                            <button class="watchlist-tab" onclick="switchWatchlistTab('favorites')">⭐</button>
+                            <button class="watchlist-tab active" onclick="switchWatchlistTab('popular')">인기</button>
+                            <button class="watchlist-tab" onclick="switchWatchlistTab('forex')">외환</button>
+                            <button class="watchlist-tab" onclick="switchWatchlistTab('crypto')">암호화폐</button>
+                            <button class="watchlist-tab" onclick="switchWatchlistTab('indices')">지수</button>
+                            <button class="watchlist-tab" onclick="switchWatchlistTab('metals')">금속</button>
+                            <button class="watchlist-tab" onclick="switchWatchlistTab('energy')">에너지</button>
+                        </div>
+                    </div>
+                    <div class="watchlist-content" id="watchlistContent"></div>
+                </div>
+                
+                <!-- Chart Detail Container -->
+                <div class="chart-detail-container" id="chartDetailContainer" style="display: none;">
+                    <div class="chart-symbol-row">
+                        <div class="chart-symbol-info" onclick="toggleChartSymbolDropdown()">
+                            <span class="chart-symbol-icon" id="chartSymbolIcon" style="font-size: 28px; color: #f7931a;">₿</span>
+                            <div>
+                                <div class="chart-symbol-name" id="chartSymbolName">Bitcoin</div>
+                                <div class="chart-symbol-id" id="chartSymbolId">BTCUSD</div>
+                            </div>
+                            <span class="material-icons-round" style="color: var(--text-muted); margin-left: 5px;">expand_more</span>
+                        </div>
+                        <button style="background: none; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer;" onclick="backToWatchlist()">
+                            <span class="material-icons-round">close</span>
+                        </button>
+                        <div class="chart-symbol-dropdown" id="chartSymbolDropdown" style="display: none;">
+                            <div class="chart-symbol-option" onclick="selectChartSymbol('BTCUSD', 'Bitcoin', '₿', '#f7931a')">
+                                <span style="font-size: 20px; color: #f7931a;">₿</span>
+                                <span>Bitcoin</span>
+                            </div>
+                            <div class="chart-symbol-option" onclick="selectChartSymbol('XAUUSD.r', 'Gold', '✦', '#ffd700')">
+                                <span style="font-size: 20px; color: #ffd700;">✦</span>
+                                <span>Gold</span>
+                            </div>
+                            <div class="chart-symbol-option" onclick="selectChartSymbol('EURUSD.r', 'Euro/Dollar', '€', '#0052cc')">
+                                <span style="font-size: 20px; color: #0052cc;">€</span>
+                                <span>Euro/Dollar</span>
+                            </div>
+                            <div class="chart-symbol-option" onclick="selectChartSymbol('US100.', 'NASDAQ 100', '⬡', '#00b450')">
+                                <span style="font-size: 20px; color: #00b450;">⬡</span>
+                                <span>NASDAQ 100</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="price-bar">
+                        <div class="price-box sell">
+                            <div class="price-label">SELL</div>
+                            <div class="price-value" id="chartBid">0.00</div>
+                        </div>
+                        <div class="price-box buy">
+                            <div class="price-label">BUY</div>
+                            <div class="price-value" id="chartAsk">0.00</div>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-header">
+                        <span class="symbol-name"></span>
+                        <div class="timeframe-buttons">
+                            <button class="tf-btn active" data-tf="M1">1M</button>
+                            <button class="tf-btn" data-tf="M5">5M</button>
+                            <button class="tf-btn" data-tf="M15">15M</button>
+                            <button class="tf-btn" data-tf="H1">1H</button>
+                            <button class="tf-btn" data-tf="D1">1D</button>
+                        </div>
+                    </div>
+                    
+                    <div id="chart-container"></div>
+                    
+                    <div class="chart-signal-section">
+                        <div class="chart-signal-title">📊 AI Signal Analysis</div>
+                        <div class="chart-gauge-container">
+                            <svg id="chartGaugeSvg" width="180" height="120" viewBox="0 0 180 120">
+                                <text id="chartGaugeScore" x="90" y="85" text-anchor="middle" fill="white" font-size="28" font-weight="bold">50</text>
+                                <polygon id="chartGaugeNeedle" points="90,25 85,40 95,40" fill="#00d4ff" transform="rotate(0, 90, 90)"/>
+                                <circle cx="90" cy="90" r="8" fill="#1a1d23" stroke="#00d4ff" stroke-width="2"/>
+                            </svg>
+                            <div class="chart-gauge-status" id="chartGaugeStatus">NEUTRAL</div>
+                        </div>
+                        <div class="chart-indicator-summary">
+                            <div class="chart-indicator-item"><div class="indicator-count sell" id="chartIndSell">0</div><div class="indicator-label">SELL</div></div>
+                            <div class="chart-indicator-item"><div class="indicator-count neutral" id="chartIndNeutral">0</div><div class="indicator-label">NEUTRAL</div></div>
+                            <div class="chart-indicator-item"><div class="indicator-count buy" id="chartIndBuy">0</div><div class="indicator-label">BUY</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ========== Trade Tab ========== -->
+            <div id="page-trade" class="page">
+                <!-- EA Panel (Buy/Sell) -->
+                <div id="buysellPanel">
+                    <div class="ea-panel">
+                        <div class="ea-header">
+                            <div class="ea-title title-font" style="color: var(--accent-cyan);">FUMA Buy/Sell v3.2</div>
+                        </div>
+                        <div class="ea-content">
+                            <!-- Symbol Row -->
+                            <div class="symbol-row">
+                                <div class="symbol-info" onclick="toggleSymbolDropdown()">
+                                    <span class="symbol-icon" id="symbolIcon" style="color: #f7931a;">₿</span>
+                                    <span class="symbol-text" id="symbolText">Bitcoin</span>
+                                    <span class="material-icons-round" style="color: var(--text-muted);">expand_more</span>
+                                </div>
+                                <button class="settings-btn" onclick="openSettings()">
+                                    <span class="material-icons-round">settings</span>
+                                </button>
+                            </div>
+                            
+                            <!-- Symbol Dropdown -->
+                            <div class="symbol-dropdown" id="symbolDropdown">
+                                <div class="symbol-option selected" onclick="selectSymbol('BTCUSD', 'Bitcoin', '₿', '#f7931a')">
+                                    <span class="symbol-option-icon" style="color: #f7931a;">₿</span>
+                                    <span class="symbol-option-name">Bitcoin</span>
+                                    <span class="symbol-option-check material-icons-round">check</span>
+                                </div>
+                                <div class="symbol-option" onclick="selectSymbol('XAUUSD.r', 'Gold', '✦', '#ffd700')">
+                                    <span class="symbol-option-icon" style="color: #ffd700;">✦</span>
+                                    <span class="symbol-option-name">Gold</span>
+                                </div>
+                                <div class="symbol-option" onclick="selectSymbol('EURUSD.r', 'Euro/Dollar', '€', '#0052cc')">
+                                    <span class="symbol-option-icon" style="color: #0052cc;">€</span>
+                                    <span class="symbol-option-name">Euro/Dollar</span>
+                                </div>
+                                <div class="symbol-option" onclick="selectSymbol('US100.', 'NASDAQ 100', '⬡', '#00b450')">
+                                    <span class="symbol-option-icon" style="color: #00b450;">⬡</span>
+                                    <span class="symbol-option-name">NASDAQ 100</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Stats Bar -->
+                            <div class="stats-bar">
+                                <div class="stat-item"><div class="stat-label">Balance</div><div class="stat-value" id="tradeBalance">$10,000</div></div>
+                                <div class="stat-item"><div class="stat-label">Lot Size</div><div class="stat-value" id="tradeLotSize">0.01</div></div>
+                                <div class="stat-item"><div class="stat-label">Today</div><div class="stat-value" id="tradeTodayPL" style="color: var(--buy-color);">+$0</div></div>
+                            </div>
+                            
+                            <!-- Gauge -->
+                            <div class="gauge-container">
+                                <svg id="gaugeSvg" width="180" height="120" viewBox="0 0 180 120">
+                                    <text id="gaugeScore" x="90" y="85" text-anchor="middle" fill="white" font-size="28" font-weight="bold">50</text>
+                                    <polygon id="gaugeNeedle" points="90,25 85,40 95,40" fill="#00d4ff" transform="rotate(0, 90, 90)"/>
+                                    <circle cx="90" cy="90" r="8" fill="#1a1d23" stroke="#00d4ff" stroke-width="2"/>
+                                </svg>
+                                <div class="gauge-status" id="gaugeStatus">NEUTRAL</div>
+                            </div>
+                            
+                            <!-- Indicator Summary -->
+                            <div class="indicator-summary">
+                                <div class="indicator-item"><div class="indicator-count sell" id="indSell">0</div><div class="indicator-label">SELL</div></div>
+                                <div class="indicator-item"><div class="indicator-count neutral" id="indNeutral">0</div><div class="indicator-label">NEUTRAL</div></div>
+                                <div class="indicator-item"><div class="indicator-count buy" id="indBuy">0</div><div class="indicator-label">BUY</div></div>
+                            </div>
+                            
+                            <!-- Target Section (Normal Mode) -->
+                            <div class="target-section" id="targetSection">
+                                <!-- Martin Mode UI -->
+                                <div id="martinModeUI" style="display: none;">
+                                    <div style="text-align: center; margin-bottom: 15px;">
+                                        <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 5px;">🎯 RECOVERY TARGET</div>
+                                        <div id="martinTargetDisplay" style="font-size: 36px; font-weight: 300; color: var(--accent-cyan);">$50</div>
+                                        <div id="martinStepBadge" style="display: none; background: rgba(220, 50, 70, 0.2); color: var(--sell-color); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-top: 8px;">Step 2 / 누적손실: -$50</div>
+                                    </div>
+                                    <div style="text-align: center; margin-bottom: 15px;">
+                                        <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 5px;">💰 LOT SIZE</div>
+                                        <div id="martinLotDisplay" style="font-size: 18px; font-weight: 600;">0.01 lot</div>
+                                    </div>
+                                    <div style="display: flex; justify-content: center; gap: 5px; margin-bottom: 10px;" id="martinDotsContainer"></div>
+                                    <div style="text-align: center; font-size: 11px; color: var(--text-muted);">
+                                        Step <span id="martinCurrentStep">1</span> / <span id="martinMaxStepsDisplay">5</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Normal Mode UI -->
+                                <div id="normalModeUI">
+                                    <div class="target-label">🎯 TARGET PROFIT</div>
+                                    <div class="target-display">
+                                        <button class="target-btn" onclick="adjustTarget(-10)">−</button>
+                                        <div class="target-value" id="targetValue">$50</div>
+                                        <button class="target-btn" onclick="adjustTarget(10)">+</button>
+                                    </div>
+                                    <div class="slider-container">
+                                        <input type="range" id="targetSlider" min="0" max="200" value="50" oninput="updateTargetFromSlider(this.value)">
+                                        <div class="slider-labels"><span>$0</span><span>$50</span><span>$100</span><span>$150</span><span>$200</span></div>
+                                    </div>
+                                    
+                                    <div class="target-label" style="margin-top: 15px;">⚡ LEVERAGE</div>
+                                    <div class="target-display">
+                                        <button class="target-btn" onclick="adjustLeverage(-1)">−</button>
+                                        <div class="target-value" id="leverageValue">x10</div>
+                                        <button class="target-btn" onclick="adjustLeverage(1)">+</button>
+                                    </div>
+                                    <div class="slider-container">
+                                        <input type="range" id="leverageSlider" min="0" max="20" value="10" oninput="updateLeverageFromSlider(this.value)">
+                                        <div class="slider-labels"><span>x0</span><span>x5</span><span>x10</span><span>x15</span><span>x20</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Position Section -->
+                            <div id="positionSection" style="display: none;">
+                                <div class="position-card" id="positionCard">
+                                    <div class="position-row">
+                                        <div class="position-item"><div class="position-label">TYPE</div><div class="position-value" id="posType">-</div></div>
+                                        <div class="position-item"><div class="position-label">ENTRY</div><div class="position-value" id="posEntry">-</div></div>
+                                        <div class="position-item"><div class="position-label">TIME</div><div class="position-value" id="posTime">00:00</div></div>
+                                    </div>
+                                </div>
+                                
+                                <!-- P/L Gauge -->
+                                <div class="pl-gauge">
+                                    <div class="pl-labels">
+                                        <span id="plMin" style="color: var(--sell-color);">-$50</span>
+                                        <span style="color: var(--text-muted);">$0</span>
+                                        <span id="plMax" style="color: var(--buy-color);">+$50</span>
+                                    </div>
+                                    <div class="pl-bar-container">
+                                        <div class="pl-bar-center"></div>
+                                        <div class="pl-bar-fill" id="plBarFill"></div>
+                                        <div class="pl-diamond" id="plDiamond"></div>
+                                    </div>
+                                    <div class="pl-bottom">
+                                        <span style="font-size: 11px; color: var(--text-muted);">Progress to Target</span>
+                                        <span class="pl-percent" id="plPercent">0%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Trade Buttons -->
+                            <div class="trade-buttons" id="tradeButtonsNoPos">
+                                <button class="trade-btn sell-btn" onclick="placeSell()">SELL</button>
+                                <button class="trade-btn buy-btn" onclick="placeBuy()">BUY</button>
+                            </div>
+                            <div class="trade-buttons" id="tradeButtonsHasPos" style="display: none;">
+                                <button class="trade-btn close-btn" onclick="closePosition()">CLOSE POSITION</button>
+                            </div>
+                        </div>
+                        <div class="ea-footer">FUMA EA by HedgeHood • v3.2</div>
+                    </div>
+                </div>
+                
+                <!-- Quick Panel -->
+                <div id="quickPanel" class="quick-panel">
+                    <div class="quick-header">
+                        <div class="quick-title-bar">
+                            <div class="quick-title title-font">Quick & Easy</div>
+                        </div>
+                        <div class="quick-content">
+                            <!-- Symbol Selector -->
+                            <div class="quick-section">
+                                <div class="quick-section-title"><span class="material-icons-round">trending_up</span>종목 선택</div>
+                                <div class="symbol-row" id="quickSymbolSelector" style="cursor: pointer;" onclick="toggleQuickSymbolDropdown()">
+                                    <div class="symbol-info">
+                                        <span class="symbol-icon" id="quickSymbolIcon" style="color: #f7931a;">₿</span>
+                                        <div>
+                                            <div class="symbol-text" id="quickSymbolName">Bitcoin</div>
+                                            <div style="font-size: 11px; color: var(--text-muted);" id="quickSymbolId">BTCUSD</div>
+                                        </div>
+                                        <span class="material-icons-round" style="color: var(--text-muted);">expand_more</span>
+                                    </div>
+                                </div>
+                                <div class="symbol-dropdown" id="quickSymbolDropdown" style="display: none;">
+                                    <div class="quick-symbol-option selected" onclick="selectQuickSymbol('BTCUSD')">
+                                        <span style="font-size: 20px; color: #f7931a;">₿</span>
+                                        <span>Bitcoin (BTCUSD)</span>
+                                    </div>
+                                    <div class="quick-symbol-option" onclick="selectQuickSymbol('XAUUSD.r')">
+                                        <span style="font-size: 20px; color: #ffd700;">✦</span>
+                                        <span>Gold (XAUUSD)</span>
+                                    </div>
+                                    <div class="quick-symbol-option" onclick="selectQuickSymbol('EURUSD.r')">
+                                        <span style="font-size: 20px; color: #0052cc;">€</span>
+                                        <span>Euro/Dollar (EURUSD)</span>
+                                    </div>
+                                    <div class="quick-symbol-option" onclick="selectQuickSymbol('US100.')">
+                                        <span style="font-size: 20px; color: #00b450;">⬡</span>
+                                        <span>NASDAQ 100 (US100)</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Account Info -->
+                            <div class="stats-bar" style="margin-bottom: 15px;">
+                                <div class="stat-item"><div class="stat-label">Balance</div><div class="stat-value" id="quickBalance">$10,000</div></div>
+                                <div class="stat-item"><div class="stat-label">Spread</div><div class="stat-value" id="quickSpreadValue">$15.00</div></div>
+                                <div class="stat-item"><div class="stat-label">Today</div><div class="stat-value" id="quickTodayPL" style="color: var(--buy-color);">+$0</div></div>
+                            </div>
+                            
+                            <!-- Lot Size -->
+                            <div class="quick-section">
+                                <div class="quick-section-title"><span class="material-icons-round">tune</span>거래 수량</div>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <button class="target-btn" onclick="adjustQuickLot(-0.01)">−</button>
+                                    <input type="number" id="quickLotInput" value="0.01" step="0.01" min="0.01" max="10" class="settings-input" style="flex: 1; font-size: 18px;" onchange="validateQuickLot(this)">
+                                    <button class="target-btn" onclick="adjustQuickLot(0.01)">+</button>
+                                    <span style="color: var(--text-muted); font-size: 14px;">lot</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Order Buttons -->
+                            <div class="quick-section">
+                                <div class="quick-section-title"><span class="material-icons-round">flash_on</span>빠른 주문</div>
+                                <div class="quick-order-buttons">
+                                    <button class="quick-order-btn sell" onclick="quickSell()">
+                                        SELL
+                                        <span class="quick-order-price" id="quickBidPrice">0.00</span>
+                                    </button>
+                                    <button class="quick-order-btn buy" onclick="quickBuy()">
+                                        BUY
+                                        <span class="quick-order-price" id="quickAskPrice">0.00</span>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Close Buttons -->
+                            <div class="quick-section">
+                                <div class="quick-section-title"><span class="material-icons-round">cancel</span>청산</div>
+                                <div class="quick-close-grid">
+                                    <button class="quick-close-btn all-close" onclick="quickCloseAll()"><span class="material-icons-round">close</span>일괄 청산</button>
+                                    <button class="quick-close-btn symbol-close" onclick="quickCloseSymbol()"><span class="material-icons-round">sell</span>현종목 청산</button>
+                                    <button class="quick-close-btn buy-close" onclick="quickCloseBuy()"><span class="material-icons-round">arrow_upward</span>매수만</button>
+                                    <button class="quick-close-btn sell-close" onclick="quickCloseSell()"><span class="material-icons-round">arrow_downward</span>매도만</button>
+                                    <button class="quick-close-btn profit-close" onclick="quickCloseProfit()"><span class="material-icons-round">trending_up</span>수익만</button>
+                                    <button class="quick-close-btn loss-close" onclick="quickCloseLoss()"><span class="material-icons-round">trending_down</span>손실만</button>
+                                </div>
+                            </div>
+                            
+                            <!-- SL/TP -->
+                            <div class="quick-section">
+                                <div class="quick-section-title"><span class="material-icons-round">security</span>SL / TP 설정</div>
+                                <div class="quick-sltp-row">
+                                    <span class="quick-sltp-label sl">🔴 Stop Loss</span>
+                                    <input type="number" id="quickSLInput" class="quick-sltp-input" placeholder="0">
+                                    <span class="quick-sltp-unit">pips</span>
+                                </div>
+                                <div class="quick-sltp-row">
+                                    <span class="quick-sltp-label tp">🟢 Take Profit</span>
+                                    <input type="number" id="quickTPInput" class="quick-sltp-input" placeholder="0">
+                                    <span class="quick-sltp-unit">pips</span>
+                                </div>
+                                <button class="quick-sltp-apply" onclick="applyQuickSLTP()">SL/TP 적용</button>
+                            </div>
+                            
+                            <!-- Position List -->
+                            <div class="quick-section">
+                                <div class="quick-section-title"><span class="material-icons-round">list_alt</span>열린 포지션</div>
+                                <div class="quick-position-list" id="quickPositionList">
+                                    <div class="quick-position-empty">
+                                        <span class="material-icons-round">inbox</span>
+                                        <div>열린 포지션이 없습니다</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="quick-footer">Quick & Easy • v3.2</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ========== Account Tab ========== -->
+            <div id="page-account" class="page">
+                <div class="account-summary">
+                    <div class="summary-box"><div class="value" id="accBalance">$0</div><div class="label">Balance</div></div>
+                    <div class="summary-box"><div class="value" id="accEquity">$0</div><div class="label">Equity</div></div>
+                    <div class="summary-box"><div class="value" id="accMargin">$0</div><div class="label">Margin</div></div>
+                    <div class="summary-box"><div class="value" id="accFree">$0</div><div class="label">Free Margin</div></div>
+                </div>
+                <div class="card">
+                    <div class="card-title">📜 Trade History</div>
+                    <div class="history-list" id="historyList"></div>
+                </div>
+            </div>
+            
+            <!-- ========== My Tab ========== -->
+            <div id="page-my" class="page">
+                <div class="profile-header">
+                    <div class="profile-avatar">👤</div>
+                    <div class="profile-name" id="profileName">Trader</div>
+                    <div class="profile-level">Trading-X Member</div>
+                </div>
+                <div class="menu-item" onclick="openSettings()">
+                    <div class="menu-left">
+                        <div class="menu-icon"><span class="material-icons-round">tune</span></div>
+                        <span>Trading Settings</span>
+                    </div>
+                    <span class="menu-arrow material-icons-round">chevron_right</span>
+                </div>
+                <div class="menu-item">
+                    <div class="menu-left">
+                        <div class="menu-icon"><span class="material-icons-round">notifications</span></div>
+                        <span>Notifications</span>
+                    </div>
+                    <span class="menu-arrow material-icons-round">chevron_right</span>
+                </div>
+                <div class="menu-item">
+                    <div class="menu-left">
+                        <div class="menu-icon"><span class="material-icons-round">help</span></div>
+                        <span>Help & Support</span>
+                    </div>
+                    <span class="menu-arrow material-icons-round">chevron_right</span>
+                </div>
+                <button class="logout-btn" onclick="logout()">
+                    <span class="material-icons-round">logout</span>
+                    Logout
+                </button>
+            </div>
+        </div>
+        
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <div class="nav-item active" data-page="home">
+                <span class="nav-icon material-icons-round">home</span>
+                <span class="nav-label">Home</span>
+            </div>
+            <div class="nav-item" data-page="chart">
+                <span class="nav-icon material-icons-round">candlestick_chart</span>
+                <span class="nav-label">Chart</span>
+            </div>
+            <div class="nav-item" data-page="trade">
+                <span class="nav-icon material-icons-round">swap_vert</span>
+                <span class="nav-label">Trade</span>
+            </div>
+            <div class="nav-item" data-page="account">
+                <span class="nav-icon material-icons-round">account_balance_wallet</span>
+                <span class="nav-label">Account</span>
+            </div>
+            <div class="nav-item" data-page="my">
+                <span class="nav-icon material-icons-round">person</span>
+                <span class="nav-label">My</span>
+            </div>
+        </nav>
+    </div>
+    
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+    
+    <!-- Chart Submenu -->
+    <div class="submenu-overlay" id="chartSubmenuOverlay" onclick="closeChartSubmenu()">
+        <div class="submenu-sheet" onclick="event.stopPropagation()">
+            <div class="submenu-handle"></div>
+            <div class="submenu-title">Chart 메뉴</div>
+            <div class="submenu-item" onclick="selectSubmenuItem('watchlist')" onmousedown="submenuItemPressStart('watchlist', this)" onmouseup="submenuItemPressEnd()" onmouseleave="submenuItemPressEnd()" ontouchstart="submenuItemPressStart('watchlist', this)" ontouchend="submenuItemPressEnd()" ontouchcancel="submenuItemPressEnd()">
+                <div class="submenu-item-icon">
+                    <svg viewBox="0 0 24 24"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                </div>
+                <div class="submenu-item-content">
+                    <div class="submenu-item-title">종목 Watchlist</div>
+                    <div class="submenu-item-hint">길게 눌러 기본 등록</div>
+                </div>
+                <div class="submenu-item-badge" id="submenuWatchlistBadge" style="display: none;">기본</div>
+                <div class="submenu-item-arrow">›</div>
+                <div class="submenu-item-progress"></div>
+            </div>
+            <div class="submenu-item" onclick="selectSubmenuItem('chart')" onmousedown="submenuItemPressStart('chart', this)" onmouseup="submenuItemPressEnd()" onmouseleave="submenuItemPressEnd()" ontouchstart="submenuItemPressStart('chart', this)" ontouchend="submenuItemPressEnd()" ontouchcancel="submenuItemPressEnd()">
+                <div class="submenu-item-icon">
+                    <svg viewBox="0 0 24 24"><path d="M3 3v18h18M9 17V9m4 8V5m4 12v-6"/></svg>
+                </div>
+                <div class="submenu-item-content">
+                    <div class="submenu-item-title">Chart View</div>
+                    <div class="submenu-item-hint">길게 눌러 기본 등록</div>
+                </div>
+                <div class="submenu-item-badge" id="submenuChartBadge" style="display: none;">기본</div>
+                <div class="submenu-item-arrow">›</div>
+                <div class="submenu-item-progress"></div>
+            </div>
+            <button class="submenu-close-btn" onclick="closeChartSubmenu()">닫기</button>
+        </div>
+    </div>
+    
+    <!-- Trade Submenu -->
+    <div class="submenu-overlay" id="tradeSubmenuOverlay" onclick="closeTradeSubmenu()">
+        <div class="submenu-sheet" onclick="event.stopPropagation()">
+            <div class="submenu-handle"></div>
+            <div class="submenu-title">Trade 메뉴</div>
+            <div class="submenu-item" onclick="selectTradeSubmenuItem('buysell')" onmousedown="tradeSubmenuItemPressStart('buysell', this)" onmouseup="tradeSubmenuItemPressEnd()" onmouseleave="tradeSubmenuItemPressEnd()" ontouchstart="tradeSubmenuItemPressStart('buysell', this)" ontouchend="tradeSubmenuItemPressEnd()" ontouchcancel="tradeSubmenuItemPressEnd()">
+                <div class="submenu-item-icon">📈</div>
+                <div class="submenu-item-content">
+                    <div class="submenu-item-title">Buy/Sell 패널</div>
+                    <div class="submenu-item-hint">길게 눌러 기본 등록</div>
+                </div>
+                <div class="submenu-item-badge" id="submenuBuysellBadge" style="display: none;">기본</div>
+                <div class="submenu-item-arrow">›</div>
+                <div class="submenu-item-progress"></div>
+            </div>
+            <div class="submenu-item" onclick="selectTradeSubmenuItem('quick')" onmousedown="tradeSubmenuItemPressStart('quick', this)" onmouseup="tradeSubmenuItemPressEnd()" onmouseleave="tradeSubmenuItemPressEnd()" ontouchstart="tradeSubmenuItemPressStart('quick', this)" ontouchend="tradeSubmenuItemPressEnd()" ontouchcancel="tradeSubmenuItemPressEnd()">
+                <div class="submenu-item-icon">⚡</div>
+                <div class="submenu-item-content">
+                    <div class="submenu-item-title">Quick & Easy 패널</div>
+                    <div class="submenu-item-hint">길게 눌러 기본 등록</div>
+                </div>
+                <div class="submenu-item-badge" id="submenuQuickBadge" style="display: none;">기본</div>
+                <div class="submenu-item-arrow">›</div>
+                <div class="submenu-item-progress"></div>
+            </div>
+            <button class="submenu-close-btn" onclick="closeTradeSubmenu()">닫기</button>
+        </div>
+    </div>
+    
+    <!-- Submenu Toast -->
+    <div class="submenu-toast" id="submenuToast">
+        <div class="submenu-toast-icon">✅</div>
+        <div class="submenu-toast-title"><span id="submenuToastViewName">차트</span> 기본 화면 등록!</div>
+        <div class="submenu-toast-desc">탭을 길게 누르면 바로 이동합니다</div>
+    </div>
+    
+    <!-- Symbol Search Modal -->
+    <div class="search-modal" id="symbolSearchModal">
+        <div class="search-header">
+            <button class="search-back" onclick="closeSymbolSearch()"><span class="material-icons-round">arrow_back</span></button>
+            <div class="search-input-wrap">
+                <span class="material-icons-round search-input-icon">search</span>
+                <input type="text" class="search-input" id="symbolSearchInput" placeholder="종목 검색..." oninput="onSymbolSearch(this.value)">
+            </div>
+        </div>
+        <div class="search-categories">
+            <button class="search-category-btn active" onclick="filterSearchCategory('all', this)">전체</button>
+            <button class="search-category-btn" onclick="filterSearchCategory('forex', this)">외환</button>
+            <button class="search-category-btn" onclick="filterSearchCategory('crypto', this)">암호화폐</button>
+            <button class="search-category-btn" onclick="filterSearchCategory('indices', this)">지수</button>
+            <button class="search-category-btn" onclick="filterSearchCategory('metals', this)">금속</button>
+        </div>
+        <div class="search-results" id="searchResultsList">
+            <div class="search-empty">
+                <span class="material-icons-round search-empty-icon">search</span>
+                <div>종목을 검색하세요</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Settings Panel -->
+    <div class="modal-overlay" id="settingsPanel">
+        <div class="settings-panel">
+            <div class="settings-header">
+                <span class="settings-title">Trading Settings</span>
+                <button class="settings-close" onclick="closeSettings()">×</button>
+            </div>
+            <div class="settings-content">
+                <div class="settings-section">
+                    <div class="settings-label">MODE</div>
+                    <div class="mode-option selected" data-mode="basic" onclick="selectMode('basic')">
+                        <div class="mode-option-header">
+                            <span class="mode-radio">◉</span>
+                            <span class="mode-name">Basic Mode</span>
+                        </div>
+                        <div class="mode-desc">Target $0~200, Leverage x0~20</div>
+                    </div>
+                    <div class="mode-option" data-mode="noLimit" onclick="selectMode('noLimit')">
+                        <div class="mode-option-header">
+                            <span class="mode-radio">◯</span>
+                            <span class="mode-name">No Limit Mode</span>
+                        </div>
+                        <div class="mode-desc">잔고의 50%까지 설정 가능</div>
+                    </div>
+                    <div class="mode-option" data-mode="martin" onclick="selectMode('martin')">
+                        <div class="mode-option-header">
+                            <span class="mode-radio">◯</span>
+                            <span class="mode-name">Martin Mode</span>
+                        </div>
+                        <div class="mode-desc">손실 복구 마틴 전략</div>
+                    </div>
+                </div>
+                <div class="settings-divider"></div>
+                <div class="settings-section">
+                    <div class="settings-label">LOT SIZE</div>
+                    <div class="input-row">
+                        <span class="input-label">Base Lot Size<span class="input-hint">(0.01 ~ 1.0)</span></span>
+                        <div class="input-controls">
+                            <button class="input-btn" onclick="adjustSettingsLot(-0.01)">−</button>
+                            <input type="number" class="input-value" id="settingsLotInput" value="0.01" step="0.01" min="0.01" max="1">
+                            <button class="input-btn" onclick="adjustSettingsLot(0.01)">+</button>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <span class="input-label">Default Leverage<span class="input-hint">(1 ~ 50)</span></span>
+                        <div class="input-controls">
+                            <button class="input-btn" onclick="adjustSettingsLeverage(-1)">−</button>
+                            <input type="number" class="input-value" id="settingsLeverageInput" value="10" step="1" min="1" max="50">
+                            <button class="input-btn" onclick="adjustSettingsLeverage(1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-divider"></div>
+                <div class="settings-section">
+                    <div class="settings-label">MARTIN</div>
+                    <div class="martin-row">
+                        <input type="checkbox" class="martin-checkbox" id="martinToggleSwitch" onclick="toggleMartin()">
+                        <span>Enable Martin Mode</span>
+                    </div>
+                    <div class="martin-info">손실 발생 시 자동으로 Lot을 늘려 복구합니다</div>
+                    <div class="martin-max">
+                        Max Steps:
+                        <button class="martin-max-btn" onclick="adjustMartinLevel(-1)">−</button>
+                        <span id="martinLevelValue">5</span>
+                        <button class="martin-max-btn" onclick="adjustMartinLevel(1)">+</button>
+                        <input type="hidden" id="settingsMartinLevel" value="5">
+                    </div>
+                </div>
+            </div>
+            <div class="settings-footer">
+                <button class="settings-footer-btn apply" onclick="applySettings()">적용</button>
+                <button class="settings-footer-btn reset" onclick="resetSettings()">초기화</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Guest Popup -->
+    <div class="guest-popup" id="guestPopup">
+        <div class="guest-popup-content">
+            <div class="guest-popup-icon">🔐</div>
+            <div class="guest-popup-title">로그인이 필요합니다</div>
+            <div class="guest-popup-desc">이 기능을 사용하려면 로그인 또는 회원가입이 필요합니다.</div>
+            <div class="guest-popup-buttons">
+                <button class="guest-popup-btn register" onclick="goToRegister()">회원가입</button>
+                <button class="guest-popup-btn login" onclick="goToLoginPage()">로그인</button>
+                <button class="guest-popup-btn close" onclick="closeGuestPopup()">닫기</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Martin Popup -->
+    <div class="martin-popup" id="martinPopup">
+        <div class="martin-popup-content">
+            <div class="martin-popup-icon">⚠️</div>
+            <div class="martin-popup-title">Step <span id="popupCurrentStep">1</span> 손실 발생</div>
+            <div class="martin-popup-info">
+                <div class="martin-popup-row"><span class="martin-popup-label">현재 손실</span><span class="martin-popup-value" id="popupCurrentLoss" style="color: var(--sell-color);">-$0</span></div>
+                <div class="martin-popup-row"><span class="martin-popup-label">누적 손실</span><span class="martin-popup-value" id="popupAccumulatedLoss" style="color: var(--sell-color);">-$0</span></div>
+                <div class="martin-popup-row"><span class="martin-popup-label">다음 랏</span><span class="martin-popup-value" id="popupNextLot">0.02 lot</span></div>
+                <div class="martin-popup-row"><span class="martin-popup-label">회복 목표</span><span class="martin-popup-value" id="popupRecoveryTarget" style="color: var(--buy-color);">+$60</span></div>
+            </div>
+            <div style="text-align: center; margin-bottom: 15px; color: var(--text-muted); font-size: 13px;">
+                <span id="popupCurrentStepKr">1</span>단계 손실! → <span id="popupNextStep">2</span>단계(<span id="popupNextStepKr">2</span>배 랏)로 진행할까요?
+            </div>
+            <div class="martin-popup-buttons">
+                <button class="martin-popup-btn primary" onclick="martinPopupContinue()">📈 Step <span id="popupNextStepBtn">2</span>로 진행</button>
+                <button class="martin-popup-btn secondary" onclick="martinPopupSettings()">⚙️ 설정으로</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Martin Max Popup -->
+    <div class="martin-popup" id="martinMaxPopup">
+        <div class="martin-popup-content max">
+            <div class="martin-popup-icon">🚨</div>
+            <div class="martin-popup-title">최대 단계 도달</div>
+            <div class="martin-popup-info">
+                <div class="martin-popup-row"><span class="martin-popup-label">총 손실</span><span class="martin-popup-value" id="maxPopupTotalLoss" style="color: var(--sell-color);">-$0</span></div>
+                <div class="martin-popup-row"><span class="martin-popup-label">사용 단계</span><span class="martin-popup-value" id="maxPopupStepsUsed">5 / 5</span></div>
+            </div>
+            <div style="text-align: center; margin-bottom: 15px; color: var(--text-muted); font-size: 13px;">
+                마틴 최대 단계에 도달했습니다.<br>1단계로 초기화됩니다.
+            </div>
+            <div class="martin-popup-buttons">
+                <button class="martin-popup-btn primary" style="background: linear-gradient(135deg, #f39c12 0%, #d68910 100%);" onclick="closeMaxPopup()">확인</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Martin Success Popup -->
+    <div class="martin-popup" id="martinSuccessPopup">
+        <div class="martin-popup-content success">
+            <div class="martin-popup-icon">🎉</div>
+            <div class="martin-popup-title">마틴 성공!</div>
+            <div class="martin-popup-info">
+                <div class="martin-popup-row"><span class="martin-popup-label">수익</span><span class="martin-popup-value" id="successPopupProfit" style="color: var(--buy-color);">+$0</span></div>
+                <div class="martin-popup-row"><span class="martin-popup-label">회복 금액</span><span class="martin-popup-value" id="successPopupRecovered">$0</span></div>
+            </div>
+            <div style="text-align: center; margin-bottom: 15px; color: var(--text-muted); font-size: 13px;">
+                축하합니다! 모든 손실을 회복했습니다! 🚀
+            </div>
+            <div class="martin-popup-buttons">
+                <button class="martin-popup-btn success-primary" onclick="martinSuccessContinue()">🚀 계속 거래</button>
+                <button class="martin-popup-btn secondary" onclick="martinSuccessToSettings()">⚙️ 설정으로</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- MT5 Connect Modal -->
+    <div class="modal-overlay" id="mt5ConnectModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-title">MT5 계좌 연결</span>
+                <button class="modal-close" onclick="closeMT5ConnectModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="mt5Step1" class="mt5-modal-step">
+                    <h3>연결 방법을 선택하세요</h3>
+                    <div class="mt5-options">
+                        <div class="mt5-option" onclick="showMT5Step2('existing')">
+                            <span class="mt5-option-icon">🔗</span>
+                            <div class="mt5-option-info">
+                                <div class="mt5-option-title">기존 계좌 연결</div>
+                                <div class="mt5-option-desc">이미 MT5 계좌가 있습니다</div>
+                            </div>
+                            <span class="mt5-option-arrow material-icons-round">chevron_right</span>
+                        </div>
+                        <div class="mt5-option" onclick="showMT5Step2('new')">
+                            <span class="mt5-option-icon">✨</span>
+                            <div class="mt5-option-info">
+                                <div class="mt5-option-title">새 계좌 개설</div>
+                                <div class="mt5-option-desc">처음 사용합니다</div>
+                            </div>
+                            <span class="mt5-option-arrow material-icons-round">chevron_right</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="mt5Step2Existing" class="mt5-modal-step" style="display: none;">
+                    <button class="mt5-back-btn" onclick="showMT5Step1()"><span class="material-icons-round">arrow_back</span> 뒤로</button>
+                    <h3>MT5 계좌 정보 입력</h3>
+                    <div class="mt5-form">
+                        <div class="mt5-form-group">
+                            <label class="mt5-form-label">서버</label>
+                            <select class="mt5-form-select" id="mt5Server">
+                                <option value="HedgeHood-Live">HedgeHood-Live</option>
+                                <option value="HedgeHood-Demo">HedgeHood-Demo</option>
+                            </select>
+                        </div>
+                        <div class="mt5-form-group">
+                            <label class="mt5-form-label">계좌번호</label>
+                            <input type="text" class="mt5-form-input" id="mt5AccountNumber" placeholder="12345678">
+                        </div>
+                        <div class="mt5-form-group">
+                            <label class="mt5-form-label">비밀번호</label>
+                            <input type="password" class="mt5-form-input" id="mt5Password" placeholder="••••••••">
+                        </div>
+                        <button class="mt5-form-btn" onclick="connectMT5Account()">연결하기</button>
+                    </div>
+                </div>
+                <div id="mt5Step2New" class="mt5-modal-step" style="display: none;">
+                    <button class="mt5-back-btn" onclick="showMT5Step1()"><span class="material-icons-round">arrow_back</span> 뒤로</button>
+                    <h3>계좌 개설 안내</h3>
+                    <div class="mt5-guide-steps">
+                        <div class="mt5-guide-step">
+                            <span class="mt5-guide-number">1</span>
+                            <span class="mt5-guide-text">HedgeHood 웹사이트에서 회원가입</span>
+                        </div>
+                        <div class="mt5-guide-step">
+                            <span class="mt5-guide-number">2</span>
+                            <span class="mt5-guide-text">KYC 인증 완료</span>
+                        </div>
+                        <div class="mt5-guide-step">
+                            <span class="mt5-guide-number">3</span>
+                            <span class="mt5-guide-text">MT5 계좌 개설 신청</span>
+                        </div>
+                        <div class="mt5-guide-step">
+                            <span class="mt5-guide-number">4</span>
+                            <span class="mt5-guide-text">이메일로 받은 계좌 정보로 연결</span>
+                        </div>
+                    </div>
+                    <a href="https://hedgehood.com" target="_blank" class="mt5-form-btn" style="display: block; text-align: center; text-decoration: none; margin-top: 20px;">HedgeHood 가입하기</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- MT5 Success Modal -->
+    <div class="modal-overlay" id="mt5SuccessModal">
+        <div class="modal-content">
+            <div class="mt5-success-content">
+                <div class="mt5-success-icon">🎉</div>
+                <div class="mt5-success-title">연결 성공!</div>
+                <div class="mt5-success-desc">MT5 계좌가 성공적으로 연결되었습니다</div>
+                <div class="mt5-success-info">
+                    <div class="mt5-success-row"><span class="mt5-success-label">계좌</span><span class="mt5-success-value" id="successAccount">-</span></div>
+                    <div class="mt5-success-row"><span class="mt5-success-label">서버</span><span class="mt5-success-value" id="successServer">-</span></div>
+                </div>
+                <button class="mt5-success-btn" onclick="closeMT5SuccessModal()">거래 시작하기</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- JS Files -->
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/websocket.js"></script>
+    <script src="js/navigation.js"></script>
+    <script src="js/home.js"></script>
+    <script src="js/chart.js"></script>
+    <script src="js/martin.js"></script>
+    <script src="js/trade.js"></script>
+    <script src="js/demo.js"></script>
+    <script src="js/account.js"></script>
+    <script src="js/settings.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,588 @@
+/* Navigation Styles */
+
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-secondary); border-top: 1px solid var(--border-color); display: flex; justify-content: space-around; padding: 8px 0; padding-bottom: env(safe-area-inset-bottom, 8px); max-width: 480px; margin: 0 auto; z-index: 100; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 15px; cursor: pointer; color: var(--text-muted); transition: all 0.2s; }
+        .nav-item.active { color: var(--accent-cyan); }
+        .nav-icon { font-size: 24px; }
+        .nav-label { font-size: 10px; }
+        
+        /* Toast */
+        .submenu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 150;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        .submenu-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .submenu-sheet {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-secondary);
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            padding: 0 0 env(safe-area-inset-bottom, 20px) 0;
+            z-index: 151;
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            max-width: 480px;
+            margin: 0 auto;
+        }
+        .submenu-overlay.show .submenu-sheet {
+            transform: translateY(0);
+        }
+        
+        .submenu-handle {
+            width: 40px;
+            height: 4px;
+            background: var(--border-color);
+            border-radius: 2px;
+            margin: 12px auto;
+        }
+        
+        .submenu-title {
+            text-align: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-muted);
+            padding: 0 20px 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .submenu-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 18px 20px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-bottom: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+        .submenu-item:last-child {
+            border-bottom: none;
+        }
+        .submenu-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .submenu-item:active {
+            background: rgba(0, 212, 255, 0.1);
+        }
+        
+        .submenu-item-icon {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            font-size: 22px;
+        }
+        
+        .submenu-item-content {
+            flex: 1;
+        }
+        .submenu-item-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
+        .submenu-item-hint {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        
+        .submenu-item-badge {
+            position: absolute;
+            top: 12px;
+            right: 15px;
+            background: var(--accent-cyan);
+            color: #000;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 10px;
+        }
+        
+        .submenu-item-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background: var(--accent-cyan);
+            width: 0%;
+            transition: width 0.5s linear;
+        }
+        .submenu-item.pressing .submenu-item-progress {
+            width: 100%;
+        }
+        
+        .submenu-toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-secondary);
+            border: 1px solid var(--accent-cyan);
+            border-radius: 12px;
+            padding: 15px 20px;
+            z-index: 200;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+            max-width: 320px;
+            width: 90%;
+        }
+        .submenu-toast.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .submenu-toast-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+        .submenu-toast-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--accent-cyan);
+            margin-bottom: 5px;
+        }
+        .submenu-toast-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+        
+        .nav-item.long-pressing {
+            transform: scale(0.95);
+            opacity: 0.7;
+        }
+        .nav-item {
+            transition: transform 0.2s, opacity 0.2s;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        /* ========== Quick & Easy 패널 ========== */
+        .quick-panel {
+            display: none;
+            padding: 15px;
+        }
+        .quick-panel.active {
+            display: block;
+        }
+        
+        .quick-header {
+            background: var(--bg-primary);
+            border: 2px solid var(--accent-cyan);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 0 40px var(--accent-cyan-glow), 0 25px 60px rgba(0,0,0,0.6);
+        }
+        
+        .quick-title-bar {
+            padding: 15px 20px;
+            text-align: center;
+            border-bottom: 2px solid var(--accent-cyan);
+            position: relative;
+        }
+        .quick-title-bar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
+        }
+        .quick-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 18px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            color: var(--accent-cyan);
+            text-shadow: 0 0 20px var(--accent-cyan-glow);
+        }
+        
+        .quick-content {
+            padding: 15px;
+        }
+        
+        /* 주문 섹션 */
+        .quick-section {
+            margin-bottom: 15px;
+        }
+        .quick-section-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .quick-section-title .material-icons-round {
+            font-size: 18px;
+        }
+        
+        /* 매수/매도 버튼 */
+        .quick-order-buttons {
+            display: flex;
+            gap: 12px;
+        }
+        .quick-order-btn {
+            flex: 1;
+            padding: 20px 15px;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 900;
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        .quick-order-btn:hover {
+            transform: scale(1.02);
+        }
+        .quick-order-btn:active {
+            transform: scale(0.98);
+        }
+        .quick-order-btn.buy {
+            background: linear-gradient(135deg, var(--buy-color) 0%, #008040 100%);
+            color: white;
+            box-shadow: 0 4px 20px rgba(0, 180, 80, 0.5);
+        }
+        .quick-order-btn.sell {
+            background: linear-gradient(135deg, var(--sell-color) 0%, #a52030 100%);
+            color: white;
+            box-shadow: 0 4px 20px rgba(220, 50, 70, 0.5);
+        }
+        .quick-order-price {
+            font-size: 14px;
+            font-weight: 600;
+            font-family: 'Rajdhani', sans-serif;
+            letter-spacing: 0;
+            opacity: 0.9;
+        }
+        
+        /* 청산 버튼 그리드 */
+        .quick-close-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .quick-close-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 14px 12px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+        .quick-close-btn:hover {
+            transform: scale(1.02);
+            border-color: var(--accent-cyan);
+        }
+        .quick-close-btn:active {
+            transform: scale(0.98);
+        }
+        .quick-close-btn .material-icons-round {
+            font-size: 18px;
+        }
+        .quick-close-btn.all-close {
+            background: linear-gradient(135deg, #ff6b6b 0%, #c0392b 100%);
+            border: none;
+            color: white;
+            box-shadow: 0 2px 10px rgba(220, 50, 70, 0.3);
+        }
+        .quick-close-btn.symbol-close {
+            background: linear-gradient(135deg, #f39c12 0%, #d68910 100%);
+            border: none;
+            color: white;
+            box-shadow: 0 2px 10px rgba(243, 156, 18, 0.3);
+        }
+        .quick-close-btn.buy-close {
+            background: var(--buy-bg);
+            border-color: rgba(0, 180, 80, 0.4);
+            color: var(--buy-color);
+        }
+        .quick-close-btn.sell-close {
+            background: var(--sell-bg);
+            border-color: rgba(220, 50, 70, 0.4);
+            color: var(--sell-color);
+        }
+        .quick-close-btn.profit-close {
+            background: rgba(0, 212, 255, 0.1);
+            border-color: rgba(0, 212, 255, 0.4);
+            color: var(--accent-cyan);
+        }
+        .quick-close-btn.loss-close {
+            background: rgba(156, 39, 176, 0.1);
+            border-color: rgba(156, 39, 176, 0.4);
+            color: #ba68c8;
+        }
+        
+        /* SL/TP 설정 */
+        .quick-sltp-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .quick-sltp-label {
+            width: 80px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+        .quick-sltp-label.sl {
+            color: var(--sell-color);
+        }
+        .quick-sltp-label.tp {
+            color: var(--buy-color);
+        }
+        .quick-sltp-input {
+            flex: 1;
+            padding: 10px 12px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+        }
+        .quick-sltp-input:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+        }
+        .quick-sltp-unit {
+            font-size: 12px;
+            color: var(--text-muted);
+            width: 40px;
+        }
+        .quick-sltp-apply {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, var(--accent-cyan) 0%, #0099cc 100%);
+            border: none;
+            border-radius: 8px;
+            color: #000;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 5px;
+        }
+        .quick-sltp-apply:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
+        }
+        
+        /* 포지션 리스트 */
+        .quick-position-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .quick-position-empty {
+            text-align: center;
+            padding: 30px 20px;
+            color: var(--text-muted);
+        }
+        .quick-position-empty .material-icons-round {
+            font-size: 40px;
+            opacity: 0.5;
+            margin-bottom: 10px;
+        }
+        .quick-position-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            border: 1px solid var(--border-color);
+        }
+        .quick-position-item:last-child {
+            margin-bottom: 0;
+        }
+        .quick-position-symbol {
+            flex: 1;
+        }
+        .quick-position-symbol-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .quick-position-symbol-info {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        .quick-position-type {
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-right: 12px;
+        }
+        .quick-position-type.buy {
+            background: var(--buy-bg);
+            color: var(--buy-color);
+        }
+        .quick-position-type.sell {
+            background: var(--sell-bg);
+            color: var(--sell-color);
+        }
+        .quick-position-profit {
+            font-size: 15px;
+            font-weight: 700;
+            min-width: 70px;
+            text-align: right;
+        }
+        .quick-position-profit.positive {
+            color: var(--buy-color);
+        }
+        .quick-position-profit.negative {
+            color: var(--sell-color);
+        }
+        .quick-position-close {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--sell-bg);
+            border: 1px solid rgba(220, 50, 70, 0.4);
+            border-radius: 8px;
+            color: var(--sell-color);
+            cursor: pointer;
+            margin-left: 10px;
+            transition: all 0.2s;
+        }
+        .quick-position-close:hover {
+            background: var(--sell-color);
+            color: white;
+        }
+        .quick-position-close .material-icons-round {
+            font-size: 18px;
+        }
+        
+        .quick-footer {
+            padding: 10px;
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-dim);
+            border-top: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+        }
+        
+        /* Quick 종목 드롭다운 */
+        .quick-symbol-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 15px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .quick-symbol-option:last-child {
+            border-bottom: none;
+        }
+        .quick-symbol-option:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .quick-symbol-option:active {
+            background: rgba(0, 212, 255, 0.2);
+        }
+        .quick-symbol-option.selected {
+            background: rgba(0, 212, 255, 0.15);
+        }
+        
+        /* Quick 포지션 아이템 개선 */
+        .quick-position-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            border: 1px solid var(--border-color);
+            transition: all 0.2s;
+        }
+        .quick-position-item:hover {
+            border-color: var(--accent-cyan);
+        }
+        .quick-position-item:last-child {
+            margin-bottom: 0;
+        }
+        .quick-position-item.buy-position {
+            border-left: 3px solid var(--buy-color);
+        }
+        .quick-position-item.sell-position {
+            border-left: 3px solid var(--sell-color);
+        }
+        
+        /* 포지션 총 손익 바 */
+        .quick-total-pl {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border-color);
+        }
+        .quick-total-pl-label {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        .quick-total-pl-value {
+            font-size: 18px;
+            font-weight: 700;
+        }
+        .quick-total-pl-value.positive {
+            color: var(--buy-color);
+        }
+        .quick-total-pl-value.negative {
+            color: var(--sell-color);
+        }
+        
+        /* Quick Symbol Selector 호버 효과 */
+        #quickSymbolSelector:hover {
+            border-color: var(--accent-cyan);
+            background: rgba(0, 212, 255, 0.05);
+        }
