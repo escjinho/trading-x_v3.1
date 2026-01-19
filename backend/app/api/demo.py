@@ -51,14 +51,25 @@ async def get_demo_account(
     db: Session = Depends(get_db)
 ):
     """데모 계정 정보 조회"""
+    print(f"\n[ACCOUNT-INFO] 🔵 START - User: {current_user.id}")
+
     # 열린 포지션들 확인 (다중 포지션)
     positions = db.query(DemoPosition).filter(
         DemoPosition.user_id == current_user.id
     ).all()
-    
+
+    print(f"[ACCOUNT-INFO] 🔍 Query result - Found {len(positions)} positions")
+    for pos in positions:
+        print(f"[ACCOUNT-INFO] 📍 Position ID: {pos.id}, Symbol: {pos.symbol}, Type: {pos.trade_type}, User: {pos.user_id}")
+
     # 기존 로직 호환 (첫 번째 포지션)
     position = positions[0] if positions else None
-    
+
+    if position:
+        print(f"[ACCOUNT-INFO] ✅ First position - ID: {position.id}, Symbol: {position.symbol}")
+    else:
+        print("[ACCOUNT-INFO] ❌ No positions found!")
+
     position_data = None
     if position:
         # 현재가 조회
@@ -277,7 +288,10 @@ async def get_demo_account(
             "profit": pos_price_data["profit"],
             "target": pos.target_profit
         })
-    
+
+    print(f"[ACCOUNT-INFO] 📦 Returning - position_data: {position_data is not None}, positions_count: {len(positions)}")
+    print("[ACCOUNT-INFO] 🔴 END\n")
+
     return {
         "balance": current_user.demo_balance or 10000.0,
         "equity": current_user.demo_equity or 10000.0,
@@ -304,18 +318,23 @@ async def place_demo_order(
     db: Session = Depends(get_db)
 ):
     """데모 주문 실행 (다중 포지션 지원)"""
+    print(f"\n[DEMO ORDER] 🔵 START - User: {current_user.id}, Symbol: {symbol}, Type: {order_type}, Volume: {volume}, Target: {target}")
+
     # 중복 주문 허용 - 체크 로직 제거됨
-    
+
     # 현재가 조회
     if not mt5.initialize():
+        print("[DEMO ORDER] ❌ MT5 initialize FAILED!")
         return JSONResponse({"success": False, "message": "MT5 연결 실패"})
-    
+
     tick = mt5.symbol_info_tick(symbol)
     if not tick:
+        print(f"[DEMO ORDER] ❌ Tick FAILED for {symbol}!")
         return JSONResponse({"success": False, "message": "가격 정보 없음"})
-    
+
     entry_price = tick.ask if order_type.upper() == "BUY" else tick.bid
-    
+    print(f"[DEMO ORDER] 📊 Entry price: {entry_price}")
+
     # 포지션 생성 (Basic/NoLimit 모드용 - target 그대로 사용)
     new_position = DemoPosition(
         user_id=current_user.id,
@@ -325,10 +344,20 @@ async def place_demo_order(
         entry_price=entry_price,
         target_profit=target
     )
-    
+
     db.add(new_position)
     db.commit()
-    
+    db.refresh(new_position)
+
+    print(f"[DEMO ORDER] ✅ Position created! ID: {new_position.id}, User: {new_position.user_id}")
+    print(f"[DEMO ORDER] 📦 Position details - Symbol: {new_position.symbol}, Type: {new_position.trade_type}, Entry: {new_position.entry_price}, Target: {new_position.target_profit}")
+
+    # 저장 확인 쿼리
+    check_position = db.query(DemoPosition).filter(DemoPosition.id == new_position.id).first()
+    print(f"[DEMO ORDER] 🔍 Verification query - Position exists: {check_position is not None}")
+
+    print("[DEMO ORDER] 🔴 END\n")
+
     return JSONResponse({
         "success": True,
         "message": f"[DEMO] {order_type.upper()} {volume} lot @ {entry_price:,.2f}",
@@ -1029,6 +1058,19 @@ async def demo_websocket_endpoint(websocket: WebSocket):
     """Demo 모드 실시간 데이터 WebSocket"""
     await websocket.accept()
 
+    # Query parameter에서 토큰 가져오기
+    token = websocket.query_params.get("token")
+    user_id = None
+
+    if token:
+        try:
+            payload = decode_token(token)
+            if payload:
+                user_id = int(payload.get("sub"))
+                print(f"[DEMO WS] User {user_id} connected")
+        except Exception as e:
+            print(f"[DEMO WS] Token decode error: {e}")
+
     symbols_list = ["BTCUSD", "EURUSD.r", "USDJPY.r", "XAUUSD.r", "US100.", "GBPUSD.r", "AUDUSD.r", "USDCAD.r", "ETHUSD"]
 
     while True:
@@ -1038,32 +1080,29 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                 await asyncio.sleep(1)
                 continue
 
-            # 인디케이터 분석 (실제 계산 로직 사용)
+            # 인디케이터 분석 (실제 계산 로직 사용) - 매번 전송!
             try:
                 indicators = IndicatorService.calculate_all_indicators("BTCUSD")
-                # IndicatorService는 이미 합이 100인 값을 반환함
                 buy_count = indicators["buy"]
                 sell_count = indicators["sell"]
                 neutral_count = indicators["neutral"]
                 base_score = indicators["score"]
 
-                # 실시간 변동을 위한 랜덤 조정 (±5% 범위)
-                variation = random.randint(-5, 5)
+                # 실시간 변동을 위한 랜덤 조정 (±3% 범위로 축소)
+                variation = random.randint(-3, 3)
                 buy_count = max(5, min(80, buy_count + variation))
                 sell_count = max(5, min(80, sell_count - variation // 2))
                 neutral_count = 100 - buy_count - sell_count
 
-                print(f"[DEMO WS] Indicators - Sell: {sell_count}, Neutral: {neutral_count}, Buy: {buy_count}, Score: {base_score:.1f}, Sum: {sell_count + neutral_count + buy_count}")
+                # 디버깅용 로그
+                print(f"[DEMO WS] 📊 Indicators - Sell: {sell_count}, Neutral: {neutral_count}, Buy: {buy_count}, Score: {base_score:.1f}")
             except Exception as e:
-                print(f"[DEMO WS] Indicator calculation error: {e}")
-                import traceback
-                traceback.print_exc()
+                print(f"[DEMO WS] ⚠️ Indicator calculation error: {e}")
                 # 오류 발생 시 랜덤값 사용 (합이 100)
                 sell_count = random.randint(20, 40)
                 buy_count = random.randint(20, 40)
                 neutral_count = 100 - sell_count - buy_count
-                base_score = random.randint(40, 60)
-                print(f"[DEMO WS] Using random fallback - Sell: {sell_count}, Neutral: {neutral_count}, Buy: {buy_count}")
+                base_score = 50.0
 
             # 모든 심볼 가격 정보
             all_prices = {}
@@ -1090,23 +1129,106 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                             "close": float(latest["close"])
                         }
 
-            # Demo 계정 정보 (기본값)
+            # Demo 계정 정보 (DB에서 실제 데이터 가져오기)
+            demo_balance = 10000.0
+            demo_equity = 10000.0
+            demo_position = None
+            positions_data = []
+            positions_count = 0
+
+            if user_id:
+                try:
+                    # DB 세션 생성
+                    from ..database import SessionLocal
+                    db = SessionLocal()
+
+                    try:
+                        # 사용자 정보 조회
+                        user = db.query(User).filter(User.id == user_id).first()
+                        if user:
+                            demo_balance = user.demo_balance or 10000.0
+                            demo_equity = user.demo_equity or 10000.0
+
+                            # 열린 포지션들 조회 (다중 포지션)
+                            positions = db.query(DemoPosition).filter(
+                                DemoPosition.user_id == user_id
+                            ).all()
+
+                            positions_count = len(positions)
+
+                            # 포지션들의 실시간 profit 계산
+                            total_profit = 0.0
+                            for pos in positions:
+                                if all_prices.get(pos.symbol):
+                                    current_price = all_prices[pos.symbol]
+                                    entry = pos.entry_price
+                                    volume = pos.volume
+
+                                    # 정확한 손익 계산
+                                    symbol_info = mt5.symbol_info(pos.symbol)
+                                    if symbol_info and symbol_info.trade_tick_size > 0:
+                                        if pos.trade_type == "BUY":
+                                            price_diff = current_price['bid'] - entry
+                                        else:
+                                            price_diff = entry - current_price['ask']
+                                        ticks = price_diff / symbol_info.trade_tick_size
+                                        profit = ticks * symbol_info.trade_tick_value * volume
+                                    else:
+                                        if pos.trade_type == "BUY":
+                                            profit = (current_price['bid'] - entry) * volume
+                                        else:
+                                            profit = (entry - current_price['ask']) * volume
+
+                                    profit = round(profit, 2)
+                                    total_profit += profit
+
+                                    # 포지션 데이터 추가
+                                    pos_data = {
+                                        "id": pos.id,
+                                        "ticket": pos.id,
+                                        "type": pos.trade_type,
+                                        "symbol": pos.symbol,
+                                        "volume": pos.volume,
+                                        "entry": entry,
+                                        "current": current_price['bid'] if pos.trade_type == "BUY" else current_price['ask'],
+                                        "profit": profit,
+                                        "target": pos.target_profit
+                                    }
+                                    positions_data.append(pos_data)
+
+                                    # 첫 번째 포지션을 position으로 설정 (하위 호환성)
+                                    if demo_position is None:
+                                        demo_position = pos_data
+
+                            # Equity 업데이트
+                            demo_equity = demo_balance + total_profit
+
+                            print(f"[DEMO WS] 💼 User {user_id}: Balance=${demo_balance:.2f}, Positions={positions_count}, TotalProfit=${total_profit:.2f}")
+                    finally:
+                        db.close()
+
+                except Exception as e:
+                    print(f"[DEMO WS] ❌ DB fetch error: {e}")
+                    import traceback
+                    traceback.print_exc()
+
             data = {
                 "broker": "Trading-X Demo",
                 "account": "DEMO",
-                "balance": 10000.0,
-                "equity": 10000.0,
-                "free_margin": 10000.0,
+                "balance": demo_balance,
+                "equity": demo_equity,
+                "free_margin": demo_balance,
                 "margin": 0.0,
                 "leverage": 500,
-                "positions_count": 0,
+                "positions_count": positions_count,
                 "buy_count": buy_count,
                 "sell_count": sell_count,
                 "neutral_count": neutral_count,
                 "base_score": base_score,
                 "all_prices": all_prices,
                 "all_candles": all_candles,
-                "position": None
+                "position": demo_position,
+                "positions": positions_data
             }
 
             await websocket.send_text(json.dumps(data))
@@ -1114,6 +1236,8 @@ async def demo_websocket_endpoint(websocket: WebSocket):
 
         except Exception as e:
             print(f"[DEMO WS] Error: {e}")
+            import traceback
+            traceback.print_exc()
             break
 
     await websocket.close()

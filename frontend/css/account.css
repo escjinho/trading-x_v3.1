@@ -13,3 +13,82 @@
         .history-profit.negative { color: var(--sell-color); }
         
         /* My */
+
+/* ========== Account Info 카드 숫자 폰트 키우기 ========== */
+.summary-box .value {
+    font-size: 21px !important;
+}
+
+/* ========== History Item 스타일 ========== */
+.history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-color);
+    gap: 8px;
+    position: relative;
+}
+
+.history-item:last-child {
+    border-bottom: none;
+}
+
+.history-symbol {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.history-time {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.history-profit {
+    font-size: 15px;
+    font-weight: bold;
+    min-width: 80px;
+    text-align: right;
+}
+
+.history-profit.positive {
+    color: var(--buy-color);
+}
+
+.history-profit.negative {
+    color: var(--sell-color);
+}
+
+/* ========== 가격 표시 추가 ========== */
+.history-divider {
+    width: 1px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 0 10px;
+}
+
+.history-price-section {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+}
+
+.history-prices {
+    font-size: 12px;
+    color: #666;
+    font-family: 'Roboto Mono', monospace;
+}
+
+/* ========== Trade History 서머리 폰트 ========== */
+.history-summary-value {
+    font-size: 15px !important;
+}
+
+.history-summary-value.positive {
+    color: var(--buy-color);
+}
+
+.history-summary-value.negative {
+    color: var(--sell-color);
+}

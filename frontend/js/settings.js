@@ -142,8 +142,15 @@ function updateSettingsUI() {
         document.getElementById('leverageLotLabel').textContent = 'Lot Size';
         document.getElementById('leverageLotHint').textContent = '(Range: 0.01 ~ 10.00)';
         document.getElementById('settingsLeverageValue').value = settingsLotSize.toFixed(2);
-    } else if (settingsMode === 'noLimit') {
-        const percent = Math.round((settingsTarget / balance) * 100);
+   } else if (settingsMode === 'noLimit') {
+        // DOM에서 현재 잔고 가져오기
+        let currentBalance = 10000;
+        const balanceEl = document.getElementById('tradeBalance');
+        if (balanceEl) {
+            const balanceText = balanceEl.textContent.replace(/[$,]/g, '');
+            currentBalance = parseFloat(balanceText) || 10000;
+        }
+        const percent = Math.round((settingsTarget / currentBalance) * 100);
         document.getElementById('settingsTargetValue').textContent = percent + '%';
         document.getElementById('targetHint').textContent = '(Range: 1% ~ 50%)';
         document.getElementById('leverageLotLabel').textContent = 'Leverage';
@@ -195,7 +202,16 @@ function selectMode(el) {
         settingsTarget = 100;
         settingsLeverage = 5;
     } else if (settingsMode === 'noLimit') {
-        settingsTarget = Math.floor(balance * 0.1);
+        // DOM에서 현재 잔고 가져오기
+        let currentBalance = 10000;
+        const balanceEl = document.getElementById('tradeBalance');
+        if (balanceEl) {
+            const balanceText = balanceEl.textContent.replace(/[$,]/g, '');
+            currentBalance = parseFloat(balanceText) || 10000;
+        }
+        settingsTarget = Math.floor(currentBalance * 0.1);
+        // 5 단위로 반올림
+        settingsTarget = Math.round(settingsTarget / 5) * 5;
         settingsLeverage = 5;
     } else if (settingsMode === 'martin') {
         // Martin 모드 기본값
@@ -222,8 +238,17 @@ function setSettingsSymbol(symbol) {
 
 function adjustSettingsTarget(delta) {
     if (settingsMode === 'noLimit') {
-        const onePercent = balance * 0.01;
-        settingsTarget = Math.max(onePercent, Math.min(balance * 0.5, settingsTarget + (delta > 0 ? onePercent : -onePercent)));
+        // DOM에서 현재 잔고 가져오기
+        let currentBalance = 10000;
+        const balanceEl = document.getElementById('tradeBalance');
+        if (balanceEl) {
+            const balanceText = balanceEl.textContent.replace(/[$,]/g, '');
+            currentBalance = parseFloat(balanceText) || 10000;
+        }
+        const onePercent = currentBalance * 0.01;
+        settingsTarget = Math.max(onePercent, Math.min(currentBalance * 0.5, settingsTarget + (delta > 0 ? onePercent : -onePercent)));
+        // 5 단위로 반올림
+        settingsTarget = Math.round(settingsTarget / 5) * 5;
     } else {
         settingsTarget = Math.max(10, Math.min(200, settingsTarget + delta));
     }
@@ -342,6 +367,14 @@ async function applySettings() {
 
     updateMainPanelForMode();
     updateTargetUI();
+    
+    // 무제한 모드면 딜레이 후 다시 UI 업데이트 (balance 동기화 대기)
+    if (currentMode === 'noLimit') {
+        setTimeout(() => {
+            updateTargetUI();
+        }, 500);
+    }
+    
     closeSettings();
     showToast('Settings applied!', 'success');
 }
@@ -352,8 +385,16 @@ function resetSettings() {
         settingsTarget = 100;
         settingsLeverage = 5;
     } else if (settingsMode === 'noLimit') {
-        // No Limit 모드 기본값
-        settingsTarget = Math.floor(balance * 0.1);
+        // No Limit 모드 기본값 - DOM에서 현재 잔고 가져오기
+        let currentBalance = 10000;
+        const balanceEl = document.getElementById('tradeBalance');
+        if (balanceEl) {
+            const balanceText = balanceEl.textContent.replace(/[$,]/g, '');
+            currentBalance = parseFloat(balanceText) || 10000;
+        }
+        settingsTarget = Math.floor(currentBalance * 0.1);
+        // 5 단위로 반올림
+        settingsTarget = Math.round(settingsTarget / 5) * 5;
         settingsLeverage = 5;
     } else if (settingsMode === 'martin') {
         settingsTarget = 50;

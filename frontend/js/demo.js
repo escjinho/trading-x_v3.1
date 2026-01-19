@@ -5,39 +5,48 @@
 
 // ========== Demo Order ==========
 async function placeDemoOrder(orderType) {
+    console.log(`[placeDemoOrder] 🔵 START - Order: ${orderType}, Symbol: ${currentSymbol}, Target: ${targetAmount}`);
     showToast('Processing...', '');
     try {
         let response;
-        
+
         if (currentMode === 'martin' && martinEnabled) {
+            console.log('[placeDemoOrder] Using Martin API');
             response = await fetch(`${API_URL}/demo/martin/order?symbol=${currentSymbol}&order_type=${orderType}&target=${targetAmount}`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
         } else {
             const lot = calculateLot();
+            console.log(`[placeDemoOrder] Using Basic API, Lot: ${lot}`);
             response = await fetch(`${API_URL}/demo/order?symbol=${currentSymbol}&order_type=${orderType}&volume=${lot}&target=${targetAmount}`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
         }
-        
+
         const result = await response.json();
-        
+        console.log('[placeDemoOrder] 📦 Server response:', result);
+
         showToast(result?.message || 'Error', result?.success ? 'success' : 'error');
         if (result?.success) {
             playSound(orderType.toLowerCase());
-            
+
             if (result.martin_step) {
                 martinStep = result.martin_step;
                 updateMartinUI();
             }
-            
+
+            console.log('[placeDemoOrder] ✅ Order success - calling fetchDemoData()');
             fetchDemoData();
+        } else {
+            console.error('[placeDemoOrder] ❌ Order failed:', result?.message);
         }
     } catch (e) {
+        console.error('[placeDemoOrder] ❌ Network error:', e);
         showToast('Network error', 'error');
     }
+    console.log('[placeDemoOrder] 🔴 END');
 }
 
 // ========== Demo Close ==========
@@ -187,22 +196,30 @@ async function resetDemo() {
 
 // ========== Fetch Demo Data ==========
 async function fetchDemoData() {
-    if (!isDemo) return;
-    
+    if (!isDemo) {
+        console.log('[fetchDemoData] ⚠️ Not in Demo mode, skipping');
+        return;
+    }
+
+    console.log('[fetchDemoData] 🔵 START - Fetching account info...');
     try {
         const response = await fetch(`${API_URL}/demo/account-info`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.json();
-        
+        console.log('[fetchDemoData] 📦 Received data:', data);
+        console.log('[fetchDemoData] 📍 Position data:', data.position);
+        console.log('[fetchDemoData] 📊 Positions count:', data.positions_count);
+
         if (data) {
             // Auto-closed position
             if (data.auto_closed) {
+                console.log('[fetchDemoData] 🔒 Position auto-closed');
                 playSound('close');
-                
+
                 const profit = data.closed_profit || 0;
                 const isWin = data.is_win !== false && profit >= 0;
-                
+
                 if (currentMode === 'martin' && martinEnabled) {
                     if (data.martin_reset || isWin) {
                         martinStep = 1;
@@ -222,8 +239,9 @@ async function fetchDemoData() {
                         showToast(data.message || `💔 손절! $${profit.toFixed(2)}`, 'error');
                     }
                 }
-                
+
                 updateTodayPL(profit);
+                console.log('[fetchDemoData] 📞 Calling updatePositionUI(false, null) - auto closed');
                 updatePositionUI(false, null);
             }
             
@@ -245,23 +263,34 @@ async function fetchDemoData() {
             
             // Position
             if (data.position) {
+                console.log('[fetchDemoData] ✅ Position exists!');
+                console.log('[fetchDemoData] 📞 Calling updatePositionUI(true, posData)');
+                console.log('[fetchDemoData] Position details:', {
+                    type: data.position.type,
+                    symbol: data.position.symbol,
+                    entry: data.position.entry,
+                    profit: data.position.profit,
+                    target: data.position.target
+                });
                 updatePositionUI(true, data.position);
-                
+
                 const pos = data.position;
                 const currentTarget = pos.target || targetAmount;
-                
+
                 if (currentTarget > 0 && !isClosing) {
                     if (pos.profit >= currentTarget) {
-                        console.log('[FRONTEND] WIN Target reached!');
+                        console.log('[fetchDemoData] 🎯 WIN Target reached!');
                         isClosing = true;
                         closeDemoPosition();
                     } else if (pos.profit <= -currentTarget) {
-                        console.log('[FRONTEND] LOSE Target reached!');
+                        console.log('[fetchDemoData] 💔 LOSE Target reached!');
                         isClosing = true;
                         closeDemoPosition();
                     }
                 }
             } else {
+                console.log('[fetchDemoData] ❌ No position');
+                console.log('[fetchDemoData] 📞 Calling updatePositionUI(false, null)');
                 updatePositionUI(false, null);
                 isClosing = false;
             }
@@ -300,6 +329,8 @@ async function fetchDemoData() {
             }
         }
     } catch (error) {
-        console.error('Demo fetch error:', error);
+        console.error('[fetchDemoData] ❌ ERROR:', error);
     }
+
+    console.log('[fetchDemoData] 🔴 END');
 }

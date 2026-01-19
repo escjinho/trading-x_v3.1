@@ -293,13 +293,20 @@ async function checkUserMode() {
 // ========== Demo 데이터 조회 ==========
 async function fetchDemoData() {
     // Demo 모드가 아니면 실행 안 함
-    if (!isDemo) return;
-    
+    if (!isDemo) {
+        console.log('[fetchDemoData] ⚠️ Not in Demo mode, skipping');
+        return;
+    }
+
+    console.log('[fetchDemoData] 🔵 START - Fetching account info...');
     try {
         const response = await fetch(`${API_URL}/demo/account-info`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.json();
+        console.log('[fetchDemoData] 📦 Received data:', data);
+        console.log('[fetchDemoData] 📍 Position data:', data.position);
+        console.log('[fetchDemoData] 📊 Positions count:', data.positions_count);
         
         if (data) {
             // 백엔드에서 자동 청산된 경우
@@ -340,45 +347,72 @@ async function fetchDemoData() {
                 updatePositionUI(false, null);
             }
             
-            document.getElementById('homeBalance').textContent = '$' + (data.balance || 10000).toLocaleString(undefined, {minimumFractionDigits: 2});
-            document.getElementById('homeBroker').textContent = data.broker || 'Demo';
-            document.getElementById('homeAccount').textContent = data.account || 'DEMO';
-            document.getElementById('homeLeverage').textContent = '1:' + (data.leverage || 500);
-            document.getElementById('homeServer').textContent = data.server || 'Demo';
-            document.getElementById('homeEquity').textContent = '$' + (data.equity || 10000).toLocaleString(undefined, {minimumFractionDigits: 2});
-            document.getElementById('homeFreeMargin').textContent = '$' + (data.balance || 10000).toLocaleString(undefined, {minimumFractionDigits: 2});
-            document.getElementById('homePositions').textContent = data.positions_count || 0;
-            document.getElementById('tradeBalance').textContent = '$' + Math.round(data.balance || 10000).toLocaleString();
-            
-            // Account 탭 업데이트
-            document.getElementById('accBalance').textContent = '$' + Math.round(data.balance || 10000).toLocaleString();
-            document.getElementById('accEquity').textContent = '$' + Math.round(data.equity || 10000).toLocaleString();
-            document.getElementById('accMargin').textContent = '$0';
-            document.getElementById('accFree').textContent = '$' + Math.round(data.balance || 10000).toLocaleString();
+            // Home 탭 업데이트 (null 체크 추가)
+            const homeBalance = document.getElementById('homeBalance');
+            const homeBroker = document.getElementById('homeBroker');
+            const homeAccount = document.getElementById('homeAccount');
+            const homeLeverage = document.getElementById('homeLeverage');
+            const homeServer = document.getElementById('homeServer');
+            const homeEquity = document.getElementById('homeEquity');
+            const homeFreeMargin = document.getElementById('homeFreeMargin');
+            const homePositions = document.getElementById('homePositions');
+            const tradeBalance = document.getElementById('tradeBalance');
+
+            if (homeBalance) homeBalance.textContent = '$' + (data.balance || 10000).toLocaleString(undefined, {minimumFractionDigits: 2});
+            if (homeBroker) homeBroker.textContent = data.broker || 'Demo';
+            if (homeAccount) homeAccount.textContent = data.account || 'DEMO';
+            if (homeLeverage) homeLeverage.textContent = '1:' + (data.leverage || 500);
+            if (homeServer) homeServer.textContent = data.server || 'Demo';
+            if (homeEquity) homeEquity.textContent = '$' + (data.equity || 10000).toLocaleString(undefined, {minimumFractionDigits: 2});
+            if (homeFreeMargin) homeFreeMargin.textContent = '$' + (data.balance || 10000).toLocaleString(undefined, {minimumFractionDigits: 2});
+            if (homePositions) homePositions.textContent = data.positions_count || 0;
+            if (tradeBalance) tradeBalance.textContent = '$' + Math.round(data.balance || 10000).toLocaleString();
+
+            // Account 탭 업데이트 (null 체크 추가)
+            const accBalance = document.getElementById('accBalance');
+            const accEquity = document.getElementById('accEquity');
+            const accMargin = document.getElementById('accMargin');
+            const accFree = document.getElementById('accFree');
+
+            if (accBalance) accBalance.textContent = '$' + Math.round(data.balance || 10000).toLocaleString();
+            if (accEquity) accEquity.textContent = '$' + Math.round(data.equity || 10000).toLocaleString();
+            if (accMargin) accMargin.textContent = '$0';
+            if (accFree) accFree.textContent = '$' + Math.round(data.balance || 10000).toLocaleString();
             
             // 포지션 정보
             if (data.position) {
+                console.log('[fetchDemoData] ✅ Position exists!');
+                console.log('[fetchDemoData] 📞 Calling updatePositionUI(true, posData)');
+                console.log('[fetchDemoData] Position details:', {
+                    type: data.position.type,
+                    symbol: data.position.symbol,
+                    entry: data.position.entry,
+                    profit: data.position.profit,
+                    target: data.position.target
+                });
                 updatePositionUI(true, data.position);
-                
+
                 // 프론트엔드에서도 목표 도달 체크 (빠른 청산)
                 const pos = data.position;
                 const currentTarget = pos.target || targetAmount;
-                
+
                 // WIN 또는 LOSE 조건 체크
                 if (currentTarget > 0 && !isClosing) {
                     if (pos.profit >= currentTarget) {
                         // WIN 조건
-                        console.log('[FRONTEND] WIN Target reached! Profit:', pos.profit, '>=', currentTarget);
+                        console.log('[fetchDemoData] 🎯 WIN Target reached! Profit:', pos.profit, '>=', currentTarget);
                         isClosing = true;
                         closeDemoPosition();
                     } else if (pos.profit <= -currentTarget) {
                         // LOSE 조건
-                        console.log('[FRONTEND] LOSE Target reached! Profit:', pos.profit, '<=', -currentTarget);
+                        console.log('[fetchDemoData] 💔 LOSE Target reached! Profit:', pos.profit, '<=', -currentTarget);
                         isClosing = true;
                         closeDemoPosition();
                     }
                 }
             } else {
+                console.log('[fetchDemoData] ❌ No position');
+                console.log('[fetchDemoData] 📞 Calling updatePositionUI(false, null)');
                 updatePositionUI(false, null);
                 isClosing = false;  // 포지션 없으면 플래그 해제
             }
@@ -388,6 +422,29 @@ async function fetchDemoData() {
             if (quickPanel && quickPanel.classList.contains('active')) {
                 updateQuickPanelFromData(data);
             }
+
+            // ========== 인디케이터 업데이트 추가 ==========
+            try {
+                const indResponse = await fetch(`${API_URL}/mt5/indicators/${currentSymbol || 'BTCUSD'}`);
+                const indData = await indResponse.json();
+                if (indData) {
+                    document.getElementById('indSell').textContent = indData.sell || 0;
+                    document.getElementById('indNeutral').textContent = indData.neutral || 0;
+                    document.getElementById('indBuy').textContent = indData.buy || 0;
+                    document.getElementById('chartIndSell').textContent = indData.sell || 0;
+                    document.getElementById('chartIndNeutral').textContent = indData.neutral || 0;
+                    document.getElementById('chartIndBuy').textContent = indData.buy || 0;
+                    
+                    if (indData.score !== undefined) {
+                        baseScore = indData.score;
+                        targetScore = indData.score;
+                        chartTargetScore = indData.score;
+                    }
+                }
+            } catch (e) {
+                console.log('[fetchDemoData] Indicator fetch error:', e);
+            }
+            // ========== 인디케이터 업데이트 끝 ==========
             
             // Demo 마틴 상태 조회 (변경된 경우에만 업데이트)
             if (currentMode === 'martin' && martinEnabled) {
@@ -418,8 +475,10 @@ async function fetchDemoData() {
             }
         }
     } catch (error) {
-        console.error('Demo fetch error:', error);
+        console.error('[fetchDemoData] ❌ ERROR:', error);
     }
+
+    console.log('[fetchDemoData] 🔴 END');
 }
 
 // Initialize

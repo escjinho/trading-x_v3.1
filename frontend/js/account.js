@@ -1,55 +1,70 @@
 /* ========================================
    Trading-X Account Tab
-   거래 내역 로드
+   Account Info 업데이트
    ======================================== */
 
-// ========== Load History ==========
-async function loadHistory() {
-    const container = document.getElementById('historyList');
-    container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-muted);">Loading...</div>';
-    
-    try {
-        const endpoint = isDemo ? '/demo/history' : '/mt5/history';
-        const response = await fetch(`${API_URL}${endpoint}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await response.json();
-        
-        if (data.history && data.history.length > 0) {
-            let html = '';
-            data.history.forEach(item => {
-                const profitClass = item.profit >= 0 ? 'positive' : 'negative';
-                const profitSign = item.profit >= 0 ? '+' : '';
-                const typeClass = item.type === 'BUY' ? 'buy' : 'sell';
-                
-                html += `
-                    <div class="history-item">
-                        <div>
-                            <div class="history-symbol">${item.symbol}</div>
-                            <div class="history-time">
-                                <span style="color: ${item.type === 'BUY' ? 'var(--buy-color)' : 'var(--sell-color)'}">${item.type}</span>
-                                • ${item.volume} lot • ${new Date(item.close_time).toLocaleString()}
-                            </div>
-                        </div>
-                        <div class="history-profit ${profitClass}">${profitSign}$${item.profit.toFixed(2)}</div>
-                    </div>
-                `;
-            });
-            container.innerHTML = html;
-        } else {
-            container.innerHTML = `
-                <div style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
-                    <span class="material-icons-round" style="font-size: 48px; opacity: 0.5; margin-bottom: 10px;">history</span>
-                    <div>거래 내역이 없습니다</div>
-                </div>
-            `;
-        }
-    } catch (e) {
-        container.innerHTML = `
-            <div style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
-                <span class="material-icons-round" style="font-size: 48px; opacity: 0.5; margin-bottom: 10px;">error_outline</span>
-                <div>내역을 불러올 수 없습니다</div>
-            </div>
-        `;
+// Account Info 업데이트 함수 (오늘 기준)
+function updateAccountInfoFromHistory(historyData) {
+    if (!historyData || historyData.length === 0) {
+        resetAccountInfo();
+        return;
     }
+    
+    // 오늘 날짜 (MM/DD 형식)
+    const today = new Date();
+    const todayStr = `${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}`;
+    
+    // 오늘 거래만 필터링
+    let todayTrades = historyData.filter(item => item.time && item.time.startsWith(todayStr));
+    
+    // 오늘 통계 계산
+    let todayWins = 0;
+    let todayLosses = 0;
+    let todayPL = 0;
+    
+    todayTrades.forEach(item => {
+        todayPL += item.profit;
+        if (item.profit >= 0) {
+            todayWins++;
+        } else {
+            todayLosses++;
+        }
+    });
+    
+    // Account Info UI 업데이트
+    const winLoseEl = document.getElementById('accWinLose');
+    const todayPLEl = document.getElementById('accTodayPL');
+    const currentPLEl = document.getElementById('accCurrentPL');
+    
+    if (winLoseEl) {
+        winLoseEl.textContent = `${todayWins} / ${todayLosses}`;
+    }
+    
+    if (todayPLEl) {
+        if (todayPL >= 0) {
+            todayPLEl.textContent = '+$' + todayPL.toFixed(2);
+            todayPLEl.style.color = 'var(--buy-color)';
+        } else {
+            todayPLEl.textContent = '-$' + Math.abs(todayPL).toFixed(2);
+            todayPLEl.style.color = 'var(--sell-color)';
+        }
+    }
+    
+    if (currentPLEl) {
+        currentPLEl.textContent = '$0.00';
+    }
+}
+
+// Account Info 초기화
+function resetAccountInfo() {
+    const winLoseEl = document.getElementById('accWinLose');
+    const todayPLEl = document.getElementById('accTodayPL');
+    const currentPLEl = document.getElementById('accCurrentPL');
+    
+    if (winLoseEl) winLoseEl.textContent = '0 / 0';
+    if (todayPLEl) {
+        todayPLEl.textContent = '+$0.00';
+        todayPLEl.style.color = 'var(--buy-color)';
+    }
+    if (currentPLEl) currentPLEl.textContent = '$0.00';
 }

@@ -45,61 +45,61 @@
                     <!-- 시간대별 인사 -->
                     <div class="greeting-section">
                         <div style="text-align: center;">
-                            <span class="greeting-text" id="greetingText" style="font-size: 24px; font-weight: 600; white-space: nowrap;">Good Evening, Trader! 🌙</span>
+                            <span class="greeting-text" id="greetingText" style="font-size: 28px; font-weight: 600; white-space: nowrap;">Good Evening, Trader! 🌙</span>
                         </div>
                         <span class="greeting-sub" id="greetingSub" style="font-size: 13px; font-weight: 600;">오늘 하루 수고하셨어요!</span>
                     </div>
                     
                     <!-- 모드 표시 -->
-                    <div id="heroModeBadge" style="margin-top: 18px; font-size: 26px; font-weight: 700; color: #e0e0e0; letter-spacing: 3px;">
+                    <div id="heroModeBadge" style="margin-top: 18px; font-size: 26px; font-weight: 700; color: #ffffff; letter-spacing: 3px;">
                         Trading-X Demo
                     </div>
                 </div>
                 
                 <!-- 프로모션 배너 (심플) -->
-                <div class="promo-slider-container">
-                    <div class="promo-slider" id="promoSlider">
-                        <!-- 카드 1: 친구 초대 -->
-                        <div class="promo-card" style="background: linear-gradient(135deg, #1e2530 0%, #151a22 100%); border-color: var(--border-color);">
-                            <div class="promo-content" style="flex: 1;">
-                                <div class="promo-title" style="font-size: 16px; font-weight: 700;">친구 초대하고 $50 받기!</div>
-                                <div class="promo-desc" style="font-size: 12px;">추천인 코드를 공유하고 보너스를 받으세요</div>
-                            </div>
-                            <div class="promo-action">
-                                <button class="promo-btn" style="background: linear-gradient(135deg, #00b450 0%, #008040 100%); color: #fff; font-size: 13px; font-weight: 600; padding: 8px 14px;" onclick="showToast('추천 코드: TRADEX2024', 'success')">코드 복사</button>
-                            </div>
-                        </div>
-                        
-                        <!-- 카드 2: 신규 가입 이벤트 -->
-                        <div class="promo-card" style="background: linear-gradient(135deg, #1e2530 0%, #151a22 100%); border-color: var(--border-color);">
-                            <div class="promo-content" style="flex: 1;">
-                                <div class="promo-title" style="font-size: 16px; font-weight: 700;">신규 가입 이벤트!</div>
-                                <div class="promo-desc" style="font-size: 12px;">첫 입금 시 100% 보너스 지급</div>
-                            </div>
-                            <div class="promo-action">
-                                <button class="promo-btn" style="background: linear-gradient(135deg, #8a2be2 0%, #6a1bb2 100%); color: #fff; font-size: 13px; font-weight: 600; padding: 8px 14px;">자세히 →</button>
-                            </div>
-                        </div>
-                        
-                        <!-- 카드 3: VIP 프로그램 -->
-                        <div class="promo-card" style="background: linear-gradient(135deg, #1e2530 0%, #151a22 100%); border-color: var(--border-color);">
-                            <div class="promo-content" style="flex: 1;">
-                                <div class="promo-title" style="font-size: 16px; font-weight: 700;">VIP 프로그램</div>
-                                <div class="promo-desc" style="font-size: 12px;">거래량에 따른 특별 혜택을 누리세요</div>
-                            </div>
-                            <div class="promo-action">
-                                <button class="promo-btn" style="background: linear-gradient(135deg, #ffa500 0%, #cc8400 100%); color: #fff; font-size: 13px; font-weight: 600; padding: 8px 14px;">가입하기</button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- 슬라이드 인디케이터 -->
-                    <div class="promo-indicators">
-                        <span class="promo-dot active" onclick="scrollToPromo(0)"></span>
-                        <span class="promo-dot" onclick="scrollToPromo(1)"></span>
-                        <span class="promo-dot" onclick="scrollToPromo(2)"></span>
-                    </div>
-                </div>
+<div class="promo-slider-container">
+    <div class="promo-slider" id="promoSlider">
+        <!-- 카드 1: 친구 초대 -->
+        <div class="promo-card" style="background: linear-gradient(135deg, #1e2530 0%, #151a22 100%); border-color: var(--border-color);">
+            <div class="promo-content" style="flex: 1;">
+                <div class="promo-title" style="font-size: 18px; font-weight: 700;">친구 초대하고 $50 받기!</div>
+                <div class="promo-desc" style="font-size: 12px;">추천인 코드를 공유하고 보너스를 받으세요</div>
+            </div>
+            <div class="promo-action">
+                <button class="promo-btn" style="background: linear-gradient(135deg, #00b450 0%, #008040 100%); color: #fff; font-size: 13px; font-weight: 600; padding: 8px 14px;" onclick="showToast('추천 코드: TRADEX2024', 'success')">코드 복사</button>
+            </div>
+        </div>
+        
+        <!-- 카드 2: 신규 가입 이벤트 -->
+        <div class="promo-card" style="background: linear-gradient(135deg, #1e2530 0%, #151a22 100%); border-color: var(--border-color);">
+            <div class="promo-content" style="flex: 1;">
+                <div class="promo-title" style="font-size: 18px; font-weight: 700;">신규 가입 이벤트!</div>
+                <div class="promo-desc" style="font-size: 12px;">첫 입금 시 100% 보너스 지급</div>
+            </div>
+            <div class="promo-action">
+                <button class="promo-btn" style="background: linear-gradient(135deg, #8a2be2 0%, #6a1bb2 100%); color: #fff; font-size: 13px; font-weight: 600; padding: 8px 14px;">자세히 →</button>
+            </div>
+        </div>
+        
+        <!-- 카드 3: VIP 프로그램 -->
+        <div class="promo-card" style="background: linear-gradient(135deg, #1e2530 0%, #151a22 100%); border-color: var(--border-color);">
+            <div class="promo-content" style="flex: 1;">
+                <div class="promo-title" style="font-size: 18px; font-weight: 700;">VIP 프로그램</div>
+                <div class="promo-desc" style="font-size: 12px;">거래량에 따른 특별 혜택을 누리세요</div>
+            </div>
+            <div class="promo-action">
+                <button class="promo-btn" style="background: linear-gradient(135deg, #ffa500 0%, #cc8400 100%); color: #fff; font-size: 13px; font-weight: 600; padding: 8px 14px;">가입하기</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 슬라이드 인디케이터 -->
+    <div class="promo-indicators">
+        <span class="promo-dot active" onclick="scrollToPromo(0)"></span>
+        <span class="promo-dot" onclick="scrollToPromo(1)"></span>
+        <span class="promo-dot" onclick="scrollToPromo(2)"></span>
+    </div>
+</div>
                 
                 <!-- Trading Mode 전환 -->
                 <div class="card">
@@ -774,21 +774,95 @@
             </div>
             
             <!-- ========== Account 탭 ========== -->
-            <div class="page" id="page-account">
-                <div class="account-summary">
-                    <div class="summary-box"><div class="value" id="accBalance">$0</div><div class="label">Balance</div></div>
-                    <div class="summary-box"><div class="value" id="accEquity">$0</div><div class="label">Equity</div></div>
-                    <div class="summary-box"><div class="value" id="accMargin">$0</div><div class="label">Margin</div></div>
-                    <div class="summary-box"><div class="value" id="accFree">$0</div><div class="label">Free Margin</div></div>
-                </div>
-                <div class="card">
-                    <div class="card-title">
-                        <span class="material-icons-round" style="font-size: 18px; vertical-align: middle; margin-right: 5px;">history</span>
-                        Trade History
-                    </div>
-                    <div id="historyList"><p style="color: var(--text-muted); text-align: center; padding: 20px;">Loading...</p></div>
-                </div>
+<div class="page" id="page-account">
+    <!-- Account Info 섹션 -->
+<div class="card">
+    <div class="card-title">
+        <span class="material-icons-round" style="font-size: 18px; vertical-align: middle; margin-right: 5px;">account_balance</span>
+        Account Info
+    </div>
+    <div class="account-summary-v2">
+        <!-- 첫째 줄 -->
+        <div class="summary-box-v2">
+            <div class="summary-value" id="accBalance">$0.00</div>
+            <div class="summary-label">Balance</div>
+        </div>
+        <div class="summary-box-v2">
+            <div class="summary-value neutral" id="accFree">$0.00</div>
+            <div class="summary-label">Margin</div>
+        </div>
+        <div class="summary-box-v2">
+            <div class="summary-value positive" id="accTodayPL">+$0.00</div>
+            <div class="summary-label">Today P&L</div>
+        </div>
+        <!-- 둘째 줄 -->
+        <div class="summary-box-v2">
+            <div class="summary-value neutral" id="accEquity">$0.00</div>
+            <div class="summary-label">Equity</div>
+        </div>
+        <div class="summary-box-v2">
+            <div class="summary-value neutral" id="accWinLose">0 / 0</div>
+            <div class="summary-label">Win / Lose</div>
+        </div>
+        <div class="summary-box-v2">
+            <div class="summary-value neutral" id="accCurrentPL">$0.00</div>
+            <div class="summary-label">Current P&L</div>
+        </div>
+    </div>
+</div>
+    
+    <!-- Trade History 섹션 -->
+    <div class="card">
+        <div class="card-title">
+            <span class="material-icons-round" style="font-size: 18px; vertical-align: middle; margin-right: 5px;">history</span>
+            Trade History
+        </div>
+        
+        <!-- 필터 바 (All/수익/손실 + 기간 드롭다운) -->
+        <div class="history-filter-bar">
+            <div class="history-tabs-inline">
+                <button class="history-tab-inline active" data-filter="all" onclick="filterHistoryByType('all')">All</button>
+                <button class="history-tab-inline" data-filter="profit" onclick="filterHistoryByType('profit')">수익</button>
+                <button class="history-tab-inline" data-filter="loss" onclick="filterHistoryByType('loss')">손실</button>
             </div>
+            <div class="period-dropdown-container">
+                <button class="period-dropdown-btn" onclick="togglePeriodDropdown()">
+    <span id="selectedPeriodText">1주일</span>
+    <span class="material-icons-round" style="font-size: 18px;">expand_more</span>
+</button>
+<div class="period-dropdown" id="periodDropdown">
+    <div class="period-option" data-period="today" onclick="selectPeriod('today', '오늘')">오늘</div>
+    <div class="period-option active" data-period="week" onclick="selectPeriod('week', '1주일')">1주일</div>
+    <div class="period-option" data-period="month" onclick="selectPeriod('month', '1개월')">1개월</div>
+    <div class="period-option" data-period="all" onclick="selectPeriod('all', '전체')">전체</div>
+</div>
+            </div>
+        </div>
+        
+        <!-- 기간별 서머리 -->
+<div class="history-summary">
+    <div class="history-summary-item">
+        <span class="history-summary-label">Win Rate</span>
+        <span class="history-summary-value" id="summaryWinRate">0.0%</span>
+    </div>
+    <div class="history-summary-divider"></div>
+    <div class="history-summary-item">
+        <span class="history-summary-label">거래량</span>
+        <span class="history-summary-value" id="summaryVolume">0.00 lot</span>
+    </div>
+    <div class="history-summary-divider"></div>
+    <div class="history-summary-item">
+        <span class="history-summary-label">손익</span>
+        <span class="history-summary-value positive" id="summaryPL">+$0.00</span>
+    </div>
+</div>
+        
+        <!-- 거래 내역 리스트 -->
+        <div id="historyList">
+            <p style="color: var(--text-muted); text-align: center; padding: 20px;">Loading...</p>
+        </div>
+    </div>
+</div>
             
             <!-- ========== My 탭 ========== -->
             <div class="page" id="page-my">
@@ -1290,101 +1364,175 @@
             </div>
         </div>
         
-        <!-- 차트 서브메뉴 (바텀시트) -->
-        <div class="submenu-overlay" id="chartSubmenuOverlay" onclick="closeChartSubmenu()">
-            <div class="submenu-sheet" onclick="event.stopPropagation()">
-                <div class="submenu-handle"></div>
-                <div class="submenu-title">Chart 메뉴 선택</div>
-                
-                <!-- 종목 목록 -->
-                <div class="submenu-item" 
-                     onclick="selectSubmenuItem('watchlist')"
-                     onmousedown="submenuItemPressStart('watchlist', this)"
-                     onmouseup="submenuItemPressEnd()"
-                     onmouseleave="submenuItemPressEnd()"
-                     ontouchstart="submenuItemPressStart('watchlist', this)"
-                     ontouchend="submenuItemPressEnd()"
-                     ontouchcancel="submenuItemPressEnd()">
-                    <div class="submenu-item-icon">📋</div>
+        <!-- 차트 서브메뉴 (바텀시트) - New Design -->
+<div class="submenu-overlay" id="chartSubmenuOverlay" onclick="closeChartSubmenu()">
+    <div class="submenu-sheet" onclick="event.stopPropagation()">
+        <div class="submenu-handle"></div>
+        <div class="submenu-title">Chart</div>
+        
+        <div class="submenu-items">
+            <!-- 종목 목록 -->
+            <div class="submenu-item" 
+                 onclick="selectSubmenuItem('watchlist')"
+                 onmousedown="submenuItemPressStart('watchlist', this)"
+                 onmouseup="submenuItemPressEnd()"
+                 onmouseleave="submenuItemPressEnd()"
+                 ontouchstart="submenuItemPressStart('watchlist', this)"
+                 ontouchend="submenuItemPressEnd()"
+                 ontouchcancel="submenuItemPressEnd()">
+                <div class="submenu-item-left">
+                    <div class="submenu-item-icon cyan">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="22" height="22">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                        </svg>
+                    </div>
                     <div class="submenu-item-content">
                         <div class="submenu-item-title">종목 목록</div>
-                        <div class="submenu-item-hint">길게 눌러 기본 화면으로 등록</div>
+                        <div class="submenu-item-subtitle">Watchlist</div>
                     </div>
-                    <div class="submenu-item-badge" id="submenuWatchlistBadge" style="display: none;">기본</div>
-                    <div class="submenu-item-progress"></div>
                 </div>
-                
-                <!-- 차트 보기 -->
-                <div class="submenu-item" 
-                     onclick="selectSubmenuItem('chart')"
-                     onmousedown="submenuItemPressStart('chart', this)"
-                     onmouseup="submenuItemPressEnd()"
-                     onmouseleave="submenuItemPressEnd()"
-                     ontouchstart="submenuItemPressStart('chart', this)"
-                     ontouchend="submenuItemPressEnd()"
-                     ontouchcancel="submenuItemPressEnd()">
-                    <div class="submenu-item-icon">📈</div>
+                <div class="submenu-item-badge" id="submenuWatchlistBadge" style="display: none;">기본</div>
+                <svg class="submenu-item-arrow" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+                <div class="submenu-item-progress"></div>
+            </div>
+            
+            <!-- 차트 보기 -->
+            <div class="submenu-item" 
+                 onclick="selectSubmenuItem('chart')"
+                 onmousedown="submenuItemPressStart('chart', this)"
+                 onmouseup="submenuItemPressEnd()"
+                 onmouseleave="submenuItemPressEnd()"
+                 ontouchstart="submenuItemPressStart('chart', this)"
+                 ontouchend="submenuItemPressEnd()"
+                 ontouchcancel="submenuItemPressEnd()">
+                <div class="submenu-item-left">
+                    <div class="submenu-item-icon emerald">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="22" height="22">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4v16" />
+                        </svg>
+                    </div>
                     <div class="submenu-item-content">
                         <div class="submenu-item-title">차트 보기</div>
-                        <div class="submenu-item-hint">길게 눌러 기본 화면으로 등록</div>
+                        <div class="submenu-item-subtitle">Chart View</div>
                     </div>
-                    <div class="submenu-item-badge" id="submenuChartBadge" style="display: none;">기본</div>
-                    <div class="submenu-item-progress"></div>
                 </div>
+                <div class="submenu-item-badge" id="submenuChartBadge" style="display: none;">기본</div>
+                <svg class="submenu-item-arrow" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+                <div class="submenu-item-progress"></div>
             </div>
         </div>
         
-        <!-- 서브메뉴 등록 토스트 -->
-        <div class="submenu-toast" id="submenuToast">
-            <div class="submenu-toast-icon">✅</div>
-            <div class="submenu-toast-title">"<span id="submenuToastViewName">차트 보기</span>" 등록 완료!</div>
-            <div class="submenu-toast-desc">앞으로 해당 탭을 길게 누르면<br>바로 이동합니다 🚀</div>
-        </div>
-        
-        <!-- Trade 서브메뉴 (바텀시트) -->
-        <div class="submenu-overlay" id="tradeSubmenuOverlay" onclick="closeTradeSubmenu()">
-            <div class="submenu-sheet" onclick="event.stopPropagation()">
-                <div class="submenu-handle"></div>
-                <div class="submenu-title">Trade 메뉴 선택</div>
-                
-                <!-- Buy/Sell 패널 -->
-                <div class="submenu-item" 
-                     onclick="selectTradeSubmenuItem('buysell')"
-                     onmousedown="tradeSubmenuItemPressStart('buysell', this)"
-                     onmouseup="tradeSubmenuItemPressEnd()"
-                     onmouseleave="tradeSubmenuItemPressEnd()"
-                     ontouchstart="tradeSubmenuItemPressStart('buysell', this)"
-                     ontouchend="tradeSubmenuItemPressEnd()"
-                     ontouchcancel="tradeSubmenuItemPressEnd()">
-                    <div class="submenu-item-icon">📊</div>
-                    <div class="submenu-item-content">
-                        <div class="submenu-item-title">Buy/Sell 패널</div>
-                        <div class="submenu-item-hint">길게 눌러 기본 화면으로 등록</div>
-                    </div>
-                    <div class="submenu-item-badge" id="submenuBuysellBadge" style="display: none;">기본</div>
-                    <div class="submenu-item-progress"></div>
-                </div>
-                
-                <!-- Quick & Easy 패널 -->
-                <div class="submenu-item" 
-                     onclick="selectTradeSubmenuItem('quick')"
-                     onmousedown="tradeSubmenuItemPressStart('quick', this)"
-                     onmouseup="tradeSubmenuItemPressEnd()"
-                     onmouseleave="tradeSubmenuItemPressEnd()"
-                     ontouchstart="tradeSubmenuItemPressStart('quick', this)"
-                     ontouchend="tradeSubmenuItemPressEnd()"
-                     ontouchcancel="tradeSubmenuItemPressEnd()">
-                    <div class="submenu-item-icon">⚡</div>
-                    <div class="submenu-item-content">
-                        <div class="submenu-item-title">Quick & Easy 패널</div>
-                        <div class="submenu-item-hint">길게 눌러 기본 화면으로 등록</div>
-                    </div>
-                    <div class="submenu-item-badge" id="submenuQuickBadge" style="display: none;">기본</div>
-                    <div class="submenu-item-progress"></div>
-                </div>
-            </div>
+        <div class="submenu-hint">
+            <p>💡 길게 누르면 기본 화면으로 등록됩니다</p>
         </div>
     </div>
+</div>
+
+<!-- 서브메뉴 등록 토스트 -->
+<div class="submenu-toast" id="submenuToast">
+    <div class="submenu-toast-icon">✅</div>
+    <div class="submenu-toast-title">"<span id="submenuToastViewName">차트 보기</span>" 등록 완료!</div>
+    <div class="submenu-toast-desc">앞으로 해당 탭을 길게 누르면<br>바로 이동합니다 🚀</div>
+</div>
+
+<!-- Trade 서브메뉴 (바텀시트) - New Design -->
+<div class="submenu-overlay" id="tradeSubmenuOverlay" onclick="closeTradeSubmenu()">
+    <div class="submenu-sheet" onclick="event.stopPropagation()">
+        <div class="submenu-handle"></div>
+        <div class="submenu-title">Trade</div>
+        
+        <div class="submenu-items">
+            <!-- Buy/Sell 패널 -->
+            <div class="submenu-item" 
+                 onclick="selectTradeSubmenuItem('buysell')"
+                 onmousedown="tradeSubmenuItemPressStart('buysell', this)"
+                 onmouseup="tradeSubmenuItemPressEnd()"
+                 onmouseleave="tradeSubmenuItemPressEnd()"
+                 ontouchstart="tradeSubmenuItemPressStart('buysell', this)"
+                 ontouchend="tradeSubmenuItemPressEnd()"
+                 ontouchcancel="tradeSubmenuItemPressEnd()">
+                <div class="submenu-item-left">
+                    <div class="submenu-item-icon cyan">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="22" height="22">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                        </svg>
+                    </div>
+                    <div class="submenu-item-content">
+                        <div class="submenu-item-title">Buy/Sell 패널</div>
+                        <div class="submenu-item-subtitle">Binary Mode</div>
+                    </div>
+                </div>
+                <div class="submenu-item-badge" id="submenuBuysellBadge" style="display: none;">기본</div>
+                <svg class="submenu-item-arrow" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+                <div class="submenu-item-progress"></div>
+            </div>
+            
+            <!-- Quick & Easy 패널 -->
+            <div class="submenu-item" 
+                 onclick="selectTradeSubmenuItem('quick')"
+                 onmousedown="tradeSubmenuItemPressStart('quick', this)"
+                 onmouseup="tradeSubmenuItemPressEnd()"
+                 onmouseleave="tradeSubmenuItemPressEnd()"
+                 ontouchstart="tradeSubmenuItemPressStart('quick', this)"
+                 ontouchend="tradeSubmenuItemPressEnd()"
+                 ontouchcancel="tradeSubmenuItemPressEnd()">
+                <div class="submenu-item-left">
+                    <div class="submenu-item-icon emerald">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="22" height="22">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                    </div>
+                    <div class="submenu-item-content">
+                        <div class="submenu-item-title">Multi Order 패널</div>
+                        <div class="submenu-item-subtitle">Multiple Mode</div>
+                    </div>
+                </div>
+                <div class="submenu-item-badge" id="submenuQuickBadge" style="display: none;">기본</div>
+                <svg class="submenu-item-arrow" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+                <div class="submenu-item-progress"></div>
+            </div>
+            
+            <!-- Multi Order 패널 -->
+            <div class="submenu-item" 
+                 onclick="selectTradeSubmenuItem('multi')"
+                 onmousedown="tradeSubmenuItemPressStart('multi', this)"
+                 onmouseup="tradeSubmenuItemPressEnd()"
+                 onmouseleave="tradeSubmenuItemPressEnd()"
+                 ontouchstart="tradeSubmenuItemPressStart('multi', this)"
+                 ontouchend="tradeSubmenuItemPressEnd()"
+                 ontouchcancel="tradeSubmenuItemPressEnd()">
+                <div class="submenu-item-left">
+                    <div class="submenu-item-icon" style="background: rgba(168, 85, 247, 0.12); color: #a855f7;">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="22" height="22">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                    </div>
+                    <div class="submenu-item-content">
+                        <div class="submenu-item-title">Quick & Easy 패널</div>
+                        <div class="submenu-item-subtitle">Easy Mode</div>
+                    </div>
+                </div>
+                <div class="submenu-item-badge" id="submenuMultiBadge" style="display: none;">기본</div>
+                <svg class="submenu-item-arrow" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+                <div class="submenu-item-progress"></div>
+            </div>
+        </div>
+        
+        <div class="submenu-hint">
+            <p>💡 길게 누르면 기본 화면으로 등록됩니다</p>
+        </div>
+    </div>
+</div>
 
     <script src="js/config.js"></script>
     <script src="js/state.js"></script>
