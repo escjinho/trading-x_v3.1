@@ -40,13 +40,13 @@ const ChartPanel = {
                 mode: LightweightCharts.CrosshairMode.Normal
             },
             rightPriceScale: {
-                borderColor: '#2d3f50',
+                borderColor: '#00d4ff',
                 autoScale: true,
                 visible: true,
-                scaleMargins: { top: 0.1, bottom: 0.1 },
+                scaleMargins: { top: 0.1, bottom: 0.2 },
             },
             timeScale: {
-                borderColor: '#2d3f50',
+                borderColor: '#00d4ff',
                 timeVisible: true
             },
             localization: {
@@ -154,9 +154,10 @@ const ChartPanel = {
     },
 
     /**
-     * 타임프레임 버튼 설정
-     */
+     * 타임프레임 버튼 설정 (기존 호환 + 드롭다운)
+    */
     setupTimeframeButtons() {
+        // 기존 버튼 방식 호환
         document.querySelectorAll('.tf-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
@@ -164,6 +165,18 @@ const ChartPanel = {
                 currentTimeframe = btn.dataset.tf;
                 this.loadCandles();
             });
+        });
+    
+        // 드롭다운 외부 클릭 시 닫기
+        document.addEventListener('click', (e) => {
+            const container = document.querySelector('.timeframe-dropdown-container');
+            const dropdown = document.getElementById('tfDropdown');
+            const btn = document.getElementById('tfDropdownBtn');
+        
+            if (container && !container.contains(e.target)) {
+                dropdown?.classList.remove('show');
+                btn?.classList.remove('open');
+            }
         });
     },
 
@@ -188,9 +201,54 @@ const ChartPanel = {
     },
 
     /**
-     * 패널 정리
-     */
-    destroy() {
+ * 보조지표 설정
+ */
+setIndicators(settings) {
+    console.log('[ChartPanel] Indicator settings:', settings);
+    
+    // 볼린저 밴드 표시/숨김
+    if (bbUpperSeries) {
+        bbUpperSeries.applyOptions({ visible: settings.bb });
+        bbMiddleSeries.applyOptions({ visible: settings.bb });
+        bbLowerSeries.applyOptions({ visible: settings.bb });
+    }
+    
+    // LWMA 표시/숨김
+    if (lwmaSeries) {
+        lwmaSeries.applyOptions({ visible: settings.lwma });
+    }
+    
+    // EMA (새로 추가 필요 시)
+    if (settings.ema && !this.emaSeries) {
+        this.emaSeries = chart.addLineSeries({
+            color: '#ff6b6b',
+            lineWidth: 2,
+            priceLineVisible: false,
+            lastValueVisible: false
+        });
+        // EMA 데이터는 서버에서 받아와야 함 - 임시로 비워둠
+    } else if (this.emaSeries) {
+        this.emaSeries.applyOptions({ visible: settings.ema });
+    }
+    
+    // SMA (새로 추가 필요 시)
+    if (settings.sma && !this.smaSeries) {
+        this.smaSeries = chart.addLineSeries({
+            color: '#4ecdc4',
+            lineWidth: 2,
+            priceLineVisible: false,
+            lastValueVisible: false
+        });
+        // SMA 데이터는 서버에서 받아와야 함 - 임시로 비워둠
+    } else if (this.smaSeries) {
+        this.smaSeries.applyOptions({ visible: settings.sma });
+    }
+},
+
+/**
+ * 패널 정리
+ */
+destroy() {
         if (chart) {
             chart.remove();
             chart = null;

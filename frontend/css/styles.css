@@ -1704,7 +1704,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
 }
 
 .summary-value {
-    font-size: 18px;
+    font-size: 19px;
     font-weight: 700;
     color: var(--accent-cyan);
     margin-bottom: 4px;
@@ -1739,7 +1739,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
     gap: 0;
     background: var(--bg-tertiary);
     border-radius: 8px;
-    padding: 3px;
+    padding: 2px;
     flex: 0 1 auto;
     min-width: 220px;
     max-width: 280px;
@@ -1747,12 +1747,12 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
 
 .history-tab-inline {
     flex: 1;
-    padding: 10px 14px;
+    padding: 8px 14px;
     background: transparent;
     border: none;
     border-radius: 6px;
     color: var(--text-muted);
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
@@ -1764,6 +1764,10 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
     background: var(--bg-secondary);
     color: var(--accent-cyan);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.history-tab-inline[data-filter="all"] {
+    font-size: 15px;
 }
 
 /* 기간 드롭다운 */
@@ -1851,7 +1855,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
 }
 
 .history-summary-value {
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 700;
     color: var(--text-primary);
 }
@@ -1860,6 +1864,10 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
 }
 .history-summary-value.negative {
     color: var(--sell-color);
+}
+
+#summaryVolume {
+    font-size: 16px;
 }
 
 .history-summary-divider {

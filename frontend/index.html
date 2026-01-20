@@ -4,10 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Trading-X</title>
+    <script>
+        // 인트로 체크 - 인트로를 안 봤으면 intro.html로 리다이렉트
+        if (!sessionStorage.getItem('intro_shown')) {
+            window.location.replace('intro.html');
+        }
+    </script>
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/chart.css">
 </head>
 <body>
     <div class="app">
@@ -256,6 +263,9 @@
                 <!-- 차트 상세 페이지 -->
                 <div class="chart-detail-container" id="chartDetailContainer">
                 
+                <!-- 차트 글로우 박스 (헤더 + 차트 + 호가) -->
+                <div class="chart-glow-box">
+                
                 <!-- Symbol Row -->
                 <div class="chart-symbol-row">
                     <div class="chart-symbol-info" onclick="toggleChartSymbolDropdown()">
@@ -268,47 +278,62 @@
                             <div class="chart-symbol-id" id="chartSymbolId">BTCUSD</div>
                         </div>
                     </div>
-                    <div class="timeframe-buttons">
-                        <button class="tf-btn active" data-tf="M1">1m</button>
-                        <button class="tf-btn" data-tf="M5">5m</button>
-                        <button class="tf-btn" data-tf="M15">15m</button>
-                        <button class="tf-btn" data-tf="H1">1H</button>
+                    
+                    <!-- 버튼 그룹 (보조지표 + 타임프레임) -->
+                    <div class="chart-btn-group">
+                        <!-- 보조지표 버튼 -->
+                        <button class="ind-popup-btn" id="indPopupBtn" onclick="openIndPopup()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 3v18h18"/>
+                                <path d="M18 9l-5 5-4-4-3 3"/>
+                            </svg>
+                            <span>지표</span>
+                        </button>
+                        
+                        <!-- 타임프레임 버튼 -->
+                        <button class="tf-popup-btn" id="tfPopupBtn" onclick="openTfPopup()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            <span id="tfBtnText">1M</span>
+                        </button>
                     </div>
                     
                     <!-- Symbol Dropdown -->
                     <div class="chart-symbol-dropdown" id="chartSymbolDropdown">
                         <div style="padding: 10px 15px; font-size: 11px; color: var(--accent-cyan); border-bottom: 1px solid var(--border-color);">⭐ 즐겨찾기</div>
-                        <div class="chart-symbol-option favorite" data-symbol="BTCUSD" data-name="Bitcoin" data-icon="₿" data-color="#f7931a" onclick="selectChartSymbol(this)">
+                        <div class="chart-symbol-option favorite" data-symbol="BTCUSD" data-name="Bitcoin" data-icon="₿" data-color="#f7931a" onclick="selectChartSymbol(this); updateSymbolInfo(this.dataset.symbol);">
                             <span style="font-size: 20px; color: #f7931a;">₿</span>
                             <div><div style="font-weight: bold;">Bitcoin</div><div style="font-size:11px;color:var(--text-muted);">BTCUSD</div></div>
                             <span class="favorite-star">⭐</span>
                         </div>
-                        <div class="chart-symbol-option favorite" data-symbol="EURUSD.r" data-name="Euro/Dollar" data-icon="€" data-color="#0052cc" onclick="selectChartSymbol(this)">
+                        <div class="chart-symbol-option favorite" data-symbol="EURUSD.r" data-name="Euro/Dollar" data-icon="€" data-color="#0052cc" onclick="selectChartSymbol(this); updateSymbolInfo(this.dataset.symbol);">
                             <span style="font-size: 20px; color: #0052cc;">€</span>
                             <div><div style="font-weight: bold;">Euro/Dollar</div><div style="font-size:11px;color:var(--text-muted);">EURUSD.r</div></div>
                             <span class="favorite-star">⭐</span>
                         </div>
-                        <div class="chart-symbol-option favorite" data-symbol="USDJPY.r" data-name="Dollar/Yen" data-icon="¥" data-color="#dc143c" onclick="selectChartSymbol(this)">
+                        <div class="chart-symbol-option favorite" data-symbol="USDJPY.r" data-name="Dollar/Yen" data-icon="¥" data-color="#dc143c" onclick="selectChartSymbol(this); updateSymbolInfo(this.dataset.symbol);">
                             <span style="font-size: 20px; color: #dc143c;">¥</span>
                             <div><div style="font-weight: bold;">Dollar/Yen</div><div style="font-size:11px;color:var(--text-muted);">USDJPY.r</div></div>
                             <span class="favorite-star">⭐</span>
                         </div>
-                        <div class="chart-symbol-option favorite" data-symbol="XAUUSD.r" data-name="Gold" data-icon="✦" data-color="#ffd700" onclick="selectChartSymbol(this)">
+                        <div class="chart-symbol-option favorite" data-symbol="XAUUSD.r" data-name="Gold" data-icon="✦" data-color="#ffd700" onclick="selectChartSymbol(this); updateSymbolInfo(this.dataset.symbol);">
                             <span style="font-size: 20px; color: #ffd700;">✦</span>
                             <div><div style="font-weight: bold;">Gold</div><div style="font-size:11px;color:var(--text-muted);">XAUUSD.r</div></div>
                             <span class="favorite-star">⭐</span>
                         </div>
-                        <div class="chart-symbol-option favorite" data-symbol="US100." data-name="NASDAQ" data-icon="⬡" data-color="#00b450" onclick="selectChartSymbol(this)">
+                        <div class="chart-symbol-option favorite" data-symbol="US100." data-name="NASDAQ" data-icon="⬡" data-color="#00b450" onclick="selectChartSymbol(this); updateSymbolInfo(this.dataset.symbol);">
                             <span style="font-size: 20px; color: #00b450;">⬡</span>
                             <div><div style="font-weight: bold;">NASDAQ</div><div style="font-size:11px;color:var(--text-muted);">US100.</div></div>
                             <span class="favorite-star">⭐</span>
                         </div>
                         <div style="padding: 10px 15px; font-size: 11px; color: var(--text-muted); border-bottom: 1px solid var(--border-color); border-top: 1px solid var(--border-color);">기타 종목</div>
-                        <div class="chart-symbol-option" data-symbol="GBPUSD.r" data-name="Pound/Dollar" data-icon="£" data-color="#9c27b0" onclick="selectChartSymbol(this)">
+                        <div class="chart-symbol-option" data-symbol="GBPUSD.r" data-name="Pound/Dollar" data-icon="£" data-color="#9c27b0" onclick="selectChartSymbol(this); updateSymbolInfo(this.dataset.symbol);">
                             <span style="font-size: 20px; color: #9c27b0;">£</span>
                             <div><div style="font-weight: bold;">Pound/Dollar</div><div style="font-size:11px;color:var(--text-muted);">GBPUSD.r</div></div>
                         </div>
-                        <div class="chart-symbol-option" data-symbol="ETHUSD" data-name="Ethereum" data-icon="Ξ" data-color="#627eea" onclick="selectChartSymbol(this)">
+                        <div class="chart-symbol-option" data-symbol="ETHUSD" data-name="Ethereum" data-icon="Ξ" data-color="#627eea" onclick="selectChartSymbol(this); updateSymbolInfo(this.dataset.symbol);">
                             <span style="font-size: 20px; color: #627eea;">Ξ</span>
                             <div><div style="font-weight: bold;">Ethereum</div><div style="font-size:11px;color:var(--text-muted);">ETHUSD</div></div>
                         </div>
@@ -329,6 +354,8 @@
                         <div class="price-value" id="chartAsk">-</div>
                     </div>
                 </div>
+                
+                </div><!-- chart-glow-box 닫기 -->
                 
                 <!-- Signal Section -->
                 <div class="chart-signal-section">
@@ -366,6 +393,122 @@
                             <div class="chart-indicator-count title-font" id="chartIndBuy" style="color: #00b450; font-family: Orbitron, sans-serif !important;">0</div>
                             <div class="chart-indicator-label">Buy</div>
                         </div>
+                    </div>
+                </div>
+                
+                <!-- 종목 정보 섹션 -->
+                <div class="symbol-info-section">
+                    <!-- 섹션 헤더 -->
+                    <div class="info-section-header" onclick="toggleSymbolInfoSection()">
+                        <div class="info-section-title">
+                            <span class="material-icons-round icon">info</span>
+                            <span class="text">종목 정보</span>
+                        </div>
+                        <span class="material-icons-round info-toggle-icon" id="symbolInfoToggleIcon">expand_more</span>
+                    </div>
+                    
+                    <!-- 정보 컨텐츠 -->
+                    <div class="symbol-info-content" id="symbolInfoContent">
+                        
+                        <!-- 종목명 헤더 -->
+                        <div class="symbol-name-header">
+                            <span class="symbol-name-icon" id="infoSymbolIcon" style="color: #f7931a;">₿</span>
+                            <div class="symbol-name-info">
+                                <div class="symbol-name-main" id="infoSymbolName">Bitcoin</div>
+                                <div class="symbol-name-sub" id="infoSymbolDesc">Digital Cryptocurrency</div>
+                            </div>
+                            <div class="info-section-badge" id="infoSymbolId">BTCUSD</div>
+                        </div>
+                        
+                        <!-- 기본 정보 그룹 -->
+                        <div class="info-group">
+                            <div class="info-group-title">기본 정보</div>
+                            
+                            <div class="info-row">
+                                <span class="info-label">랏 사이즈</span>
+                                <span class="info-value" id="infoLotSize">1 BTC</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">최소 가격 변동</span>
+                                <span class="info-value" id="infoTickSize">0.01</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">최소 거래량</span>
+                                <span class="info-value" id="infoMinLot">0.01 lot</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">최대 거래량</span>
+                                <span class="info-value" id="infoMaxLot">100.00 lot</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">핍 사이즈</span>
+                                <span class="info-value highlight" id="infoPipSize">0.01 (2 digits)</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Stop levels</span>
+                                <span class="info-value" id="infoStopLevel">0</span>
+                            </div>
+                        </div>
+                        
+                        <!-- 스프레드 & 스왑 그룹 -->
+                        <div class="info-group">
+                            <div class="info-group-title">스프레드 & 스왑</div>
+                            
+                            <div class="info-row">
+                                <span class="info-label">변동 스프레드</span>
+                                <div style="text-align: right;">
+                                    <div class="info-value" id="infoSpread">15.00 • 0.016%</div>
+                                    <div class="info-value-sub" id="infoSpreadPips">150 pips</div>
+                                </div>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">스왑 롱</span>
+                                <div style="text-align: right;">
+                                    <div class="info-value" id="infoSwapLong">-0.5 • -0.0005%</div>
+                                    <div class="info-value-sub">거래 규모당 1일</div>
+                                </div>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">스왑 숏</span>
+                                <div style="text-align: right;">
+                                    <div class="info-value" id="infoSwapShort">-0.5 • -0.0005%</div>
+                                    <div class="info-value-sub">거래 규모당 1일</div>
+                                </div>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">3일 스왑</span>
+                                <span class="info-value highlight" id="infoSwap3Day">Wednesday</span>
+                            </div>
+                        </div>
+                        
+                        <!-- 거래 시간 그룹 -->
+                        <div class="info-group">
+                            <div class="info-group-title">거래 시간</div>
+                            
+                            <div class="trading-hours-grid" id="tradingHoursGrid">
+                                <span class="trading-day">일요일</span>
+                                <span class="trading-time" id="infoHoursSun">23:00 - 23:59</span>
+                                
+                                <span class="trading-day">월요일</span>
+                                <span class="trading-time" id="infoHoursMon">00:00 - 23:59</span>
+                                
+                                <span class="trading-day">화요일</span>
+                                <span class="trading-time" id="infoHoursTue">00:00 - 23:59</span>
+                                
+                                <span class="trading-day">수요일</span>
+                                <span class="trading-time" id="infoHoursWed">00:00 - 23:59</span>
+                                
+                                <span class="trading-day">목요일</span>
+                                <span class="trading-time" id="infoHoursThu">00:00 - 23:59</span>
+                                
+                                <span class="trading-day">금요일</span>
+                                <span class="trading-time" id="infoHoursFri">00:00 - 23:59</span>
+                                
+                                <span class="trading-day">토요일</span>
+                                <span class="trading-time closed" id="infoHoursSat">—</span>
+                            </div>
+                        </div>
+                        
                     </div>
                 </div>
                 
@@ -1551,6 +1694,567 @@
     <script src="js/chart.js"></script>
     <script src="js/settings.js"></script>
     <script src="js/quick.js"></script>
+    <script>
+        // ========== 타임프레임 드롭다운 함수 ==========
+        function toggleTimeframeDropdown() {
+            const dropdown = document.getElementById('tfDropdown');
+            const btn = document.getElementById('tfDropdownBtn');
+            dropdown.classList.toggle('show');
+            btn.classList.toggle('open');
+        }
+        
+        function selectTimeframe(tf, label) {
+            // 현재 텍스트 업데이트
+            document.getElementById('currentTfText').textContent = label;
+            
+            // 활성 상태 변경
+            document.querySelectorAll('.tf-dropdown-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.dataset.tf === tf) {
+                    item.classList.add('active');
+                }
+            });
+            
+            // 드롭다운 닫기
+            document.getElementById('tfDropdown').classList.remove('show');
+            document.getElementById('tfDropdownBtn').classList.remove('open');
+            
+            // 타임프레임 변경 및 캔들 로드
+            currentTimeframe = tf;
+            if (typeof ChartPanel !== 'undefined') {
+                ChartPanel.loadCandles();
+            }
+        }
+    </script>
+
+    <script>
+    // ========== 타임프레임 모달 팝업 ==========
+    function openTfPopup() {
+        document.getElementById('tfModalOverlay').style.display = 'flex';
+    }
+    
+    function closeTfPopup() {
+        document.getElementById('tfModalOverlay').style.display = 'none';
+    }
+    
+    function selectTimeframe(tf, label) {
+        document.getElementById('tfBtnText').textContent = label;
+        
+        document.querySelectorAll('.tf-modal-item').forEach(item => {
+            item.classList.remove('active');
+            item.style.background = '#2a3444';
+            item.style.color = '#ffffff';
+            item.style.border = 'none';
+            if (item.dataset.tf === tf) {
+                item.classList.add('active');
+                item.style.background = 'linear-gradient(135deg,#00d4ff,#00b4d8)';
+                item.style.color = '#000000';
+            }
+        });
+        
+        closeTfPopup();
+        
+        currentTimeframe = tf;
+        if (typeof ChartPanel !== 'undefined' && ChartPanel.loadCandles) {
+            ChartPanel.loadCandles();
+        }
+        
+        showToast(label + ' 타임프레임 적용', 'success');
+    }
+    
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeTfPopup();
+        if (e.key === 'Escape') closeIndPopup();
+    });
+    
+    // ========== 보조지표 모달 ==========
+    function openIndPopup() {
+        document.getElementById('indModalOverlay').style.display = 'flex';
+    }
+    
+    function closeIndPopup() {
+        document.getElementById('indModalOverlay').style.display = 'none';
+    }
+    
+    function toggleIndicator(item) {
+        const checkbox = item.querySelector('.ind-checkbox');
+        checkbox.classList.toggle('checked');
+    }
+    
+    function filterIndicators(query) {
+        const items = document.querySelectorAll('.ind-item');
+        query = query.toLowerCase();
+        items.forEach(item => {
+            const name = item.querySelector('.ind-name').textContent.toLowerCase();
+            const desc = item.querySelector('.ind-desc').textContent.toLowerCase();
+            if (name.includes(query) || desc.includes(query)) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+    
+    function resetIndicators() {
+        document.querySelectorAll('.ind-checkbox').forEach(cb => {
+            cb.classList.remove('checked');
+        });
+        showToast('지표가 초기화되었습니다', 'info');
+    }
+    
+    function applyIndicators() {
+        const selected = [];
+        document.querySelectorAll('.ind-checkbox.checked').forEach(cb => {
+            const item = cb.closest('.ind-item');
+            selected.push(item.dataset.ind);
+        });
+        
+        console.log('적용된 지표:', selected);
+        closeIndPopup();
+        showToast(selected.length + '개 지표가 적용되었습니다', 'success');
+        
+        // TODO: 실제 차트에 지표 적용 로직
+    }
+    
+    // ========== 종목 정보 섹션 ==========
+    function toggleSymbolInfoSection() {
+        const content = document.getElementById('symbolInfoContent');
+        const icon = document.getElementById('symbolInfoToggleIcon');
+        
+        content.classList.toggle('collapsed');
+        icon.classList.toggle('open');
+    }
+    
+    // 종목 정보 데이터 (MT5 실제 데이터 기준)
+    const symbolInfoData = {
+        'BTCUSD': {
+            icon: '₿', iconColor: '#f7931a', name: 'Bitcoin', desc: 'Bitcoin vs US Dollar',
+            lotSize: '1 Contract', tickSize: '0.01', minLot: '0.01 lot', maxLot: '10.00 lot',
+            pipSize: '0.01 (2 digits)', stopLevel: '0',
+            spread: '유동 스프레드', spreadPips: '~15 pips',
+            swapLong: '-17.76%', swapLongClass: 'negative',
+            swapShort: '-11.84%', swapShortClass: 'negative',
+            swap3Day: 'Wednesday',
+            hours: { sun: '00:02 - 23:57', mon: '00:02 - 23:57', tue: '00:02 - 23:57', wed: '00:02 - 23:57', thu: '00:02 - 23:57', fri: '00:02 - 23:57', sat: '00:00 - 14:00' }
+        },
+        'EURUSD.r': {
+            icon: '€', iconColor: '#0052cc', name: 'Euro/Dollar', desc: 'Euro vs US Dollar',
+            lotSize: '100,000 EUR', tickSize: '0.00001', minLot: '0.01 lot', maxLot: '50.00 lot',
+            pipSize: '0.00001 (5 digits)', stopLevel: '0',
+            spread: '유동 스프레드', spreadPips: '~1.0 pips',
+            swapLong: '-8.9 points', swapLongClass: 'negative',
+            swapShort: '+3.3 points', swapShortClass: 'positive',
+            swap3Day: 'Wednesday',
+            hours: { sun: '—', mon: '00:02 - 23:58', tue: '00:02 - 23:58', wed: '00:02 - 23:58', thu: '00:02 - 23:58', fri: '00:02 - 23:58', sat: '—' }
+        },
+        'USDJPY.r': {
+            icon: '¥', iconColor: '#dc143c', name: 'Dollar/Yen', desc: 'US Dollar vs Japanese Yen',
+            lotSize: '100,000 USD', tickSize: '0.001', minLot: '0.01 lot', maxLot: '50.00 lot',
+            pipSize: '0.001 (3 digits)', stopLevel: '0',
+            spread: '유동 스프레드', spreadPips: '~1.0 pips',
+            swapLong: '+9.0 points', swapLongClass: 'positive',
+            swapShort: '-19.5 points', swapShortClass: 'negative',
+            swap3Day: 'Wednesday',
+            hours: { sun: '—', mon: '00:02 - 23:58', tue: '00:02 - 23:58', wed: '00:02 - 23:58', thu: '00:02 - 23:58', fri: '00:02 - 23:58', sat: '—' }
+        },
+        'XAUUSD.r': {
+            icon: '✦', iconColor: '#ffd700', name: 'Gold', desc: 'Gold vs US Dollar',
+            lotSize: '100 oz', tickSize: '0.01', minLot: '0.01 lot', maxLot: '20.00 lot',
+            pipSize: '0.01 (2 digits)', stopLevel: '0',
+            spread: '유동 스프레드', spreadPips: '~16 pips',
+            swapLong: '-53.5 points', swapLongClass: 'negative',
+            swapShort: '+27.6 points', swapShortClass: 'positive',
+            swap3Day: 'Wednesday',
+            hours: { sun: '—', mon: '01:02 - 23:58', tue: '01:02 - 23:58', wed: '01:02 - 23:58', thu: '01:02 - 23:58', fri: '01:02 - 23:58', sat: '—' }
+        },
+        'US100.': {
+            icon: '⬡', iconColor: '#00b450', name: 'NASDAQ', desc: 'US Tech 100 Index Cash',
+            lotSize: '20 Contract', tickSize: '0.01', minLot: '0.01 lot', maxLot: '200.00 lot',
+            pipSize: '0.01 (2 digits)', stopLevel: '0',
+            spread: '유동 스프레드', spreadPips: '~100 pips',
+            swapLong: '-165 USD', swapLongClass: 'negative',
+            swapShort: '+43.4 USD', swapShortClass: 'positive',
+            swap3Day: 'Friday',
+            hours: { sun: '—', mon: '01:02 - 23:58', tue: '01:02 - 23:58', wed: '01:02 - 23:58', thu: '01:02 - 23:58', fri: '01:02 - 23:55', sat: '—' }
+        },
+        'GBPUSD.r': {
+            icon: '£', iconColor: '#9c27b0', name: 'Pound/Dollar', desc: 'British Pound vs US Dollar',
+            lotSize: '100,000 GBP', tickSize: '0.00001', minLot: '0.01 lot', maxLot: '50.00 lot',
+            pipSize: '0.00001 (5 digits)', stopLevel: '0',
+            spread: '유동 스프레드', spreadPips: '~1.2 pips',
+            swapLong: '-4.2 points', swapLongClass: 'negative',
+            swapShort: '+0.8 points', swapShortClass: 'positive',
+            swap3Day: 'Wednesday',
+            hours: { sun: '—', mon: '00:02 - 23:58', tue: '00:02 - 23:58', wed: '00:02 - 23:58', thu: '00:02 - 23:58', fri: '00:02 - 23:58', sat: '—' }
+        },
+        'ETHUSD': {
+            icon: 'Ξ', iconColor: '#627eea', name: 'Ethereum', desc: 'Ethereum vs US Dollar',
+            lotSize: '1 Contract', tickSize: '0.01', minLot: '0.01 lot', maxLot: '10.00 lot',
+            pipSize: '0.01 (2 digits)', stopLevel: '0',
+            spread: '유동 스프레드', spreadPips: '~150 pips',
+            swapLong: '-15.0%', swapLongClass: 'negative',
+            swapShort: '-10.0%', swapShortClass: 'negative',
+            swap3Day: 'Wednesday',
+            hours: { sun: '00:02 - 23:57', mon: '00:02 - 23:57', tue: '00:02 - 23:57', wed: '00:02 - 23:57', thu: '00:02 - 23:57', fri: '00:02 - 23:57', sat: '00:00 - 14:00' }
+        }
+    };
+
+    // 종목 정보 업데이트 함수
+    function updateSymbolInfo(symbol) {
+        const data = symbolInfoData[symbol];
+        if (!data) {
+            console.warn('[updateSymbolInfo] 종목 정보 없음:', symbol);
+            return;
+        }
+        
+        console.log('[updateSymbolInfo] 종목 정보 업데이트:', symbol);
+        
+        // 종목명 헤더
+        const iconEl = document.getElementById('infoSymbolIcon');
+        if (iconEl) {
+            iconEl.textContent = data.icon;
+            iconEl.style.color = data.iconColor;
+        }
+        
+        const nameEl = document.getElementById('infoSymbolName');
+        if (nameEl) nameEl.textContent = data.name;
+        
+        const descEl = document.getElementById('infoSymbolDesc');
+        if (descEl) descEl.textContent = data.desc;
+        
+        const idEl = document.getElementById('infoSymbolId');
+        if (idEl) idEl.textContent = symbol;
+        
+        // 기본 정보
+        const lotSizeEl = document.getElementById('infoLotSize');
+        if (lotSizeEl) lotSizeEl.textContent = data.lotSize;
+        
+        const tickSizeEl = document.getElementById('infoTickSize');
+        if (tickSizeEl) tickSizeEl.textContent = data.tickSize;
+        
+        const minLotEl = document.getElementById('infoMinLot');
+        if (minLotEl) minLotEl.textContent = data.minLot;
+        
+        const maxLotEl = document.getElementById('infoMaxLot');
+        if (maxLotEl) maxLotEl.textContent = data.maxLot;
+        
+        const pipSizeEl = document.getElementById('infoPipSize');
+        if (pipSizeEl) pipSizeEl.textContent = data.pipSize;
+        
+        const stopLevelEl = document.getElementById('infoStopLevel');
+        if (stopLevelEl) stopLevelEl.textContent = data.stopLevel;
+        
+        // 스프레드 & 스왑
+        const spreadEl = document.getElementById('infoSpread');
+        if (spreadEl) spreadEl.textContent = data.spread;
+        
+        const spreadPipsEl = document.getElementById('infoSpreadPips');
+        if (spreadPipsEl) spreadPipsEl.textContent = data.spreadPips;
+        
+        const swapLongEl = document.getElementById('infoSwapLong');
+        if (swapLongEl) {
+            swapLongEl.textContent = data.swapLong;
+            swapLongEl.className = 'info-value ' + (data.swapLongClass || '');
+        }
+        
+        const swapShortEl = document.getElementById('infoSwapShort');
+        if (swapShortEl) {
+            swapShortEl.textContent = data.swapShort;
+            swapShortEl.className = 'info-value ' + (data.swapShortClass || '');
+        }
+        
+        const swap3DayEl = document.getElementById('infoSwap3Day');
+        if (swap3DayEl) swap3DayEl.textContent = data.swap3Day;
+        
+        // 거래 시간
+        if (data.hours) {
+            const sunEl = document.getElementById('infoHoursSun');
+            if (sunEl) sunEl.textContent = data.hours.sun;
+            
+            const monEl = document.getElementById('infoHoursMon');
+            if (monEl) monEl.textContent = data.hours.mon;
+            
+            const tueEl = document.getElementById('infoHoursTue');
+            if (tueEl) tueEl.textContent = data.hours.tue;
+            
+            const wedEl = document.getElementById('infoHoursWed');
+            if (wedEl) wedEl.textContent = data.hours.wed;
+            
+            const thuEl = document.getElementById('infoHoursThu');
+            if (thuEl) thuEl.textContent = data.hours.thu;
+            
+            const friEl = document.getElementById('infoHoursFri');
+            if (friEl) friEl.textContent = data.hours.fri;
+            
+            const satEl = document.getElementById('infoHoursSat');
+            if (satEl) {
+                satEl.textContent = data.hours.sat;
+                satEl.className = data.hours.sat === '—' ? 'trading-time closed' : 'trading-time';
+            }
+        }
+    }
+    
+    // 차트 드롭다운에서 종목 선택 시 호출 (전역 함수 재정의)
+    function selectChartSymbol(element) {
+        const symbol = element.dataset.symbol;
+        const name = element.dataset.name;
+        const icon = element.dataset.icon;
+        const color = element.dataset.color;
+        
+        console.log('[selectChartSymbol] 차트 드롭다운 종목 선택:', symbol);
+        
+        // 전역 변수 업데이트
+        chartSymbol = symbol;
+        localStorage.setItem('last_chart_symbol', symbol);
+        
+        // 차트 헤더 UI 업데이트
+        const iconEl = document.getElementById('chartSymbolIcon');
+        const nameEl = document.getElementById('chartSymbolName');
+        const idEl = document.getElementById('chartSymbolId');
+        const dropdown = document.getElementById('chartSymbolDropdown');
+        
+        if (iconEl) {
+            iconEl.textContent = icon;
+            iconEl.style.color = color;
+        }
+        if (nameEl) nameEl.textContent = name;
+        if (idEl) idEl.textContent = symbol;
+        if (dropdown) dropdown.style.display = 'none';
+        
+        // 차트 재초기화
+        if (typeof ChartPanel !== 'undefined') {
+            ChartPanel.reinit();
+        }
+        
+        // 종목 정보 섹션 업데이트
+        updateSymbolInfo(symbol);
+        
+        showToast(name + ' 차트로 변경', 'success');
+    }
+    </script>
+
+    <!-- 타임프레임 모달 (새 디자인) -->
+    <div id="tfModalOverlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.75); backdrop-filter:blur(8px); z-index:99999; justify-content:center; align-items:center;" onclick="closeTfPopup()">
+        <div onclick="event.stopPropagation()" style="background:#1e2738; border-radius:24px; min-width:300px; max-width:340px; box-shadow:0 20px 60px rgba(0,0,0,0.6); overflow:hidden;">
+            <!-- 상단 바 -->
+            <div style="width:40px; height:4px; background:#3a4553; border-radius:2px; margin:12px auto 0;"></div>
+            <!-- 헤더 -->
+            <div style="padding:20px 24px 16px;">
+                <span style="font-size:18px; font-weight:600; color:#ffffff; letter-spacing:-0.3px;">타임프레임</span>
+            </div>
+            <!-- 버튼 그리드 -->
+            <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:10px; padding:0 20px 24px;">
+                <button class="tf-modal-item active" data-tf="M1" onclick="selectTimeframe('M1','1M')" style="padding:14px 20px; background:#2a3444; border:none; border-radius:14px; color:#ffffff; font-size:15px; font-weight:500; cursor:pointer; transition:all 0.2s;">1M</button>
+<button class="tf-modal-item" data-tf="M5" onclick="selectTimeframe('M5','5M')" style="padding:14px 20px; background:#2a3444; border:none; border-radius:14px; color:#ffffff; font-size:15px; font-weight:500; cursor:pointer; transition:all 0.2s;">5M</button>
+<button class="tf-modal-item" data-tf="M15" onclick="selectTimeframe('M15','15M')" style="padding:14px 20px; background:#2a3444; border:none; border-radius:14px; color:#ffffff; font-size:15px; font-weight:500; cursor:pointer; transition:all 0.2s;">15M</button>
+<button class="tf-modal-item" data-tf="M30" onclick="selectTimeframe('M30','30M')" style="padding:14px 20px; background:#2a3444; border:none; border-radius:14px; color:#ffffff; font-size:15px; font-weight:500; cursor:pointer; transition:all 0.2s;">30M</button>
+<button class="tf-modal-item" data-tf="H1" onclick="selectTimeframe('H1','1H')" style="padding:14px 20px; background:#2a3444; border:none; border-radius:14px; color:#ffffff; font-size:15px; font-weight:500; cursor:pointer; transition:all 0.2s;">1H</button>
+<button class="tf-modal-item" data-tf="H4" onclick="selectTimeframe('H4','4H')" style="padding:14px 20px; background:#2a3444; border:none; border-radius:14px; color:#ffffff; font-size:15px; font-weight:500; cursor:pointer; transition:all 0.2s;">4H</button>
+<button class="tf-modal-item" data-tf="D1" onclick="selectTimeframe('D1','1D')" style="padding:14px 20px; background:#2a3444; border:none; border-radius:14px; color:#ffffff; font-size:15px; font-weight:500; cursor:pointer; transition:all 0.2s;">1D</button>
+<button class="tf-modal-item" data-tf="W1" onclick="selectTimeframe('W1','1W')" style="padding:14px 20px; background:#2a3444; border:none; border-radius:14px; color:#ffffff; font-size:15px; font-weight:500; cursor:pointer; transition:all 0.2s;">1W</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 보조지표 모달 -->
+    <div id="indModalOverlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.75); backdrop-filter:blur(8px); z-index:99999; justify-content:center; align-items:center;" onclick="closeIndPopup()">
+        <div class="ind-modal" onclick="event.stopPropagation()">
+            <!-- 헤더 -->
+            <div class="ind-modal-header">
+                <span class="ind-modal-title">보조지표</span>
+                <button class="ind-modal-close" onclick="closeIndPopup()">✕</button>
+            </div>
+            
+            <!-- 검색 -->
+            <div class="ind-modal-search">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <input type="text" id="indSearchInput" placeholder="지표 검색..." oninput="filterIndicators(this.value)">
+            </div>
+            
+            <!-- 지표 리스트 -->
+            <div class="ind-modal-list" id="indModalList">
+                <!-- 이동평균 계열 -->
+                <div class="ind-item" data-ind="sma" onclick="toggleIndicator(this)">
+                    <div class="ind-checkbox"></div>
+                    <div class="ind-color-dot" style="background: #9C27B0;"></div>
+                    <div class="ind-info">
+                        <div class="ind-name">SMA (200)</div>
+                        <div class="ind-desc">단순이동평균</div>
+                    </div>
+                </div>
+                <div class="ind-item" data-ind="ema" onclick="toggleIndicator(this)">
+                    <div class="ind-checkbox"></div>
+                    <div class="ind-color-dot" style="background: #E91E63;"></div>
+                    <div class="ind-info">
+                        <div class="ind-name">EMA (20)</div>
+                        <div class="ind-desc">지수이동평균</div>
+                    </div>
+                </div>
+                <div class="ind-item" data-ind="lwma" onclick="toggleIndicator(this)">
+                    <div class="ind-checkbox checked"></div>
+                    <div class="ind-color-dot" style="background: #FFC107;"></div>
+                    <div class="ind-info">
+                        <div class="ind-name">LWMA (50)</div>
+                        <div class="ind-desc">선형가중이동평균</div>
+                    </div>
+                </div>
+                <div class="ind-item" data-ind="wma" onclick="toggleIndicator(this)">
+                    <div class="ind-checkbox"></div>
+                    <div class="ind-color-dot" style="background: #FF5722;"></div>
+                    <div class="ind-info">
+                        <div class="ind-name">WMA (14)</div>
+                        <div class="ind-desc">가중이동평균</div>
+                    </div>
+                </div>
+                
+                <!-- 밴드/채널 계열 -->
+                <div class="ind-item" data-ind="bb" onclick="toggleIndicator(this)">
+                    <div class="ind-checkbox checked"></div>
+                    <div class="ind-color-dot" style="background: #2196F3;"></div>
+                    <div class="ind-info">
+                        <div class="ind-name">Bollinger Bands</div>
+                        <div class="ind-desc">볼린저 밴드 (20, 2)</div>
+                    </div>
+                </div>
+                <div class="ind-item" data-ind="keltner" onclick="toggleIndicator(this)">
+                    <div class="ind-checkbox"></div>
+                    <div class="ind-color-dot" style="background: #00ACC1;"></div>
+                    <div class="ind-info">
+                        <div class="ind-name">Keltner Channel</div>
+                        <div class="ind-desc">켈트너 채널</div>
+                    </div>
+                </div>
+                <div class="ind-item" data-ind="donchian" onclick="toggleIndicator(this)">
+                    <div class="ind-checkbox"></div>
+                    <div class="ind-color-dot" style="background: #26A69A;"></div>
+                    <div class="ind-info">
+                        <div class="ind-name">Donchian Channel</div>
+                        <div class="ind-desc">돈치안 채널 (20)</div>
+                    </div>
+                </div>
+                <div class="ind-item" data-ind="envelope" onclick="toggleIndicator(this)">
+                    <div class="ind-checkbox"></div>
+                    <div class="ind-color-dot" style="background: #7E57C2;"></div>
+                    <div class="ind-info">
+                        <div class="ind-name">Envelope</div>
+                        <div class="ind-desc">엔벨로프 (20, 2.5%)</div>
+                    </div>
+                </div>
+                
+                <!-- 오실레이터 계열 -->
+                <div class="ind-item" data-ind="rsi" onclick="toggleIndicator(this)">
+                    <div class="ind-checkbox"></div>
+                    <div class="ind-color-dot" style="background: #00BCD4;"></div>
+                    <div class="ind-info">
+                        <div class="ind-name">RSI (14)</div>
+                        <div class="ind-desc">상대강도지수</div>
+                    </div>
+                </div>
+                <div class="ind-item" data-ind="macd" onclick="toggleIndicator(this)">
+                    <div class="ind-checkbox"></div>
+                    <div class="ind-color-dot" style="background: #4CAF50;"></div>
+                    <div class="ind-info">
+                        <div class="ind-name">MACD</div>
+                        <div class="ind-desc">이동평균수렴확산 (12,26,9)</div>
+                    </div>
+                </div>
+                <div class="ind-item" data-ind="stoch" onclick="toggleIndicator(this)">
+                    <div class="ind-checkbox"></div>
+                    <div class="ind-color-dot" style="background: #FF9800;"></div>
+                    <div class="ind-info">
+                        <div class="ind-name">Stochastic</div>
+                        <div class="ind-desc">스토캐스틱 (14,3,3)</div>
+                    </div>
+                </div>
+                <div class="ind-item" data-ind="cci" onclick="toggleIndicator(this)">
+                    <div class="ind-checkbox"></div>
+                    <div class="ind-color-dot" style="background: #8BC34A;"></div>
+                    <div class="ind-info">
+                        <div class="ind-name">CCI (20)</div>
+                        <div class="ind-desc">상품채널지수</div>
+                    </div>
+                </div>
+                <div class="ind-item" data-ind="williams" onclick="toggleIndicator(this)">
+                    <div class="ind-checkbox"></div>
+                    <div class="ind-color-dot" style="background: #F44336;"></div>
+                    <div class="ind-info">
+                        <div class="ind-name">Williams %R</div>
+                        <div class="ind-desc">윌리엄스 %R (14)</div>
+                    </div>
+                </div>
+                <div class="ind-item" data-ind="mfi" onclick="toggleIndicator(this)">
+                    <div class="ind-checkbox"></div>
+                    <div class="ind-color-dot" style="background: #009688;"></div>
+                    <div class="ind-info">
+                        <div class="ind-name">MFI (14)</div>
+                        <div class="ind-desc">자금흐름지수</div>
+                    </div>
+                </div>
+                
+                <!-- 추세/변동성 계열 -->
+                <div class="ind-item" data-ind="atr" onclick="toggleIndicator(this)">
+                    <div class="ind-checkbox"></div>
+                    <div class="ind-color-dot" style="background: #795548;"></div>
+                    <div class="ind-info">
+                        <div class="ind-name">ATR (14)</div>
+                        <div class="ind-desc">평균진폭</div>
+                    </div>
+                </div>
+                <div class="ind-item" data-ind="adx" onclick="toggleIndicator(this)">
+                    <div class="ind-checkbox"></div>
+                    <div class="ind-color-dot" style="background: #607D8B;"></div>
+                    <div class="ind-info">
+                        <div class="ind-name">ADX (14)</div>
+                        <div class="ind-desc">평균방향지수</div>
+                    </div>
+                </div>
+                <div class="ind-item" data-ind="psar" onclick="toggleIndicator(this)">
+                    <div class="ind-checkbox"></div>
+                    <div class="ind-color-dot" style="background: #FFEB3B;"></div>
+                    <div class="ind-info">
+                        <div class="ind-name">Parabolic SAR</div>
+                        <div class="ind-desc">파라볼릭 SAR</div>
+                    </div>
+                </div>
+                <div class="ind-item" data-ind="ichimoku" onclick="toggleIndicator(this)">
+                    <div class="ind-checkbox"></div>
+                    <div class="ind-color-dot" style="background: #E040FB;"></div>
+                    <div class="ind-info">
+                        <div class="ind-name">Ichimoku Cloud</div>
+                        <div class="ind-desc">일목균형표</div>
+                    </div>
+                </div>
+                
+                <!-- 거래량 계열 -->
+                <div class="ind-item" data-ind="obv" onclick="toggleIndicator(this)">
+                    <div class="ind-checkbox"></div>
+                    <div class="ind-color-dot" style="background: #3F51B5;"></div>
+                    <div class="ind-info">
+                        <div class="ind-name">OBV</div>
+                        <div class="ind-desc">거래량균형지표</div>
+                    </div>
+                </div>
+                <div class="ind-item" data-ind="vwap" onclick="toggleIndicator(this)">
+                    <div class="ind-checkbox"></div>
+                    <div class="ind-color-dot" style="background: #673AB7;"></div>
+                    <div class="ind-info">
+                        <div class="ind-name">VWAP</div>
+                        <div class="ind-desc">거래량가중평균가격</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 푸터 -->
+            <div class="ind-modal-footer">
+                <button class="ind-btn-reset" onclick="resetIndicators()">초기화</button>
+                <button class="ind-btn-apply" onclick="applyIndicators()">적용하기</button>
+            </div>
+        </div>
+    </div>
+
     <script src="js/trading.js"></script>
     <script src="js/connection.js"></script>
     <script src="js/init.js"></script>

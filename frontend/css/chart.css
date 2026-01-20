@@ -1,109 +1,1215 @@
 /* Chart Tab Styles */
 
-        .chart-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: var(--bg-secondary); }
-        .symbol-name { font-size: 16px; font-weight: bold; }
-        .timeframe-buttons { display: flex; gap: 5px; }
-        .tf-btn { background: #1e2127; border: 1px solid var(--border-color); color: var(--text-muted); padding: 5px 10px; border-radius: 5px; font-size: 12px; cursor: pointer; }
-        .tf-btn.active { background: var(--accent-cyan); color: #0d1421; border-color: var(--accent-cyan); }
-        #chart-container { width: 100%; height: 720px; background: var(--bg-primary); }
-        .price-bar { display: flex; padding: 10px 15px; gap: 10px; }
-        
-        /* Chart Symbol Selector */
-        .chart-symbol-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); position: relative; }
-        .chart-symbol-info { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-        .chart-symbol-icon { font-size: 24px; }
-        .chart-symbol-name { font-size: 22px; font-weight: bold; }
-        .chart-symbol-id { font-size: 11px; color: var(--text-muted); }
-        .chart-symbol-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: var(--bg-secondary); border: 1px solid var(--accent-cyan); border-radius: 8px; margin-top: 5px; z-index: 50; max-height: 300px; overflow-y: auto; display: none; }
-        .chart-symbol-option { display: flex; align-items: center; gap: 10px; padding: 12px 15px; cursor: pointer; border-bottom: 1px solid var(--border-color); }
-        .chart-symbol-option:hover { background: rgba(255,255,255,0.1); }
-        .chart-symbol-option:last-child { border-bottom: none; }
-        .chart-symbol-option.favorite { background: rgba(0,212,255,0.1); }
-        .favorite-star { color: #ffd700; margin-left: auto; }
-        
-        /* Chart Signal Section */
-        .chart-signal-section { padding: 15px; background: var(--bg-primary); }
-        .chart-signal-title { font-size: 16px; font-weight: 700; color: var(--accent-cyan); margin-bottom: 15px; letter-spacing: 0.5px; }
-        .chart-gauge-container { text-align: center; padding: 10px 0; }
-        .chart-gauge-status { font-size: 24px; font-weight: 900; letter-spacing: 2px; margin-top: 5px; transition: color 0.5s ease, text-shadow 0.5s ease; }
-        .chart-indicator-summary { display: flex; background: var(--bg-secondary); border-radius: 10px; overflow: hidden; margin-top: 15px; border: 1px solid var(--border-color); }
-        .chart-indicator-item { flex: 1; text-align: center; padding: 10px; }
-        .chart-indicator-item:not(:last-child) { border-right: 1px solid var(--border-color); }
-        .chart-indicator-count { font-size: 24px; font-weight: bold; }
-        .chart-indicator-label { font-size: 10px; color: var(--text-muted); }
-        .price-box { flex: 1; text-align: center; padding: 10px 15px; border-radius: 8px; }
-        .price-box.sell { background: linear-gradient(180deg, #ff5252, #d32f2f); }
-        .price-box.buy { background: linear-gradient(180deg, #00c853, #00a844); }
-        .price-label { font-size: 10px; opacity: 0.9; }
-        .price-value { font-size: 18px; font-weight: bold; }
-        
-        /* EA 패널 */
-        .chart-detail-container {
-            display: none;
-        }
-        
-        /* 종목 검색 모달 */
-        .search-category-btn {
-            padding: 6px 14px;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            border-radius: 20px;
-            color: var(--text-muted);
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: all 0.2s;
-        }
-        .search-category-btn.active {
-            background: var(--accent-cyan);
-            border-color: var(--accent-cyan);
-            color: #000;
-        }
-        .search-result-item {
-            display: flex;
-            align-items: center;
-            padding: 12px 15px;
-            cursor: pointer;
-            transition: background 0.2s;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .search-result-item:hover {
-            background: rgba(255, 255, 255, 0.05);
-        }
-        .search-result-item:active {
-            background: rgba(0, 212, 255, 0.1);
-        }
-        .search-result-icon {
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            background: var(--bg-tertiary);
-            border-radius: 8px;
-            margin-right: 12px;
-        }
-        .search-result-info {
-            flex: 1;
-        }
-        .search-result-symbol {
-            font-size: 15px;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-        .search-result-name {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-top: 2px;
-        }
-        .search-result-category {
-            font-size: 10px;
-            padding: 3px 8px;
-            background: var(--bg-tertiary);
-            border-radius: 4px;
-            color: var(--text-muted);
-        }
+.chart-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: var(--bg-secondary); }
+.symbol-name { font-size: 16px; font-weight: bold; }
 
-        /* 공지 배너 */
+/* 기존 타임프레임 버튼 (호환성 유지) */
+.timeframe-buttons { display: flex; gap: 5px; }
+.tf-btn { background: #1e2127; border: 1px solid var(--border-color); color: var(--text-muted); padding: 5px 10px; border-radius: 5px; font-size: 12px; cursor: pointer; }
+.tf-btn.active { background: var(--accent-cyan); color: #0d1421; border-color: var(--accent-cyan); }
+
+/* ========== 차트 툴 버튼 v2 (세련된 버전) ========== */
+.chart-tool-btn-v2 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: linear-gradient(180deg, rgba(30, 40, 55, 0.9) 0%, rgba(15, 20, 30, 0.95) 100%);
+    border: 1px solid rgba(0, 212, 255, 0.3);
+    border-radius: 8px;
+    color: #00d4ff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.chart-tool-btn-v2:hover {
+    background: linear-gradient(180deg, rgba(0, 212, 255, 0.15) 0%, rgba(0, 150, 200, 0.1) 100%);
+    border-color: rgba(0, 212, 255, 0.6);
+    box-shadow: 0 4px 15px rgba(0, 212, 255, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+}
+
+.chart-tool-btn-v2:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.chart-tool-btn-v2 svg {
+    stroke: #00d4ff;
+}
+
+/* 드롭다운 메뉴 v2 */
+.chart-tool-menu-v2 {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: linear-gradient(180deg, #1e2530 0%, #151a22 100%);
+    border: 1px solid rgba(0, 212, 255, 0.4);
+    border-radius: 12px;
+    padding: 14px;
+    min-width: 200px;
+    z-index: 150;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.6), 0 0 25px rgba(0, 212, 255, 0.15);
+}
+
+.chart-tool-menu-v2.show {
+    display: block;
+    animation: menuFadeInV2 0.2s ease;
+}
+
+@keyframes menuFadeInV2 {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.tool-menu-title-v2 {
+    font-size: 11px;
+    font-weight: 700;
+    color: #00d4ff;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+}
+
+/* 타임프레임 그리드 v2 */
+.tf-grid-v2 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+}
+
+.tf-item-v2 {
+    padding: 10px 6px;
+    background: rgba(30, 40, 55, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    color: #9ca3af;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: center;
+}
+
+.tf-item-v2:hover {
+    background: rgba(0, 212, 255, 0.1);
+    border-color: rgba(0, 212, 255, 0.3);
+    color: #ffffff;
+}
+
+.tf-item-v2.active {
+    background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+    border-color: #00d4ff;
+    color: #000;
+    font-weight: 700;
+    box-shadow: 0 2px 10px rgba(0, 212, 255, 0.4);
+}
+
+/* ========== 타임프레임 모달 팝업 (글래스모피즘) ========== */
+.tf-popup-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tf-popup-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+.tf-popup-btn:active {
+    transform: scale(0.98);
+}
+
+.tf-popup-btn svg {
+    stroke: #00d4ff;
+}
+
+/* 모달 오버레이 */
+.tf-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* 모달 박스 */
+.tf-modal {
+    background: linear-gradient(180deg, #1a2535 0%, #0d1421 100%);
+    border: 1px solid rgba(0, 212, 255, 0.5);
+    border-radius: 20px;
+    padding: 0;
+    width: 90%;
+    max-width: 320px;
+    box-shadow: 
+        0 25px 80px rgba(0, 0, 0, 0.8),
+        0 0 60px rgba(0, 212, 255, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    animation: modalSlideIn 0.3s ease;
+    overflow: hidden;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* 모달 헤더 */
+.tf-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 20px;
+    background: linear-gradient(180deg, rgba(0, 212, 255, 0.15) 0%, transparent 100%);
+    border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+}
+
+.tf-modal-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #00d4ff;
+    letter-spacing: 0.5px;
+}
+
+.tf-modal-close {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 8px;
+    color: #9ca3af;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tf-modal-close:hover {
+    background: rgba(255, 82, 82, 0.3);
+    color: #ff5252;
+}
+
+/* 모달 그리드 (2열 4행) */
+.tf-modal-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    padding: 20px;
+}
+
+.tf-modal-item {
+    padding: 16px 20px;
+    background: rgba(30, 40, 55, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: #9ca3af;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.tf-modal-item:hover {
+    background: rgba(0, 212, 255, 0.15);
+    border-color: rgba(0, 212, 255, 0.4);
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+}
+
+.tf-modal-item.active {
+    background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+    border-color: #00d4ff;
+    color: #000;
+    font-weight: 700;
+    box-shadow: 0 5px 25px rgba(0, 212, 255, 0.5);
+}
+
+.tf-modal-item.active:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0, 212, 255, 0.6);
+}
+
+/* 보조지표 메뉴 v2 */
+.indicator-menu-v2 {
+    min-width: 220px;
+}
+
+.indicator-options-v2 {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.ind-option-v2 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: rgba(30, 40, 55, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.ind-option-v2:hover {
+    background: rgba(0, 212, 255, 0.08);
+    border-color: rgba(0, 212, 255, 0.2);
+}
+
+.ind-option-v2 input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #00d4ff;
+    cursor: pointer;
+}
+
+.ind-color-v2 {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.ind-option-v2 span:last-child {
+    font-size: 13px;
+    color: #e5e7eb;
+    font-weight: 500;
+}
+
+.ind-apply-btn-v2 {
+    width: 100%;
+    margin-top: 12px;
+    padding: 11px;
+    background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+    border: none;
+    border-radius: 8px;
+    color: #000;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ind-apply-btn-v2:hover {
+    box-shadow: 0 4px 20px rgba(0, 212, 255, 0.4);
+    transform: translateY(-1px);
+}
+
+.ind-apply-btn-v2:active {
+    transform: translateY(0);
+}
+
+/* ========== 차트 컨테이너 ========== */
+#chart-container { 
+    width: 100%; 
+    height: 720px; 
+    background: var(--bg-primary); 
+    border: 1px solid rgba(0, 212, 255, 0.4);
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.1), inset 0 0 30px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    margin: 10px 5px;
+    width: calc(100% - 10px);
+}
+
+.price-bar { display: flex; padding: 10px 15px; gap: 10px; }
+
+/* Chart Symbol Selector */
+.chart-symbol-row { 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+    padding: 14px 16px; 
+    background: linear-gradient(180deg, #151c28 0%, #0d1421 100%); 
+    border-bottom: 1px solid rgba(0, 212, 255, 0.15); 
+    position: relative; 
+}
+.chart-symbol-info { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.chart-symbol-icon { font-size: 24px; }
+.chart-symbol-name { font-size: 22px; font-weight: bold; }
+.chart-symbol-id { font-size: 11px; color: var(--text-muted); }
+.chart-symbol-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: var(--bg-secondary); border: 1px solid var(--accent-cyan); border-radius: 8px; margin-top: 5px; z-index: 50; max-height: 300px; overflow-y: auto; display: none; }
+.chart-symbol-option { display: flex; align-items: center; gap: 10px; padding: 12px 15px; cursor: pointer; border-bottom: 1px solid var(--border-color); }
+.chart-symbol-option:hover { background: rgba(255,255,255,0.1); }
+.chart-symbol-option:last-child { border-bottom: none; }
+.chart-symbol-option.favorite { background: rgba(0,212,255,0.1); }
+.favorite-star { color: #ffd700; margin-left: auto; }
+
+/* Chart Signal Section */
+.chart-signal-section { padding: 15px; background: var(--bg-primary); }
+.chart-signal-title { font-size: 16px; font-weight: 700; color: var(--accent-cyan); margin-bottom: 15px; letter-spacing: 0.5px; }
+.chart-gauge-container { text-align: center; padding: 10px 0; }
+.chart-gauge-status { font-size: 24px; font-weight: 900; letter-spacing: 2px; margin-top: 5px; transition: color 0.5s ease, text-shadow 0.5s ease; }
+.chart-indicator-summary { display: flex; background: var(--bg-secondary); border-radius: 10px; overflow: hidden; margin-top: 15px; border: 1px solid var(--border-color); }
+.chart-indicator-item { flex: 1; text-align: center; padding: 10px; }
+.chart-indicator-item:not(:last-child) { border-right: 1px solid var(--border-color); }
+.chart-indicator-count { font-size: 24px; font-weight: bold; }
+.chart-indicator-label { font-size: 10px; color: var(--text-muted); }
+.price-box { flex: 1; text-align: center; padding: 10px 15px; border-radius: 8px; }
+.price-box.sell { background: linear-gradient(180deg, #ff5252, #d32f2f); }
+.price-box.buy { background: linear-gradient(180deg, #00c853, #00a844); }
+.price-label { font-size: 10px; opacity: 0.9; }
+.price-value { font-size: 18px; font-weight: bold; }
+
+/* 차트 상세 컨테이너 */
+.chart-detail-container {
+    display: none;
+}
+
+.chart-detail-container.active {
+    display: block;
+}
+
+/* 차트 글로우 박스 (헤더 + 차트 + 호가) */
+.chart-glow-box {
+    margin: 10px 1px;
+    padding: 8px;
+    background: linear-gradient(180deg, rgba(13, 20, 33, 0.95) 0%, rgba(10, 15, 24, 0.98) 100%);
+    border: 1px solid rgba(0, 212, 255, 0.35);
+    border-radius: 16px;
+    box-shadow: 
+        0 0 25px rgba(0, 212, 255, 0.12),
+        0 0 50px rgba(0, 212, 255, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+/* 종목 검색 모달 */
+.search-category-btn {
+    padding: 6px 14px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+.search-category-btn.active {
+    background: var(--accent-cyan);
+    border-color: var(--accent-cyan);
+    color: #000;
+}
+.search-result-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    cursor: pointer;
+    transition: background 0.2s;
+    border-bottom: 1px solid var(--border-color);
+}
+.search-result-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+.search-result-item:active {
+    background: rgba(0, 212, 255, 0.1);
+}
+.search-result-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    margin-right: 12px;
+}
+.search-result-info {
+    flex: 1;
+}
+.search-result-symbol {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+.search-result-name {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+.search-result-category {
+    font-size: 10px;
+    padding: 3px 8px;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    color: var(--text-muted);
+}
+
+/* ========== 차트 툴 드롭다운 (기존 클래스) ========== */
+.chart-tools-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+}
+
+.chart-tool-dropdown {
+    position: relative;
+    display: inline-flex;
+    vertical-align: top;
+}
+
+.chart-tool-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: linear-gradient(180deg, rgba(30, 40, 55, 0.9) 0%, rgba(15, 20, 30, 0.95) 100%);
+    border: 1px solid rgba(0, 212, 255, 0.3);
+    border-radius: 8px;
+    color: #00d4ff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.chart-tool-btn:hover {
+    background: linear-gradient(180deg, rgba(0, 212, 255, 0.15) 0%, rgba(0, 150, 200, 0.1) 100%);
+    border-color: rgba(0, 212, 255, 0.6);
+    transform: translateY(-1px);
+}
+
+.chart-tool-btn svg {
+    stroke: #00d4ff;
+}
+
+/* 드롭다운 메뉴 */
+.chart-tool-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    left: auto;
+    background: linear-gradient(180deg, #1e2530 0%, #151a22 100%);
+    border: 1px solid rgba(0, 212, 255, 0.4);
+    border-radius: 12px;
+    padding: 14px;
+    min-width: 140px;
+    z-index: 1000;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.6), 0 0 25px rgba(0, 212, 255, 0.15);
+    white-space: nowrap;
+}
+
+.tool-menu-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #00d4ff;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+}
+
+/* 타임프레임 그리드 (2열 4행) */
+.tf-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+}
+
+.tf-item {
+    padding: 10px 6px;
+    background: rgba(30, 40, 55, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    color: #9ca3af;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: center;
+}
+
+.tf-item:hover {
+    background: rgba(0, 212, 255, 0.1);
+    border-color: rgba(0, 212, 255, 0.3);
+    color: #ffffff;
+}
+
+.tf-item.active {
+    background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+    border-color: #00d4ff;
+    color: #000;
+    font-weight: 700;
+    box-shadow: 0 2px 10px rgba(0, 212, 255, 0.4);
+}
+
+/* 보조지표 옵션 */
+.indicator-menu {
+    min-width: 220px;
+}
+
+.indicator-options {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.ind-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: rgba(30, 40, 55, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.ind-option:hover {
+    background: rgba(0, 212, 255, 0.08);
+    border-color: rgba(0, 212, 255, 0.2);
+}
+
+.ind-option input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #00d4ff;
+    cursor: pointer;
+}
+
+.ind-color {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.ind-option span:last-child {
+    font-size: 13px;
+    color: #e5e7eb;
+    font-weight: 500;
+}
+
+.ind-apply-btn {
+    width: 100%;
+    margin-top: 12px;
+    padding: 11px;
+    background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+    border: none;
+    border-radius: 8px;
+    color: #000;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ind-apply-btn:hover {
+    box-shadow: 0 4px 20px rgba(0, 212, 255, 0.4);
+    transform: translateY(-1px);
+}
+
+/* ========== 타임프레임 드롭다운 (새 버전) ========== */
+.tf-dropdown-wrapper {
+    position: relative;
+}
+
+.tf-dropdown-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: linear-gradient(180deg, rgba(0, 212, 255, 0.15) 0%, rgba(0, 150, 200, 0.08) 100%);
+    border: 1px solid rgba(0, 212, 255, 0.4);
+    border-radius: 10px;
+    color: #00d4ff;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3), 0 0 15px rgba(0, 212, 255, 0.1);
+}
+
+.tf-dropdown-btn:hover {
+    background: linear-gradient(180deg, rgba(0, 212, 255, 0.25) 0%, rgba(0, 150, 200, 0.15) 100%);
+    border-color: rgba(0, 212, 255, 0.7);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 25px rgba(0, 212, 255, 0.2);
+    transform: translateY(-1px);
+}
+
+.tf-dropdown-btn:active {
+    transform: translateY(0);
+}
+
+.tf-dropdown-btn svg {
+    stroke: #00d4ff;
+}
+
+.tf-arrow {
+    transition: transform 0.25s ease;
+    opacity: 0.7;
+}
+
+.tf-dropdown-btn.open .tf-arrow {
+    transform: rotate(180deg);
+}
+
+/* 드롭다운 메뉴 */
+.tf-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    background: linear-gradient(180deg, #1a2332 0%, #0f1419 100%);
+    border: 1px solid rgba(0, 212, 255, 0.5);
+    border-radius: 14px;
+    padding: 16px;
+    min-width: 180px;
+    z-index: 1000;
+    box-shadow: 
+        0 20px 60px rgba(0, 0, 0, 0.7),
+        0 0 40px rgba(0, 212, 255, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.tf-dropdown-menu.show {
+    display: block;
+    animation: tfDropdownOpen 0.2s ease;
+}
+
+@keyframes tfDropdownOpen {
+    from {
+        opacity: 0;
+        transform: translateY(-10px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.tf-dropdown-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #00d4ff;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+    text-align: center;
+}
+
+/* 2열 4행 그리드 */
+.tf-dropdown-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.tf-dropdown-item {
+    padding: 12px 16px;
+    background: rgba(30, 40, 55, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    color: #9ca3af;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.tf-dropdown-item:hover {
+    background: rgba(0, 212, 255, 0.15);
+    border-color: rgba(0, 212, 255, 0.4);
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+.tf-dropdown-item.active {
+    background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+    border-color: #00d4ff;
+    color: #000;
+    font-weight: 700;
+    box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
+}
+
+/* ========== 차트 버튼 그룹 ========== */
+.chart-btn-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ========== 보조지표 버튼 (글래스모피즘) ========== */
+.ind-popup-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ind-popup-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+.ind-popup-btn:active {
+    transform: scale(0.98);
+}
+
+.ind-popup-btn svg {
+    stroke: #00d4ff;
+}
+
+/* ========== 보조지표 모달 ========== */
+.ind-modal {
+    background: #1a2332;
+    border: 1px solid rgba(0, 212, 255, 0.4);
+    border-radius: 16px;
+    overflow: hidden;
+    width: 90%;
+    max-width: 340px;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.8), 0 0 60px rgba(0, 212, 255, 0.15);
+    animation: indModalSlideIn 0.25s ease;
+}
+
+@keyframes indModalSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.ind-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 18px;
+    background: linear-gradient(180deg, rgba(0, 212, 255, 0.1) 0%, transparent 100%);
+    border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+}
+
+.ind-modal-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.ind-modal-close {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 6px;
+    color: #9ca3af;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.ind-modal-close:hover {
+    background: rgba(255, 82, 82, 0.3);
+    color: #ff5252;
+}
+
+.ind-modal-search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ind-modal-search input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    font-size: 14px;
+    outline: none;
+}
+
+.ind-modal-search input::placeholder {
+    color: #6b7280;
+}
+
+.ind-modal-list {
+    max-height: 320px;
+    overflow-y: auto;
+    padding: 8px 0;
+}
+
+.ind-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.ind-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.ind-checkbox {
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+}
+
+.ind-checkbox.checked {
+    background: #00d4ff;
+    border-color: #00d4ff;
+}
+
+.ind-checkbox.checked::after {
+    content: '✓';
+    color: #000;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.ind-color-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.ind-info {
+    flex: 1;
+}
+
+.ind-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.ind-desc {
+    font-size: 11px;
+    color: #6b7280;
+    margin-top: 1px;
+}
+
+.ind-modal-footer {
+    padding: 14px 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    gap: 10px;
+}
+
+.ind-btn-reset {
+    flex: 1;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 8px;
+    color: #9ca3af;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.ind-btn-reset:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+}
+
+.ind-btn-apply {
+    flex: 2;
+    padding: 12px;
+    background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+    border: none;
+    border-radius: 8px;
+    color: #000;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.ind-btn-apply:hover {
+    box-shadow: 0 4px 20px rgba(0, 212, 255, 0.4);
+    transform: translateY(-1px);
+}
+
+.ind-btn-apply:active {
+    transform: translateY(0);
+}
+
+/* ========== 종목 정보 섹션 (Account Overview 스타일) ========== */
+.symbol-info-section {
+    margin: 15px 1px;
+    padding: 8px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.info-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.info-section-header:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.info-section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.info-section-title .icon {
+    color: #00d4ff;
+    font-size: 18px;
+}
+
+.info-section-title .text {
+    font-size: 14px;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.info-section-badge {
+    font-size: 11px;
+    padding: 4px 10px;
+    background: rgba(0, 212, 255, 0.15);
+    color: #00d4ff;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.info-toggle-icon {
+    color: #6b7280;
+    font-size: 20px;
+    transition: transform 0.3s ease;
+}
+
+.info-toggle-icon.open {
+    transform: rotate(180deg);
+}
+
+.symbol-name-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--bg-tertiary);
+    border-radius: 10px;
+    margin: 0 0 12px;
+}
+
+.symbol-name-icon {
+    font-size: 28px;
+}
+
+.symbol-name-info {
+    flex: 1;
+}
+
+.symbol-name-main {
+    font-size: 15px;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.symbol-name-sub {
+    font-size: 11px;
+    color: #6b7280;
+    margin-top: 2px;
+}
+
+/* 정보 그룹 (카드 스타일) */
+.info-group {
+    background: var(--bg-tertiary);
+    border-radius: 10px;
+    padding: 12px 15px;
+    margin: 0 0 12px;
+}
+
+.info-group:last-child {
+    margin-bottom: 12px;
+}
+
+.info-group-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #00d4ff;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.info-group-title::before {
+    content: '';
+    width: 3px;
+    height: 14px;
+    background: #00d4ff;
+    border-radius: 2px;
+}
+
+/* 정보 행 */
+.symbol-info-section .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.symbol-info-section .info-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.symbol-info-section .info-row:first-of-type {
+    padding-top: 0;
+}
+
+.symbol-info-section .info-label {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.symbol-info-section .info-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: #ffffff;
+    text-align: right;
+}
+
+.symbol-info-section .info-value.highlight {
+    color: #00d4ff;
+}
+
+.symbol-info-section .info-value.positive {
+    color: #00b450;
+}
+
+.symbol-info-section .info-value.negative {
+    color: #dc3246;
+}
+
+.info-value-sub {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+/* 거래시간 그리드 */
+.trading-hours-grid {
+    display: grid;
+    grid-template-columns: 70px 1fr;
+    gap: 6px 12px;
+}
+
+.trading-day {
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 6px 0;
+}
+
+.trading-day.today {
+    color: #00d4ff;
+    font-weight: 600;
+}
+
+.trading-time {
+    font-size: 12px;
+    color: #ffffff;
+    padding: 6px 0;
+    text-align: right;
+    font-weight: 600;
+}
+
+.trading-time.closed {
+    color: #dc3246;
+}
+
+/* 접기/펼치기 */
+.symbol-info-content.collapsed {
+    display: none;
+}
+
+.symbol-info-content {
+    padding-top: 4px;
+}

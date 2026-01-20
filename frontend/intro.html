@@ -784,15 +784,17 @@
         // ========== 앱 시작 (데모) ==========
         // ========== 로그인 페이지로 ==========
         function goToLogin() {
-            window.location.href = 'login.html';
+            sessionStorage.setItem('intro_shown', 'true');
+            window.location.href = 'login.html';            
         }
-        
+
         // ========== 게스트 모드로 앱 시작 ==========
         function guestMode() {
+            sessionStorage.setItem('intro_shown', 'true');
             sessionStorage.setItem('guest_mode', 'true');
             window.location.href = 'index.html';
         }
-        
+
         // ========== 앱 시작 (기존 호환) ==========
         function startApp() {
             goToLogin();

@@ -879,14 +879,14 @@ function renderFilteredHistory() {
             const exitStr = exitPrice.toFixed(decimals);
             
             html += `<div class="history-item">
-                <div style="flex:1;display:flex;align-items:center;gap:8px;">
+                <div style="flex:1;display:flex;align-items:center;gap:8px;margin-left:5px;">
                     <span style="font-size:15px;font-weight:600;">${h.symbol} <span style="color:${typeColor};font-weight:600;font-size:15px;">${h.type}</span></span>
                     <span style="color:rgba(255,255,255,0.2);">|</span>
                     <span class="history-time">${h.time}</span>
                     <span style="color:rgba(255,255,255,0.2);">|</span>
                     <span class="history-time">${h.volume} lot</span>
                 </div>
-                <span class="history-profit ${profitClass}" style="min-width:80px;text-align:right;font-size:15px;">${profitSign}$${h.profit.toFixed(2)}</span>
+                <span class="history-profit ${profitClass}" style="min-width:80px;text-align:right;font-size:15px;margin-right:5px;">${profitSign}$${h.profit.toFixed(2)}</span>
             </div>`;
         });
         container.innerHTML = html;

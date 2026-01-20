@@ -227,6 +227,11 @@ function openChartFromWatchlist(symbol, name, icon, color) {
     }
     initChart();
     loadCandles();
+    
+    // 종목 정보 섹션 업데이트
+    if (typeof SymbolSelectorPanel !== 'undefined' && SymbolSelectorPanel.updateSymbolInfoSection) {
+        SymbolSelectorPanel.updateSymbolInfoSection(symbol);
+    }
 }
 
 function backToWatchlist() {
@@ -383,6 +388,11 @@ function selectSearchSymbol(symbol, name, icon, color) {
     }
     initChart();
     loadCandles();
+    
+    // 종목 정보 섹션 업데이트
+    if (typeof SymbolSelectorPanel !== 'undefined' && SymbolSelectorPanel.updateSymbolInfoSection) {
+        SymbolSelectorPanel.updateSymbolInfoSection(symbol);
+    }
 
     showToast(`${symbol} 차트를 로드합니다`, 'success');
 }
