@@ -1,7 +1,77 @@
 /* ========================================
    Trading-X Account Tab
-   Account Info 업데이트
+   Account Info 업데이트 + 거래내역 로드
    ======================================== */
+
+// ========== 거래내역 로드 ==========
+async function loadHistory() {
+    const container = document.getElementById('historyList');
+    if (!container) return;
+    
+    container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-muted);">Loading...</div>';
+    
+    console.log('[loadHistory] isDemo:', isDemo, 'token:', token ? 'exists' : 'none');
+    
+    try {
+        // Demo/Live 모드에 따라 다른 API 호출
+        const endpoint = isDemo ? '/demo/history' : '/mt5/history';
+        console.log('[loadHistory] Fetching from:', endpoint);
+        
+        const response = await fetch(`${API_URL}${endpoint}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('[loadHistory] Response:', data);
+        
+        if (data.history && data.history.length > 0) {
+            let html = '';
+            data.history.forEach(item => {
+                const profit = item.profit || 0;
+                const profitClass = profit >= 0 ? 'profit-positive' : 'profit-negative';
+                const profitSign = profit >= 0 ? '+' : '';
+                const typeClass = (item.type === 'BUY' || item.type === 0) ? 'type-buy' : 'type-sell';
+                const typeText = (item.type === 'BUY' || item.type === 0) ? 'BUY' : 'SELL';
+                
+                // Live 모드에서는 entry/exit 대신 price만 있을 수 있음
+                const entryPrice = item.entry || item.price || 0;
+                const exitPrice = item.exit || item.price || 0;
+                
+                html += `
+                    <div class="history-item">
+                        <div class="history-left">
+                            <div class="history-symbol">${item.symbol || '-'}</div>
+                            <div class="history-details">
+                                <span class="history-type ${typeClass}">${typeText}</span>
+                                <span class="history-volume">${item.volume || 0} lot</span>
+                                <span class="history-time">${item.time || '-'}</span>
+                            </div>
+                        </div>
+                        <div class="history-right">
+                            <div class="history-profit ${profitClass}">${profitSign}$${profit.toFixed(2)}</div>
+                            <div class="history-prices">${entryPrice.toFixed(2)} → ${exitPrice.toFixed(2)}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+            
+            // Account Info 업데이트
+            updateAccountInfoFromHistory(data.history);
+        } else {
+            container.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-muted);">거래 내역이 없습니다</div>';
+            resetAccountInfo();
+        }
+    } catch (error) {
+        console.error('[loadHistory] Error:', error);
+        container.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-muted);">거래 내역을 불러올 수 없습니다</div>';
+        resetAccountInfo();
+    }
+}
 
 // Account Info 업데이트 함수 (오늘 기준)
 function updateAccountInfoFromHistory(historyData) {
@@ -17,14 +87,30 @@ function updateAccountInfoFromHistory(historyData) {
     // 오늘 거래만 필터링
     let todayTrades = historyData.filter(item => item.time && item.time.startsWith(todayStr));
     
+    // 전체 통계도 계산 (오늘 거래가 없을 경우 대비)
+    let allWins = 0;
+    let allLosses = 0;
+    let allPL = 0;
+    
+    historyData.forEach(item => {
+        const profit = item.profit || 0;
+        allPL += profit;
+        if (profit >= 0) {
+            allWins++;
+        } else {
+            allLosses++;
+        }
+    });
+    
     // 오늘 통계 계산
     let todayWins = 0;
     let todayLosses = 0;
     let todayPL = 0;
     
     todayTrades.forEach(item => {
-        todayPL += item.profit;
-        if (item.profit >= 0) {
+        const profit = item.profit || 0;
+        todayPL += profit;
+        if (profit >= 0) {
             todayWins++;
         } else {
             todayLosses++;
@@ -36,16 +122,21 @@ function updateAccountInfoFromHistory(historyData) {
     const todayPLEl = document.getElementById('accTodayPL');
     const currentPLEl = document.getElementById('accCurrentPL');
     
+    // 오늘 거래가 있으면 오늘 통계, 없으면 전체 통계
+    const displayWins = todayTrades.length > 0 ? todayWins : allWins;
+    const displayLosses = todayTrades.length > 0 ? todayLosses : allLosses;
+    const displayPL = todayTrades.length > 0 ? todayPL : allPL;
+    
     if (winLoseEl) {
-        winLoseEl.textContent = `${todayWins} / ${todayLosses}`;
+        winLoseEl.textContent = `${displayWins} / ${displayLosses}`;
     }
     
     if (todayPLEl) {
-        if (todayPL >= 0) {
-            todayPLEl.textContent = '+$' + todayPL.toFixed(2);
+        if (displayPL >= 0) {
+            todayPLEl.textContent = '+$' + displayPL.toFixed(2);
             todayPLEl.style.color = 'var(--buy-color)';
         } else {
-            todayPLEl.textContent = '-$' + Math.abs(todayPL).toFixed(2);
+            todayPLEl.textContent = '-$' + Math.abs(displayPL).toFixed(2);
             todayPLEl.style.color = 'var(--sell-color)';
         }
     }
@@ -53,6 +144,8 @@ function updateAccountInfoFromHistory(historyData) {
     if (currentPLEl) {
         currentPLEl.textContent = '$0.00';
     }
+    
+    console.log('[updateAccountInfoFromHistory] Today trades:', todayTrades.length, 'Total trades:', historyData.length);
 }
 
 // Account Info 초기화
@@ -67,4 +160,9 @@ function resetAccountInfo() {
         todayPLEl.style.color = 'var(--buy-color)';
     }
     if (currentPLEl) currentPLEl.textContent = '$0.00';
+}
+
+// Account 탭 전환 시 자동 로드
+function initAccountTab() {
+    loadHistory();
 }

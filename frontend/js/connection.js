@@ -68,15 +68,23 @@ function connectWebSocket() {
         
         balance = data.balance;
         
-        // Home
-        document.getElementById('homeBalance').textContent = '$' + data.balance.toLocaleString(undefined, {minimumFractionDigits: 2});
-        document.getElementById('homeBroker').textContent = data.broker;
-        document.getElementById('homeAccount').textContent = data.account;
-        document.getElementById('homeLeverage').textContent = '1:' + data.leverage;
-        document.getElementById('homeEquity').textContent = '$' + data.equity.toLocaleString(undefined, {minimumFractionDigits: 2});
-        document.getElementById('homeFreeMargin').textContent = '$' + data.free_margin.toLocaleString(undefined, {minimumFractionDigits: 2});
-        document.getElementById('homePositions').textContent = data.positions_count;
+        // Home (null 체크 추가)
+        const homeBalance = document.getElementById('homeBalance');
+        const homeBroker = document.getElementById('homeBroker');
+        const homeAccount = document.getElementById('homeAccount');
+        const homeLeverage = document.getElementById('homeLeverage');
+        const homeEquity = document.getElementById('homeEquity');
+        const homeFreeMargin = document.getElementById('homeFreeMargin');
+        const homePositions = document.getElementById('homePositions');
         
+        if (homeBalance) homeBalance.textContent = '$' + data.balance.toLocaleString(undefined, {minimumFractionDigits: 2});
+        if (homeBroker) homeBroker.textContent = data.broker;
+        if (homeAccount) homeAccount.textContent = data.account;
+        if (homeLeverage) homeLeverage.textContent = '1:' + data.leverage;
+        if (homeEquity) homeEquity.textContent = '$' + data.equity.toLocaleString(undefined, {minimumFractionDigits: 2});
+        if (homeFreeMargin) homeFreeMargin.textContent = '$' + data.free_margin.toLocaleString(undefined, {minimumFractionDigits: 2});
+        if (homePositions) homePositions.textContent = data.positions_count;
+
         // Chart prices
         if (data.all_prices && data.all_prices[chartSymbol]) {
             const symbolPrice = data.all_prices[chartSymbol];
@@ -118,6 +126,7 @@ function connectWebSocket() {
         // 포지션 정보
             if (data.position) {
                 updatePositionUI(true, data.position);
+                window.lastLivePosition = data.position;
                 
                 // 프론트엔드에서도 목표 도달 체크 (백엔드 보완)
                 const pos = data.position;
@@ -129,14 +138,54 @@ function connectWebSocket() {
                     closeDemoPosition();
                 }
             } else {
+                // Live 모드에서 포지션 청산 감지
+                if (!isDemo && window.lastLivePosition) {
+                    const lastProfit = window.lastLivePosition.profit || 0;
+                    playSound('close');
+                    
+                    if (lastProfit >= 0) {
+                        showToast(`🎯 청산 완료! +$${lastProfit.toFixed(2)}`, 'success');
+                    } else {
+                        showToast(`💔 청산 완료! $${lastProfit.toFixed(2)}`, 'error');
+                    }
+                    
+                    if (typeof updateTodayPL === 'function') {
+                        updateTodayPL(lastProfit);
+                    }
+                    if (typeof loadHistory === 'function') {
+                        loadHistory();
+                    }
+                    
+                    window.lastLivePosition = null;
+                }
                 updatePositionUI(false, null);
             }
         
-        // Account tab
-        document.getElementById('accBalance').textContent = '$' + Math.round(data.balance).toLocaleString();
-        document.getElementById('accEquity').textContent = '$' + Math.round(data.equity).toLocaleString();
-        document.getElementById('accMargin').textContent = '$' + Math.round(data.margin).toLocaleString();
-        document.getElementById('accFree').textContent = '$' + Math.round(data.free_margin).toLocaleString();
+        // Account tab (null 체크 + HTML ID에 맞게 수정)
+        const accBalance = document.getElementById('accBalance');
+        const accEquity = document.getElementById('accEquity');
+        const accFree = document.getElementById('accFree');
+        const accCurrentPL = document.getElementById('accCurrentPL');
+        
+        if (accBalance) accBalance.textContent = '$' + data.balance.toLocaleString(undefined, {minimumFractionDigits: 2});
+        if (accEquity) accEquity.textContent = '$' + data.equity.toLocaleString(undefined, {minimumFractionDigits: 2});
+        if (accFree) accFree.textContent = '$' + Math.round(data.margin || 0).toLocaleString();
+        
+        // Current P&L 업데이트 (현재 포지션 손익)
+        if (accCurrentPL) {
+            let currentProfit = 0;
+            if (data.position) {
+                currentProfit = data.position.profit || 0;
+            }
+            
+            if (currentProfit >= 0) {
+                accCurrentPL.textContent = '+$' + currentProfit.toFixed(2);
+                accCurrentPL.style.color = 'var(--buy-color)';
+            } else {
+                accCurrentPL.textContent = '-$' + Math.abs(currentProfit).toFixed(2);
+                accCurrentPL.style.color = 'var(--sell-color)';
+            }
+        }
         
         // Martin state
         if (data.martin) {
@@ -195,10 +244,30 @@ async function fetchAccountData() {
             
             document.getElementById('tradeBalance').textContent = '$' + Math.round(data.balance || 0).toLocaleString();
             
-            document.getElementById('accBalance').textContent = '$' + Math.round(data.balance || 0).toLocaleString();
-            document.getElementById('accEquity').textContent = '$' + Math.round(data.equity || 0).toLocaleString();
-            document.getElementById('accMargin').textContent = '$' + Math.round(data.margin || 0).toLocaleString();
-            document.getElementById('accFree').textContent = '$' + Math.round(data.free_margin || 0).toLocaleString();
+            const accBalance = document.getElementById('accBalance');
+            const accEquity = document.getElementById('accEquity');
+            const accFree = document.getElementById('accFree');
+            const accCurrentPL = document.getElementById('accCurrentPL');
+            
+            if (accBalance) accBalance.textContent = '$' + (data.balance || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+            if (accEquity) accEquity.textContent = '$' + (data.equity || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+            if (accFree) accFree.textContent = '$' + Math.round(data.margin || 0).toLocaleString();
+            
+            // Current P&L 업데이트 (현재 포지션 손익)
+            if (accCurrentPL) {
+                let currentProfit = 0;
+                if (data.position) {
+                    currentProfit = data.position.profit || 0;
+                }
+                
+                if (currentProfit >= 0) {
+                    accCurrentPL.textContent = '+$' + currentProfit.toFixed(2);
+                    accCurrentPL.style.color = 'var(--buy-color)';
+                } else {
+                    accCurrentPL.textContent = '-$' + Math.abs(currentProfit).toFixed(2);
+                    accCurrentPL.style.color = 'var(--sell-color)';
+                }
+            }
             
             if (data.buy_count !== undefined) {
                 console.log('[fetchAccountData] Updating indicators:', data.sell_count, data.neutral_count, data.buy_count);
@@ -219,9 +288,45 @@ async function fetchAccountData() {
                 document.getElementById('chartAsk').textContent = price.ask.toFixed(decimals);
             }
             
+            // 포지션 상태 변화 감지 (청산 감지)
             if (data.position) {
                 updatePositionUI(true, data.position);
+                window.lastLivePosition = data.position;
             } else {
+                // 이전에 포지션이 있었는데 지금 없으면 = 청산됨!
+                if (window.lastLivePosition) {
+                    const lastProfit = window.lastLivePosition.profit || 0;
+                    playSound('close');
+                    
+                    if (lastProfit >= 0) {
+                        showToast(`🎯 청산 완료! +$${lastProfit.toFixed(2)}`, 'success');
+                    } else {
+                        showToast(`💔 청산 완료! $${lastProfit.toFixed(2)}`, 'error');
+                    }
+                    
+                    // Today P/L 업데이트
+                    const accTodayPL = document.getElementById('accTodayPL');
+                    if (accTodayPL) {
+                        const currentPL = parseFloat(accTodayPL.textContent.replace(/[^0-9.-]/g, '')) || 0;
+                        const newPL = currentPL + lastProfit;
+                        if (newPL >= 0) {
+                            accTodayPL.textContent = '+$' + newPL.toFixed(2);
+                            accTodayPL.style.color = 'var(--buy-color)';
+                        } else {
+                            accTodayPL.textContent = '-$' + Math.abs(newPL).toFixed(2);
+                            accTodayPL.style.color = 'var(--sell-color)';
+                        }
+                    }
+                    
+                    // 거래내역 새로고침 (약간 딜레이 후)
+                    setTimeout(() => {
+                        if (typeof loadHistory === 'function') {
+                            loadHistory();
+                        }
+                    }, 500);
+                    
+                    window.lastLivePosition = null;
+                }
                 updatePositionUI(false, null);
             }
             
@@ -230,8 +335,8 @@ async function fetchAccountData() {
         }
     } catch (error) {
         console.error('Fetch error:', error);
-        document.getElementById('statusDot').classList.add('disconnected');
-        document.getElementById('headerStatus').textContent = 'Disconnected';
+        // 에러가 나도 바로 Disconnected로 바꾸지 않음 (일시적 오류일 수 있음)
+        console.log('Fetch error, will retry...');
     }
 }
 
@@ -249,33 +354,97 @@ async function checkUserMode() {
             isDemo = false;
             document.getElementById('headerStatus').textContent = 'Connected';
             document.getElementById('statusDot').style.background = '#00ff88';
+            document.getElementById('statusDot').classList.remove('disconnected');
             
             // Live 배지 표시
             const badge = document.getElementById('modeBadge');
             badge.textContent = 'LIVE';
             badge.className = 'mode-badge-live';
             badge.style.display = 'inline';
-            connectWebSocket();
+            
+            // ★ Trading Mode UI를 Live로 설정
+            const liveBtn = document.getElementById('modeLiveBtn');
+            const demoBtn = document.getElementById('modeDemoBtn');
+            const liveCheck = document.getElementById('liveCheck');
+            const demoCheck = document.getElementById('demoCheck');
+            const modeStatus = document.getElementById('modeStatus');
+            const demoControl = document.getElementById('demoControlCard');
+            
+            if (liveBtn && demoBtn) {
+                liveBtn.classList.add('active', 'live-active');
+                demoBtn.classList.remove('active');
+                liveCheck.style.display = 'flex';
+                demoCheck.style.display = 'none';
+                modeStatus.className = 'mode-status live';
+                modeStatus.innerHTML = '<span class="mode-status-dot live"></span><span>Currently in <strong>Live Mode</strong> - Real trading active</span>';
+            }
+            if (demoControl) demoControl.style.display = 'none';
+            
+            // Hero 배지도 업데이트
+            const heroBadge = document.getElementById('heroModeBadge');
+            if (heroBadge) {
+                heroBadge.textContent = 'Trading-X Live';
+                heroBadge.style.background = 'linear-gradient(135deg, rgba(0, 255, 136, 0.2) 0%, rgba(0, 255, 136, 0.05) 100%)';
+                heroBadge.style.borderColor = 'rgba(0, 255, 136, 0.4)';
+                heroBadge.style.color = '#ffffff';
+            }
+            
+            // WebSocket 연결 (실패해도 폴링으로 대체)
+            try {
+                connectWebSocket();
+            } catch (e) {
+                console.log('WebSocket connection failed, using polling');
+            }
+            
             fetchAccountData();
             setInterval(fetchAccountData, 2000);
+            
         } else {
             // MT5 없음 → Demo 모드
             isDemo = true;
             document.getElementById('headerStatus').textContent = 'Connected';
-            document.getElementById('demoControlCard').style.display = 'block';
             document.getElementById('statusDot').style.background = '#00d4ff';
+            
+            // ★ Trading Mode UI를 Demo로 설정
+            const liveBtn = document.getElementById('modeLiveBtn');
+            const demoBtn = document.getElementById('modeDemoBtn');
+            const liveCheck = document.getElementById('liveCheck');
+            const demoCheck = document.getElementById('demoCheck');
+            const modeStatus = document.getElementById('modeStatus');
+            const demoControl = document.getElementById('demoControlCard');
+            
+            if (liveBtn && demoBtn) {
+                demoBtn.classList.add('active');
+                demoBtn.classList.remove('live-active');
+                liveBtn.classList.remove('active', 'live-active');
+                demoCheck.style.display = 'flex';
+                liveCheck.style.display = 'none';
+                modeStatus.className = 'mode-status';
+                modeStatus.innerHTML = '<span class="mode-status-dot demo"></span><span>Currently in <strong>Demo Mode</strong> - Practice with virtual $10,000</span>';
+            }
+            if (demoControl) demoControl.style.display = 'block';
+            
+            // Hero 배지도 업데이트
+            const heroBadge = document.getElementById('heroModeBadge');
+            if (heroBadge) {
+                heroBadge.textContent = 'Trading-X Demo';
+                heroBadge.style.background = 'linear-gradient(135deg, rgba(0, 212, 255, 0.2) 0%, rgba(0, 212, 255, 0.05) 100%)';
+                heroBadge.style.borderColor = 'rgba(0, 212, 255, 0.4)';
+                heroBadge.style.color = '#ffffff';
+            }
 
             // Demo 배지 표시
             const badge = document.getElementById('modeBadge');
             badge.textContent = 'DEMO';
             badge.className = 'mode-badge-demo';
             badge.style.display = 'inline';
-            connectWebSocket();  // WebSocket으로 실시간 데이터 수신
+            
+            connectWebSocket();
 
-            // Demo 모드에서는 토큰이 있을 때만 HTTP 폴링 사용 (포지션 자동청산 감지)
+            // ★ Demo 데이터 즉시 로드 (Account Overview 업데이트)
             if (token) {
-                fetchDemoData();
-                setInterval(fetchDemoData, 500);  // 500ms로 단축 (빠른 청산)
+                await fetchDemoData();  // await 추가하여 즉시 실행
+                setInterval(fetchDemoData, 500);
             }
 
             setTimeout(() => {
@@ -284,7 +453,6 @@ async function checkUserMode() {
         }
     } catch (error) {
         console.error('Mode check error:', error);
-        // 에러 시 Demo 모드로 기본 설정
         isDemo = true;
         fetchDemoData();
     }
@@ -371,13 +539,50 @@ async function fetchDemoData() {
             // Account 탭 업데이트 (null 체크 추가)
             const accBalance = document.getElementById('accBalance');
             const accEquity = document.getElementById('accEquity');
-            const accMargin = document.getElementById('accMargin');
             const accFree = document.getElementById('accFree');
+            const accCurrentPL = document.getElementById('accCurrentPL');
 
-            if (accBalance) accBalance.textContent = '$' + Math.round(data.balance || 10000).toLocaleString();
-            if (accEquity) accEquity.textContent = '$' + Math.round(data.equity || 10000).toLocaleString();
-            if (accMargin) accMargin.textContent = '$0';
-            if (accFree) accFree.textContent = '$' + Math.round(data.balance || 10000).toLocaleString();
+            if (accBalance) accBalance.textContent = '$' + (data.balance || 10000).toLocaleString(undefined, {minimumFractionDigits: 2});
+            if (accEquity) accEquity.textContent = '$' + (data.equity || 10000).toLocaleString(undefined, {minimumFractionDigits: 2});
+            // Demo 마진 계산 (포지션이 있으면 마진 표시)
+            if (accFree) {
+                let totalMargin = 0;
+                if (data.position) {
+                    // 단일 포지션: entry × volume / leverage
+                    const entry = data.position.entry || 0;
+                    const volume = data.position.volume || 0;
+                    const leverage = data.leverage || 500;
+                    totalMargin = (entry * volume) / leverage;
+                } else if (data.positions && data.positions.length > 0) {
+                    // 다중 포지션: 합계
+                    const leverage = data.leverage || 500;
+                    data.positions.forEach(pos => {
+                        const entry = pos.entry || 0;
+                        const volume = pos.volume || 0;
+                        totalMargin += (entry * volume) / leverage;
+                    });
+                }
+                accFree.textContent = '$' + totalMargin.toFixed(2);
+            }
+            
+            // Current P&L 업데이트 (현재 포지션 손익)
+            if (accCurrentPL) {
+                let currentProfit = 0;
+                if (data.position) {
+                    currentProfit = data.position.profit || 0;
+                } else if (data.positions && data.positions.length > 0) {
+                    // 다중 포지션인 경우 합계
+                    currentProfit = data.positions.reduce((sum, pos) => sum + (pos.profit || 0), 0);
+                }
+                
+                if (currentProfit >= 0) {
+                    accCurrentPL.textContent = '+$' + currentProfit.toFixed(2);
+                    accCurrentPL.style.color = 'var(--buy-color)';
+                } else {
+                    accCurrentPL.textContent = '-$' + Math.abs(currentProfit).toFixed(2);
+                    accCurrentPL.style.color = 'var(--sell-color)';
+                }
+            }
             
             // 포지션 정보
             if (data.position) {
@@ -575,6 +780,13 @@ function switchTradingMode(mode) {
             modeBadge.style.display = 'inline';
         }
         
+        // ★ Hero 배지 업데이트 추가
+        const heroBadge = document.getElementById('heroModeBadge');
+        if (heroBadge) {
+            heroBadge.textContent = 'Trading-X Demo';
+            heroBadge.style.color = '#ffffff';
+        }
+        
         // Demo Control 표시
         const demoControl = document.getElementById('demoControlCard');
         if (demoControl) demoControl.style.display = 'block';
@@ -608,6 +820,13 @@ function switchTradingMode(mode) {
                     modeBadge.textContent = 'LIVE';
                     modeBadge.className = 'mode-badge-live';
                     modeBadge.style.display = 'inline';
+                }
+                
+                // ★ Hero 배지 업데이트 추가
+                const heroBadge = document.getElementById('heroModeBadge');
+                if (heroBadge) {
+                    heroBadge.textContent = 'Trading-X Live';
+                    heroBadge.style.color = '#ffffff';
                 }
                 
                 // Demo Control 숨기기
@@ -687,13 +906,21 @@ async function disconnectMT5() {
     if (!confirm('MT5 계좌 연결을 해제하시겠습니까?')) return;
     
     try {
-        // 연결 해제 API 호출 (추후 구현)
-        // await apiCall('/mt5/disconnect', 'POST');
+        const response = await fetch(`${API_URL}/mt5/disconnect`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
         
-        updateMT5AccountUI(false);
-        switchTradingMode('demo');
-        showToast('MT5 계좌 연결이 해제되었습니다', 'success');
+        if (data.success) {
+            updateMT5AccountUI(false);
+            switchTradingMode('demo');
+            showToast('MT5 계좌 연결이 해제되었습니다', 'success');
+        } else {
+            showToast(data.message || '연결 해제 실패', 'error');
+        }
     } catch (e) {
+        console.error('Disconnect error:', e);
         showToast('연결 해제 실패', 'error');
     }
 }
@@ -777,29 +1004,42 @@ async function connectMT5Account() {
     showToast('연결 중...', '');
     
     try {
-        // 실제 API 호출 (추후 구현)
-        // const result = await apiCall('/mt5/connect', 'POST', { server, account, password });
+        // 실제 API 호출
+        const response = await fetch(`${API_URL}/mt5/connect`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ server, account, password })
+        });
+        const result = await response.json();
         
-        // 임시: 성공 처리
-        setTimeout(() => {
+        if (result.success) {
             closeMT5ConnectModal();
             
             // 성공 모달 표시
             document.getElementById('successAccount').textContent = account;
-            document.getElementById('successServer').textContent = server;
+            document.getElementById('successServer').textContent = server || 'HedgeHood-MT5';
             document.getElementById('mt5SuccessModal').classList.add('show');
             
             // MT5 연결 상태 업데이트
             updateMT5AccountUI(true, {
-                broker: 'HedgeHood',
+                broker: 'HedgeHood Pty Ltd',
                 account: account,
-                server: server,
+                server: server || 'HedgeHood-MT5',
                 leverage: 500
             });
             
             // Live 모드로 전환
             isDemo = false;
-            switchTradingMode('live');
+            
+            // 배지 업데이트
+            const modeBadge = document.getElementById('modeBadge');
+            if (modeBadge) {
+                modeBadge.textContent = 'LIVE';
+                modeBadge.className = 'mode-badge-live';
+            }
             
             // Hero 배지 업데이트
             const heroBadge = document.getElementById('heroModeBadge');
@@ -809,9 +1049,43 @@ async function connectMT5Account() {
                 heroBadge.style.borderColor = 'rgba(0, 255, 136, 0.4)';
                 heroBadge.style.color = '#00ff88';
             }
-        }, 1500);
+            
+            // Trading Mode UI 업데이트
+            const liveBtn = document.getElementById('modeLiveBtn');
+            const demoBtn = document.getElementById('modeDemoBtn');
+            const liveCheck = document.getElementById('liveCheck');
+            const demoCheck = document.getElementById('demoCheck');
+            const modeStatus = document.getElementById('modeStatus');
+            const demoControl = document.getElementById('demoControlCard');
+            
+            if (liveBtn && demoBtn) {
+                liveBtn.classList.add('active', 'live-active');
+                demoBtn.classList.remove('active');
+                liveCheck.style.display = 'flex';
+                demoCheck.style.display = 'none';
+                modeStatus.className = 'mode-status live';
+                modeStatus.innerHTML = '<span class="mode-status-dot live"></span><span>Currently in <strong>Live Mode</strong> - Real trading active</span>';
+            }
+            if (demoControl) demoControl.style.display = 'none';
+            
+            // WebSocket 재연결 (Demo → Live URL로 변경)
+            if (ws) {
+                ws.close();
+            }
+            connectWebSocket();
+            
+            // Live 데이터 조회 시작
+            fetchAccountData();
+            setInterval(fetchAccountData, 2000);
+            
+            showToast('🎉 MT5 계정 연결 완료!', 'success');
+            
+        } else {
+            showToast(result.message || '연결 실패', 'error');
+        }
         
     } catch (error) {
+        console.error('MT5 Connect error:', error);
         showToast('연결 실패: ' + error.message, 'error');
     }
 }

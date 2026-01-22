@@ -272,7 +272,23 @@ async function connectMT5Account() {
     showToast('연결 중...', '');
     
     try {
-        setTimeout(() => {
+        // 백엔드 API 호출하여 DB에 저장
+        const response = await fetch(`${API_URL}/mt5/connect`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                server: server,
+                account: account,
+                password: password
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
             closeMT5ConnectModal();
             
             document.getElementById('successAccount').textContent = account;
@@ -287,7 +303,31 @@ async function connectMT5Account() {
             });
             
             isDemo = false;
-            switchTradingMode('live');
+            
+            // Live 모드 UI 직접 업데이트 (checkMT5Connection 우회)
+            const liveBtn = document.getElementById('modeLiveBtn');
+            const demoBtn = document.getElementById('modeDemoBtn');
+            const liveCheck = document.getElementById('liveCheck');
+            const demoCheck = document.getElementById('demoCheck');
+            const modeStatus = document.getElementById('modeStatus');
+            const modeBadge = document.getElementById('modeBadge');
+            
+            liveBtn.classList.add('active', 'live-active');
+            demoBtn.classList.remove('active');
+            liveCheck.style.display = 'flex';
+            demoCheck.style.display = 'none';
+            
+            modeStatus.className = 'mode-status live';
+            modeStatus.innerHTML = '<span class="mode-status-dot live"></span><span>Currently in <strong>Live Mode</strong> - Real trading active</span>';
+            
+            if (modeBadge) {
+                modeBadge.textContent = 'LIVE';
+                modeBadge.className = 'mode-badge-live';
+                modeBadge.style.display = 'inline';
+            }
+            
+            const demoControl = document.getElementById('demoControlCard');
+            if (demoControl) demoControl.style.display = 'none';
             
             const heroBadge = document.getElementById('heroModeBadge');
             if (heroBadge) {
@@ -296,7 +336,13 @@ async function connectMT5Account() {
                 heroBadge.style.borderColor = 'rgba(0, 255, 136, 0.4)';
                 heroBadge.style.color = '#00ff88';
             }
-        }, 1500);
+            
+            showToast('💎 MT5 계정 연결 완료!', 'success');
+            fetchAccountData();
+            
+        } else {
+            showToast('연결 실패: ' + data.message, 'error');
+        }
         
     } catch (error) {
         showToast('연결 실패: ' + error.message, 'error');

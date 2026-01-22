@@ -19,6 +19,8 @@ class User(Base):
     demo_equity = Column(Float, default=10000.0)       # 데모 자산
     demo_today_profit = Column(Float, default=0.0)     # 오늘 수익
     has_mt5_account = Column(Boolean, default=False)   # MT5 계정 연결 여부
+    mt5_account_number = Column(String(50), nullable=True)  # MT5 계좌번호
+    mt5_server = Column(String(100), nullable=True)         # MT5 서버
     
     # ========== Demo 마틴 모드 필드 ==========
     demo_martin_step = Column(Integer, default=1)           # 현재 마틴 단계

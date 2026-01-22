@@ -248,7 +248,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
 .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 15px; cursor: pointer; color: var(--text-muted); transition: all 0.2s; }
 .nav-item.active { color: var(--accent-cyan); }
 .nav-icon { font-size: 24px; }
-.nav-label { font-size: 10px; }
+.nav-label { font-size: 12px; }
 
 /* Toast */
 .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #1e2127; padding: 12px 20px; border-radius: 8px; border: 1px solid var(--border-color); display: none; z-index: 1000; max-width: 90%; }

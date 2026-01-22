@@ -306,22 +306,36 @@ async def close_position(
 async def get_history(current_user: User = Depends(get_current_user)):
     """거래 내역 조회"""
     from_date = datetime.now() - timedelta(days=30)
-    to_date = datetime.now()
+    to_date = datetime.now() + timedelta(days=1)  # 미래 1일 추가 (시간대 문제 방지)
+    
     deals = mt5.history_deals_get(from_date, to_date)
+    
+    print(f"[MT5 History] from: {from_date}, to: {to_date}")
+    print(f"[MT5 History] Total deals found: {len(deals) if deals else 0}")
     
     history = []
     if deals:
-        for deal in deals[-20:]:
-            if deal.profit != 0:  # 실제 거래만
-                history.append({
-                    "ticket": deal.ticket,
-                    "time": datetime.fromtimestamp(deal.time).strftime("%m/%d %H:%M"),
-                    "symbol": deal.symbol,
-                    "type": "BUY" if deal.type == 0 else "SELL",
-                    "volume": deal.volume,
-                    "price": deal.price,
-                    "profit": deal.profit
-                })
+        # profit이 0이 아닌 거래만 필터링하고 시간순 정렬
+        filtered_deals = [d for d in deals if d.profit != 0]
+        # 최신순 정렬
+        sorted_deals = sorted(filtered_deals, key=lambda x: x.time, reverse=True)
+        
+        print(f"[MT5 History] Filtered deals: {len(filtered_deals)}")
+        
+        for deal in sorted_deals[:30]:  # 최근 30개
+            trade_time = datetime.fromtimestamp(deal.time)
+            history.append({
+                "ticket": deal.ticket,
+                "time": trade_time.strftime("%m/%d %H:%M"),
+                "symbol": deal.symbol,
+                "type": "BUY" if deal.type == 0 else "SELL",
+                "volume": deal.volume,
+                "price": deal.price,
+                "profit": deal.profit,
+                "entry": deal.price,
+                "exit": deal.price
+            })
+            print(f"[MT5 History] Deal: {deal.ticket}, Time: {trade_time}, Symbol: {deal.symbol}, Profit: {deal.profit}")
     
     return {"history": history}
 
@@ -564,6 +578,75 @@ def get_all_symbols():
     except Exception as e:
         return {"success": False, "symbols": [], "message": str(e)}
 
+# ========== MT5 계정 연결 ==========
+from pydantic import BaseModel
+
+class MT5ConnectRequest(BaseModel):
+    server: str = "HedgeHood-MT5"
+    account: str
+    password: str
+
+@router.post("/connect")
+async def connect_mt5_account(
+    request: MT5ConnectRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """MT5 계정 연결 및 저장"""
+    if not request.account or not request.password:
+        return JSONResponse({"success": False, "message": "계좌번호와 비밀번호를 입력하세요"})
+    
+    if not mt5.initialize():
+        return JSONResponse({"success": False, "message": "MT5 초기화 실패"})
+    
+    # DB에 has_mt5_account = True 저장
+    current_user.has_mt5_account = True
+    current_user.mt5_account_number = request.account
+    current_user.mt5_server = request.server
+    db.commit()
+    
+    return JSONResponse({
+        "success": True,
+        "message": "MT5 계정 연결 완료!",
+        "account": request.account,
+        "server": request.server
+    })
+    """MT5 계정 연결 및 저장"""
+    if not account or not password:
+        return JSONResponse({"success": False, "message": "계좌번호와 비밀번호를 입력하세요"})
+    
+    if not mt5.initialize():
+        return JSONResponse({"success": False, "message": "MT5 초기화 실패"})
+    
+    # DB에 has_mt5_account = True 저장
+    current_user.has_mt5_account = True
+    current_user.mt5_account_number = account
+    current_user.mt5_server = server
+    db.commit()
+    
+    return JSONResponse({
+        "success": True,
+        "message": "MT5 계정 연결 완료!",
+        "account": account,
+        "server": server
+    })
+
+
+@router.post("/disconnect")
+async def disconnect_mt5_account(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """MT5 계정 연결 해제"""
+    current_user.has_mt5_account = False
+    current_user.mt5_account_number = None
+    current_user.mt5_server = None
+    db.commit()
+    
+    return JSONResponse({
+        "success": True,
+        "message": "MT5 계정 연결이 해제되었습니다"
+    })
 
 # ========== WebSocket 실시간 데이터 ==========
 @router.websocket("/ws")
