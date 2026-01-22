@@ -63,6 +63,9 @@ function connectWebSocket() {
             document.getElementById('chartIndNeutral').textContent = data.neutral_count;
             document.getElementById('chartIndBuy').textContent = data.buy_count;
 
+            // ★ Demo 모드에서도 포지션 실시간 업데이트
+            fetchDemoData();
+            
             return;
         }
         
@@ -588,6 +591,10 @@ async function fetchDemoData() {
             if (data.position) {
                 console.log('[fetchDemoData] ✅ Position exists!');
                 console.log('[fetchDemoData] 📞 Calling updatePositionUI(true, posData)');
+                
+                // ★ P/L 게이지용 profit 값 저장
+                window.currentProfit = data.position.profit || 0;
+                window.currentTarget = data.position.target || targetAmount;
                 console.log('[fetchDemoData] Position details:', {
                     type: data.position.type,
                     symbol: data.position.symbol,
@@ -618,6 +625,11 @@ async function fetchDemoData() {
             } else {
                 console.log('[fetchDemoData] ❌ No position');
                 console.log('[fetchDemoData] 📞 Calling updatePositionUI(false, null)');
+                
+                // ★ 포지션 없을 때 profit 초기화
+                window.currentProfit = 0;
+                window.currentTarget = 0;
+                
                 updatePositionUI(false, null);
                 isClosing = false;  // 포지션 없으면 플래그 해제
             }

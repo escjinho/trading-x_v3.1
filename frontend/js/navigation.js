@@ -408,8 +408,43 @@ function navLongPressAction(tab) {
     }
 }
 
+// ========== 차트 종목 초기화 ==========
+function initChartSymbolFromStorage() {
+    const lastSymbol = localStorage.getItem('last_chart_symbol') || 'BTCUSD';
+    const symbolInfo = getSymbolInfo(lastSymbol);
+    
+    // 전역 변수 업데이트
+    if (typeof chartSymbol !== 'undefined') {
+        chartSymbol = lastSymbol;
+    }
+    
+    // 차트 상단 종목 표시 업데이트
+    const iconEl = document.getElementById('chartSymbolIcon');
+    const nameEl = document.getElementById('chartSymbolName');
+    const idEl = document.getElementById('chartSymbolId');
+    
+    if (iconEl) {
+        iconEl.textContent = symbolInfo.icon;
+        iconEl.style.color = symbolInfo.color;
+    }
+    if (nameEl) nameEl.textContent = symbolInfo.name;
+    if (idEl) idEl.textContent = lastSymbol;
+    
+    // ★ 하단 "종목 정보" 섹션도 업데이트
+    if (typeof updateSymbolInfo === 'function') {
+        updateSymbolInfo(lastSymbol);
+    }
+    
+    console.log('[Navigation] Chart symbol initialized:', lastSymbol);
+}
+
 // Setup on load
-document.addEventListener('DOMContentLoaded', setupNavLongPress);
+document.addEventListener('DOMContentLoaded', function() {
+    setupNavLongPress();
+    initChartSymbolFromStorage();  // ★ 종목 정보 초기화 추가
+});
+
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
     setupNavLongPress();
+    initChartSymbolFromStorage();  // ★ 종목 정보 초기화 추가
 }

@@ -110,6 +110,9 @@ function updateTodayPL(profit) {
 
 // ========== P/L Gauge ==========
 function updatePLGauge(currentPL, target = null) {
+    // ★ 디버깅 로그 추가
+    console.log(`[updatePLGauge] Called with PL: ${currentPL}, Target: ${target}`);
+    
     const actualTarget = target || targetAmount;
     const plPercent = Math.min(1, Math.max(-1, currentPL / actualTarget));
     const plPercentDisplay = Math.round(Math.abs(plPercent) * 100);
