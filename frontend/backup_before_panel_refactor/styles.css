@@ -1282,15 +1282,15 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
 }
 
 /* ========== Quick & Easy 패널 ========== */
-.multi-order-panel {
+.quick-panel {
     display: none;
     padding: 15px;
 }
-.multi-order-panel.active {
+.quick-panel.active {
     display: block;
 }
 
-.multi-order-header {
+.quick-header {
     background: var(--bg-primary);
     border: 2px solid var(--accent-cyan);
     border-radius: 16px;
@@ -1298,13 +1298,13 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
     box-shadow: 0 0 40px var(--accent-cyan-glow), 0 25px 60px rgba(0,0,0,0.6);
 }
 
-.multi-order-title-bar {
+.quick-title-bar {
     padding: 15px 20px;
     text-align: center;
     border-bottom: 2px solid var(--accent-cyan);
     position: relative;
 }
-.multi-order-title-bar::before {
+.quick-title-bar::before {
     content: '';
     position: absolute;
     top: 0;
@@ -1313,7 +1313,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
     height: 2px;
     background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
 }
-.multi-order-title {
+.quick-title {
     font-family: 'Orbitron', sans-serif;
     font-size: 18px;
     font-weight: 900;
@@ -1322,15 +1322,15 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
     text-shadow: 0 0 20px var(--accent-cyan-glow);
 }
 
-.multi-order-content {
+.quick-content {
     padding: 15px;
 }
 
 /* 주문 섹션 */
-.multi-order-section {
+.quick-section {
     margin-bottom: 15px;
 }
-.multi-order-section-title {
+.quick-section-title {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -1341,16 +1341,16 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
     padding-bottom: 8px;
     border-bottom: 1px solid var(--border-color);
 }
-.multi-order-section-title .material-icons-round {
+.quick-section-title .material-icons-round {
     font-size: 18px;
 }
 
 /* 매수/매도 버튼 */
-.multi-order-order-buttons {
+.quick-order-buttons {
     display: flex;
     gap: 12px;
 }
-.multi-order-order-btn {
+.quick-order-btn {
     flex: 1;
     padding: 20px 15px;
     border: none;
@@ -1366,23 +1366,23 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
     align-items: center;
     gap: 5px;
 }
-.multi-order-order-btn:hover {
+.quick-order-btn:hover {
     transform: scale(1.02);
 }
-.multi-order-order-btn:active {
+.quick-order-btn:active {
     transform: scale(0.98);
 }
-.multi-order-order-btn.buy {
+.quick-order-btn.buy {
     background: linear-gradient(135deg, var(--buy-color) 0%, #008040 100%);
     color: white;
     box-shadow: 0 4px 20px rgba(0, 180, 80, 0.5);
 }
-.multi-order-order-btn.sell {
+.quick-order-btn.sell {
     background: linear-gradient(135deg, var(--sell-color) 0%, #a52030 100%);
     color: white;
     box-shadow: 0 4px 20px rgba(220, 50, 70, 0.5);
 }
-.multi-order-order-price {
+.quick-order-price {
     font-size: 14px;
     font-weight: 600;
     font-family: 'Rajdhani', sans-serif;
@@ -1391,12 +1391,12 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
 }
 
 /* 청산 버튼 그리드 */
-.multi-order-close-grid {
+.quick-close-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10px;
 }
-.multi-order-close-btn {
+.quick-close-btn {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1411,69 +1411,69 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
     background: var(--bg-tertiary);
     color: var(--text-primary);
 }
-.multi-order-close-btn:hover {
+.quick-close-btn:hover {
     transform: scale(1.02);
     border-color: var(--accent-cyan);
 }
-.multi-order-close-btn:active {
+.quick-close-btn:active {
     transform: scale(0.98);
 }
-.multi-order-close-btn .material-icons-round {
+.quick-close-btn .material-icons-round {
     font-size: 18px;
 }
-.multi-order-close-btn.all-close {
+.quick-close-btn.all-close {
     background: linear-gradient(135deg, #ff6b6b 0%, #c0392b 100%);
     border: none;
     color: white;
     box-shadow: 0 2px 10px rgba(220, 50, 70, 0.3);
 }
-.multi-order-close-btn.symbol-close {
+.quick-close-btn.symbol-close {
     background: linear-gradient(135deg, #f39c12 0%, #d68910 100%);
     border: none;
     color: white;
     box-shadow: 0 2px 10px rgba(243, 156, 18, 0.3);
 }
-.multi-order-close-btn.buy-close {
+.quick-close-btn.buy-close {
     background: var(--buy-bg);
     border-color: rgba(0, 180, 80, 0.4);
     color: var(--buy-color);
 }
-.multi-order-close-btn.sell-close {
+.quick-close-btn.sell-close {
     background: var(--sell-bg);
     border-color: rgba(220, 50, 70, 0.4);
     color: var(--sell-color);
 }
-.multi-order-close-btn.profit-close {
+.quick-close-btn.profit-close {
     background: rgba(0, 212, 255, 0.1);
     border-color: rgba(0, 212, 255, 0.4);
     color: var(--accent-cyan);
 }
-.multi-order-close-btn.loss-close {
+.quick-close-btn.loss-close {
     background: rgba(156, 39, 176, 0.1);
     border-color: rgba(156, 39, 176, 0.4);
     color: #ba68c8;
 }
 
 /* SL/TP 설정 */
-.multi-order-sltp-row {
+.quick-sltp-row {
     display: flex;
     align-items: center;
     gap: 10px;
     margin-bottom: 10px;
 }
-.multi-order-sltp-label {
+.quick-sltp-label {
     width: 80px;
     font-size: 13px;
     font-weight: 600;
     color: var(--text-muted);
 }
-.multi-order-sltp-label.sl {
+.quick-sltp-label.sl {
     color: var(--sell-color);
 }
-.multi-order-sltp-label.tp {
+.quick-sltp-label.tp {
     color: var(--buy-color);
 }
-.multi-order-sltp-input {
+.quick-sltp-input {
     flex: 1;
     padding: 10px 12px;
     background: var(--bg-tertiary);
@@ -1484,16 +1484,16 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
     font-weight: 600;
     text-align: center;
 }
-.multi-order-sltp-input:focus {
+.quick-sltp-input:focus {
     outline: none;
     border-color: var(--accent-cyan);
 }
-.multi-order-sltp-unit {
+.quick-sltp-unit {
     font-size: 12px;
     color: var(--text-muted);
     width: 40px;
 }
-.multi-order-sltp-apply {
+.quick-sltp-apply {
     width: 100%;
     padding: 12px;
     background: linear-gradient(135deg, var(--accent-cyan) 0%, #0099cc 100%);
@@ -1506,27 +1506,27 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
     transition: all 0.2s;
     margin-top: 5px;
 }
-.multi-order-sltp-apply:hover {
+.quick-sltp-apply:hover {
     transform: scale(1.02);
     box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
 }
 
 /* 포지션 리스트 */
-.multi-order-position-list {
+.quick-position-list {
     max-height: 200px;
     overflow-y: auto;
 }
-.multi-order-position-empty {
+.quick-position-empty {
     text-align: center;
     padding: 30px 20px;
     color: var(--text-muted);
 }
-.multi-order-position-empty .material-icons-round {
+.quick-position-empty .material-icons-round {
     font-size: 40px;
     opacity: 0.5;
     margin-bottom: 10px;
 }
-.multi-order-position-item {
+.quick-position-item {
     display: flex;
     align-items: center;
     padding: 12px;
@@ -1535,50 +1535,50 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
     margin-bottom: 8px;
     border: 1px solid var(--border-color);
 }
-.multi-order-position-item:last-child {
+.quick-position-item:last-child {
     margin-bottom: 0;
 }
-.multi-order-position-symbol {
+.quick-position-symbol {
     flex: 1;
 }
-.multi-order-position-symbol-name {
+.quick-position-symbol-name {
     font-size: 14px;
     font-weight: 700;
     color: var(--text-primary);
 }
-.multi-order-position-symbol-info {
+.quick-position-symbol-info {
     font-size: 11px;
     color: var(--text-muted);
     margin-top: 2px;
 }
-.multi-order-position-type {
+.quick-position-type {
     padding: 4px 10px;
     border-radius: 5px;
     font-size: 11px;
     font-weight: 700;
     margin-right: 12px;
 }
-.multi-order-position-type.buy {
+.quick-position-type.buy {
     background: var(--buy-bg);
     color: var(--buy-color);
 }
-.multi-order-position-type.sell {
+.quick-position-type.sell {
     background: var(--sell-bg);
     color: var(--sell-color);
 }
-.multi-order-position-profit {
+.quick-position-profit {
     font-size: 15px;
     font-weight: 700;
     min-width: 70px;
     text-align: right;
 }
-.multi-order-position-profit.positive {
+.quick-position-profit.positive {
     color: var(--buy-color);
 }
-.multi-order-position-profit.negative {
+.quick-position-profit.negative {
     color: var(--sell-color);
 }
-.multi-order-position-close {
+.quick-position-close {
     width: 32px;
     height: 32px;
     display: flex;
@@ -1592,15 +1592,15 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
     margin-left: 10px;
     transition: all 0.2s;
 }
-.multi-order-position-close:hover {
+.quick-position-close:hover {
     background: var(--sell-color);
     color: white;
 }
-.multi-order-position-close .material-icons-round {
+.quick-position-close .material-icons-round {
     font-size: 18px;
 }
 
-.multi-order-footer {
+.quick-footer {
     padding: 10px;
     text-align: center;
     font-size: 11px;
@@ -1610,7 +1610,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
 }
 
 /* Quick 종목 드롭다운 */
-.multi-order-symbol-option {
+.quick-symbol-option {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -1619,21 +1619,21 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
     transition: background 0.2s;
     border-bottom: 1px solid var(--border-color);
 }
-.multi-order-symbol-option:last-child {
+.quick-symbol-option:last-child {
     border-bottom: none;
 }
-.multi-order-symbol-option:hover {
+.quick-symbol-option:hover {
     background: rgba(255, 255, 255, 0.1);
 }
-.multi-order-symbol-option:active {
+.quick-symbol-option:active {
     background: rgba(0, 212, 255, 0.2);
 }
-.multi-order-symbol-option.selected {
+.quick-symbol-option.selected {
     background: rgba(0, 212, 255, 0.15);
 }
 
 /* Quick 포지션 아이템 개선 */
-.multi-order-position-item {
+.quick-position-item {
     display: flex;
     align-items: center;
     padding: 12px;
@@ -1643,21 +1643,21 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
     border: 1px solid var(--border-color);
     transition: all 0.2s;
 }
-.multi-order-position-item:hover {
+.quick-position-item:hover {
     border-color: var(--accent-cyan);
 }
-.multi-order-position-item:last-child {
+.quick-position-item:last-child {
     margin-bottom: 0;
 }
-.multi-order-position-item.buy-position {
+.quick-position-item.buy-position {
     border-left: 3px solid var(--buy-color);
 }
-.multi-order-position-item.sell-position {
+.quick-position-item.sell-position {
     border-left: 3px solid var(--sell-color);
 }
 
 /* 포지션 총 손익 바 */
-.multi-order-total-pl {
+.quick-total-pl {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1667,18 +1667,18 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
     margin-bottom: 10px;
     border: 1px solid var(--border-color);
 }
-.multi-order-total-pl-label {
+.quick-total-pl-label {
     font-size: 13px;
     color: var(--text-muted);
 }
-.multi-order-total-pl-value {
+.quick-total-pl-value {
     font-size: 18px;
     font-weight: 700;
 }
-.multi-order-total-pl-value.positive {
+.quick-total-pl-value.positive {
     color: var(--buy-color);
 }
-.multi-order-total-pl-value.negative {
+.quick-total-pl-value.negative {
     color: var(--sell-color);
 }
 
