@@ -295,10 +295,10 @@ async function fetchDemoData() {
                 isClosing = false;
             }
             
-            // Quick Panel
-            const quickPanel = document.getElementById('quickPanel');
-            if (quickPanel && quickPanel.classList.contains('active')) {
-                updateQuickPanelFromData(data);
+            // Multi Order Panel
+            const multiOrderPanel = document.getElementById('multiOrderPanel');
+            if (multiOrderPanel && multiOrderPanel.classList.contains('active')) {
+                updateMultiOrderPanelFromData(data);
             }
             
             // Martin state

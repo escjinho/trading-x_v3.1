@@ -121,18 +121,18 @@ function connectWebSocket() {
             if (data.positions && Array.isArray(data.positions)) {
                 console.log(`[WS] 💼 Received ${data.positions.length} positions`);
 
-                // quickPositions 배열 업데이트
-                if (typeof quickPositions !== 'undefined') {
-                    quickPositions = data.positions;
+                // multiOrderPositions 배열 업데이트
+                if (typeof multiOrderPositions !== 'undefined') {
+                    multiOrderPositions = data.positions;
 
-                    // Quick 패널이 열려있으면 업데이트
-                    if (typeof updateQuickPositionList === 'function') {
-                        updateQuickPositionList();
+                    // Multi Order 패널이 열려있으면 업데이트
+                    if (typeof updateMultiOrderPositionList === 'function') {
+                        updateMultiOrderPositionList();
                     }
 
-                    // trading.js의 updateQuickPanelFromData 호출
-                    if (typeof updateQuickPanelFromData === 'function') {
-                        updateQuickPanelFromData(data);
+                    // trading.js의 updateMultiOrderPanelFromData 호출
+                    if (typeof updateMultiOrderPanelFromData === 'function') {
+                        updateMultiOrderPanelFromData(data);
                     }
                 }
             }
