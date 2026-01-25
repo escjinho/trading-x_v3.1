@@ -736,483 +736,184 @@
                 
                 <!-- Multi Order 패널 -->
 <div class="multi-order-panel" id="multiOrderPanel">
-    
-    <!-- 섹션 1: 헤더 + 계좌 정보 -->
-    <div class="multi-order-glow-box multi-order-header-section">
-        <div class="multi-order-title-row">
-            <div class="multi-order-title-left">
-                <div class="multi-order-icon-ring">
-                    <span class="material-icons-round">grid_view</span>
+    <div class="multi-order-header">
+        <div class="multi-order-title-bar">
+            <div class="multi-order-title">⚡ QUICK & EASY</div>
+        </div>
+        
+        <div class="multi-order-content">
+            <!-- 계좌 정보 상단 바 -->
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px;">
+                <div style="background: var(--bg-tertiary); border-radius: 8px; padding: 10px; text-align: center;">
+                    <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 3px;">Balance</div>
+                    <div id="multiOrderBalance" style="font-size: 13px; font-weight: 700; color: var(--text-primary);">$0</div>
                 </div>
-                <div class="multi-order-title-text">
-                    <h1>MULTI ORDER</h1>
-                    <span>PROFESSIONAL v1.0</span>
+                <div style="background: var(--bg-tertiary); border-radius: 8px; padding: 10px; text-align: center;">
+                    <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 3px;">Equity</div>
+                    <div id="multiOrderEquity" style="font-size: 13px; font-weight: 700; color: var(--text-primary);">$0</div>
                 </div>
-            </div>
-            <div class="multi-order-title-right">
-                <div class="multi-order-panels-count">2/3</div>
-                <div class="multi-order-panels-label">PANELS</div>
-            </div>
-        </div>
-        
-        <div class="multi-order-account-grid">
-            <div class="multi-order-account-item">
-                <div class="multi-order-account-value" id="multiOrderBalance">$0</div>
-                <div class="multi-order-account-label">Balance</div>
-            </div>
-            <div class="multi-order-account-item">
-                <div class="multi-order-account-value" id="multiOrderEquity">$0</div>
-                <div class="multi-order-account-label">Equity</div>
-            </div>
-            <div class="multi-order-account-item">
-                <div class="multi-order-account-value" id="multiOrderMargin">$0</div>
-                <div class="multi-order-account-label">Margin</div>
-            </div>
-            <div class="multi-order-account-item">
-                <div class="multi-order-account-value positive" id="multiOrderTodayPL">+$0</div>
-                <div class="multi-order-account-label">Today P/L</div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 섹션 2: 주문 영역 -->
-    <div class="multi-order-glow-box multi-order-order-section">
-        
-        <!-- 종목 + Market/Limit -->
-        <div class="multi-order-symbol-row">
-            <div class="multi-order-symbol-simple" id="multiOrderSymbolSelector" onclick="toggleMultiOrderSymbolDropdown()">
-                <span class="multi-order-symbol-icon" id="multiOrderSymbolIcon" style="color: #f7931a;">₿</span>
-                <span class="multi-order-symbol-id">
-                    <span id="multiOrderSymbolId">BTCUSD</span>
-                    <span class="material-icons-round">expand_more</span>
-                </span>
-            </div>
-            <div class="multi-order-type-toggle">
-                <span class="multi-order-toggle-label active" id="multiOrderMarketLabel">Market</span>
-                <div class="multi-order-toggle-switch" id="multiOrderTypeToggle" onclick="toggleMultiOrderType()"></div>
-                <span class="multi-order-toggle-label" id="multiOrderLimitLabel">Limit</span>
-            </div>
-        </div>
-        
-        <!-- 종목 드롭다운 -->
-        <div id="multiOrderSymbolDropdown" style="display: none; position: absolute; left: 16px; right: 16px; background: var(--bg-secondary); border: 1px solid var(--accent-cyan); border-radius: 12px; margin-top: 5px; z-index: 60; max-height: 250px; overflow-y: auto;">
-            <div class="multi-order-symbol-option" data-symbol="BTCUSD" onclick="selectMultiOrderSymbol('BTCUSD')">
-                <span style="font-size: 20px; color: #f7931a;">₿</span>
-                <div><div style="font-weight: 600;">Bitcoin</div><div style="font-size: 11px; color: var(--text-muted);">BTCUSD</div></div>
-            </div>
-            <div class="multi-order-symbol-option" data-symbol="EURUSD.r" onclick="selectMultiOrderSymbol('EURUSD.r')">
-                <span style="font-size: 20px; color: #0052cc;">€</span>
-                <div><div style="font-weight: 600;">Euro/Dollar</div><div style="font-size: 11px; color: var(--text-muted);">EURUSD.r</div></div>
-            </div>
-            <div class="multi-order-symbol-option" data-symbol="USDJPY.r" onclick="selectMultiOrderSymbol('USDJPY.r')">
-                <span style="font-size: 20px; color: #dc143c;">¥</span>
-                <div><div style="font-weight: 600;">Dollar/Yen</div><div style="font-size: 11px; color: var(--text-muted);">USDJPY.r</div></div>
-            </div>
-            <div class="multi-order-symbol-option" data-symbol="XAUUSD.r" onclick="selectMultiOrderSymbol('XAUUSD.r')">
-                <span style="font-size: 20px; color: #ffd700;">✦</span>
-                <div><div style="font-weight: 600;">Gold</div><div style="font-size: 11px; color: var(--text-muted);">XAUUSD.r</div></div>
-            </div>
-            <div class="multi-order-symbol-option" data-symbol="US100." onclick="selectMultiOrderSymbol('US100.')">
-                <span style="font-size: 20px; color: #00b450;">⬡</span>
-                <div><div style="font-weight: 600;">NASDAQ</div><div style="font-size: 11px; color: var(--text-muted);">US100.</div></div>
-            </div>
-        </div>
-        
-        <!-- 지정가 입력 (Limit 모드) -->
-        <div class="multi-order-limit-section" id="multiOrderLimitSection">
-            <div class="multi-order-limit-row">
-                <span class="multi-order-limit-label">지정가</span>
-                <input type="text" class="multi-order-limit-input" id="multiOrderLimitPrice" placeholder="0.00">
-            </div>
-        </div>
-        
-        <!-- 랏수 -->
-        <div class="multi-order-lot-row">
-            <div class="multi-order-lot-control">
-                <button class="multi-order-lot-btn" onclick="adjustMultiOrderLot(-0.01)">−</button>
-                <input type="text" class="multi-order-lot-input" id="multiOrderLotInput" value="0.01" onclick="this.select()" onchange="validateMultiOrderLot(this)">
-                <button class="multi-order-lot-btn" onclick="adjustMultiOrderLot(0.01)">+</button>
-            </div>
-            <button class="multi-order-lot-settings" onclick="openMultiOrderLotPopup()">
-                <span class="material-icons-round">settings</span>
-            </button>
-        </div>
-        
-        <!-- SELL/BUY 버튼 -->
-        <div class="multi-order-trade-buttons">
-            <button class="multi-order-trade-btn sell" onclick="multiOrderSell()">
-                <span class="multi-order-trade-btn-label">SELL</span>
-                <span class="multi-order-trade-btn-price" id="multiOrderBidPrice">0.00</span>
-            </button>
-            <button class="multi-order-trade-btn buy" onclick="multiOrderBuy()">
-                <span class="multi-order-trade-btn-label">BUY</span>
-                <span class="multi-order-trade-btn-price" id="multiOrderAskPrice">0.00</span>
-            </button>
-        </div>
-        
-        <!-- SL/TP 버튼 -->
-        <button class="multi-order-sltp-btn" onclick="openMultiOrderSLTPPopup()">
-            <span class="material-icons-round">security</span>
-            SL / TP 설정
-        </button>
-        
-        <!-- 포지션 리스트 -->
-        <div class="multi-order-position-header">
-            <span class="multi-order-position-title">
-                <span class="material-icons-round" style="font-size: 16px;">list_alt</span>
-                포지션
-            </span>
-            <span class="multi-order-position-count" id="multiOrderPositionCount">0</span>
-        </div>
-        <div class="multi-order-position-list" id="multiOrderPositionList">
-            <div class="multi-order-position-empty">
-                <span class="material-icons-round">inbox</span>
-                <div>열린 포지션이 없습니다</div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 섹션 3: 청산 버튼 -->
-    <div class="multi-order-glow-box multi-order-close-section">
-        <div class="multi-order-close-title">
-            <span class="material-icons-round" style="font-size: 16px;">close</span>
-            청산
-        </div>
-        <div class="multi-order-close-grid">
-            <button class="multi-order-close-btn all-close" onclick="multiOrderCloseAll()">
-                <span class="material-icons-round">close_fullscreen</span>
-                일괄청산
-            </button>
-            <button class="multi-order-close-btn symbol-close" onclick="multiOrderCloseSymbol()">
-                <span class="material-icons-round">cancel</span>
-                현종목 청산
-            </button>
-            <button class="multi-order-close-btn buy-close" onclick="multiOrderCloseBuy()">
-                <span class="material-icons-round">arrow_upward</span>
-                매수만 청산
-            </button>
-            <button class="multi-order-close-btn sell-close" onclick="multiOrderCloseSell()">
-                <span class="material-icons-round">arrow_downward</span>
-                매도만 청산
-            </button>
-            <button class="multi-order-close-btn profit-close" onclick="multiOrderCloseProfit()">
-                <span class="material-icons-round">trending_up</span>
-                수익만 청산
-            </button>
-            <button class="multi-order-close-btn loss-close" onclick="multiOrderCloseLoss()">
-                <span class="material-icons-round">trending_down</span>
-                손실만 청산
-            </button>
-        </div>
-    </div>
-    
-    <!-- 랏수 프리셋 팝업 -->
-    <div class="multi-order-popup-overlay" id="multiOrderLotPopup" onclick="closeMultiOrderLotPopup(event)">
-        <div class="multi-order-popup" onclick="event.stopPropagation()">
-            <div class="multi-order-popup-header">
-                <span class="multi-order-popup-title">랏수 프리셋</span>
-                <button class="multi-order-popup-close" onclick="closeMultiOrderLotPopup()">✕</button>
-            </div>
-            <div class="multi-order-popup-content">
-                <div class="multi-order-lot-preset-grid">
-                    <button class="multi-order-lot-preset-btn" onclick="setMultiOrderLot(0.01)">0.01</button>
-                    <button class="multi-order-lot-preset-btn" onclick="setMultiOrderLot(0.05)">0.05</button>
-                    <button class="multi-order-lot-preset-btn" onclick="setMultiOrderLot(0.10)">0.10</button>
-                    <button class="multi-order-lot-preset-btn" onclick="setMultiOrderLot(0.50)">0.50</button>
-                    <button class="multi-order-lot-preset-btn" onclick="setMultiOrderLot(1.00)">1.00</button>
-                    <button class="multi-order-lot-preset-btn" onclick="setMultiOrderLot(5.00)">5.00</button>
+                <div style="background: var(--bg-tertiary); border-radius: 8px; padding: 10px; text-align: center;">
+                    <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 3px;">Margin</div>
+                    <div id="multiOrderMargin" style="font-size: 13px; font-weight: 700; color: var(--text-primary);">$0</div>
+                </div>
+                <div style="background: var(--bg-tertiary); border-radius: 8px; padding: 10px; text-align: center;">
+                    <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 3px;">Today</div>
+                    <div id="multiOrderTodayPL" style="font-size: 13px; font-weight: 700; color: var(--buy-color);">+$0</div>
                 </div>
             </div>
-        </div>
-    </div>
-    
-    <!-- SL/TP 팝업 -->
-    <div class="multi-order-popup-overlay" id="multiOrderSLTPPopup" onclick="closeMultiOrderSLTPPopup(event)">
-        <div class="multi-order-popup" onclick="event.stopPropagation()">
-            <div class="multi-order-popup-header">
-                <span class="multi-order-popup-title">SL / TP 설정</span>
-                <button class="multi-order-popup-close" onclick="closeMultiOrderSLTPPopup()">✕</button>
-            </div>
-            <div class="multi-order-popup-content">
-                <!-- 탭 -->
-                <div class="multi-order-sltp-tabs">
-                    <button class="multi-order-sltp-tab active" onclick="switchMultiOrderSLTPTab(this, 'basic')">TP/SL</button>
-                    <button class="multi-order-sltp-tab" onclick="switchMultiOrderSLTPTab(this, 'position')">Position TP/SL</button>
-                    <button class="multi-order-sltp-tab" onclick="switchMultiOrderSLTPTab(this, 'trailing')">Trailing</button>
+            
+            <!-- 종목 + 랏수 선택 -->
+            <div class="multi-order-section">
+                <div class="multi-order-section-title">
+                    <span class="material-icons-round">currency_exchange</span>
+                    종목 & 랏수 선택
                 </div>
-                
-                <!-- 타입 선택 -->
-                <div class="multi-order-sltp-type-btns">
-                    <button class="multi-order-sltp-type-btn active" onclick="switchMultiOrderSLTPType(this, 'price')">가격</button>
-                    <button class="multi-order-sltp-type-btn" onclick="switchMultiOrderSLTPType(this, 'pips')">Pips</button>
-                    <button class="multi-order-sltp-type-btn" onclick="switchMultiOrderSLTPType(this, 'usd')">USD</button>
-                </div>
-                
-                <!-- TP 입력 -->
-                <div class="multi-order-sltp-input-group">
-                    <div class="multi-order-sltp-input-label">
-                        <div class="multi-order-sltp-input-label-text">
-                            <span class="indicator tp"></span>
-                            <span>Take Profit</span>
+                <div style="display: flex; gap: 10px; align-items: stretch;">
+                    <!-- 종목 선택 -->
+                    <div style="flex: 1; position: relative;">
+                        <div id="multiOrderSymbolSelector" onclick="toggleMultiOrderSymbolDropdown()" style="display: flex; align-items: center; gap: 10px; padding: 12px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 10px; cursor: pointer; transition: all 0.2s;">
+                            <span id="multiOrderSymbolIcon" style="font-size: 24px; color: #f7931a;">₿</span>
+                            <div style="flex: 1;">
+                                <div id="multiOrderSymbolName" style="font-size: 15px; font-weight: 700;">Bitcoin</div>
+                                <div id="multiOrderSymbolId" style="font-size: 11px; color: var(--text-muted);">BTCUSD</div>
+                            </div>
+                            <span class="material-icons-round" style="color: var(--text-muted); font-size: 20px;">expand_more</span>
                         </div>
-                        <span class="multi-order-sltp-input-hint">선택사항</span>
-                    </div>
-                    <input type="text" class="multi-order-sltp-input-field" id="multiOrderTPInput" placeholder="0">
-                </div>
-                
-                <!-- SL 입력 -->
-                <div class="multi-order-sltp-input-group">
-                    <div class="multi-order-sltp-input-label">
-                        <div class="multi-order-sltp-input-label-text">
-                            <span class="indicator sl"></span>
-                            <span>Stop Loss</span>
+                        <!-- 종목 드롭다운 -->
+                        <div id="multiOrderSymbolDropdown" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--bg-secondary); border: 1px solid var(--accent-cyan); border-radius: 10px; margin-top: 5px; z-index: 60; max-height: 250px; overflow-y: auto;">
+                            <div class="multi-order-symbol-option" data-symbol="BTCUSD" onclick="selectMultiOrderSymbol('BTCUSD')">
+                                <span style="font-size: 20px; color: #f7931a;">₿</span>
+                                <div><div style="font-weight: 600;">Bitcoin</div><div style="font-size: 11px; color: var(--text-muted);">BTCUSD</div></div>
+                            </div>
+                            <div class="multi-order-symbol-option" data-symbol="EURUSD.r" onclick="selectMultiOrderSymbol('EURUSD.r')">
+                                <span style="font-size: 20px; color: #0052cc;">€</span>
+                                <div><div style="font-weight: 600;">Euro/Dollar</div><div style="font-size: 11px; color: var(--text-muted);">EURUSD.r</div></div>
+                            </div>
+                            <div class="multi-order-symbol-option" data-symbol="USDJPY.r" onclick="selectMultiOrderSymbol('USDJPY.r')">
+                                <span style="font-size: 20px; color: #dc143c;">¥</span>
+                                <div><div style="font-weight: 600;">Dollar/Yen</div><div style="font-size: 11px; color: var(--text-muted);">USDJPY.r</div></div>
+                            </div>
+                            <div class="multi-order-symbol-option" data-symbol="XAUUSD.r" onclick="selectMultiOrderSymbol('XAUUSD.r')">
+                                <span style="font-size: 20px; color: #ffd700;">✦</span>
+                                <div><div style="font-weight: 600;">Gold</div><div style="font-size: 11px; color: var(--text-muted);">XAUUSD.r</div></div>
+                            </div>
+                            <div class="multi-order-symbol-option" data-symbol="US100." onclick="selectMultiOrderSymbol('US100.')">
+                                <span style="font-size: 20px; color: #00b450;">⬡</span>
+                                <div><div style="font-weight: 600;">NASDAQ</div><div style="font-size: 11px; color: var(--text-muted);">US100.</div></div>
+                            </div>
                         </div>
-                        <span class="multi-order-sltp-input-hint">선택사항</span>
                     </div>
-                    <input type="text" class="multi-order-sltp-input-field" id="multiOrderSLInput" placeholder="0">
+                    
+                    <!-- 랏수 선택 -->
+                    <div style="width: 110px;">
+                        <div style="display: flex; align-items: center; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; height: 100%;">
+                            <button onclick="adjustMultiOrderLot(-0.01)" style="width: 32px; height: 100%; background: transparent; border: none; color: var(--text-muted); font-size: 18px; cursor: pointer;">−</button>
+                            <input type="text" id="multiOrderLotInput" value="0.01" onclick="this.select()" onchange="validateMultiOrderLot(this)" style="flex: 1; background: transparent; border: none; color: var(--text-primary); text-align: center; font-size: 15px; font-weight: 700; width: 100%;">
+                            <button onclick="adjustMultiOrderLot(0.01)" style="width: 32px; height: 100%; background: transparent; border: none; color: var(--text-muted); font-size: 18px; cursor: pointer;">+</button>
+                        </div>
+                        <div style="text-align: center; font-size: 10px; color: var(--text-muted); margin-top: 4px;">LOT</div>
+                    </div>
                 </div>
                 
-                <!-- 저장 버튼 -->
-                <button class="multi-order-sltp-save-btn" onclick="applyMultiOrderSLTP()">
-                    <span class="material-icons-round">check_circle</span>
-                    저장하기
+                <!-- 스프레드 표시 -->
+                <div style="display: flex; justify-content: space-between; margin-top: 10px; padding: 8px 12px; background: rgba(0, 212, 255, 0.1); border-radius: 8px;">
+                    <span style="font-size: 12px; color: var(--text-muted);">Spread</span>
+                    <span id="multiOrderSpreadValue" style="font-size: 12px; font-weight: 600; color: var(--accent-cyan);">$15.00</span>
+                </div>
+            </div>
+            
+            <!-- 주문 버튼 -->
+            <div class="multi-order-section">
+                <div class="multi-order-section-title">
+                    <span class="material-icons-round">swap_vert</span>
+                    빠른 주문
+                </div>
+                <div class="multi-order-order-buttons">
+                    <button class="multi-order-order-btn sell" onclick="multiOrderSell()">
+                        SELL
+                        <span class="multi-order-order-price" id="multiOrderBidPrice">104,250.50</span>
+                    </button>
+                    <button class="multi-order-order-btn buy" onclick="multiOrderBuy()">
+                        BUY
+                        <span class="multi-order-order-price" id="multiOrderAskPrice">104,265.50</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 청산 버튼 -->
+            <div class="multi-order-section">
+                <div class="multi-order-section-title">
+                    <span class="material-icons-round">close</span>
+                    청산
+                </div>
+                <div class="multi-order-close-grid">
+                    <button class="multi-order-close-btn all-close" onclick="multiOrderCloseAll()">
+                        <span class="material-icons-round">close_fullscreen</span>
+                        일괄청산
+                    </button>
+                    <button class="multi-order-close-btn symbol-close" onclick="multiOrderCloseSymbol()">
+                        <span class="material-icons-round">cancel</span>
+                        현종목 청산
+                    </button>
+                    <button class="multi-order-close-btn buy-close" onclick="multiOrderCloseBuy()">
+                        <span class="material-icons-round">arrow_upward</span>
+                        매수만 청산
+                    </button>
+                    <button class="multi-order-close-btn sell-close" onclick="multiOrderCloseSell()">
+                        <span class="material-icons-round">arrow_downward</span>
+                        매도만 청산
+                    </button>
+                    <button class="multi-order-close-btn profit-close" onclick="multiOrderCloseProfit()">
+                        <span class="material-icons-round">trending_up</span>
+                        수익만 청산
+                    </button>
+                    <button class="multi-order-close-btn loss-close" onclick="multiOrderCloseLoss()">
+                        <span class="material-icons-round">trending_down</span>
+                        손실만 청산
+                    </button>
+                </div>
+            </div>
+            
+            <!-- SL/TP 설정 -->
+            <div class="multi-order-section">
+                <div class="multi-order-section-title">
+                    <span class="material-icons-round">security</span>
+                    SL / TP 설정
+                </div>
+                <div class="multi-order-sltp-row">
+                    <span class="multi-order-sltp-label sl">Stop Loss</span>
+                    <input type="number" class="multi-order-sltp-input" id="multiOrderSLInput" placeholder="0" value="">
+                    <span class="multi-order-sltp-unit">pips</span>
+                </div>
+                <div class="multi-order-sltp-row">
+                    <span class="multi-order-sltp-label tp">Take Profit</span>
+                    <input type="number" class="multi-order-sltp-input" id="multiOrderTPInput" placeholder="0" value="">
+                    <span class="multi-order-sltp-unit">pips</span>
+                </div>
+                <button class="multi-order-sltp-apply" onclick="applyMultiOrderSLTP()">
+                    <span class="material-icons-round" style="font-size: 16px; vertical-align: middle; margin-right: 5px;">check_circle</span>
+                    SL/TP 적용
                 </button>
             </div>
+            
+            <!-- 포지션 리스트 -->
+            <div class="multi-order-section">
+                <div class="multi-order-section-title">
+                    <span class="material-icons-round">list_alt</span>
+                    포지션 리스트
+                </div>
+                <div class="multi-order-position-list" id="multiOrderPositionList">
+                    <div class="multi-order-position-empty">
+                        <span class="material-icons-round">inbox</span>
+                        <div>열린 포지션이 없습니다</div>
+                    </div>
+                </div>
+            </div>
         </div>
+        
+        <div class="multi-order-footer">Multi Order Panel • v1.0</div>
     </div>
-    
 </div><!-- multiOrderPanel 닫기 -->
-                
-                <!-- Multi Order V5 패널 -->
-                <div class="multi-v5-panel" id="multiOrderPanelV5" style="display: none;">
-                    
-                    <!-- 섹션 1: 타이틀 + Account Info -->
-                    <div class="v5-glow-box v5-header-section">
-                        <div class="v5-title-row">
-                            <div class="v5-title-left">
-                                <div class="v5-title-icon">
-                                    <span class="material-icons-round">grid_view</span>
-                                </div>
-                                <div class="v5-title-text">
-                                    <h1>MULTI ORDER</h1>
-                                    <span>PROFESSIONAL TRADING v1.0</span>
-                                </div>
-                            </div>
-                            <div class="v5-title-right">
-                                <div class="v5-panels-count" id="v5PanelsCount">1/5</div>
-                                <div class="v5-panels-label">PANELS</div>
-                            </div>
-                        </div>
-                        
-                        <div class="v5-account-grid">
-                            <div class="v5-account-item">
-                                <div class="v5-account-value" id="v5Balance">$0</div>
-                                <div class="v5-account-label">Balance</div>
-                            </div>
-                            <div class="v5-account-item">
-                                <div class="v5-account-value" id="v5TodayPL">$0</div>
-                                <div class="v5-account-label">Today P/L</div>
-                            </div>
-                            <div class="v5-account-item">
-                                <div class="v5-account-value" id="v5Margin">$0</div>
-                                <div class="v5-account-label">Margin</div>
-                            </div>
-                            <div class="v5-account-item">
-                                <div class="v5-account-value positive" id="v5CurrentPL">$0</div>
-                                <div class="v5-account-label">Current P/L</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- 섹션 2: 주문 패널 영역 -->
-                    <div class="v5-glow-box v5-order-section">
-                        <div class="v5-order-panel" id="v5OrderPanel1">
-                            <!-- 종목 헤더 + Market/Limit 토글 -->
-                            <div class="v5-order-header">
-                                <div class="v5-symbol-simple" onclick="openV5SymbolPopup()">
-                                    <span class="v5-symbol-icon" id="v5SymbolIcon" style="color: #f7931a;">₿</span>
-                                    <span class="v5-symbol-id">
-                                        <span id="v5SymbolName">BTCUSD</span>
-                                        <span class="material-icons-round">expand_more</span>
-                                    </span>
-                                </div>
-                                <div class="v5-type-toggle">
-                                    <span class="v5-toggle-label active" id="v5MarketLabel">Market</span>
-                                    <div class="v5-toggle-switch" id="v5TypeToggle" onclick="toggleV5OrderType()"></div>
-                                    <span class="v5-toggle-label" id="v5LimitLabel">Limit</span>
-                                </div>
-                            </div>
-                            
-                            <!-- 지정가 입력 -->
-                            <div class="v5-limit-section" id="v5LimitSection">
-                                <div class="v5-limit-row">
-                                    <label>Price:</label>
-                                    <input type="text" class="v5-limit-input" id="v5LimitPrice" placeholder="0.00">
-                                </div>
-                            </div>
-                            
-                            <!-- 랏수 영역 -->
-                            <div class="v5-lot-section">
-                                <div class="v5-lot-row">
-                                    <div class="v5-lot-control">
-                                        <button class="v5-lot-btn" onclick="adjustV5Lot(-0.01)">−</button>
-                                        <input type="text" class="v5-lot-input" id="v5LotInput" value="0.01" onclick="this.select()" onchange="validateV5Lot(this)">
-                                        <button class="v5-lot-btn" onclick="adjustV5Lot(0.01)">+</button>
-                                    </div>
-                                    <button class="v5-lot-settings" onclick="openV5LotPopup()">
-                                        <span class="material-icons-round">settings</span>
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <!-- 주문 버튼 -->
-                            <div class="v5-order-buttons">
-                                <div class="v5-order-buttons-row">
-                                    <button class="v5-order-btn sell" onclick="v5Sell()">
-                                        SELL
-                                        <span class="v5-order-btn-price" id="v5BidPrice">0.00</span>
-                                    </button>
-                                    <button class="v5-order-btn buy" onclick="v5Buy()">
-                                        BUY
-                                        <span class="v5-order-btn-price" id="v5AskPrice">0.00</span>
-                                    </button>
-                                </div>
-                                <button class="v5-order-btn close-position" onclick="v5CloseSymbol()">
-                                    CLOSE POSITION
-                                </button>
-                            </div>
-                            
-                            <!-- 포지션 리스트 -->
-                            <div class="v5-position-list">
-                                <div class="v5-position-header">
-                                    <div class="v5-position-title">
-                                        <span class="material-icons-round" style="font-size: 14px;">list_alt</span>
-                                        OPEN POSITIONS
-                                    </div>
-                                    <button class="v5-sltp-btn" onclick="openV5SltpPopup()">SL/TP</button>
-                                </div>
-                                <div id="v5PositionList">
-                                    <div class="v5-position-empty">
-                                        <span class="material-icons-round" style="font-size: 32px; opacity: 0.3;">inbox</span>
-                                        <div>열린 포지션이 없습니다</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <button class="v5-add-panel-btn" onclick="addV5Panel()">
-                            <span class="material-icons-round">add_circle_outline</span>
-                            새 종목 패널 추가 (최대 5개)
-                        </button>
-                    </div>
-                    
-                    <!-- 섹션 3: 전체 청산 -->
-                    <div class="v5-glow-box v5-close-section">
-                        <div class="v5-close-main">
-                            <button class="v5-close-all-btn" onclick="v5CloseAll()">
-                                <span class="material-icons-round">close_fullscreen</span>
-                                ALL CLOSE
-                            </button>
-                        </div>
-                        <div class="v5-close-group">
-                            <button class="v5-close-btn buy-only" onclick="v5CloseBuy()">
-                                <span class="material-icons-round">arrow_upward</span>
-                                매수만
-                            </button>
-                            <button class="v5-close-btn sell-only" onclick="v5CloseSell()">
-                                <span class="material-icons-round">arrow_downward</span>
-                                매도만
-                            </button>
-                            <button class="v5-close-btn profit-only" onclick="v5CloseProfit()">
-                                <span class="material-icons-round">trending_up</span>
-                                수익만
-                            </button>
-                            <button class="v5-close-btn loss-only" onclick="v5CloseLoss()">
-                                <span class="material-icons-round">trending_down</span>
-                                손실만
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- 종목 선택 팝업 -->
-                    <div class="v5-popup-overlay" id="v5SymbolPopup" onclick="closeV5SymbolPopup(event)">
-                        <div class="v5-popup" onclick="event.stopPropagation()">
-                            <div class="v5-popup-header">
-                                <div class="v5-popup-title">
-                                    <span class="material-icons-round">star</span>
-                                    즐겨찾기 종목
-                                </div>
-                                <button class="v5-popup-close" onclick="closeV5SymbolPopup()">
-                                    <span class="material-icons-round">close</span>
-                                </button>
-                            </div>
-                            <div class="v5-popup-content" id="v5SymbolList">
-                                <!-- JS에서 동적 생성 -->
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- 랏수 설정 팝업 -->
-                    <div class="v5-popup-overlay" id="v5LotPopup" onclick="closeV5LotPopup(event)">
-                        <div class="v5-popup" onclick="event.stopPropagation()">
-                            <div class="v5-popup-header">
-                                <div class="v5-popup-title">
-                                    <span class="material-icons-round">tune</span>
-                                    랏수 프리셋
-                                </div>
-                                <button class="v5-popup-close" onclick="closeV5LotPopup()">
-                                    <span class="material-icons-round">close</span>
-                                </button>
-                            </div>
-                            <div class="v5-popup-content">
-                                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
-                                    <button class="v5-lot-preset" onclick="setV5Lot(0.01)">0.01</button>
-                                    <button class="v5-lot-preset" onclick="setV5Lot(0.05)">0.05</button>
-                                    <button class="v5-lot-preset" onclick="setV5Lot(0.10)">0.10</button>
-                                    <button class="v5-lot-preset" onclick="setV5Lot(0.50)">0.50</button>
-                                    <button class="v5-lot-preset" onclick="setV5Lot(1.00)">1.00</button>
-                                    <button class="v5-lot-preset" onclick="setV5Lot(2.00)">2.00</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- SL/TP 설정 팝업 -->
-                    <div class="v5-popup-overlay" id="v5SltpPopup" onclick="closeV5SltpPopup(event)">
-                        <div class="v5-popup" onclick="event.stopPropagation()">
-                            <div class="v5-popup-header">
-                                <div class="v5-popup-title">
-                                    <span class="material-icons-round">tune</span>
-                                    SL / TP 설정
-                                </div>
-                                <button class="v5-popup-close" onclick="closeV5SltpPopup()">
-                                    <span class="material-icons-round">close</span>
-                                </button>
-                            </div>
-                            <div class="v5-popup-content">
-                                <div style="margin-bottom: 16px;">
-                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                                        <div style="width: 4px; height: 16px; background: var(--buy-color); border-radius: 2px;"></div>
-                                        <span style="font-size: 13px; font-weight: 600;">Take Profit</span>
-                                    </div>
-                                    <input type="text" class="v5-limit-input" id="v5TPInput" placeholder="0" style="width: 100%;">
-                                </div>
-                                <div style="margin-bottom: 16px;">
-                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                                        <div style="width: 4px; height: 16px; background: var(--sell-color); border-radius: 2px;"></div>
-                                        <span style="font-size: 13px; font-weight: 600;">Stop Loss</span>
-                                    </div>
-                                    <input type="text" class="v5-limit-input" id="v5SLInput" placeholder="0" style="width: 100%;">
-                                </div>
-                                <button class="v5-close-all-btn" style="background: linear-gradient(135deg, var(--accent-cyan) 0%, #0099cc 100%);" onclick="applyV5SLTP()">
-                                    <span class="material-icons-round">check_circle</span>
-                                    적용하기
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                </div><!-- multiOrderPanelV5 닫기 -->
                 
             </div>
             
@@ -1943,33 +1644,6 @@
                 <div class="submenu-item-progress"></div>
             </div>
             
-            <!-- Multi Order V5 패널 -->
-            <div class="submenu-item" 
-                 onclick="selectTradeSubmenuItem('multiV5')"
-                 onmousedown="tradeSubmenuItemPressStart('multiV5', this)"
-                 onmouseup="tradeSubmenuItemPressEnd()"
-                 onmouseleave="tradeSubmenuItemPressEnd()"
-                 ontouchstart="tradeSubmenuItemPressStart('multiV5', this)"
-                 ontouchend="tradeSubmenuItemPressEnd()"
-                 ontouchcancel="tradeSubmenuItemPressEnd()">
-                <div class="submenu-item-left">
-                    <div class="submenu-item-icon" style="background: rgba(0, 212, 255, 0.12); color: #00d4ff;">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="22" height="22">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                        </svg>
-                    </div>
-                    <div class="submenu-item-content">
-                        <div class="submenu-item-title">Multi Order V5 패널</div>
-                        <div class="submenu-item-subtitle">New Design</div>
-                    </div>
-                </div>
-                <div class="submenu-item-badge" id="submenuMultiV5Badge" style="display: none;">기본</div>
-                <svg class="submenu-item-arrow" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-                <div class="submenu-item-progress"></div>
-            </div>
-
             <!-- Quick & Easy 패널 -->
             <div class="submenu-item" 
                  onclick="selectTradeSubmenuItem('multi')"
@@ -2018,7 +1692,6 @@
     <script src="js/panels/symbolSelectorPanel.js"></script>
     <script src="js/panels/randomWalkPanel.js"></script>
     <script src="js/panels/multiOrderPanel.js"></script>
-    <script src="js/panels/multiOrderPanelV5.js"></script>
 
     <script src="js/chart.js"></script>
     <script src="js/settings.js"></script>

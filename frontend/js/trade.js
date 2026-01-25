@@ -291,9 +291,75 @@ async function closePosition() {
             playSound('close');
             const profit = result.profit || 0;
             
+            // 마틴 모드 처리
             if (currentMode === 'martin' && martinEnabled) {
-                handleMartinClose(profit, result);
+                const baseTarget = 50;
+                const currentDisplayTarget = baseTarget * Math.pow(2, martinStep - 1) + martinAccumulatedLoss;
+                
+                // Case 1: 수익으로 청산
+                if (profit > 0) {
+                    if (profit >= martinAccumulatedLoss && martinAccumulatedLoss > 0) {
+                        // 전액 회복 → 마틴 성공!
+                        await apiCall('/mt5/martin/reset-full', 'POST');
+                        martinStep = 1;
+                        martinAccumulatedLoss = 0;
+                        martinHistory = [];
+                        updateMartinUI();
+                        updateTodayPL(profit);
+                        showMartinSuccessPopup(profit);
+                    } else {
+                        // 일부 회복 → 단계 유지
+                        const remainingLoss = Math.max(0, martinAccumulatedLoss - profit);
+                        await apiCall(`/mt5/martin/update-state?step=${martinStep}&accumulated_loss=${remainingLoss}`, 'POST');
+                        martinAccumulatedLoss = remainingLoss;
+                        updateMartinUI();
+                        updateTodayPL(profit);
+                        if (remainingLoss > 0) {
+                            showToast(`💰 일부 회복! +$${profit.toFixed(2)} (남은 손실: $${remainingLoss.toFixed(2)})`, 'success');
+                        } else {
+                            showMartinSuccessPopup(profit);
+                        }
+                    }
+                }
+                // Case 2: 손실로 청산
+                else if (profit < 0) {
+                    const lossAmount = Math.abs(profit);
+                    const halfTarget = currentDisplayTarget / 2;
+                    
+                    if (lossAmount >= halfTarget) {
+                        // 손실 >= 50% → 다음 단계 확인 팝업
+                        const newStep = Math.min(martinStep + 1, martinLevel);
+                        
+                        if (newStep > martinLevel) {
+                            // 최대 단계 초과 → 강제 리셋
+                            const totalLoss = martinAccumulatedLoss + lossAmount;
+                            await apiCall('/mt5/martin/reset-full', 'POST');
+                            showMaxPopup(totalLoss);
+                            martinStep = 1;
+                            martinAccumulatedLoss = 0;
+                            martinHistory = [];
+                            updateMartinUI();
+                        } else {
+                            // ★ 마틴 팝업 표시
+                            updateTodayPL(profit);
+                            showMartinPopup(profit);
+                        }
+                    } else {
+                        // 손실 < 50% → 단계 유지
+                        const newAccumulatedLoss = martinAccumulatedLoss + lossAmount;
+                        await apiCall(`/mt5/martin/update-state?step=${martinStep}&accumulated_loss=${newAccumulatedLoss}`, 'POST');
+                        martinAccumulatedLoss = newAccumulatedLoss;
+                        showToast(`📊 단계 유지! 손실: -$${lossAmount.toFixed(2)} (누적: $${newAccumulatedLoss.toFixed(2)})`, 'error');
+                        updateTodayPL(profit);
+                        updateMartinUI();
+                    }
+                }
+                // Case 3: 손익 0
+                else {
+                    showToast('청산 완료 (손익 없음)', 'success');
+                }
             } else {
+                // Basic/NoLimit 모드
                 updateTodayPL(profit);
                 showToast(result.message, 'success');
             }

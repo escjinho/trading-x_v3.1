@@ -66,6 +66,11 @@ function connectWebSocket() {
             // ★ Demo 모드에서도 포지션 실시간 업데이트
             fetchDemoData();
             
+            // ★ V5 패널도 실시간 업데이트
+            if (typeof updateMultiOrderPanelV5 === 'function') {
+                updateMultiOrderPanelV5();
+            }
+            
             return;
         }
         
@@ -172,21 +177,38 @@ function connectWebSocket() {
         
         if (accBalance) accBalance.textContent = '$' + data.balance.toLocaleString(undefined, {minimumFractionDigits: 2});
         if (accEquity) accEquity.textContent = '$' + data.equity.toLocaleString(undefined, {minimumFractionDigits: 2});
-        if (accFree) accFree.textContent = '$' + Math.round(data.margin || 0).toLocaleString();
-        
-        // Current P&L 업데이트 (현재 포지션 손익)
+        // 마진: MT5에서 직접 가져온 값 사용 (소수점 둘째자리, 깜빡임 방지)
+        if (accFree) {
+            const newMarginText = '$' + (data.margin || 0).toFixed(2);
+            if (accFree.textContent !== newMarginText) {
+                accFree.textContent = newMarginText;
+            }
+        }
+        // Current P&L 업데이트 (전체 포지션 손익 합계)
         if (accCurrentPL) {
             let currentProfit = 0;
+            
+            // Buy/Sell 포지션 손익 (magic=100001)
             if (data.position) {
-                currentProfit = data.position.profit || 0;
+                currentProfit += data.position.profit || 0;
             }
             
-            if (currentProfit >= 0) {
-                accCurrentPL.textContent = '+$' + currentProfit.toFixed(2);
-                accCurrentPL.style.color = 'var(--buy-color)';
-            } else {
-                accCurrentPL.textContent = '-$' + Math.abs(currentProfit).toFixed(2);
-                accCurrentPL.style.color = 'var(--sell-color)';
+            // V5 포지션 손익 (magic=100002)
+            if (typeof v5Positions !== 'undefined' && v5Positions && v5Positions.length > 0) {
+                v5Positions.forEach(pos => {
+                    currentProfit += pos.profit || 0;
+                });
+            }
+            
+            // 깜빡임 방지: 값이 변경된 경우에만 업데이트
+            const newText = currentProfit >= 0 
+                ? '+$' + currentProfit.toFixed(2) 
+                : '-$' + Math.abs(currentProfit).toFixed(2);
+            const newColor = currentProfit >= 0 ? 'var(--buy-color)' : 'var(--sell-color)';
+            
+            if (accCurrentPL.textContent !== newText) {
+                accCurrentPL.textContent = newText;
+                accCurrentPL.style.color = newColor;
             }
         }
         
@@ -207,6 +229,11 @@ function connectWebSocket() {
                 document.getElementById('tradeLotSize').textContent = data.martin.current_lot.toFixed(2);
                 updateMartinUI();
             }
+        }
+        
+        // ★ V5 패널 실시간 업데이트 (라이브 모드)
+        if (typeof updateMultiOrderPanelV5 === 'function') {
+            updateMultiOrderPanelV5();
         }
     };
     
@@ -254,21 +281,38 @@ async function fetchAccountData() {
             
             if (accBalance) accBalance.textContent = '$' + (data.balance || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
             if (accEquity) accEquity.textContent = '$' + (data.equity || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
-            if (accFree) accFree.textContent = '$' + Math.round(data.margin || 0).toLocaleString();
+            // 마진: 소수점 둘째자리 (WebSocket과 동일 형식)
+            if (accFree) {
+                const newMarginText = '$' + (data.margin || 0).toFixed(2);
+                if (accFree.textContent !== newMarginText) {
+                    accFree.textContent = newMarginText;
+                }
+            }
             
-            // Current P&L 업데이트 (현재 포지션 손익)
+            // Current P&L 업데이트 (전체 포지션 손익 합계)
             if (accCurrentPL) {
                 let currentProfit = 0;
+                
+                // Buy/Sell 포지션 손익 (magic=100001)
                 if (data.position) {
-                    currentProfit = data.position.profit || 0;
+                    currentProfit += data.position.profit || 0;
                 }
                 
-                if (currentProfit >= 0) {
-                    accCurrentPL.textContent = '+$' + currentProfit.toFixed(2);
-                    accCurrentPL.style.color = 'var(--buy-color)';
-                } else {
-                    accCurrentPL.textContent = '-$' + Math.abs(currentProfit).toFixed(2);
-                    accCurrentPL.style.color = 'var(--sell-color)';
+                // V5 포지션 손익 (magic=100002) - 전역 변수에서 가져오기
+                if (typeof v5Positions !== 'undefined' && v5Positions && v5Positions.length > 0) {
+                    v5Positions.forEach(pos => {
+                        currentProfit += pos.profit || 0;
+                    });
+                }
+                
+                // 값이 변경된 경우에만 업데이트 (깜빡임 방지)
+                const newText = currentProfit >= 0 
+                    ? '+$' + currentProfit.toFixed(2) 
+                    : '-$' + Math.abs(currentProfit).toFixed(2);
+                
+                if (accCurrentPL.textContent !== newText) {
+                    accCurrentPL.textContent = newText;
+                    accCurrentPL.style.color = currentProfit >= 0 ? 'var(--buy-color)' : 'var(--sell-color)';
                 }
             }
             
@@ -547,24 +591,19 @@ async function fetchDemoData() {
 
             if (accBalance) accBalance.textContent = '$' + (data.balance || 10000).toLocaleString(undefined, {minimumFractionDigits: 2});
             if (accEquity) accEquity.textContent = '$' + (data.equity || 10000).toLocaleString(undefined, {minimumFractionDigits: 2});
-            // Demo 마진 계산 (포지션이 있으면 마진 표시)
+            
+            // Demo 마진: 포지션에서 직접 합산
             if (accFree) {
                 let totalMargin = 0;
-                if (data.position) {
-                    // 단일 포지션: entry × volume / leverage
-                    const entry = data.position.entry || 0;
-                    const volume = data.position.volume || 0;
-                    const leverage = data.leverage || 500;
-                    totalMargin = (entry * volume) / leverage;
+                
+                if (data.position && data.position.margin) {
+                    totalMargin = data.position.margin;
                 } else if (data.positions && data.positions.length > 0) {
-                    // 다중 포지션: 합계
-                    const leverage = data.leverage || 500;
                     data.positions.forEach(pos => {
-                        const entry = pos.entry || 0;
-                        const volume = pos.volume || 0;
-                        totalMargin += (entry * volume) / leverage;
+                        totalMargin += pos.margin || 0;
                     });
                 }
+                
                 accFree.textContent = '$' + totalMargin.toFixed(2);
             }
             
@@ -807,6 +846,13 @@ function switchTradingMode(mode) {
         showToast('🎮 Demo 모드로 전환되었습니다', 'success');
         fetchDemoData();
         
+        // 패널 동기화
+        setTimeout(() => {
+            if (typeof loadHistory === 'function') loadHistory();
+            if (typeof updateMultiOrderPanelV5 === 'function') updateMultiOrderPanelV5();
+            if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
+        }, 500);
+        
     } else if (mode === 'live') {
         // Live 모드 전환 시도
         // MT5 계정 연결 확인 필요
@@ -848,6 +894,13 @@ function switchTradingMode(mode) {
                 isDemo = false;
                 showToast('💎 Live 모드로 전환되었습니다', 'success');
                 fetchAccountData();
+                
+                // 패널 동기화
+                setTimeout(() => {
+                    if (typeof loadHistory === 'function') loadHistory();
+                    if (typeof updateMultiOrderPanelV5 === 'function') updateMultiOrderPanelV5();
+                    if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
+                }, 500);
                 
             } else {
                 showToast('MT5 계정을 먼저 연결해주세요', 'error');

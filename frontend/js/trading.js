@@ -1,3 +1,6 @@
+// ========== Buy/Sell 패널 매직넘버 ==========
+const BUYSELL_MAGIC_NUMBER = 100001;
+
 // ========== 마틴 팝업 ==========
 function showMartinPopup(currentLoss) {
     pendingLoss = Math.abs(currentLoss);
@@ -97,15 +100,80 @@ function martinSuccessContinue() {
 
 // ========== Today P/L ==========
 function updateTodayPL(profit) {
-    todayPL += profit;
-    const el = document.getElementById('tradeTodayPL');
-    if (todayPL >= 0) {
-        el.textContent = '+$' + Math.abs(todayPL).toFixed(0);
-        el.style.color = 'var(--buy-color)';
-    } else {
-        el.textContent = '-$' + Math.abs(todayPL).toFixed(0);
-        el.style.color = 'var(--sell-color)';
+    // 1. Account 탭 Today P/L 즉시 업데이트
+    const accTodayPL = document.getElementById('accTodayPL');
+    if (accTodayPL) {
+        // 현재 값 파싱
+        let currentPL = 0;
+        const text = accTodayPL.textContent.replace(/[^0-9.-]/g, '');
+        if (text) {
+            currentPL = parseFloat(text) || 0;
+            // 음수 체크
+            if (accTodayPL.textContent.includes('-$')) {
+                currentPL = -Math.abs(currentPL);
+            }
+        }
+        
+        // 새 값 계산
+        const newPL = currentPL + profit;
+        
+        // Account 탭 업데이트
+        if (newPL >= 0) {
+            accTodayPL.textContent = '+$' + newPL.toFixed(2);
+            accTodayPL.style.color = 'var(--buy-color)';
+        } else {
+            accTodayPL.textContent = '-$' + Math.abs(newPL).toFixed(2);
+            accTodayPL.style.color = 'var(--sell-color)';
+        }
+        
+        console.log(`[updateTodayPL] Profit: ${profit}, Current: ${currentPL}, New: ${newPL}`);
     }
+    
+    // 2. Buy/Sell 패널도 즉시 동기화
+    syncTradeTodayPL();
+    
+    // 3. V5 패널도 즉시 동기화
+    if (typeof updateV5AccountInfo === 'function') {
+        updateV5AccountInfo();
+    }
+    
+    // 4. 윈/로스 즉시 업데이트
+    updateWinLossImmediate(profit);
+    
+    // 5. 나중에 히스토리로 정확한 값 검증 (서버 동기화)
+    setTimeout(() => {
+        if (typeof loadHistory === 'function') loadHistory();
+    }, 1000);
+}
+
+// Buy/Sell 패널 Today P/L을 Account 탭과 동기화
+function syncTradeTodayPL() {
+    const accTodayPL = document.getElementById('accTodayPL');
+    const tradeTodayPL = document.getElementById('tradeTodayPL');
+    
+    if (accTodayPL && tradeTodayPL) {
+        tradeTodayPL.textContent = accTodayPL.textContent;
+        tradeTodayPL.style.color = accTodayPL.style.color;
+    }
+}
+
+// 청산 직후 윈/로스 즉시 업데이트
+function updateWinLossImmediate(profit) {
+    const winLoseEl = document.getElementById('accWinLose');
+    if (!winLoseEl) return;
+    
+    const current = winLoseEl.textContent.split(' / ');
+    let wins = parseInt(current[0]) || 0;
+    let losses = parseInt(current[1]) || 0;
+    
+    if (profit > 0) {
+        wins++;
+    } else if (profit < 0) {
+        losses++;
+    }
+    
+    winLoseEl.textContent = `${wins} / ${losses}`;
+    console.log(`[updateWinLossImmediate] Profit: ${profit}, Wins: ${wins}, Losses: ${losses}`);
 }
 
 // ========== P/L Gauge ==========
@@ -251,7 +319,7 @@ async function placeBuy() {
             result = await apiCall(`/mt5/martin/buy?symbol=${currentSymbol}`, 'POST');
         } else {
             const lot = calculateLot();
-            result = await apiCall(`/mt5/order?symbol=${currentSymbol}&order_type=BUY&volume=${lot}&target=${targetAmount}`, 'POST');
+            result = await apiCall(`/mt5/order?symbol=${currentSymbol}&order_type=BUY&volume=${lot}&target=${targetAmount}&magic=100001`, 'POST');
         }
         showToast(result?.message || 'Error', result?.success ? 'success' : 'error');
         if (result?.success) playSound('buy');
@@ -274,7 +342,7 @@ async function placeSell() {
             result = await apiCall(`/mt5/martin/sell?symbol=${currentSymbol}`, 'POST');
         } else {
             const lot = calculateLot();
-            result = await apiCall(`/mt5/order?symbol=${currentSymbol}&order_type=SELL&volume=${lot}&target=${targetAmount}`, 'POST');
+            result = await apiCall(`/mt5/order?symbol=${currentSymbol}&order_type=SELL&volume=${lot}&target=${targetAmount}&magic=100001`, 'POST');
         }
         showToast(result?.message || 'Error', result?.success ? 'success' : 'error');
         if (result?.success) playSound('sell');
@@ -290,7 +358,7 @@ async function closePosition() {
     
     showToast('Closing...', '');
     try {
-        const result = await apiCall(`/mt5/close?symbol=${currentSymbol}`, 'POST');
+        const result = await apiCall(`/mt5/close?symbol=${currentSymbol}&magic=${BUYSELL_MAGIC_NUMBER}`, 'POST');
         
         if (result?.success) {
             playSound('close');
@@ -400,7 +468,7 @@ async function placeDemoOrder(orderType) {
         } else {
             const lot = calculateLot();
             console.log(`[placeDemoOrder] Using Basic API, Lot: ${lot}`);
-            response = await fetch(`${API_URL}/demo/order?symbol=${currentSymbol}&order_type=${orderType}&volume=${lot}&target=${targetAmount}`, {
+            response = await fetch(`${API_URL}/demo/order?symbol=${currentSymbol}&order_type=${orderType}&volume=${lot}&target=${targetAmount}&magic=${BUYSELL_MAGIC_NUMBER}`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -435,7 +503,7 @@ async function placeDemoOrder(orderType) {
 async function closeDemoPosition() {
     showToast('Closing...', '');
     try {
-        const response = await fetch(`${API_URL}/demo/close`, {
+        const response = await fetch(`${API_URL}/demo/close?magic=${BUYSELL_MAGIC_NUMBER}`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -653,6 +721,36 @@ function updateAccountStats(history) {
     }
     
     console.log(`[updateAccountStats] Today: ${todayStr}, Wins: ${todayWins}, Losses: ${todayLosses}, PL: ${todayPL}`);
+    
+    // 전역 변수에 저장 (다른 곳에서 사용 가능)
+    window.todayWins = todayWins;
+    window.todayLosses = todayLosses;
+    
+    // Buy/Sell 패널 Today P/L 동기화
+    if (typeof syncTradeTodayPL === 'function') {
+        syncTradeTodayPL();
+    }
+}
+
+// 청산 직후 윈/로스 즉시 업데이트 (히스토리 API 대기 없이)
+function updateWinLossImmediate(profit) {
+    const winLoseEl = document.getElementById('accWinLose');
+    if (!winLoseEl) return;
+    
+    // 현재 값 파싱
+    const current = winLoseEl.textContent.split(' / ');
+    let wins = parseInt(current[0]) || 0;
+    let losses = parseInt(current[1]) || 0;
+    
+    // 수익/손실에 따라 증가
+    if (profit > 0) {
+        wins++;
+    } else if (profit < 0) {
+        losses++;
+    }
+    
+    winLoseEl.textContent = `${wins} / ${losses}`;
+    console.log(`[updateWinLossImmediate] Profit: ${profit}, Wins: ${wins}, Losses: ${losses}`);
 }
 
 // 기간 드롭다운 토글
@@ -883,8 +981,7 @@ function renderFilteredHistory() {
             
             html += `<div class="history-item">
                 <div style="flex:1;display:flex;align-items:center;gap:8px;margin-left:5px;">
-                    <span style="font-size:15px;font-weight:600;">${h.symbol} <span style="color:${typeColor};font-weight:600;font-size:15px;">${h.type}</span></span>
-                    <span style="color:rgba(255,255,255,0.2);">|</span>
+                    <span style="font-size:15px;font-weight:600;min-width:130px;">${h.symbol} <span style="color:${typeColor};font-weight:600;font-size:15px;">${h.type}</span></span>
                     <span class="history-time">${h.time}</span>
                     <span style="color:rgba(255,255,255,0.2);">|</span>
                     <span class="history-time">${h.volume} lot</span>

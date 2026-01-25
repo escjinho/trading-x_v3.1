@@ -15,7 +15,11 @@
       "Bash(taskkill:*)",
       "Bash(move \"C:\\\\Users\\\\escji\\\\trading-x_v3.1\\\\frontend\\\\app_cleaned.html\" \"C:\\\\Users\\\\escji\\\\trading-x_v3.1\\\\frontend\\\\app.html\")",
       "Bash(wc:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git rm:*)",
+      "Bash(git push:*)",
+      "Bash(git checkout:*)"
     ]
   }
 }

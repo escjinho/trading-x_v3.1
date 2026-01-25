@@ -43,18 +43,16 @@ async function loadHistory() {
                 
                 html += `
                     <div class="history-item">
-                        <div class="history-left">
-                            <div class="history-symbol">${item.symbol || '-'}</div>
-                            <div class="history-details">
-                                <span class="history-type ${typeClass}">${typeText}</span>
-                                <span class="history-volume">${item.volume || 0} lot</span>
-                                <span class="history-time">${item.time || '-'}</span>
-                            </div>
+                        <div class="history-symbol-type">
+                            <span class="history-symbol">${item.symbol || '-'}</span>
+                            <span class="history-type ${typeClass}">${typeText}</span>
                         </div>
-                        <div class="history-right">
-                            <div class="history-profit ${profitClass}">${profitSign}$${profit.toFixed(2)}</div>
-                            <div class="history-prices">${entryPrice.toFixed(2)} → ${exitPrice.toFixed(2)}</div>
+                        <div class="history-datetime-lot">
+                            <span class="history-time">${item.time || '-'}</span>
+                            <span class="history-divider-text">|</span>
+                            <span class="history-volume">${item.volume || 0} lot</span>
                         </div>
+                        <div class="history-profit ${profitClass}">${profitSign}$${profit.toFixed(2)}</div>
                     </div>
                 `;
             });

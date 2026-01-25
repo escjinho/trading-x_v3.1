@@ -223,17 +223,33 @@ function selectTradeSubmenuItem(view) {
 
 function showTradePanel(panel) {
     const buysellPanel = document.getElementById('buysellPanel');
-    const quickPanel = document.getElementById('quickPanel');
+    const multiOrderPanel = document.getElementById('multiOrderPanel');
+    const multiOrderPanelV5 = document.getElementById('multiOrderPanelV5');
     
+    // 모든 패널 숨기기
+    buysellPanel.style.display = 'none';
+    multiOrderPanel.classList.remove('active');
+    multiOrderPanel.style.display = 'none';
+    if (multiOrderPanelV5) {
+        multiOrderPanelV5.classList.remove('active');
+        multiOrderPanelV5.style.display = 'none';
+    }
+    
+    // 선택된 패널만 표시
     if (panel === 'buysell') {
         buysellPanel.style.display = 'block';
-        quickPanel.classList.remove('active');
-        quickPanel.style.display = 'none';
     } else if (panel === 'quick') {
-        buysellPanel.style.display = 'none';
-        quickPanel.classList.add('active');
-        quickPanel.style.display = 'block';
-        updateQuickPanel();
+        multiOrderPanel.classList.add('active');
+        multiOrderPanel.style.display = 'block';
+        updateMultiOrderPanel();
+    } else if (panel === 'multiV5') {
+        if (multiOrderPanelV5) {
+            multiOrderPanelV5.classList.add('active');
+            multiOrderPanelV5.style.display = 'block';
+            if (typeof updateMultiOrderPanelV5 === 'function') {
+                updateMultiOrderPanelV5();
+            }
+        }
     }
 }
 

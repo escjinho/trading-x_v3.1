@@ -883,8 +883,7 @@ function renderFilteredHistory() {
             
             html += `<div class="history-item">
                 <div style="flex:1;display:flex;align-items:center;gap:8px;margin-left:5px;">
-                    <span style="font-size:15px;font-weight:600;">${h.symbol} <span style="color:${typeColor};font-weight:600;font-size:15px;">${h.type}</span></span>
-                    <span style="color:rgba(255,255,255,0.2);">|</span>
+                    <span style="font-size:15px;font-weight:600;min-width:130px;">${h.symbol} <span style="color:${typeColor};font-weight:600;font-size:15px;">${h.type}</span></span>
                     <span class="history-time">${h.time}</span>
                     <span style="color:rgba(255,255,255,0.2);">|</span>
                     <span class="history-time">${h.volume} lot</span>

@@ -55,7 +55,7 @@ async def get_current_user(
     return user
 
 
-# ========== 계정 정보 ==========
+    # ========== 계정 정보 ==========
 @router.get("/account-info")
 async def get_account_info(current_user: User = Depends(get_current_user)):
     """MT5 계정 정보 + 인디케이터 + 포지션 조회"""
@@ -73,15 +73,23 @@ async def get_account_info(current_user: User = Depends(get_current_user)):
         
         position_data = None
         if positions and len(positions) > 0:
-            pos = positions[0]
-            position_data = {
-                "type": "BUY" if pos.type == 0 else "SELL",
-                "symbol": pos.symbol,
-                "volume": pos.volume,
-                "entry": pos.price_open,
-                "profit": pos.profit,
-                "ticket": pos.ticket
-            }
+            # Buy/Sell 패널용 포지션 (magic=100001)
+            buysell_pos = None
+            for pos in positions:
+                if pos.magic == 100001:
+                    buysell_pos = pos
+                    break
+            
+            if buysell_pos:
+                position_data = {
+                    "type": "BUY" if buysell_pos.type == 0 else "SELL",
+                    "symbol": buysell_pos.symbol,
+                    "volume": buysell_pos.volume,
+                    "entry": buysell_pos.price_open,
+                    "profit": buysell_pos.profit,
+                    "ticket": buysell_pos.ticket,
+                    "magic": buysell_pos.magic
+                }
         
         # 인디케이터 계산
         try:
@@ -204,6 +212,7 @@ async def place_order(
     order_type: str = "BUY",
     volume: float = 0.01,
     target: int = 100,
+    magic: int = 100000,
     current_user: User = Depends(get_current_user)
 ):
     """일반 주문 실행 (BUY/SELL)"""
@@ -213,21 +222,28 @@ async def place_order(
     if not tick or not symbol_info:
         return JSONResponse({"success": False, "message": "가격 정보 없음"})
     
-    # TP/SL 계산
-    point_value = symbol_info.trade_tick_value if symbol_info.trade_tick_value > 0 else 1
-    tp_points = int(target / (volume * point_value)) if volume * point_value > 0 else 500
-    sl_points = tp_points
+    # TP/SL 계산 (target > 0일 때만)
+    if target > 0:
+        point_value = symbol_info.trade_tick_value if symbol_info.trade_tick_value > 0 else 1
+        tp_points = int(target / (volume * point_value)) if volume * point_value > 0 else 500
+        sl_points = tp_points
+        
+        if order_type.upper() == "BUY":
+            tp_price = tick.ask + (tp_points * symbol_info.point)
+            sl_price = tick.ask - (sl_points * symbol_info.point)
+        else:
+            tp_price = tick.bid - (tp_points * symbol_info.point)
+            sl_price = tick.bid + (sl_points * symbol_info.point)
+    else:
+        tp_price = 0
+        sl_price = 0
     
     if order_type.upper() == "BUY":
         mt5_type = mt5.ORDER_TYPE_BUY
         price = tick.ask
-        tp_price = tick.ask + (tp_points * symbol_info.point)
-        sl_price = tick.ask - (sl_points * symbol_info.point)
     else:
         mt5_type = mt5.ORDER_TYPE_SELL
         price = tick.bid
-        tp_price = tick.bid - (tp_points * symbol_info.point)
-        sl_price = tick.bid + (sl_points * symbol_info.point)
     
     request = {
         "action": mt5.TRADE_ACTION_DEAL,
@@ -235,14 +251,18 @@ async def place_order(
         "volume": volume,
         "type": mt5_type,
         "price": price,
-        "sl": sl_price,
-        "tp": tp_price,
         "deviation": 20,
-        "magic": 123456,
+        "magic": magic,
         "comment": f"Trading-X {order_type.upper()}",
         "type_time": mt5.ORDER_TIME_GTC,
         "type_filling": mt5.ORDER_FILLING_IOC,
     }
+    
+    # SL/TP가 있을 때만 추가
+    if sl_price > 0:
+        request["sl"] = sl_price
+    if tp_price > 0:
+        request["tp"] = tp_price
     
     result = mt5.order_send(request)
     
@@ -263,14 +283,19 @@ async def place_order(
 @router.post("/close")
 async def close_position(
     symbol: str = "BTCUSD",
+    magic: int = None,
     current_user: User = Depends(get_current_user)
 ):
-    """포지션 청산"""
+    """포지션 청산 (magic 필터 옵션)"""
     positions = mt5.positions_get(symbol=symbol)
     if not positions:
         return JSONResponse({"success": False, "message": "열린 포지션 없음"})
     
     for pos in positions:
+        # magic 필터링 (지정된 경우)
+        if magic is not None and pos.magic != magic:
+            continue
+            
         tick = mt5.symbol_info_tick(symbol)
         close_type = mt5.ORDER_TYPE_SELL if pos.type == 0 else mt5.ORDER_TYPE_BUY
         close_price = tick.bid if pos.type == 0 else tick.ask
@@ -300,6 +325,254 @@ async def close_position(
     
     return JSONResponse({"success": False, "message": "청산 실패"})
 
+# ========== 포지션 목록 조회 ==========
+@router.get("/positions")
+async def get_positions(
+    magic: int = None,
+    current_user: User = Depends(get_current_user)
+):
+    """모든 열린 포지션 조회 (magic 필터 옵션)"""
+    if not mt5.initialize():
+        return {"success": False, "positions": [], "message": "MT5 초기화 실패"}
+    
+    positions = mt5.positions_get()
+    account = mt5.account_info()
+    leverage = account.leverage if account else 500
+    total_margin = account.margin if account else 0
+    
+    if not positions:
+        return {"success": True, "positions": [], "count": 0, "total_margin": 0}
+    
+    position_list = []
+    for pos in positions:
+        # magic 필터링 (지정된 경우)
+        if magic is not None and pos.magic != magic:
+            continue
+        
+        # MT5 함수로 정확한 마진 계산 (종목별 레버리지 자동 적용)
+        order_type = mt5.ORDER_TYPE_BUY if pos.type == 0 else mt5.ORDER_TYPE_SELL
+        tick = mt5.symbol_info_tick(pos.symbol)
+        current_price = tick.ask if pos.type == 0 else tick.bid if tick else pos.price_open
+        margin = mt5.order_calc_margin(order_type, pos.symbol, pos.volume, current_price)
+        if margin is None:
+            margin = 0
+            
+        position_list.append({
+            "ticket": pos.ticket,
+            "symbol": pos.symbol,
+            "type": "BUY" if pos.type == 0 else "SELL",
+            "volume": pos.volume,
+            "entry": pos.price_open,
+            "current": pos.price_current,
+            "profit": pos.profit,
+            "sl": pos.sl,
+            "tp": pos.tp,
+            "magic": pos.magic,
+            "comment": pos.comment,
+            "margin": round(margin, 2)
+        })
+    
+    # 필터된 포지션들의 마진 합계
+    filtered_margin = sum(p["margin"] for p in position_list)
+    
+    return {
+        "success": True, 
+        "positions": position_list, 
+        "count": len(position_list),
+        "total_margin": round(filtered_margin, 2),
+        "leverage": leverage
+    }
+
+# ========== 전체 청산 ==========
+@router.post("/close-all")
+async def close_all_positions(
+    magic: int = None,
+    current_user: User = Depends(get_current_user)
+):
+    """모든 포지션 청산 (magic 필터 옵션)"""
+    if not mt5.initialize():
+        return JSONResponse({"success": False, "message": "MT5 초기화 실패"})
+    
+    positions = mt5.positions_get()
+    if not positions:
+        return JSONResponse({"success": False, "message": "열린 포지션 없음"})
+    
+    closed_count = 0
+    total_profit = 0
+    
+    for pos in positions:
+        # magic 필터링
+        if magic is not None and pos.magic != magic:
+            continue
+            
+        tick = mt5.symbol_info_tick(pos.symbol)
+        if not tick:
+            continue
+            
+        close_type = mt5.ORDER_TYPE_SELL if pos.type == 0 else mt5.ORDER_TYPE_BUY
+        close_price = tick.bid if pos.type == 0 else tick.ask
+        
+        request = {
+            "action": mt5.TRADE_ACTION_DEAL,
+            "symbol": pos.symbol,
+            "volume": pos.volume,
+            "type": close_type,
+            "position": pos.ticket,
+            "price": close_price,
+            "deviation": 20,
+            "magic": 123456,
+            "comment": "Trading-X CLOSE ALL",
+            "type_time": mt5.ORDER_TIME_GTC,
+            "type_filling": mt5.ORDER_FILLING_IOC,
+        }
+        
+        result = mt5.order_send(request)
+        
+        if result.retcode == mt5.TRADE_RETCODE_DONE:
+            closed_count += 1
+            total_profit += pos.profit
+    
+    if closed_count > 0:
+        return JSONResponse({
+            "success": True,
+            "message": f"{closed_count}개 청산 완료! 총 P/L: ${total_profit:,.2f}",
+            "closed_count": closed_count,
+            "total_profit": total_profit
+        })
+    else:
+        return JSONResponse({"success": False, "message": "청산 실패"})
+
+
+# ========== 타입별 청산 (BUY/SELL) ==========
+@router.post("/close-by-type")
+async def close_by_type(
+    type: str = "BUY",
+    magic: int = None,
+    current_user: User = Depends(get_current_user)
+):
+    """BUY 또는 SELL 포지션만 청산"""
+    if not mt5.initialize():
+        return JSONResponse({"success": False, "message": "MT5 초기화 실패"})
+    
+    positions = mt5.positions_get()
+    if not positions:
+        return JSONResponse({"success": False, "message": "열린 포지션 없음"})
+    
+    target_type = 0 if type.upper() == "BUY" else 1
+    closed_count = 0
+    total_profit = 0
+    
+    for pos in positions:
+        if pos.type != target_type:
+            continue
+        # magic 필터링
+        if magic is not None and pos.magic != magic:
+            continue
+            
+        tick = mt5.symbol_info_tick(pos.symbol)
+        if not tick:
+            continue
+            
+        close_type = mt5.ORDER_TYPE_SELL if pos.type == 0 else mt5.ORDER_TYPE_BUY
+        close_price = tick.bid if pos.type == 0 else tick.ask
+        
+        request = {
+            "action": mt5.TRADE_ACTION_DEAL,
+            "symbol": pos.symbol,
+            "volume": pos.volume,
+            "type": close_type,
+            "position": pos.ticket,
+            "price": close_price,
+            "deviation": 20,
+            "magic": 123456,
+            "comment": f"Trading-X CLOSE {type.upper()}",
+            "type_time": mt5.ORDER_TIME_GTC,
+            "type_filling": mt5.ORDER_FILLING_IOC,
+        }
+        
+        result = mt5.order_send(request)
+        
+        if result.retcode == mt5.TRADE_RETCODE_DONE:
+            closed_count += 1
+            total_profit += pos.profit
+    
+    if closed_count > 0:
+        return JSONResponse({
+            "success": True,
+            "message": f"{type.upper()} {closed_count}개 청산! P/L: ${total_profit:,.2f}",
+            "closed_count": closed_count,
+            "total_profit": total_profit
+        })
+    else:
+        return JSONResponse({"success": False, "message": f"{type.upper()} 포지션 없음"})
+
+
+# ========== 손익별 청산 (수익/손실) ==========
+@router.post("/close-by-profit")
+async def close_by_profit(
+    profit_type: str = "positive",
+    magic: int = None,
+    current_user: User = Depends(get_current_user)
+):
+    """수익 또는 손실 포지션만 청산"""
+    if not mt5.initialize():
+        return JSONResponse({"success": False, "message": "MT5 초기화 실패"})
+    
+    positions = mt5.positions_get()
+    if not positions:
+        return JSONResponse({"success": False, "message": "열린 포지션 없음"})
+    
+    closed_count = 0
+    total_profit = 0
+    
+    for pos in positions:
+        # magic 필터링
+        if magic is not None and pos.magic != magic:
+            continue
+        # 수익/손실 필터링
+        if profit_type == "positive" and pos.profit <= 0:
+            continue
+        if profit_type == "negative" and pos.profit >= 0:
+            continue
+            
+        tick = mt5.symbol_info_tick(pos.symbol)
+        if not tick:
+            continue
+            
+        close_type = mt5.ORDER_TYPE_SELL if pos.type == 0 else mt5.ORDER_TYPE_BUY
+        close_price = tick.bid if pos.type == 0 else tick.ask
+        
+        request = {
+            "action": mt5.TRADE_ACTION_DEAL,
+            "symbol": pos.symbol,
+            "volume": pos.volume,
+            "type": close_type,
+            "position": pos.ticket,
+            "price": close_price,
+            "deviation": 20,
+            "magic": 123456,
+            "comment": f"Trading-X CLOSE {'PROFIT' if profit_type == 'positive' else 'LOSS'}",
+            "type_time": mt5.ORDER_TIME_GTC,
+            "type_filling": mt5.ORDER_FILLING_IOC,
+        }
+        
+        result = mt5.order_send(request)
+        
+        if result.retcode == mt5.TRADE_RETCODE_DONE:
+            closed_count += 1
+            total_profit += pos.profit
+    
+    type_name = "수익" if profit_type == "positive" else "손실"
+    
+    if closed_count > 0:
+        return JSONResponse({
+            "success": True,
+            "message": f"{type_name} {closed_count}개 청산! P/L: ${total_profit:,.2f}",
+            "closed_count": closed_count,
+            "total_profit": total_profit
+        })
+    else:
+        return JSONResponse({"success": False, "message": f"{type_name} 포지션 없음"})
 
 # ========== 거래 내역 ==========
 @router.get("/history")
@@ -323,7 +596,8 @@ async def get_history(current_user: User = Depends(get_current_user)):
         print(f"[MT5 History] Filtered deals: {len(filtered_deals)}")
         
         for deal in sorted_deals[:30]:  # 최근 30개
-            trade_time = datetime.fromtimestamp(deal.time)
+            # MT5 서버 시간 → 로컬 시간 보정 (2시간 차이 보정)
+            trade_time = datetime.fromtimestamp(deal.time) - timedelta(hours=2)
             history.append({
                 "ticket": deal.ticket,
                 "time": trade_time.strftime("%m/%d %H:%M"),
@@ -403,16 +677,15 @@ async def martin_update_state(
     current_user: User = Depends(get_current_user)
 ):
     """마틴 단계와 누적손실 업데이트"""
-    martin_service.state["step"] = step
-    martin_service.state["accumulated_loss"] = accumulated_loss
-    martin_service.state["current_lot"] = martin_service.state["base_lot"] * (2 ** (step - 1))
+    martin_service.state.step = step
+    martin_service.state.accumulated_loss = accumulated_loss
     
     return JSONResponse({
         "success": True,
         "message": f"마틴 상태 업데이트: Step {step}, 누적손실 ${accumulated_loss:,.2f}",
         "step": step,
         "accumulated_loss": accumulated_loss,
-        "current_lot": martin_service.state["current_lot"]
+        "current_lot": martin_service.get_current_lot()
     })
 
 
@@ -421,9 +694,9 @@ async def martin_reset_full(
     current_user: User = Depends(get_current_user)
 ):
     """마틴 완전 초기화 (1단계, 누적손실 0)"""
-    martin_service.state["step"] = 1
-    martin_service.state["accumulated_loss"] = 0
-    martin_service.state["current_lot"] = martin_service.state["base_lot"]
+    martin_service.state.step = 1
+    martin_service.state.accumulated_loss = 0
+    # current_lot은 get_current_lot() 메서드로 자동 계산됨
     
     return JSONResponse({
         "success": True,
@@ -677,15 +950,23 @@ async def websocket_endpoint(websocket: WebSocket):
             
             position_data = None
             if positions and len(positions) > 0:
-                pos = positions[0]
-                position_data = {
-                    "type": "BUY" if pos.type == 0 else "SELL",
-                    "symbol": pos.symbol,
-                    "volume": pos.volume,
-                    "entry": pos.price_open,
-                    "profit": pos.profit,
-                    "ticket": pos.ticket
-                }
+                # Buy/Sell 패널용 포지션 (magic=100001)
+                buysell_pos = None
+                for pos in positions:
+                    if pos.magic == 100001:
+                        buysell_pos = pos
+                        break
+                
+                if buysell_pos:
+                    position_data = {
+                        "type": "BUY" if buysell_pos.type == 0 else "SELL",
+                        "symbol": buysell_pos.symbol,
+                        "volume": buysell_pos.volume,
+                        "entry": buysell_pos.price_open,
+                        "profit": buysell_pos.profit,
+                        "ticket": buysell_pos.ticket,
+                        "magic": buysell_pos.magic
+                    }
             
             # 인디케이터 계산
             try:

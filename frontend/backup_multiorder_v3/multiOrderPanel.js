@@ -524,83 +524,6 @@ function updateMultiOrderPanelFromData(data) {
     updateMultiOrderPrices();
 }
 
-// ========== V5 새 기능 함수들 ==========
-
-// Market/Limit 토글
-function toggleMultiOrderType() {
-    const toggle = document.getElementById('multiOrderTypeToggle');
-    const limitSection = document.getElementById('multiOrderLimitSection');
-    const marketLabel = document.getElementById('multiOrderMarketLabel');
-    const limitLabel = document.getElementById('multiOrderLimitLabel');
-    
-    toggle.classList.toggle('limit');
-    
-    if (toggle.classList.contains('limit')) {
-        limitSection.classList.add('show');
-        marketLabel.classList.remove('active');
-        limitLabel.classList.add('active');
-    } else {
-        limitSection.classList.remove('show');
-        marketLabel.classList.add('active');
-        limitLabel.classList.remove('active');
-    }
-}
-
-// 랏수 프리셋 팝업 열기
-function openMultiOrderLotPopup() {
-    document.getElementById('multiOrderLotPopup').classList.add('show');
-}
-
-// 랏수 프리셋 팝업 닫기
-function closeMultiOrderLotPopup(event) {
-    if (!event || event.target === document.getElementById('multiOrderLotPopup')) {
-        document.getElementById('multiOrderLotPopup').classList.remove('show');
-    }
-}
-
-// 랏수 프리셋 선택
-function setMultiOrderLot(value) {
-    document.getElementById('multiOrderLotInput').value = value.toFixed(2);
-    multiOrderLot = value;
-    closeMultiOrderLotPopup();
-    showToast(`랏수 ${value.toFixed(2)} 설정됨`, 'success');
-}
-
-// SL/TP 팝업 열기
-function openMultiOrderSLTPPopup() {
-    document.getElementById('multiOrderSLTPPopup').classList.add('show');
-}
-
-// SL/TP 팝업 닫기
-function closeMultiOrderSLTPPopup(event) {
-    if (!event || event.target === document.getElementById('multiOrderSLTPPopup')) {
-        document.getElementById('multiOrderSLTPPopup').classList.remove('show');
-    }
-}
-
-// SL/TP 탭 전환
-function switchMultiOrderSLTPTab(btn, tab) {
-    document.querySelectorAll('.multi-order-sltp-tab').forEach(t => t.classList.remove('active'));
-    btn.classList.add('active');
-    // TODO: 탭별 내용 전환 로직
-}
-
-// SL/TP 타입 전환 (가격/Pips/USD)
-function switchMultiOrderSLTPType(btn, type) {
-    document.querySelectorAll('.multi-order-sltp-type-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    // TODO: 타입별 입력 방식 변경 로직
-}
-
-// 포지션 카운트 업데이트
-function updateMultiOrderPositionCount() {
-    const countEl = document.getElementById('multiOrderPositionCount');
-    if (countEl) {
-        const count = multiOrderPositions ? multiOrderPositions.length : 0;
-        countEl.textContent = count;
-    }
-}
-
 // ========== 초기화 ==========
 document.addEventListener('DOMContentLoaded', function() {
     // 드롭다운 외부 클릭 시 닫기
@@ -611,17 +534,4 @@ document.addEventListener('DOMContentLoaded', function() {
             dropdown.style.display = 'none';
         }
     });
-    
-    // 초기 가격 업데이트
-    setTimeout(() => {
-        updateMultiOrderPrices();
-        updateMultiOrderAccountInfo();
-    }, 1000);
-
-    // 주기적 가격 업데이트 (1초마다)
-    setInterval(() => {
-        if (document.getElementById('multiOrderPanel')?.classList.contains('active')) {
-            updateMultiOrderPrices();
-        }
-    }, 1000);
 });

@@ -53,10 +53,13 @@ async def get_demo_account(
     """데모 계정 정보 조회"""
     print(f"\n[ACCOUNT-INFO] 🔵 START - User: {current_user.id}")
 
-    # 열린 포지션들 확인 (다중 포지션)
-    positions = db.query(DemoPosition).filter(
+    # 모든 열린 포지션 조회 (Account 탭용)
+    all_positions = db.query(DemoPosition).filter(
         DemoPosition.user_id == current_user.id
     ).all()
+    
+    # Buy/Sell 패널용 포지션 (magic=100001)
+    positions = [p for p in all_positions if p.magic == 100001]
 
     print(f"[ACCOUNT-INFO] 🔍 Query result - Found {len(positions)} positions")
     for pos in positions:
@@ -251,16 +254,20 @@ async def get_demo_account(
                     "target": target
                 }
     
-    # 다중 포지션 데이터 생성
+    # 다중 포지션 데이터 생성 (전체 포지션 - Account 탭용)
     positions_data = []
-    for pos in positions:
-        pos_price_data = {"profit": 0, "current": pos.entry_price}
+    total_margin = 0
+    leverage = 500  # 데모 레버리지
+    
+    for pos in all_positions:
+        pos_price_data = {"profit": 0, "current": pos.entry_price, "margin": 0}
         
         if mt5.initialize():
             tick = mt5.symbol_info_tick(pos.symbol)
+            symbol_info = mt5.symbol_info(pos.symbol)
+            
             if tick:
                 current_price = tick.bid if pos.trade_type == "BUY" else tick.ask
-                symbol_info = mt5.symbol_info(pos.symbol)
                 
                 if symbol_info and symbol_info.trade_tick_size > 0:
                     if pos.trade_type == "BUY":
@@ -275,7 +282,19 @@ async def get_demo_account(
                     else:
                         profit = (pos.entry_price - current_price) * pos.volume
                 
-                pos_price_data = {"profit": round(profit, 2), "current": current_price}
+                # MT5 함수로 정확한 마진 계산 (종목별 레버리지 자동 적용)
+                order_type = mt5.ORDER_TYPE_BUY if pos.trade_type == "BUY" else mt5.ORDER_TYPE_SELL
+                margin = mt5.order_calc_margin(order_type, pos.symbol, pos.volume, current_price)
+                if margin is None:
+                    margin = 0
+                
+                pos_price_data = {
+                    "profit": round(profit, 2), 
+                    "current": current_price,
+                    "margin": round(margin, 2)
+                }
+        
+        total_margin += pos_price_data["margin"]
         
         positions_data.append({
             "id": pos.id,
@@ -286,7 +305,9 @@ async def get_demo_account(
             "entry": pos.entry_price,
             "current": pos_price_data["current"],
             "profit": pos_price_data["profit"],
-            "target": pos.target_profit
+            "target": pos.target_profit,
+            "magic": pos.magic,
+            "margin": pos_price_data["margin"]
         })
 
     print(f"[ACCOUNT-INFO] 📦 Returning - position_data: {position_data is not None}, positions_count: {len(positions)}")
@@ -302,8 +323,11 @@ async def get_demo_account(
         "leverage": 500,
         "position": position_data,
         "positions": positions_data,
-        "positions_count": len(positions),
-        "has_mt5": current_user.has_mt5_account or False
+        "positions_count": len(all_positions),
+        "buysell_count": len(positions),
+        "has_mt5": current_user.has_mt5_account or False,
+        "margin": round(total_margin, 2),
+        "total_margin": round(total_margin, 2)
     }
 
 
@@ -314,6 +338,7 @@ async def place_demo_order(
     order_type: str = "BUY",
     volume: float = 0.01,
     target: float = 100,
+    magic: int = 100001,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -342,7 +367,8 @@ async def place_demo_order(
         trade_type=order_type.upper(),
         volume=volume,
         entry_price=entry_price,
-        target_profit=target
+        target_profit=target,
+        magic=magic
     )
 
     db.add(new_position)
@@ -364,12 +390,92 @@ async def place_demo_order(
         "position_id": new_position.id
     })
 
+# ========== 데모 포지션 조회 ==========
+@router.get("/positions")
+async def get_demo_positions(
+    magic: int = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """데모 포지션 조회 (magic 필터 옵션)"""
+    query = db.query(DemoPosition).filter(
+        DemoPosition.user_id == current_user.id
+    )
+    if magic is not None:
+        query = query.filter(DemoPosition.magic == magic)
+    
+    positions = query.all()
+    
+    if not mt5.initialize():
+        return {"positions": [], "message": "MT5 연결 실패", "total_margin": 0}
+    
+    leverage = 500  # 데모 기본 레버리지
+    
+    positions_data = []
+    total_margin = 0
+    
+    for pos in positions:
+        tick = mt5.symbol_info_tick(pos.symbol)
+        symbol_info = mt5.symbol_info(pos.symbol)
+        
+        if tick:
+            current_price = tick.bid if pos.trade_type == "BUY" else tick.ask
+            
+            # 손익 계산
+            if symbol_info and symbol_info.trade_tick_size > 0:
+                if pos.trade_type == "BUY":
+                    price_diff = current_price - pos.entry_price
+                else:
+                    price_diff = pos.entry_price - current_price
+                ticks = price_diff / symbol_info.trade_tick_size
+                profit = ticks * symbol_info.trade_tick_value * pos.volume
+            else:
+                if pos.trade_type == "BUY":
+                    profit = (current_price - pos.entry_price) * pos.volume
+                else:
+                    profit = (pos.entry_price - current_price) * pos.volume
+            
+            profit = round(profit, 2)
+        else:
+            current_price = pos.entry_price
+            profit = 0
+        
+        # MT5 함수로 정확한 마진 계산 (종목별 레버리지 자동 적용)
+        order_type = mt5.ORDER_TYPE_BUY if pos.trade_type == "BUY" else mt5.ORDER_TYPE_SELL
+        margin = mt5.order_calc_margin(order_type, pos.symbol, pos.volume, current_price)
+        if margin is None:
+            margin = 0
+        
+        margin = round(margin, 2)
+        total_margin += margin
+        
+        positions_data.append({
+            "id": pos.id,
+            "ticket": pos.id,
+            "type": pos.trade_type,
+            "symbol": pos.symbol,
+            "volume": pos.volume,
+            "entry": pos.entry_price,
+            "current": current_price,
+            "profit": profit,
+            "target": pos.target_profit,
+            "magic": pos.magic,
+            "margin": margin
+        })
+    
+    return {
+        "positions": positions_data,
+        "count": len(positions_data),
+        "total_margin": round(total_margin, 2),
+        "leverage": leverage
+    }
 
 # ========== 데모 청산 ==========
 @router.post("/close")
 async def close_demo_position(
     ticket: int = None,
     symbol: str = None,
+    magic: int = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -380,10 +486,23 @@ async def close_demo_position(
             DemoPosition.id == ticket,
             DemoPosition.user_id == current_user.id
         ).first()
-    # symbol로 해당 종목 첫 번째 포지션 청산
+    # symbol + magic으로 해당 종목 포지션 청산
+    elif symbol and magic:
+        position = db.query(DemoPosition).filter(
+            DemoPosition.symbol == symbol,
+            DemoPosition.magic == magic,
+            DemoPosition.user_id == current_user.id
+        ).first()
+    # symbol만으로 해당 종목 첫 번째 포지션 청산
     elif symbol:
         position = db.query(DemoPosition).filter(
             DemoPosition.symbol == symbol,
+            DemoPosition.user_id == current_user.id
+        ).first()
+    # magic만으로 해당 패널 포지션 청산
+    elif magic:
+        position = db.query(DemoPosition).filter(
+            DemoPosition.magic == magic,
             DemoPosition.user_id == current_user.id
         ).first()
     # 둘 다 없으면 아무 포지션이나 청산
@@ -806,13 +925,17 @@ async def reset_demo_martin_full(
 # ========== 일괄 청산 ==========
 @router.post("/close-all")
 async def close_all_demo_positions(
+    magic: int = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """모든 데모 포지션 일괄 청산"""
-    positions = db.query(DemoPosition).filter(
+    """모든 데모 포지션 일괄 청산 (magic 필터 옵션)"""
+    query = db.query(DemoPosition).filter(
         DemoPosition.user_id == current_user.id
-    ).all()
+    )
+    if magic is not None:
+        query = query.filter(DemoPosition.magic == magic)
+    positions = query.all()
     
     if not positions:
         return JSONResponse({"success": False, "message": "열린 포지션 없음"})
@@ -885,14 +1008,18 @@ async def close_all_demo_positions(
 @router.post("/close-by-type")
 async def close_demo_by_type(
     type: str = "BUY",
+    magic: int = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """특정 타입(BUY/SELL) 포지션만 청산"""
-    positions = db.query(DemoPosition).filter(
+    """특정 타입(BUY/SELL) 포지션만 청산 (magic 필터 옵션)"""
+    query = db.query(DemoPosition).filter(
         DemoPosition.user_id == current_user.id,
         DemoPosition.trade_type == type.upper()
-    ).all()
+    )
+    if magic is not None:
+        query = query.filter(DemoPosition.magic == magic)
+    positions = query.all()
     
     if not positions:
         return JSONResponse({"success": False, "message": f"{type} 포지션 없음"})
@@ -965,13 +1092,17 @@ async def close_demo_by_type(
 @router.post("/close-by-profit")
 async def close_demo_by_profit(
     profit_type: str = "positive",
+    magic: int = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """수익/손실 포지션만 청산 (profit_type: positive/negative)"""
-    positions = db.query(DemoPosition).filter(
+    """수익/손실 포지션만 청산 (profit_type: positive/negative, magic 필터 옵션)"""
+    query = db.query(DemoPosition).filter(
         DemoPosition.user_id == current_user.id
-    ).all()
+    )
+    if magic is not None:
+        query = query.filter(DemoPosition.magic == magic)
+    positions = query.all()
     
     if not positions:
         return JSONResponse({"success": False, "message": "열린 포지션 없음"})
