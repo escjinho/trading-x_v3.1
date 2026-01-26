@@ -245,6 +245,11 @@ function connectWebSocket() {
         if (typeof updateMultiOrderPanelV5 === 'function') {
             updateMultiOrderPanelV5();
         }
+        
+        // 패널 동기화 (Today P/L 등)
+        if (typeof syncAccountInfoToPanels === 'function') {
+            syncAccountInfoToPanels();
+        }
     };
     
     ws.onclose = function() {
@@ -454,6 +459,12 @@ async function checkUserMode() {
             }
             
             fetchAccountData();
+            
+            // ★ 히스토리 로드 (Today P/L 계산)
+            if (typeof loadHistory === 'function') {
+                loadHistory();
+            }
+            
             setInterval(fetchAccountData, 2000);
             
         } else {
@@ -501,6 +512,12 @@ async function checkUserMode() {
             // ★ Demo 데이터 즉시 로드 (Account Overview 업데이트)
             if (token) {
                 await fetchDemoData();  // await 추가하여 즉시 실행
+                
+                // ★ 히스토리 로드 (Today P/L 계산)
+                if (typeof loadHistory === 'function') {
+                    loadHistory();
+                }
+                
                 setInterval(fetchDemoData, 500);
             }
 
@@ -745,6 +762,11 @@ async function fetchDemoData() {
     }
 
     console.log('[fetchDemoData] 🔴 END');
+    
+    // 패널 동기화 (Today P/L 등)
+    if (typeof syncAccountInfoToPanels === 'function') {
+        syncAccountInfoToPanels();
+    }
 }
 
 // Initialize

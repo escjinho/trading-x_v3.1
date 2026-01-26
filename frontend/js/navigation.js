@@ -243,10 +243,8 @@ function showTradePanel(panel) {
     // 선택된 패널만 표시
     if (panel === 'buysell') {
         buysellPanel.style.display = 'block';
-        // Today P/L 동기화
-        if (typeof syncTradeTodayPL === 'function') {
-            syncTradeTodayPL();
-        }
+        // Account Info에서 값 동기화
+        syncAccountInfoToPanels();
     } else if (panel === 'multiV5') {
         if (multiOrderPanelV5) {
             multiOrderPanelV5.classList.add('active');
@@ -254,10 +252,8 @@ function showTradePanel(panel) {
             if (typeof updateMultiOrderPanelV5 === 'function') {
                 updateMultiOrderPanelV5();
             }
-            // V5 계정 정보 동기화
-            if (typeof updateV5AccountInfo === 'function') {
-                updateV5AccountInfo();
-            }
+            // Account Info에서 값 동기화
+            syncAccountInfoToPanels();
         }
     } else if (panel === 'multi') {
         // Quick & Easy 패널 - 준비중
@@ -487,4 +483,50 @@ document.addEventListener('DOMContentLoaded', function() {
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
     setupNavLongPress();
     initChartSymbolFromStorage();  // ★ 종목 정보 초기화 추가
+}
+
+// ========== Account Info → 패널 동기화 ==========
+function syncAccountInfoToPanels() {
+    // Account 탭에서 값 가져오기
+    const accBalance = document.getElementById('accBalance');
+    const accTodayPL = document.getElementById('accTodayPL');
+    const accFree = document.getElementById('accFree');
+    const accCurrentPL = document.getElementById('accCurrentPL');
+    
+    // Buy/Sell 패널 동기화
+    const tradeBalance = document.getElementById('tradeBalance');
+    const tradeTodayPL = document.getElementById('tradeTodayPL');
+    
+    if (tradeBalance && accBalance) {
+        const balText = accBalance.textContent.replace(/[$,]/g, '');
+        const bal = parseFloat(balText) || 0;
+        tradeBalance.textContent = '$' + Math.round(bal).toLocaleString();
+    }
+    
+    if (tradeTodayPL && accTodayPL) {
+        tradeTodayPL.textContent = accTodayPL.textContent;
+        tradeTodayPL.style.color = accTodayPL.style.color || 'var(--text-muted)';
+    }
+    
+    // V5 Multi Order 패널 동기화
+    const v5Balance = document.getElementById('v5Balance');
+    const v5TodayPL = document.getElementById('v5TodayPL');
+    const v5Margin = document.getElementById('v5Margin');
+    
+    if (v5Balance && accBalance) {
+        const balText = accBalance.textContent.replace(/[$,]/g, '');
+        const bal = parseFloat(balText) || 0;
+        v5Balance.textContent = '$' + Math.round(bal).toLocaleString();
+    }
+    
+    if (v5TodayPL && accTodayPL) {
+        v5TodayPL.textContent = accTodayPL.textContent;
+        v5TodayPL.style.color = accTodayPL.style.color || 'var(--text-muted)';
+    }
+    
+    if (v5Margin && accFree) {
+        v5Margin.textContent = accFree.textContent;
+    }
+    
+    console.log('[syncAccountInfoToPanels] 패널 동기화 완료');
 }

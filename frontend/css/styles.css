@@ -3076,3 +3076,36 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
     color: var(--accent-cyan);
     background: rgba(0, 212, 255, 0.1);
 }
+
+/* V5 패널 삭제 버튼 (인라인 - 헤더 줄에 위치) */
+.v5-panel-delete-btn-inline {
+    width: 28px;
+    height: 28px;
+    background: rgba(220, 50, 70, 0.15);
+    border: 1px solid rgba(220, 50, 70, 0.4);
+    border-radius: 6px;
+    color: var(--sell-color);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    margin-left: 8px;
+}
+
+.v5-panel-delete-btn-inline:hover {
+    background: var(--sell-color);
+    color: white;
+}
+
+.v5-panel-delete-btn-inline .material-icons-round {
+    font-size: 16px;
+}
+
+/* V5 헤더 오른쪽 그룹 (Market/Limit + 삭제 버튼) */
+.v5-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}

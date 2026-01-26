@@ -69,6 +69,11 @@ async function loadHistory() {
         container.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-muted);">거래 내역을 불러올 수 없습니다</div>';
         resetAccountInfo();
     }
+    
+    // 히스토리 로드 완료 후 패널 동기화
+    if (typeof syncAccountInfoToPanels === 'function') {
+        syncAccountInfoToPanels();
+    }
 }
 
 // Account Info 업데이트 함수 (오늘 기준)
@@ -157,7 +162,10 @@ function resetAccountInfo() {
         todayPLEl.textContent = '+$0.00';
         todayPLEl.style.color = 'var(--buy-color)';
     }
-    if (currentPLEl) currentPLEl.textContent = '$0.00';
+    if (currentPLEl) {
+        currentPLEl.textContent = '+$0.00';
+        currentPLEl.style.color = 'var(--buy-color)';
+    }
 }
 
 // Account 탭 전환 시 자동 로드
