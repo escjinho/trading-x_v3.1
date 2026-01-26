@@ -76,6 +76,15 @@ function switchTradingMode(mode) {
         const demoControl = document.getElementById('demoControlCard');
         if (demoControl) demoControl.style.display = 'block';
         
+        // Hero Badge 업데이트
+        const heroBadge = document.getElementById('heroModeBadge');
+        if (heroBadge) {
+            heroBadge.textContent = 'Trading-X Demo';
+            heroBadge.style.background = 'none';
+            heroBadge.style.border = 'none';
+            heroBadge.style.color = '#00d4ff';
+        }
+        
         isDemo = true;
         showToast('🎮 Demo 모드로 전환되었습니다', 'success');
         fetchDemoData();
@@ -104,6 +113,15 @@ function switchTradingMode(mode) {
                 
                 const demoControl = document.getElementById('demoControlCard');
                 if (demoControl) demoControl.style.display = 'none';
+                
+                // Hero Badge 업데이트
+                const heroBadge = document.getElementById('heroModeBadge');
+                if (heroBadge) {
+                    heroBadge.textContent = 'Trading-X Live';
+                    heroBadge.style.background = 'none';
+                    heroBadge.style.border = 'none';
+                    heroBadge.style.color = '#00ff88';
+                }
                 
                 isDemo = false;
                 showToast('💎 Live 모드로 전환되었습니다', 'success');
@@ -332,8 +350,8 @@ async function connectMT5Account() {
             const heroBadge = document.getElementById('heroModeBadge');
             if (heroBadge) {
                 heroBadge.textContent = 'Trading-X Live';
-                heroBadge.style.background = 'linear-gradient(135deg, rgba(0, 255, 136, 0.2) 0%, rgba(0, 255, 136, 0.05) 100%)';
-                heroBadge.style.borderColor = 'rgba(0, 255, 136, 0.4)';
+                heroBadge.style.background = 'none';
+                heroBadge.style.border = 'none';
                 heroBadge.style.color = '#00ff88';
             }
             

@@ -341,8 +341,16 @@
                     </div>
                 </div>
                 
-                <!-- Chart -->
-                <div id="chart-container"></div>
+                <!-- Chart Wrapper (메인 + 패널 지표) -->
+                <div id="chart-wrapper">
+                    <!-- 메인 차트 -->
+                    <div id="chart-container"></div>
+                    
+                    <!-- 패널 지표 영역 (RSI, MACD 등) -->
+                    <div id="indicator-panels">
+                        <!-- 동적으로 추가됨 -->
+                    </div>
+                </div>
                 
                 <!-- Price Bar -->
                 <div class="price-bar">
@@ -1744,6 +1752,7 @@
 
     <script src="js/config.js"></script>
     <script src="js/state.js"></script>
+    <script src="js/auth.js"></script>
     <script src="js/api.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/watchlist.js"></script>
@@ -1833,7 +1842,42 @@
     });
     
     // ========== 보조지표 모달 ==========
+    const MAX_PANEL_INDICATORS = 3;  // 패널 지표 최대 개수
+    
+    // 지표 설정 정보
+    const indicatorConfig = {
+        // 오버레이 지표
+        sma: { name: 'SMA (200)', color: '#9C27B0', type: 'overlay' },
+        ema: { name: 'EMA (20)', color: '#E91E63', type: 'overlay' },
+        lwma: { name: 'LWMA (50)', color: '#FFC107', type: 'overlay' },
+        wma: { name: 'WMA (14)', color: '#FF5722', type: 'overlay' },
+        bb: { name: 'Bollinger Bands', color: '#2196F3', type: 'overlay' },
+        keltner: { name: 'Keltner Channel', color: '#00ACC1', type: 'overlay' },
+        donchian: { name: 'Donchian Channel', color: '#26A69A', type: 'overlay' },
+        envelope: { name: 'Envelope', color: '#7E57C2', type: 'overlay' },
+        psar: { name: 'Parabolic SAR', color: '#FFEB3B', type: 'overlay' },
+        ichimoku: { name: 'Ichimoku Cloud', color: '#E040FB', type: 'overlay' },
+        vwap: { name: 'VWAP', color: '#673AB7', type: 'overlay' },
+        // 패널 지표
+        rsi: { name: 'RSI (14)', color: '#00BCD4', type: 'panel' },
+        macd: { name: 'MACD', color: '#4CAF50', type: 'panel' },
+        stoch: { name: 'Stochastic', color: '#FF9800', type: 'panel' },
+        cci: { name: 'CCI (20)', color: '#8BC34A', type: 'panel' },
+        williams: { name: 'Williams %R', color: '#F44336', type: 'panel' },
+        mfi: { name: 'MFI (14)', color: '#009688', type: 'panel' },
+        atr: { name: 'ATR (14)', color: '#795548', type: 'panel' },
+        adx: { name: 'ADX (14)', color: '#607D8B', type: 'panel' },
+        obv: { name: 'OBV', color: '#3F51B5', type: 'panel' }
+    };
+    
+    // 현재 활성화된 지표
+    let activeIndicators = {
+        overlay: ['bb', 'lwma'],  // 기본 활성화
+        panel: []
+    };
+    
     function openIndPopup() {
+        updatePanelCount();
         document.getElementById('indModalOverlay').style.display = 'flex';
     }
     
@@ -1843,7 +1887,39 @@
     
     function toggleIndicator(item) {
         const checkbox = item.querySelector('.ind-checkbox');
+        const indId = item.dataset.ind;
+        const indType = item.dataset.type;
+        
+        // 패널 지표 3개 제한 체크
+        if (indType === 'panel' && !checkbox.classList.contains('checked')) {
+            const currentPanelCount = document.querySelectorAll('.ind-item[data-type="panel"] .ind-checkbox.checked').length;
+            if (currentPanelCount >= MAX_PANEL_INDICATORS) {
+                showToast('⚠️ 패널 지표는 최대 ' + MAX_PANEL_INDICATORS + '개까지만 추가할 수 있습니다', 'warning');
+                return;
+            }
+        }
+        
         checkbox.classList.toggle('checked');
+        updatePanelCount();
+    }
+    
+    function updatePanelCount() {
+        const currentCount = document.querySelectorAll('.ind-item[data-type="panel"] .ind-checkbox.checked').length;
+        const countDisplay = document.querySelector('.panel-count');
+        if (countDisplay) {
+            countDisplay.textContent = `(${currentCount}/${MAX_PANEL_INDICATORS})`;
+            countDisplay.style.color = currentCount >= MAX_PANEL_INDICATORS ? '#ff5252' : '#FF9800';
+        }
+        
+        // 3개 도달 시 나머지 패널 지표 비활성화
+        document.querySelectorAll('.ind-item[data-type="panel"]').forEach(item => {
+            const isChecked = item.querySelector('.ind-checkbox').classList.contains('checked');
+            if (currentCount >= MAX_PANEL_INDICATORS && !isChecked) {
+                item.classList.add('panel-disabled');
+            } else {
+                item.classList.remove('panel-disabled');
+            }
+        });
     }
     
     function filterIndicators(query) {
@@ -1858,28 +1934,631 @@
                 item.style.display = 'none';
             }
         });
+        
+        // 카테고리 헤더 표시/숨김
+        document.querySelectorAll('.ind-category-header').forEach(header => {
+            header.style.display = query ? 'none' : 'block';
+        });
     }
     
     function resetIndicators() {
+        // 모든 체크 해제
         document.querySelectorAll('.ind-checkbox').forEach(cb => {
             cb.classList.remove('checked');
         });
-        showToast('지표가 초기화되었습니다', 'info');
+        
+        // 기본값 (BB, LWMA)만 체크
+        const defaultIndicators = ['bb', 'lwma'];
+        defaultIndicators.forEach(indId => {
+            const item = document.querySelector(`.ind-item[data-ind="${indId}"]`);
+            if (item) {
+                item.querySelector('.ind-checkbox').classList.add('checked');
+            }
+        });
+        
+        updatePanelCount();
+        showToast('기본 지표로 초기화되었습니다', 'info');
     }
     
     function applyIndicators() {
-        const selected = [];
+        const selectedOverlay = [];
+        const selectedPanel = [];
+        
         document.querySelectorAll('.ind-checkbox.checked').forEach(cb => {
             const item = cb.closest('.ind-item');
-            selected.push(item.dataset.ind);
+            const indId = item.dataset.ind;
+            const indType = item.dataset.type;
+            
+            if (indType === 'overlay') {
+                selectedOverlay.push(indId);
+            } else if (indType === 'panel') {
+                selectedPanel.push(indId);
+            }
         });
         
-        console.log('적용된 지표:', selected);
-        closeIndPopup();
-        showToast(selected.length + '개 지표가 적용되었습니다', 'success');
+        // 활성 지표 업데이트
+        activeIndicators.overlay = selectedOverlay;
+        activeIndicators.panel = selectedPanel;
         
-        // TODO: 실제 차트에 지표 적용 로직
+        console.log('적용된 오버레이 지표:', selectedOverlay);
+        console.log('적용된 패널 지표:', selectedPanel);
+        
+        // 오버레이 지표 적용 (ChartPanel)
+        applyOverlayIndicators(selectedOverlay);
+        
+        // 패널 지표 적용
+        applyPanelIndicators(selectedPanel);
+        
+        
+        // 차트 래퍼 클래스 업데이트 (높이 조절)
+        updateChartWrapperClass(selectedPanel.length);
+        
+        closeIndPopup();
+        
+        const totalCount = selectedOverlay.length + selectedPanel.length;
+        showToast('✅ ' + totalCount + '개 지표가 적용되었습니다', 'success');
     }
+    
+    // 오버레이 지표 적용
+    function applyOverlayIndicators(indicators) {
+        if (typeof ChartPanel !== 'undefined' && ChartPanel.setIndicators) {
+            ChartPanel.setIndicators({
+                bb: indicators.includes('bb'),
+                lwma: indicators.includes('lwma'),
+                ema: indicators.includes('ema'),
+                sma: indicators.includes('sma')
+            });
+        }
+    }
+    
+    // 패널 지표 적용
+    function applyPanelIndicators(indicators) {
+        const panelsContainer = document.getElementById('indicator-panels');
+        if (!panelsContainer) return;
+        
+        // 기존 패널 제거
+        panelsContainer.innerHTML = '';
+        
+        // 새 패널 생성
+        indicators.forEach(indId => {
+            const config = indicatorConfig[indId];
+            if (!config) return;
+            
+            const panel = createIndicatorPanel(indId, config);
+            panelsContainer.appendChild(panel);
+        });
+        
+        // 패널 차트 초기화 (Lightweight Charts)
+        indicators.forEach(indId => {
+            initPanelChart(indId);
+        });
+    }
+    
+    // 패널 지표 DOM 생성
+    function createIndicatorPanel(indId, config) {
+        const panel = document.createElement('div');
+        panel.className = 'indicator-panel';
+        panel.id = `panel-${indId}`;
+        panel.innerHTML = `
+            <div class="indicator-panel-header">
+                <div class="indicator-panel-title">
+                    <span class="color-dot" style="background: ${config.color};"></span>
+                    <span>${config.name}</span>
+                </div>
+                <button class="indicator-panel-close" onclick="removeIndicatorPanel('${indId}')" title="지표 삭제">✕</button>
+            </div>
+            <div class="indicator-panel-chart" id="panel-chart-${indId}"></div>
+        `;
+        return panel;
+    }
+    
+    // 패널 차트 초기화 (Lightweight Charts)
+    function initPanelChart(indId) {
+        const container = document.getElementById(`panel-chart-${indId}`);
+        if (!container || typeof LightweightCharts === 'undefined') return;
+        
+        const config = indicatorConfig[indId];
+        
+        const panelChart = LightweightCharts.createChart(container, {
+            width: container.clientWidth,
+            height: 120,
+            layout: {
+                background: { color: 'transparent' },
+                textColor: '#8899a6'
+            },
+            grid: {
+                vertLines: { color: '#1e2d3d' },
+                horzLines: { color: '#1e2d3d' }
+            },
+            rightPriceScale: {
+                borderColor: 'rgba(0, 212, 255, 0.3)',
+                scaleMargins: { top: 0.1, bottom: 0.1 }
+            },
+            timeScale: {
+                visible: false
+            },
+            crosshair: {
+                mode: LightweightCharts.CrosshairMode.Normal
+            }
+        });
+        
+        // 더미 데이터 생성
+        const dummyData = generateDummyIndicatorData(indId);
+        
+        // 지표 타입에 따른 시리즈 생성
+        if (indId === 'macd') {
+            // MACD: 히스토그램 (0 기준 양수=초록, 음수=빨강)
+            const histogramSeries = panelChart.addHistogramSeries({
+                priceLineVisible: false,
+                lastValueVisible: true,
+                priceFormat: { type: 'price', precision: 2 }
+            });
+            histogramSeries.setData(dummyData.histogram);
+            
+            // MACD 라인 (파랑)
+            const macdLineSeries = panelChart.addLineSeries({
+                color: '#2196F3',
+                lineWidth: 2,
+                priceLineVisible: false,
+                lastValueVisible: false
+            });
+            macdLineSeries.setData(dummyData.macdLine);
+            
+            // 시그널 라인 (주황)
+            const signalSeries = panelChart.addLineSeries({
+                color: '#FF9800',
+                lineWidth: 1,
+                priceLineVisible: false,
+                lastValueVisible: false
+            });
+            signalSeries.setData(dummyData.signalLine);
+            
+            // 0 기준선 (흰색 점선)
+            const zeroLine = panelChart.addLineSeries({
+                color: 'rgba(255, 255, 255, 0.3)',
+                lineWidth: 1,
+                lineStyle: 2,
+                priceLineVisible: false,
+                lastValueVisible: false
+            });
+            zeroLine.setData(dummyData.macdLine.map(d => ({ time: d.time, value: 0 })));
+            
+        } else if (indId === 'rsi') {
+            // RSI: 라인 + 과매수/과매도 기준선
+            const rsiSeries = panelChart.addLineSeries({
+                color: config.color,
+                lineWidth: 2,
+                priceLineVisible: false,
+                lastValueVisible: true
+            });
+            rsiSeries.setData(dummyData);
+            
+            // 70 기준선 (과매수 - 빨강 점선)
+            const overboughtLine = panelChart.addLineSeries({
+                color: '#ff5252',
+                lineWidth: 1,
+                lineStyle: 2,
+                priceLineVisible: false,
+                lastValueVisible: false
+            });
+            overboughtLine.setData(dummyData.map(d => ({ time: d.time, value: 70 })));
+            
+            // 50 기준선 (중립 - 흰색 점선)
+            const midLine = panelChart.addLineSeries({
+                color: 'rgba(255, 255, 255, 0.3)',
+                lineWidth: 1,
+                lineStyle: 2,
+                priceLineVisible: false,
+                lastValueVisible: false
+            });
+            midLine.setData(dummyData.map(d => ({ time: d.time, value: 50 })));
+            
+            // 30 기준선 (과매도 - 초록 점선)
+            const oversoldLine = panelChart.addLineSeries({
+                color: '#00c853',
+                lineWidth: 1,
+                lineStyle: 2,
+                priceLineVisible: false,
+                lastValueVisible: false
+            });
+            oversoldLine.setData(dummyData.map(d => ({ time: d.time, value: 30 })));
+            
+        } else if (indId === 'stoch') {
+            // Stochastic: %K, %D 두 라인 + 80/20 기준선
+            const kSeries = panelChart.addLineSeries({
+                color: '#00BCD4',
+                lineWidth: 2,
+                priceLineVisible: false,
+                lastValueVisible: true
+            });
+            kSeries.setData(dummyData.kLine);
+            
+            const dSeries = panelChart.addLineSeries({
+                color: '#FF5722',
+                lineWidth: 1,
+                priceLineVisible: false,
+                lastValueVisible: false
+            });
+            dSeries.setData(dummyData.dLine);
+            
+            // 80 기준선 (과매수 - 빨강 점선)
+            const overboughtLine = panelChart.addLineSeries({
+                color: '#ff5252',
+                lineWidth: 1,
+                lineStyle: 2,
+                priceLineVisible: false,
+                lastValueVisible: false
+            });
+            overboughtLine.setData(dummyData.kLine.map(d => ({ time: d.time, value: 80 })));
+            
+            // 50 기준선 (중립 - 흰색 점선)
+            const midLine = panelChart.addLineSeries({
+                color: 'rgba(255, 255, 255, 0.3)',
+                lineWidth: 1,
+                lineStyle: 2,
+                priceLineVisible: false,
+                lastValueVisible: false
+            });
+            midLine.setData(dummyData.kLine.map(d => ({ time: d.time, value: 50 })));
+            
+            // 20 기준선 (과매도 - 초록 점선)
+            const oversoldLine = panelChart.addLineSeries({
+                color: '#00c853',
+                lineWidth: 1,
+                lineStyle: 2,
+                priceLineVisible: false,
+                lastValueVisible: false
+            });
+            oversoldLine.setData(dummyData.kLine.map(d => ({ time: d.time, value: 20 })));
+            
+        } else if (indId === 'cci') {
+            // CCI: 라인 + 100/-100 기준선
+            const cciSeries = panelChart.addLineSeries({
+                color: config.color,
+                lineWidth: 2,
+                priceLineVisible: false,
+                lastValueVisible: true
+            });
+            cciSeries.setData(dummyData);
+            
+            // +100 기준선
+            const upperLine = panelChart.addLineSeries({
+                color: '#ff5252',
+                lineWidth: 1,
+                lineStyle: 2,
+                priceLineVisible: false,
+                lastValueVisible: false
+            });
+            upperLine.setData(dummyData.map(d => ({ time: d.time, value: 100 })));
+            
+            // 0 기준선
+            const zeroLine = panelChart.addLineSeries({
+                color: 'rgba(255, 255, 255, 0.3)',
+                lineWidth: 1,
+                lineStyle: 2,
+                priceLineVisible: false,
+                lastValueVisible: false
+            });
+            zeroLine.setData(dummyData.map(d => ({ time: d.time, value: 0 })));
+            
+            // -100 기준선
+            const lowerLine = panelChart.addLineSeries({
+                color: '#00c853',
+                lineWidth: 1,
+                lineStyle: 2,
+                priceLineVisible: false,
+                lastValueVisible: false
+            });
+            lowerLine.setData(dummyData.map(d => ({ time: d.time, value: -100 })));
+            
+        } else if (indId === 'williams') {
+            // Williams %R: 라인 + -20/-80 기준선
+            const wrSeries = panelChart.addLineSeries({
+                color: config.color,
+                lineWidth: 2,
+                priceLineVisible: false,
+                lastValueVisible: true
+            });
+            wrSeries.setData(dummyData);
+            
+            // -20 기준선 (과매수)
+            const upperLine = panelChart.addLineSeries({
+                color: '#ff5252',
+                lineWidth: 1,
+                lineStyle: 2,
+                priceLineVisible: false,
+                lastValueVisible: false
+            });
+            upperLine.setData(dummyData.map(d => ({ time: d.time, value: -20 })));
+            
+            // -50 기준선
+            const midLine = panelChart.addLineSeries({
+                color: 'rgba(255, 255, 255, 0.3)',
+                lineWidth: 1,
+                lineStyle: 2,
+                priceLineVisible: false,
+                lastValueVisible: false
+            });
+            midLine.setData(dummyData.map(d => ({ time: d.time, value: -50 })));
+            
+            // -80 기준선 (과매도)
+            const lowerLine = panelChart.addLineSeries({
+                color: '#00c853',
+                lineWidth: 1,
+                lineStyle: 2,
+                priceLineVisible: false,
+                lastValueVisible: false
+            });
+            lowerLine.setData(dummyData.map(d => ({ time: d.time, value: -80 })));
+            
+        } else {
+            // 기타 지표: 단일 라인
+            const series = panelChart.addLineSeries({
+                color: config.color,
+                lineWidth: 2,
+                priceLineVisible: false,
+                lastValueVisible: true
+            });
+            series.setData(dummyData);
+        }
+        
+        // 리사이즈 대응
+        window.addEventListener('resize', () => {
+            panelChart.applyOptions({ width: container.clientWidth });
+        });
+        
+        // 차트 객체 저장 (나중에 삭제용)
+        container._chart = panelChart;
+    }
+    
+    // 더미 데이터 생성 (실제로는 서버 API 필요)
+    function generateDummyIndicatorData(indId) {
+        const now = Math.floor(Date.now() / 1000);
+        const baseTime = now - (200 * 60);
+        const count = 200;
+        
+        if (indId === 'macd') {
+            // MACD: 0 기준으로 위아래로 움직이는 데이터
+            const histogram = [];
+            const macdLine = [];
+            const signalLine = [];
+            
+            let macdVal = 0;
+            let signalVal = 0;
+            
+            for (let i = 0; i < count; i++) {
+                // 0을 기준으로 위아래로 움직임
+                macdVal += (Math.random() - 0.5) * 3;
+                macdVal = Math.max(-20, Math.min(20, macdVal));
+                
+                // 시그널은 MACD를 따라가는 느린 라인
+                signalVal += (macdVal - signalVal) * 0.15;
+                
+                const histVal = macdVal - signalVal;
+                
+                histogram.push({
+                    time: baseTime + (i * 60),
+                    value: histVal,
+                    color: histVal >= 0 ? 'rgba(0, 200, 83, 0.8)' : 'rgba(255, 82, 82, 0.8)'
+                });
+                
+                macdLine.push({
+                    time: baseTime + (i * 60),
+                    value: macdVal
+                });
+                
+                signalLine.push({
+                    time: baseTime + (i * 60),
+                    value: signalVal
+                });
+            }
+            
+            return { histogram, macdLine, signalLine };
+            
+        } else if (indId === 'stoch') {
+            // Stochastic: 0~100 범위, %K와 %D
+            const kLine = [];
+            const dLine = [];
+            
+            let kVal = 50;
+            let dVal = 50;
+            
+            for (let i = 0; i < count; i++) {
+                kVal += (Math.random() - 0.5) * 20;
+                kVal = Math.max(0, Math.min(100, kVal));
+                
+                dVal += (kVal - dVal) * 0.25;
+                
+                kLine.push({ time: baseTime + (i * 60), value: kVal });
+                dLine.push({ time: baseTime + (i * 60), value: dVal });
+            }
+            
+            return { kLine, dLine };
+            
+        } else if (indId === 'rsi') {
+            // RSI: 0~100 범위, 주로 30~70 사이
+            const data = [];
+            let rsiVal = 50;
+            
+            for (let i = 0; i < count; i++) {
+                rsiVal += (Math.random() - 0.5) * 10;
+                rsiVal += (50 - rsiVal) * 0.03;  // 50으로 회귀
+                rsiVal = Math.max(15, Math.min(85, rsiVal));
+                
+                data.push({ time: baseTime + (i * 60), value: rsiVal });
+            }
+            return data;
+            
+        } else if (indId === 'cci') {
+            // CCI: -200 ~ 200 범위, 주로 -100 ~ 100 사이
+            const data = [];
+            let cciVal = 0;
+            
+            for (let i = 0; i < count; i++) {
+                cciVal += (Math.random() - 0.5) * 30;
+                cciVal += (0 - cciVal) * 0.02;  // 0으로 회귀
+                cciVal = Math.max(-200, Math.min(200, cciVal));
+                
+                data.push({ time: baseTime + (i * 60), value: cciVal });
+            }
+            return data;
+            
+        } else if (indId === 'williams') {
+            // Williams %R: -100 ~ 0 범위
+            const data = [];
+            let wrVal = -50;
+            
+            for (let i = 0; i < count; i++) {
+                wrVal += (Math.random() - 0.5) * 15;
+                wrVal += (-50 - wrVal) * 0.02;  // -50으로 회귀
+                wrVal = Math.max(-100, Math.min(0, wrVal));
+                
+                data.push({ time: baseTime + (i * 60), value: wrVal });
+            }
+            return data;
+            
+        } else if (indId === 'mfi') {
+            // MFI: 0~100 범위 (RSI와 유사)
+            const data = [];
+            let mfiVal = 50;
+            
+            for (let i = 0; i < count; i++) {
+                mfiVal += (Math.random() - 0.5) * 12;
+                mfiVal += (50 - mfiVal) * 0.02;
+                mfiVal = Math.max(10, Math.min(90, mfiVal));
+                
+                data.push({ time: baseTime + (i * 60), value: mfiVal });
+            }
+            return data;
+            
+        } else if (indId === 'atr') {
+            // ATR: 양수만, 변동성 지표
+            const data = [];
+            let atrVal = 50;
+            
+            for (let i = 0; i < count; i++) {
+                atrVal += (Math.random() - 0.5) * 8;
+                atrVal = Math.max(10, Math.min(100, atrVal));
+                
+                data.push({ time: baseTime + (i * 60), value: atrVal });
+            }
+            return data;
+            
+        } else if (indId === 'adx') {
+            // ADX: 0~100 범위, 주로 10~50 사이
+            const data = [];
+            let adxVal = 25;
+            
+            for (let i = 0; i < count; i++) {
+                adxVal += (Math.random() - 0.5) * 6;
+                adxVal += (25 - adxVal) * 0.02;
+                adxVal = Math.max(5, Math.min(60, adxVal));
+                
+                data.push({ time: baseTime + (i * 60), value: adxVal });
+            }
+            return data;
+            
+        } else if (indId === 'obv') {
+            // OBV: 누적 거래량, 상승/하락 추세
+            const data = [];
+            let obvVal = 1000000;
+            
+            for (let i = 0; i < count; i++) {
+                obvVal += (Math.random() - 0.48) * 50000;  // 약간 상승 편향
+                
+                data.push({ time: baseTime + (i * 60), value: obvVal });
+            }
+            return data;
+            
+        } else {
+            // 기타: 0~100 범위
+            const data = [];
+            let val = 50;
+            
+            for (let i = 0; i < count; i++) {
+                val += (Math.random() - 0.5) * 10;
+                val = Math.max(0, Math.min(100, val));
+                data.push({ time: baseTime + (i * 60), value: val });
+            }
+            return data;
+        }
+    }
+    
+    // 패널 지표 삭제
+    function removeIndicatorPanel(indId) {
+        const panel = document.getElementById(`panel-${indId}`);
+        if (panel) {
+            // 차트 정리
+            const chartContainer = document.getElementById(`panel-chart-${indId}`);
+            if (chartContainer && chartContainer._chart) {
+                chartContainer._chart.remove();
+            }
+            
+            // DOM 제거
+            panel.remove();
+        }
+        
+        // 활성 지표에서 제거
+        activeIndicators.panel = activeIndicators.panel.filter(id => id !== indId);
+        
+        // 모달 체크박스 해제
+        const item = document.querySelector(`.ind-item[data-ind="${indId}"]`);
+        if (item) {
+            item.querySelector('.ind-checkbox').classList.remove('checked');
+        }
+        
+        updateChartWrapperClass(activeIndicators.panel.length);
+        updatePanelCount();
+        
+        showToast('🗑️ ' + indicatorConfig[indId].name + ' 지표가 삭제되었습니다', 'info');
+    }
+    
+    // 오버레이 지표 삭제
+    function removeOverlayIndicator(indId) {
+        activeIndicators.overlay = activeIndicators.overlay.filter(id => id !== indId);
+        
+        // 모달 체크박스 해제
+        const item = document.querySelector(`.ind-item[data-ind="${indId}"]`);
+        if (item) {
+            item.querySelector('.ind-checkbox').classList.remove('checked');
+        }
+        
+        // 차트에서 지표 숨김
+        applyOverlayIndicators(activeIndicators.overlay);
+        
+        showToast('🗑️ ' + indicatorConfig[indId].name + ' 지표가 삭제되었습니다', 'info');
+    }
+    
+    // 차트 래퍼 클래스 업데이트 (높이 조절)
+    function updateChartWrapperClass(panelCount) {
+        const wrapper = document.getElementById('chart-wrapper');
+        if (!wrapper) return;
+        
+        // 기존 클래스 제거
+        wrapper.classList.remove('panels-0', 'panels-1', 'panels-2', 'panels-3');
+        
+        // 새 클래스 추가
+        wrapper.classList.add(`panels-${Math.min(panelCount, 3)}`);
+        
+        // 메인 차트 리사이즈
+        if (typeof chart !== 'undefined' && chart) {
+            setTimeout(() => {
+                const container = document.getElementById('chart-container');
+                if (container) {
+                    chart.applyOptions({ 
+                        height: container.clientHeight 
+                    });
+                }
+            }, 350);  // CSS transition 이후
+        }
+    }
+    
+    // 페이지 로드 시 초기화
+    document.addEventListener('DOMContentLoaded', function() {
+        // 차트 래퍼 초기 클래스 설정
+        updateChartWrapperClass(0);
+        
+    });
     
     // ========== 종목 정보 섹션 ==========
     function toggleSymbolInfoSection() {
@@ -2130,6 +2809,12 @@
                 <button class="ind-modal-close" onclick="closeIndPopup()">✕</button>
             </div>
             
+            <!-- 패널 지표 개수 안내 -->
+            <div class="ind-panel-limit-notice">
+                <span class="material-icons-round" style="font-size: 14px;">info</span>
+                <span>패널 지표(RSI, MACD 등)는 최대 <strong>3개</strong>까지 추가 가능</span>
+            </div>
+            
             <!-- 검색 -->
             <div class="ind-modal-search">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2">
@@ -2141,8 +2826,12 @@
             
             <!-- 지표 리스트 -->
             <div class="ind-modal-list" id="indModalList">
+                
+                <!-- ===== 오버레이 지표 (차트 위) ===== -->
+                <div class="ind-category-header">📈 오버레이 지표</div>
+                
                 <!-- 이동평균 계열 -->
-                <div class="ind-item" data-ind="sma" onclick="toggleIndicator(this)">
+                <div class="ind-item" data-ind="sma" data-type="overlay" onclick="toggleIndicator(this)">
                     <div class="ind-checkbox"></div>
                     <div class="ind-color-dot" style="background: #9C27B0;"></div>
                     <div class="ind-info">
@@ -2150,7 +2839,7 @@
                         <div class="ind-desc">단순이동평균</div>
                     </div>
                 </div>
-                <div class="ind-item" data-ind="ema" onclick="toggleIndicator(this)">
+                <div class="ind-item" data-ind="ema" data-type="overlay" onclick="toggleIndicator(this)">
                     <div class="ind-checkbox"></div>
                     <div class="ind-color-dot" style="background: #E91E63;"></div>
                     <div class="ind-info">
@@ -2158,7 +2847,7 @@
                         <div class="ind-desc">지수이동평균</div>
                     </div>
                 </div>
-                <div class="ind-item" data-ind="lwma" onclick="toggleIndicator(this)">
+                <div class="ind-item" data-ind="lwma" data-type="overlay" onclick="toggleIndicator(this)">
                     <div class="ind-checkbox checked"></div>
                     <div class="ind-color-dot" style="background: #FFC107;"></div>
                     <div class="ind-info">
@@ -2166,7 +2855,7 @@
                         <div class="ind-desc">선형가중이동평균</div>
                     </div>
                 </div>
-                <div class="ind-item" data-ind="wma" onclick="toggleIndicator(this)">
+                <div class="ind-item" data-ind="wma" data-type="overlay" onclick="toggleIndicator(this)">
                     <div class="ind-checkbox"></div>
                     <div class="ind-color-dot" style="background: #FF5722;"></div>
                     <div class="ind-info">
@@ -2176,7 +2865,7 @@
                 </div>
                 
                 <!-- 밴드/채널 계열 -->
-                <div class="ind-item" data-ind="bb" onclick="toggleIndicator(this)">
+                <div class="ind-item" data-ind="bb" data-type="overlay" onclick="toggleIndicator(this)">
                     <div class="ind-checkbox checked"></div>
                     <div class="ind-color-dot" style="background: #2196F3;"></div>
                     <div class="ind-info">
@@ -2184,7 +2873,7 @@
                         <div class="ind-desc">볼린저 밴드 (20, 2)</div>
                     </div>
                 </div>
-                <div class="ind-item" data-ind="keltner" onclick="toggleIndicator(this)">
+                <div class="ind-item" data-ind="keltner" data-type="overlay" onclick="toggleIndicator(this)">
                     <div class="ind-checkbox"></div>
                     <div class="ind-color-dot" style="background: #00ACC1;"></div>
                     <div class="ind-info">
@@ -2192,7 +2881,7 @@
                         <div class="ind-desc">켈트너 채널</div>
                     </div>
                 </div>
-                <div class="ind-item" data-ind="donchian" onclick="toggleIndicator(this)">
+                <div class="ind-item" data-ind="donchian" data-type="overlay" onclick="toggleIndicator(this)">
                     <div class="ind-checkbox"></div>
                     <div class="ind-color-dot" style="background: #26A69A;"></div>
                     <div class="ind-info">
@@ -2200,7 +2889,7 @@
                         <div class="ind-desc">돈치안 채널 (20)</div>
                     </div>
                 </div>
-                <div class="ind-item" data-ind="envelope" onclick="toggleIndicator(this)">
+                <div class="ind-item" data-ind="envelope" data-type="overlay" onclick="toggleIndicator(this)">
                     <div class="ind-checkbox"></div>
                     <div class="ind-color-dot" style="background: #7E57C2;"></div>
                     <div class="ind-info">
@@ -2208,75 +2897,7 @@
                         <div class="ind-desc">엔벨로프 (20, 2.5%)</div>
                     </div>
                 </div>
-                
-                <!-- 오실레이터 계열 -->
-                <div class="ind-item" data-ind="rsi" onclick="toggleIndicator(this)">
-                    <div class="ind-checkbox"></div>
-                    <div class="ind-color-dot" style="background: #00BCD4;"></div>
-                    <div class="ind-info">
-                        <div class="ind-name">RSI (14)</div>
-                        <div class="ind-desc">상대강도지수</div>
-                    </div>
-                </div>
-                <div class="ind-item" data-ind="macd" onclick="toggleIndicator(this)">
-                    <div class="ind-checkbox"></div>
-                    <div class="ind-color-dot" style="background: #4CAF50;"></div>
-                    <div class="ind-info">
-                        <div class="ind-name">MACD</div>
-                        <div class="ind-desc">이동평균수렴확산 (12,26,9)</div>
-                    </div>
-                </div>
-                <div class="ind-item" data-ind="stoch" onclick="toggleIndicator(this)">
-                    <div class="ind-checkbox"></div>
-                    <div class="ind-color-dot" style="background: #FF9800;"></div>
-                    <div class="ind-info">
-                        <div class="ind-name">Stochastic</div>
-                        <div class="ind-desc">스토캐스틱 (14,3,3)</div>
-                    </div>
-                </div>
-                <div class="ind-item" data-ind="cci" onclick="toggleIndicator(this)">
-                    <div class="ind-checkbox"></div>
-                    <div class="ind-color-dot" style="background: #8BC34A;"></div>
-                    <div class="ind-info">
-                        <div class="ind-name">CCI (20)</div>
-                        <div class="ind-desc">상품채널지수</div>
-                    </div>
-                </div>
-                <div class="ind-item" data-ind="williams" onclick="toggleIndicator(this)">
-                    <div class="ind-checkbox"></div>
-                    <div class="ind-color-dot" style="background: #F44336;"></div>
-                    <div class="ind-info">
-                        <div class="ind-name">Williams %R</div>
-                        <div class="ind-desc">윌리엄스 %R (14)</div>
-                    </div>
-                </div>
-                <div class="ind-item" data-ind="mfi" onclick="toggleIndicator(this)">
-                    <div class="ind-checkbox"></div>
-                    <div class="ind-color-dot" style="background: #009688;"></div>
-                    <div class="ind-info">
-                        <div class="ind-name">MFI (14)</div>
-                        <div class="ind-desc">자금흐름지수</div>
-                    </div>
-                </div>
-                
-                <!-- 추세/변동성 계열 -->
-                <div class="ind-item" data-ind="atr" onclick="toggleIndicator(this)">
-                    <div class="ind-checkbox"></div>
-                    <div class="ind-color-dot" style="background: #795548;"></div>
-                    <div class="ind-info">
-                        <div class="ind-name">ATR (14)</div>
-                        <div class="ind-desc">평균진폭</div>
-                    </div>
-                </div>
-                <div class="ind-item" data-ind="adx" onclick="toggleIndicator(this)">
-                    <div class="ind-checkbox"></div>
-                    <div class="ind-color-dot" style="background: #607D8B;"></div>
-                    <div class="ind-info">
-                        <div class="ind-name">ADX (14)</div>
-                        <div class="ind-desc">평균방향지수</div>
-                    </div>
-                </div>
-                <div class="ind-item" data-ind="psar" onclick="toggleIndicator(this)">
+                <div class="ind-item" data-ind="psar" data-type="overlay" onclick="toggleIndicator(this)">
                     <div class="ind-checkbox"></div>
                     <div class="ind-color-dot" style="background: #FFEB3B;"></div>
                     <div class="ind-info">
@@ -2284,7 +2905,7 @@
                         <div class="ind-desc">파라볼릭 SAR</div>
                     </div>
                 </div>
-                <div class="ind-item" data-ind="ichimoku" onclick="toggleIndicator(this)">
+                <div class="ind-item" data-ind="ichimoku" data-type="overlay" onclick="toggleIndicator(this)">
                     <div class="ind-checkbox"></div>
                     <div class="ind-color-dot" style="background: #E040FB;"></div>
                     <div class="ind-info">
@@ -2292,22 +2913,88 @@
                         <div class="ind-desc">일목균형표</div>
                     </div>
                 </div>
-                
-                <!-- 거래량 계열 -->
-                <div class="ind-item" data-ind="obv" onclick="toggleIndicator(this)">
-                    <div class="ind-checkbox"></div>
-                    <div class="ind-color-dot" style="background: #3F51B5;"></div>
-                    <div class="ind-info">
-                        <div class="ind-name">OBV</div>
-                        <div class="ind-desc">거래량균형지표</div>
-                    </div>
-                </div>
-                <div class="ind-item" data-ind="vwap" onclick="toggleIndicator(this)">
+                <div class="ind-item" data-ind="vwap" data-type="overlay" onclick="toggleIndicator(this)">
                     <div class="ind-checkbox"></div>
                     <div class="ind-color-dot" style="background: #673AB7;"></div>
                     <div class="ind-info">
                         <div class="ind-name">VWAP</div>
                         <div class="ind-desc">거래량가중평균가격</div>
+                    </div>
+                </div>
+                
+                <!-- ===== 패널 지표 (차트 아래) ===== -->
+                <div class="ind-category-header">📊 패널 지표 <span class="panel-count">(0/3)</span></div>
+                
+                <div class="ind-item" data-ind="rsi" data-type="panel" onclick="toggleIndicator(this)">
+                    <div class="ind-checkbox"></div>
+                    <div class="ind-color-dot" style="background: #00BCD4;"></div>
+                    <div class="ind-info">
+                        <div class="ind-name">RSI (14)</div>
+                        <div class="ind-desc">상대강도지수</div>
+                    </div>
+                </div>
+                <div class="ind-item" data-ind="macd" data-type="panel" onclick="toggleIndicator(this)">
+                    <div class="ind-checkbox"></div>
+                    <div class="ind-color-dot" style="background: #4CAF50;"></div>
+                    <div class="ind-info">
+                        <div class="ind-name">MACD</div>
+                        <div class="ind-desc">이동평균수렴확산 (12,26,9)</div>
+                    </div>
+                </div>
+                <div class="ind-item" data-ind="stoch" data-type="panel" onclick="toggleIndicator(this)">
+                    <div class="ind-checkbox"></div>
+                    <div class="ind-color-dot" style="background: #FF9800;"></div>
+                    <div class="ind-info">
+                        <div class="ind-name">Stochastic</div>
+                        <div class="ind-desc">스토캐스틱 (14,3,3)</div>
+                    </div>
+                </div>
+                <div class="ind-item" data-ind="cci" data-type="panel" onclick="toggleIndicator(this)">
+                    <div class="ind-checkbox"></div>
+                    <div class="ind-color-dot" style="background: #8BC34A;"></div>
+                    <div class="ind-info">
+                        <div class="ind-name">CCI (20)</div>
+                        <div class="ind-desc">상품채널지수</div>
+                    </div>
+                </div>
+                <div class="ind-item" data-ind="williams" data-type="panel" onclick="toggleIndicator(this)">
+                    <div class="ind-checkbox"></div>
+                    <div class="ind-color-dot" style="background: #F44336;"></div>
+                    <div class="ind-info">
+                        <div class="ind-name">Williams %R</div>
+                        <div class="ind-desc">윌리엄스 %R (14)</div>
+                    </div>
+                </div>
+                <div class="ind-item" data-ind="mfi" data-type="panel" onclick="toggleIndicator(this)">
+                    <div class="ind-checkbox"></div>
+                    <div class="ind-color-dot" style="background: #009688;"></div>
+                    <div class="ind-info">
+                        <div class="ind-name">MFI (14)</div>
+                        <div class="ind-desc">자금흐름지수</div>
+                    </div>
+                </div>
+                <div class="ind-item" data-ind="atr" data-type="panel" onclick="toggleIndicator(this)">
+                    <div class="ind-checkbox"></div>
+                    <div class="ind-color-dot" style="background: #795548;"></div>
+                    <div class="ind-info">
+                        <div class="ind-name">ATR (14)</div>
+                        <div class="ind-desc">평균진폭</div>
+                    </div>
+                </div>
+                <div class="ind-item" data-ind="adx" data-type="panel" onclick="toggleIndicator(this)">
+                    <div class="ind-checkbox"></div>
+                    <div class="ind-color-dot" style="background: #607D8B;"></div>
+                    <div class="ind-info">
+                        <div class="ind-name">ADX (14)</div>
+                        <div class="ind-desc">평균방향지수</div>
+                    </div>
+                </div>
+                <div class="ind-item" data-ind="obv" data-type="panel" onclick="toggleIndicator(this)">
+                    <div class="ind-checkbox"></div>
+                    <div class="ind-color-dot" style="background: #3F51B5;"></div>
+                    <div class="ind-info">
+                        <div class="ind-name">OBV</div>
+                        <div class="ind-desc">거래량균형지표</div>
                     </div>
                 </div>
             </div>

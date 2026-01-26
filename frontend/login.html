@@ -537,6 +537,14 @@
                     localStorage.setItem('access_token', data.access_token);
                     localStorage.setItem('user_email', email);
                     
+                    // refresh_token 저장 (세션 연장용)
+                    if (data.refresh_token) {
+                        localStorage.setItem('refresh_token', data.refresh_token);
+                    }
+                    
+                    // 마지막 활동 시간 기록
+                    localStorage.setItem('last_activity', Date.now().toString());
+                    
                     // 앱 페이지로 이동
                     window.location.href = 'index.html';
                 } else {

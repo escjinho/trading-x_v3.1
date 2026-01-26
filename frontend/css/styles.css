@@ -303,14 +303,14 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
 
 /* Mode Badge */
 .mode-badge-demo {
-    background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
-    color: #000;
-    box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+    background: none;
+    color: #00d4ff;
+    box-shadow: none;
 }
 .mode-badge-live {
-    background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
-    color: #000;
-    box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+    background: none;
+    color: #00ff88;
+    box-shadow: none;
 }
 
 /* 종목 목록 (Watchlist) */
@@ -3108,4 +3108,15 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
     align-items: center;
     gap: 8px;
     margin-left: auto;
+}
+
+/* Hero Mode Badge - 박스 제거 + 폰트 스타일 */
+#heroModeBadge {
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    font-family: 'Orbitron', sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 24px !important;
 }

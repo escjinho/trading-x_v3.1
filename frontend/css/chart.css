@@ -1213,3 +1213,296 @@
 .symbol-info-content {
     padding-top: 4px;
 }
+
+/* ========== 차트 + 패널 지표 레이아웃 ========== */
+
+/* 차트 래퍼 (메인 차트 + 패널 지표 포함) */
+#chart-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-height: 400px;
+    max-height: 720px;
+    transition: all 0.3s ease;
+}
+
+/* 메인 차트 - 패널 지표 개수에 따라 높이 조절 */
+#chart-wrapper #chart-container {
+    flex: 1;
+    min-height: 250px;
+    height: auto !important;
+    transition: all 0.3s ease;
+}
+
+/* 패널 지표가 없을 때 */
+#chart-wrapper.panels-0 #chart-container {
+    height: 720px !important;
+}
+
+/* 패널 지표 1개 */
+#chart-wrapper.panels-1 #chart-container {
+    height: 520px !important;
+}
+
+/* 패널 지표 2개 */
+#chart-wrapper.panels-2 #chart-container {
+    height: 420px !important;
+}
+
+/* 패널 지표 3개 */
+#chart-wrapper.panels-3 #chart-container {
+    height: 320px !important;
+}
+
+/* ========== 패널 지표 영역 ========== */
+#indicator-panels {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: var(--bg-primary);
+}
+
+/* 개별 패널 지표 */
+.indicator-panel {
+    position: relative;
+    height: 120px;
+    background: #0d1421;
+    border: 1px solid rgba(0, 212, 255, 0.3);
+    border-radius: 6px;
+    margin: 2px 5px;
+    overflow: hidden;
+}
+
+/* 패널 헤더 (지표명 + 삭제버튼) */
+.indicator-panel-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 10px;
+    background: linear-gradient(180deg, rgba(13, 20, 33, 0.95) 0%, transparent 100%);
+    z-index: 10;
+}
+
+.indicator-panel-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #9ca3af;
+}
+
+.indicator-panel-title .color-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+}
+
+/* 패널 삭제 버튼 */
+.indicator-panel-close {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 4px;
+    color: #6b7280;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    opacity: 0;
+}
+
+.indicator-panel:hover .indicator-panel-close {
+    opacity: 1;
+}
+
+.indicator-panel-close:hover {
+    background: rgba(255, 82, 82, 0.3);
+    color: #ff5252;
+}
+
+/* 패널 차트 컨테이너 */
+.indicator-panel-chart {
+    width: 100%;
+    height: 100%;
+}
+
+/* ========== 활성 지표 태그 바 ========== */
+.active-indicators-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 10px;
+    min-height: 0;
+    transition: all 0.2s ease;
+}
+
+.active-indicators-bar:empty {
+    display: none;
+}
+
+/* 활성 지표 태그 */
+.active-indicator-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    background: rgba(30, 40, 55, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #e5e7eb;
+    animation: tagFadeIn 0.2s ease;
+}
+
+@keyframes tagFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.active-indicator-tag .tag-color {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+}
+
+.active-indicator-tag .tag-name {
+    color: #ffffff;
+}
+
+.active-indicator-tag .tag-type {
+    font-size: 9px;
+    padding: 2px 5px;
+    background: rgba(0, 212, 255, 0.2);
+    color: #00d4ff;
+    border-radius: 3px;
+}
+
+.active-indicator-tag .tag-type.panel {
+    background: rgba(255, 152, 0, 0.2);
+    color: #FF9800;
+}
+
+/* 태그 삭제 버튼 */
+.active-indicator-tag .tag-remove {
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: #6b7280;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.15s ease;
+    margin-left: 2px;
+}
+
+.active-indicator-tag .tag-remove:hover {
+    background: rgba(255, 82, 82, 0.3);
+    color: #ff5252;
+}
+
+/* ========== 지표 모달 추가 스타일 ========== */
+
+/* 패널 지표 개수 안내 */
+.ind-panel-limit-notice {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: rgba(0, 212, 255, 0.1);
+    border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+    font-size: 12px;
+    color: #ffffff;
+}
+
+.ind-panel-limit-notice strong {
+    color: #00d4ff;
+}
+
+/* 지표 카테고리 헤더 */
+.ind-category-header {
+    padding: 12px 16px 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #00d4ff;
+    background: rgba(0, 212, 255, 0.05);
+    border-top: 1px solid rgba(0, 212, 255, 0.1);
+    border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+    margin-top: 4px;
+}
+
+.ind-category-header:first-child {
+    margin-top: 0;
+    border-top: none;
+}
+
+.ind-category-header .panel-count {
+    font-weight: 400;
+    color: #FF9800;
+}
+
+/* 패널 지표 항목 비활성화 상태 */
+.ind-item.panel-disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.ind-item.panel-disabled::after {
+    content: '최대 3개';
+    position: absolute;
+    right: 16px;
+    font-size: 10px;
+    color: #ff5252;
+    font-weight: 600;
+}
+
+/* 지표 항목 레이아웃 */
+.ind-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.ind-item .ind-info {
+    flex: 1;
+}
+
+/* 패널 뱃지 */
+.ind-item[data-type="panel"]::after {
+    content: '패널';
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 3px 8px;
+    background: rgba(255, 152, 0, 0.2);
+    color: #FF9800;
+    font-size: 10px;
+    font-weight: 600;
+    border-radius: 4px;
+}
+
+/* 선택된 지표 하이라이트 */
+.ind-item.selected {
+    background: rgba(0, 212, 255, 0.1);
+    border-color: rgba(0, 212, 255, 0.3);
+}
