@@ -29,34 +29,34 @@ function isFavorite(symbol) {
 const watchlistSymbols = {
     popular: [
         { symbol: 'BTCUSD', name: 'BTCUSD', fullName: 'Bitcoin vs US Dollar', icon: '₿', color: '#f7931a' },
-        { symbol: 'EURUSD.r', name: 'EURUSD', fullName: 'Euro vs US Dollar', icon: '€', color: '#0052cc' },
-        { symbol: 'USDJPY.r', name: 'USDJPY', fullName: 'Dollar vs Japanese Yen', icon: '¥', color: '#dc143c' },
-        { symbol: 'XAUUSD.r', name: 'XAUUSD', fullName: 'Gold vs US Dollar', icon: '✦', color: '#ffd700' },
-        { symbol: 'US100.', name: 'US100', fullName: 'Nasdaq 100 Index', icon: '⬡', color: '#00b450' }
+        { symbol: 'EURUSD.r', name: 'EURUSD.r', fullName: 'Euro vs US Dollar', icon: '€', color: '#0052cc' },
+        { symbol: 'USDJPY.r', name: 'USDJPY.r', fullName: 'Dollar vs Japanese Yen', icon: '¥', color: '#dc143c' },
+        { symbol: 'XAUUSD.r', name: 'XAUUSD.r', fullName: 'Gold vs US Dollar', icon: '✦', color: '#ffd700' },
+        { symbol: 'US100.', name: 'US100.', fullName: 'Nasdaq 100 Index', icon: '⬡', color: '#00b450' }
     ],
     forex: [
-        { symbol: 'EURUSD.r', name: 'EURUSD', fullName: 'Euro vs US Dollar', icon: '€', color: '#0052cc' },
-        { symbol: 'USDJPY.r', name: 'USDJPY', fullName: 'Dollar vs Japanese Yen', icon: '¥', color: '#dc143c' },
-        { symbol: 'GBPUSD.r', name: 'GBPUSD', fullName: 'Pound vs US Dollar', icon: '£', color: '#9c27b0' },
-        { symbol: 'AUDUSD.r', name: 'AUDUSD', fullName: 'Australian vs US Dollar', icon: 'A$', color: '#00875a' },
-        { symbol: 'USDCAD.r', name: 'USDCAD', fullName: 'US Dollar vs Canadian', icon: 'C$', color: '#ff5722' }
+        { symbol: 'EURUSD.r', name: 'EURUSD.r', fullName: 'Euro vs US Dollar', icon: '€', color: '#0052cc' },
+        { symbol: 'USDJPY.r', name: 'USDJPY.r', fullName: 'Dollar vs Japanese Yen', icon: '¥', color: '#dc143c' },
+        { symbol: 'GBPUSD.r', name: 'GBPUSD.r', fullName: 'Pound vs US Dollar', icon: '£', color: '#9c27b0' },
+        { symbol: 'AUDUSD.r', name: 'AUDUSD.r', fullName: 'Australian vs US Dollar', icon: 'A$', color: '#00875a' },
+        { symbol: 'USDCAD.r', name: 'USDCAD.r', fullName: 'US Dollar vs Canadian', icon: 'C$', color: '#ff5722' }
     ],
     crypto: [
         { symbol: 'BTCUSD', name: 'BTCUSD', fullName: 'Bitcoin vs US Dollar', icon: '₿', color: '#f7931a' },
         { symbol: 'ETHUSD', name: 'ETHUSD', fullName: 'Ethereum vs US Dollar', icon: 'Ξ', color: '#627eea' }
     ],
     indices: [
-        { symbol: 'US100.', name: 'US100', fullName: 'Nasdaq 100 Index', icon: '⬡', color: '#00b450' },
-        { symbol: 'US500.', name: 'US500', fullName: 'S&P 500 Index', icon: '◆', color: '#1976d2' },
-        { symbol: 'US30.', name: 'US30', fullName: 'Dow Jones Index', icon: '◈', color: '#ff9800' }
+        { symbol: 'US100.', name: 'US100.', fullName: 'Nasdaq 100 Index', icon: '⬡', color: '#00b450' },
+        { symbol: 'US500.', name: 'US500.', fullName: 'S&P 500 Index', icon: '◆', color: '#1976d2' },
+        { symbol: 'US30.', name: 'US30.', fullName: 'Dow Jones Index', icon: '◈', color: '#ff9800' }
     ],
     metals: [
-        { symbol: 'XAUUSD.r', name: 'XAUUSD', fullName: 'Gold vs US Dollar', icon: '✦', color: '#ffd700' },
-        { symbol: 'XAGUSD.r', name: 'XAGUSD', fullName: 'Silver vs US Dollar', icon: '✦', color: '#c0c0c0' }
+        { symbol: 'XAUUSD.r', name: 'XAUUSD.r', fullName: 'Gold vs US Dollar', icon: '✦', color: '#ffd700' },
+        { symbol: 'XAGUSD.r', name: 'XAGUSD.r', fullName: 'Silver vs US Dollar', icon: '✦', color: '#c0c0c0' }
     ],
     energy: [
-        { symbol: 'XBRUSD', name: 'BRENT', fullName: 'Brent Crude Oil', icon: '🛢', color: '#795548' },
-        { symbol: 'XTIUSD', name: 'WTI', fullName: 'WTI Crude Oil', icon: '🛢', color: '#5d4037' }
+        { symbol: 'XBRUSD', name: 'XBRUSD', fullName: 'Brent Crude Oil', icon: '🛢', color: '#795548' },
+        { symbol: 'XTIUSD', name: 'XTIUSD', fullName: 'WTI Crude Oil', icon: '🛢', color: '#5d4037' }
     ]
 };
 

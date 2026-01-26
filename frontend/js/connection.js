@@ -29,6 +29,11 @@ function connectWebSocket() {
 
         // Demo 모드면 차트/시세만 업데이트하고 계정 정보는 건너뛰기
         if (isDemo) {
+            // ★ 전역 가격 저장 (V5 패널에서 사용)
+            if (data.all_prices) {
+                window.allPrices = data.all_prices;
+            }
+            
             // Chart prices만 업데이트
             if (data.all_prices && data.all_prices[chartSymbol]) {
                 const symbolPrice = data.all_prices[chartSymbol];
@@ -93,6 +98,11 @@ function connectWebSocket() {
         if (homeFreeMargin) homeFreeMargin.textContent = '$' + data.free_margin.toLocaleString(undefined, {minimumFractionDigits: 2});
         if (homePositions) homePositions.textContent = data.positions_count;
 
+        // ★ 전역 가격 저장 (V5 패널에서 사용)
+        if (data.all_prices) {
+            window.allPrices = data.all_prices;
+        }
+        
         // Chart prices
         if (data.all_prices && data.all_prices[chartSymbol]) {
             const symbolPrice = data.all_prices[chartSymbol];

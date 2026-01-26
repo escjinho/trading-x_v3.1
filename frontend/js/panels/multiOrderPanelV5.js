@@ -84,7 +84,8 @@ function updateV5Prices() {
     
     if (!bidEl || !askEl) return;
     
-    const prices = watchlistPrices[v5Symbol] || demoQuotes[v5Symbol];
+    // ★ 전역 allPrices 우선 사용 (WebSocket 실시간 데이터)
+    const prices = window.allPrices?.[v5Symbol] || watchlistPrices[v5Symbol] || demoQuotes[v5Symbol];
     if (prices) {
         const decimals = getDecimalsForSymbol(v5Symbol);
         bidEl.textContent = prices.bid.toFixed(decimals);
@@ -739,7 +740,12 @@ function updateV5PositionList() {
     const container = document.getElementById('v5PositionList');
     if (!container) return;
     
+    // 부모 컨테이너 (.v5-position-list)
+    const listWrapper = container.closest('.v5-position-list');
+    
     if (v5Positions && v5Positions.length > 0) {
+        // 포지션 있음 → 표시
+        if (listWrapper) listWrapper.classList.add('has-positions');
         container.innerHTML = v5Positions.map((pos, idx) => {
             const isBuy = pos.type === 'BUY' || pos.type === 0;
             const typeText = isBuy ? 'BUY' : 'SELL';
@@ -771,14 +777,12 @@ function updateV5PositionList() {
             `;
         }).join('');
     } else {
-        container.innerHTML = `
-            <div class="v5-position-empty">
-                <span class="material-icons-round" style="font-size: 32px; opacity: 0.3;">inbox</span>
-                <div>열린 포지션이 없습니다</div>
-            </div>
-        `;
+        // 포지션 없음 → 숨김
+        if (listWrapper) listWrapper.classList.remove('has-positions');
+        container.innerHTML = '';
     }
 }
+
 
 // ========== 패널 추가 (미구현) ==========
 function addV5Panel() {
@@ -812,8 +816,9 @@ function updateV5PanelFromData(data) {
 document.addEventListener('DOMContentLoaded', function() {
     // 주기적 가격 업데이트
     setInterval(() => {
-        if (document.getElementById('multiOrderPanelV5')?.style.display !== 'none') {
+        const panel = document.getElementById('multiOrderPanelV5');
+        if (panel && panel.classList.contains('active')) {
             updateV5Prices();
         }
-    }, 1000);
+    }, 500);
 });

@@ -188,16 +188,20 @@ function openTradeSubmenu() {
     
     const buysellBadge = document.getElementById('submenuBuysellBadge');
     const multiV5Badge = document.getElementById('submenuMultiV5Badge');
+    const quickBadge = document.getElementById('submenuMultiBadge');
     
     // 모든 배지 숨기기
     if (buysellBadge) buysellBadge.style.display = 'none';
     if (multiV5Badge) multiV5Badge.style.display = 'none';
+    if (quickBadge) quickBadge.style.display = 'none';
     
     // 기본 패널 배지 표시
     if (defaultView === 'buysell' && buysellBadge) {
         buysellBadge.style.display = 'block';
     } else if (defaultView === 'multiV5' && multiV5Badge) {
         multiV5Badge.style.display = 'block';
+    } else if (defaultView === 'multi' && quickBadge) {
+        quickBadge.style.display = 'block';
     }
     
     document.getElementById('tradeSubmenuOverlay').classList.add('show');
@@ -224,6 +228,7 @@ function selectTradeSubmenuItem(view) {
 function showTradePanel(panel) {
     const buysellPanel = document.getElementById('buysellPanel');
     const multiOrderPanelV5 = document.getElementById('multiOrderPanelV5');
+    const quickPanel = document.getElementById('quickPanel');
     
     // 모든 패널 숨기기
     buysellPanel.style.display = 'none';
@@ -231,10 +236,17 @@ function showTradePanel(panel) {
         multiOrderPanelV5.classList.remove('active');
         multiOrderPanelV5.style.display = 'none';
     }
+    if (quickPanel) {
+        quickPanel.style.display = 'none';
+    }
     
     // 선택된 패널만 표시
     if (panel === 'buysell') {
         buysellPanel.style.display = 'block';
+        // Today P/L 동기화
+        if (typeof syncTradeTodayPL === 'function') {
+            syncTradeTodayPL();
+        }
     } else if (panel === 'multiV5') {
         if (multiOrderPanelV5) {
             multiOrderPanelV5.classList.add('active');
@@ -242,6 +254,15 @@ function showTradePanel(panel) {
             if (typeof updateMultiOrderPanelV5 === 'function') {
                 updateMultiOrderPanelV5();
             }
+            // V5 계정 정보 동기화
+            if (typeof updateV5AccountInfo === 'function') {
+                updateV5AccountInfo();
+            }
+        }
+    } else if (panel === 'multi') {
+        // Quick & Easy 패널 - 준비중
+        if (quickPanel) {
+            quickPanel.style.display = 'block';
         }
     }
 }
@@ -272,19 +293,26 @@ function registerTradeDefaultView(view) {
     
     const buysellBadge = document.getElementById('submenuBuysellBadge');
     const multiV5Badge = document.getElementById('submenuMultiV5Badge');
+    const quickBadge = document.getElementById('submenuMultiBadge');
     
     // 모든 배지 숨기기
     if (buysellBadge) buysellBadge.style.display = 'none';
     if (multiV5Badge) multiV5Badge.style.display = 'none';
+    if (quickBadge) quickBadge.style.display = 'none';
     
     // 선택된 패널 배지 표시
     if (view === 'buysell' && buysellBadge) {
         buysellBadge.style.display = 'block';
     } else if (view === 'multiV5' && multiV5Badge) {
         multiV5Badge.style.display = 'block';
+    } else if (view === 'multi' && quickBadge) {
+        quickBadge.style.display = 'block';
     }
     
-    const viewName = view === 'buysell' ? 'Buy/Sell 패널' : 'Multi Order V5 패널';
+    let viewName = 'Buy/Sell 패널';
+    if (view === 'multiV5') viewName = 'Multi Order V5 패널';
+    else if (view === 'multi') viewName = 'Quick & Easy 패널';
+    
     showSubmenuToast(viewName);
     
     if (navigator.vibrate) {
