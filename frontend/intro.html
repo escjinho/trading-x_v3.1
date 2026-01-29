@@ -11,15 +11,22 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+
+        html {
+            height: 100%;
+        }
+
         body {
             background: #000;
             min-height: 100vh;
+            min-height: -webkit-fill-available;
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
             font-family: 'Orbitron', sans-serif;
+            margin: 0;
+            padding: 0;
         }
         
         /* 시작 화면 (터치하여 시작) */
@@ -27,8 +34,8 @@
             position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
+            width: 100%;
+            height: 100%;
             background: #000;
             display: flex;
             flex-direction: column;
@@ -43,8 +50,8 @@
         }
         
         .start-icon {
-            width: 100px;
-            height: 100px;
+            width: clamp(70px, 20vw, 100px);
+            height: clamp(70px, 20vw, 100px);
             border: 3px solid #00d4ff;
             border-radius: 50%;
             display: flex;
@@ -96,8 +103,8 @@
         /* 배경 글로우 효과 */
         .bg-glow {
             position: absolute;
-            width: 600px;
-            height: 600px;
+            width: clamp(250px, 80vw, 600px);
+            height: clamp(250px, 80vw, 600px);
             background: radial-gradient(circle, rgba(0, 212, 255, 0.15) 0%, transparent 70%);
             border-radius: 50%;
             animation: pulseGlow 3s ease-in-out infinite;
@@ -108,18 +115,18 @@
             50% { transform: scale(1.2); opacity: 0.8; }
         }
         
-        /* 메인 로고 컨테이너 */
         .logo-container {
             position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
+            margin-top: -80px;
         }
         
         /* T 글자 */
         .letter-t {
             position: absolute;
-            font-size: 300px;
+            font-size: clamp(120px, 35vw, 300px);
             font-weight: 900;
             color: #00d4ff;
             text-shadow: 
@@ -136,7 +143,7 @@
         /* X 글자 */
         .letter-x {
             position: absolute;
-            font-size: 300px;
+            font-size: clamp(120px, 35vw, 300px);
             font-weight: 900;
             color: #00d4ff;
             text-shadow: 
@@ -473,13 +480,13 @@
         }
         
         .main-button {
-            padding: 16px 60px;
+            padding: 12px 35px;
             background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
             border: none;
             border-radius: 30px;
             color: #000;
             font-family: 'Orbitron', sans-serif;
-            font-size: 14px;
+            font-size: 12px;
             font-weight: 700;
             letter-spacing: 2px;
             cursor: pointer;
@@ -528,7 +535,7 @@
     
     <!-- 스킵 버튼 -->
     <button class="skip-btn" id="skipBtn" onclick="skipIntro()">
-        SKIP <span class="skip-progress" id="skipProgress">4s</span>
+        SKIP <span class="skip-progress" id="skipProgress">6s</span>
     </button>
     
     <!-- 재시작 버튼 -->
@@ -552,7 +559,7 @@
         let audioContext = null;
         let isMuted = false;
         let introTimer = null;
-        let countdownTime = 4;
+        let countdownTime = 6;
         let isIntroFinished = false;
         let isStarted = false;
         
@@ -590,10 +597,10 @@
             // 카운트다운 시작
             startCountdown();
             
-            // 4초 후 리플레이 버튼 표시
+            // 2초 후 리플레이 버튼 표시
             setTimeout(() => {
                 document.getElementById('replayBtn').classList.add('show');
-            }, 4000);
+            }, 2000);
         }
         
         // ========== 사운드 효과 (Netflix "두둥" 스타일 - 개선된 버전) ==========
@@ -606,7 +613,7 @@
                 // 리버브 생성
                 const convolver = createReverb(audioContext, 2.5);
                 const masterGain = audioContext.createGain();
-                masterGain.gain.value = 1.2;
+                masterGain.gain.value = 4.0;
                 masterGain.connect(audioContext.destination);
                 
                 // 첫 번째 "두" - 임팩트 있는 시작

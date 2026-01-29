@@ -5,7 +5,8 @@ const maxRetries = 5;
 
 function connectWebSocket() {
     // Demo 모드와 Live 모드에 따라 다른 WebSocket URL 사용
-    const wsUrl = isDemo ? 'ws://localhost:8000/api/demo/ws' : 'ws://localhost:8000/api/mt5/ws';
+    const wsPath = isDemo ? '/api/demo/ws' : '/api/mt5/ws';
+    const wsUrl = typeof getWsUrl === 'function' ? getWsUrl(wsPath) : `ws://localhost:8000${wsPath}`;
     console.log(`[connection.js] Connecting to: ${wsUrl} (Demo: ${isDemo})`);
     ws = new WebSocket(wsUrl);
     
@@ -451,6 +452,8 @@ async function checkUserMode() {
                 heroBadge.style.color = '#ffffff';
             }
             
+            updateHeroCTA('live');
+            
             // WebSocket 연결 (실패해도 폴링으로 대체)
             try {
                 connectWebSocket();
@@ -500,6 +503,8 @@ async function checkUserMode() {
                 heroBadge.style.borderColor = 'rgba(0, 212, 255, 0.4)';
                 heroBadge.style.color = '#ffffff';
             }
+            
+            updateHeroCTA('demo');
 
             // Demo 배지 표시
             const badge = document.getElementById('modeBadge');
@@ -814,6 +819,8 @@ if (!isGuest && token) {
     setTimeout(() => {
         showToast('👋 게스트 모드로 둘러보는 중입니다', '');
     }, 1000);
+    
+    updateHeroCTA('guest');
 }
 
 // Profile name
@@ -876,6 +883,7 @@ function switchTradingMode(mode) {
         
         isDemo = true;
         showToast('🎮 Demo 모드로 전환되었습니다', 'success');
+        updateHeroCTA('demo_with_live');
         fetchDemoData();
         
         // 패널 동기화
@@ -925,6 +933,7 @@ function switchTradingMode(mode) {
                 
                 isDemo = false;
                 showToast('💎 Live 모드로 전환되었습니다', 'success');
+                updateHeroCTA('live');
                 fetchAccountData();
                 
                 // 패널 동기화
@@ -1189,4 +1198,48 @@ async function connectMT5Account() {
 
 function closeMT5SuccessModal() {
     document.getElementById('mt5SuccessModal').classList.remove('show');
+}
+
+// ========== 히어로 섹션 CTA 업데이트 ==========
+function updateHeroCTA(mode) {
+    const ctaDesc = document.querySelector('.live-cta-desc');
+    const ctaBtn = document.querySelector('.live-cta-btn');
+    if (!ctaDesc || !ctaBtn) return;
+    
+    if (mode === 'guest') {
+        // 게스트 모드
+        ctaDesc.innerHTML = '<span style="color: #ffffff; font-size: 16px; font-weight: 600;">부담 없이 체험해보세요!</span><br>가입 후 데모자금으로 자유롭게 연습 해 보세요!';
+        ctaBtn.innerHTML = '<span class="material-icons-round">person_add</span>무료체험 시작';
+        ctaBtn.className = 'live-cta-btn';
+        ctaBtn.onclick = function() { window.location.href = 'register.html'; };
+    } else if (mode === 'demo') {
+        // 로그인 + 라이브 미연결
+        ctaDesc.innerHTML = '라이브 계좌를 연결하고<br>실거래를 시작하세요!';
+        ctaBtn.innerHTML = '<span class="material-icons-round">link</span>라이브 계좌 연결';
+        ctaBtn.className = 'live-cta-btn';
+        ctaBtn.onclick = function() { scrollToMT5Section(); };
+    } else if (mode === 'demo_with_live') {
+        // 로그인 + 라이브 연결 O + 데모 모드 (랜덤 멘트)
+        const messages = [
+            {
+                desc: '안전하게 연습 중! 💪<br>실거래 준비되면 라이브로 전환하세요',
+                btn: '라이브 모드 시작'
+            },
+            {
+                desc: '좋아요! 충분히 연습하고 계시네요 👍<br>준비되면 실거래를 시작해보세요',
+                btn: '라이브 모드 전환'
+            }
+        ];
+        const random = messages[Math.floor(Math.random() * messages.length)];
+        ctaDesc.innerHTML = random.desc;
+        ctaBtn.innerHTML = '<span class="material-icons-round">swap_horiz</span>' + random.btn;
+        ctaBtn.className = 'live-cta-btn';
+        ctaBtn.onclick = function() { switchTradingMode('live'); };
+    } else if (mode === 'live') {
+        // 로그인 + 라이브 연결
+        ctaDesc.innerHTML = '실거래 준비 완료!<br>오늘도 성공적인 트레이딩 되세요 💪';
+        ctaBtn.innerHTML = '<span class="material-icons-round">trending_up</span>거래 시작하기';
+        ctaBtn.className = 'live-cta-btn success';
+        ctaBtn.onclick = function() { switchTab('trading'); };
+    }
 }

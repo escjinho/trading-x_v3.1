@@ -2990,8 +2990,22 @@
 
     <script>
         // ========== Configuration ==========
-        const API_URL = 'http://localhost:8000/api';
-        
+        const getApiUrl = () => {
+            const hostname = window.location.hostname;
+            if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.startsWith('192.168.') || hostname.startsWith('10.')) {
+                return `http://${hostname}:8000/api`;
+            }
+            return 'http://localhost:8000/api';
+        };
+        const getWsUrl = (path) => {
+            const hostname = window.location.hostname;
+            if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.startsWith('192.168.') || hostname.startsWith('10.')) {
+                return `ws://${hostname}:8000${path}`;
+            }
+            return `ws://localhost:8000${path}`;
+        };
+        const API_URL = getApiUrl();
+
         // ========== Auth Check ==========
         const token = localStorage.getItem('access_token');
         const isGuest = sessionStorage.getItem('guest_mode') === 'true';
@@ -4954,7 +4968,7 @@
         const maxRetries = 5;
         
         function connectWebSocket() {
-            const wsUrl = 'ws://localhost:8000/api/mt5/ws';
+            const wsUrl = getWsUrl('/api/mt5/ws');
             ws = new WebSocket(wsUrl);
             
             ws.onopen = function() {

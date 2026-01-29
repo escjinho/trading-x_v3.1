@@ -395,7 +395,7 @@
     <div class="login-container">
         <!-- Logo -->
         <div class="logo-section">
-            <div class="logo">
+            <div class="logo" style="cursor: pointer;" onclick="window.location.href='index.html?guest=true'">
                 <svg width="48" height="38" viewBox="0 0 28 22">
                     <rect x="1" y="1" width="26" height="20" rx="3" fill="none" stroke="#00d4ff" stroke-width="2"/>
                     <text x="14" y="16" font-size="14" font-weight="900" fill="#00d4ff" font-family="Arial" text-anchor="middle">TX</text>
@@ -457,9 +457,11 @@
                 <div class="divider-line"></div>
             </div>
             
-            <div class="register-section">
+            <div class="register-section" style="white-space: nowrap;">
                 <span class="register-text">계정이 없으신가요?</span>
                 <a href="register.html" class="register-link">회원가입</a>
+                <span style="color: var(--text-dim); margin: 0 4px;">|</span>
+                <a href="index.html?guest=true" class="register-link">둘러보기</a>
             </div>
         </div>
         
@@ -475,8 +477,15 @@
     </div>
     
     <script>
-        const API_URL = 'http://localhost:8000/api';
-        
+        const getApiUrl = () => {
+            const hostname = window.location.hostname;
+            if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.startsWith('192.168.') || hostname.startsWith('10.')) {
+                return `http://${hostname}:8000/api`;
+            }
+            return 'http://localhost:8000/api';
+        };
+        const API_URL = getApiUrl();
+
         // 이미 로그인되어 있으면 앱으로 이동
         if (localStorage.getItem('access_token')) {
             window.location.href = 'index.html';

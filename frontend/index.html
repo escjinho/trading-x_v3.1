@@ -20,7 +20,7 @@
     <div class="app">
         <!-- 헤더 -->
         <div class="header">
-            <div class="header-title" style="font-size: 23px; font-weight: 700; display: flex; align-items: center; color: #ffffff;">
+            <div class="header-title" style="font-size: 23px; font-weight: 700; display: flex; align-items: center; color: #ffffff; cursor: pointer;" onclick="document.querySelector('.nav-item[data-tab=home]')?.click() || document.querySelectorAll('.nav-item')[0]?.click()">
                 <svg width="32" height="23" viewBox="0 0 32 23" style="margin-right: 10px; vertical-align: middle;">
                     <rect x="1" y="1" width="30" height="21" rx="3" fill="none" stroke="#00d4ff" stroke-width="2"/>
                     <text x="16" y="16.5" font-size="14" font-weight="900" fill="#00d4ff" font-family="Arial" text-anchor="middle">TX</text>
@@ -48,68 +48,81 @@
                     <button class="notice-close" onclick="closeNoticeBanner()">✕</button>
                 </div>
                 
-                <div class="welcome-banner">
-                    <!-- 시간대별 인사 -->
-                    <div class="greeting-section">
-                        <div style="text-align: center;">
-                            <span class="greeting-text" id="greetingText" style="font-size: 32px; font-weight: 600; white-space: nowrap;">Good Evening, Trader! 🌙</span>
+                <!-- 통합 홈 슬라이더 -->
+                <div class="home-slider-container">
+                    <div class="home-slider" id="homeSlider">
+                        
+                        <!-- 카드 1: 인사말 + 라이브 계좌 안내 -->
+                        <div class="home-slide">
+                            <div class="home-slide-content greeting-slide">
+                                <!-- 인사말 -->
+                                <div class="greeting-section">
+                                    <span class="greeting-text" id="greetingText">Good Afternoon! 🌤️</span>
+                                    <span class="greeting-sub" id="greetingSub">오후도 화이팅!</span>
+                                </div>
+                                
+                                <!-- 라이브 계좌 CTA (미연결 시) -->
+                                <div class="live-cta-simple" id="liveCTANotConnected">
+                                    <p class="live-cta-desc">라이브 계좌를 연결하고 실거래를 시작하세요!</p>
+                                    <button class="live-cta-btn" onclick="openMT5ConnectModal()">
+                                        <span class="material-icons-round">link</span>
+                                        라이브 계좌 연결
+                                    </button>
+                                </div>
+                                
+                                <!-- 라이브 계좌 CTA (연결됨) -->
+                                <div class="live-cta-simple connected" id="liveCTAConnected" style="display: none;">
+                                    <p class="live-cta-desc success">실거래 준비 완료! 오늘도 성공적인 트레이딩 되세요 💪</p>
+                                    <button class="live-cta-btn success" onclick="switchToTrading()">
+                                        <span class="material-icons-round">trending_up</span>
+                                        거래 시작하기
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                        <span class="greeting-sub" id="greetingSub" style="font-size: 13px; font-weight: 600;">오늘 하루 수고하셨어요!</span>
+                        
+                        <!-- 카드 2: 이용가이드 (미니멀) -->
+<div class="home-slide">
+    <div class="home-slide-content guide-slide">
+        <div class="guide-label">GUIDE</div>
+        <div class="guide-title">처음이신가요?</div>
+        <p class="guide-desc">3분이면 충분해요!</p>
+        <p class="guide-desc-sub">친절한 튜토리얼과 함께 시작하세요</p>
+        <button class="guide-btn" onclick="startGuideTour()">
+            시작하기
+            <span class="material-icons-round">arrow_forward</span>
+        </button>
+    </div>
+</div>
+                        
+                        <!-- 카드 3: 셀퍼럴/리베이트 안내 -->
+                        <div class="home-slide">
+                            <div class="home-slide-content referral-slide">
+                                <div class="referral-title">셀퍼럴 리베이트</div>
+                                <div class="referral-highlight">
+                                    <span class="referral-amount">최대 $2</span>
+                                    <span class="referral-unit">/ lot</span>
+                                </div>
+                                <p class="referral-desc">거래량에 따라 캐시백을 돌려받으세요</p>
+                                <button class="referral-btn" onclick="openReferralPage()">
+                                    자세히 보기
+                                    <span class="material-icons-round">arrow_forward</span>
+                                </button>
+                            </div>
+                        </div>
+                        
                     </div>
                     
-                    <!-- 모드 표시 -->
-                    <div id="heroModeBadge" style="margin-top: 18px; font-size: 26px; font-weight: 700; color: #ffffff; letter-spacing: 3px;">
-                        Trading-X Demo
+                    <!-- 슬라이드 인디케이터 -->
+                    <div class="home-slider-indicators">
+                        <span class="home-dot active" data-index="0"></span>
+                        <span class="home-dot" data-index="1"></span>
+                        <span class="home-dot" data-index="2"></span>
                     </div>
                 </div>
                 
-                <!-- 프로모션 배너 (심플) -->
-<div class="promo-slider-container">
-    <div class="promo-slider" id="promoSlider">
-        <!-- 카드 1: 친구 초대 -->
-        <div class="promo-card" style="background: linear-gradient(135deg, #1e2530 0%, #151a22 100%); border-color: var(--border-color);">
-            <div class="promo-content" style="flex: 1;">
-                <div class="promo-title" style="font-size: 18px; font-weight: 700;">친구 초대하고 $50 받기!</div>
-                <div class="promo-desc" style="font-size: 12px;">추천인 코드를 공유하고 보너스를 받으세요</div>
-            </div>
-            <div class="promo-action">
-                <button class="promo-btn" style="background: linear-gradient(135deg, #00b450 0%, #008040 100%); color: #fff; font-size: 13px; font-weight: 600; padding: 8px 14px;" onclick="showToast('추천 코드: TRADEX2024', 'success')">코드 복사</button>
-            </div>
-        </div>
-        
-        <!-- 카드 2: 신규 가입 이벤트 -->
-        <div class="promo-card" style="background: linear-gradient(135deg, #1e2530 0%, #151a22 100%); border-color: var(--border-color);">
-            <div class="promo-content" style="flex: 1;">
-                <div class="promo-title" style="font-size: 18px; font-weight: 700;">신규 가입 이벤트!</div>
-                <div class="promo-desc" style="font-size: 12px;">첫 입금 시 100% 보너스 지급</div>
-            </div>
-            <div class="promo-action">
-                <button class="promo-btn" style="background: linear-gradient(135deg, #8a2be2 0%, #6a1bb2 100%); color: #fff; font-size: 13px; font-weight: 600; padding: 8px 14px;">자세히 →</button>
-            </div>
-        </div>
-        
-        <!-- 카드 3: VIP 프로그램 -->
-        <div class="promo-card" style="background: linear-gradient(135deg, #1e2530 0%, #151a22 100%); border-color: var(--border-color);">
-            <div class="promo-content" style="flex: 1;">
-                <div class="promo-title" style="font-size: 18px; font-weight: 700;">VIP 프로그램</div>
-                <div class="promo-desc" style="font-size: 12px;">거래량에 따른 특별 혜택을 누리세요</div>
-            </div>
-            <div class="promo-action">
-                <button class="promo-btn" style="background: linear-gradient(135deg, #ffa500 0%, #cc8400 100%); color: #fff; font-size: 13px; font-weight: 600; padding: 8px 14px;">가입하기</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 슬라이드 인디케이터 -->
-    <div class="promo-indicators">
-        <span class="promo-dot active" onclick="scrollToPromo(0)"></span>
-        <span class="promo-dot" onclick="scrollToPromo(1)"></span>
-        <span class="promo-dot" onclick="scrollToPromo(2)"></span>
-    </div>
-</div>
-                
                 <!-- Trading Mode 전환 -->
-                <div class="card">
+                <div class="card trading-mode-card">
                     <div class="card-title" style="font-size: 16px; font-weight: 700;">
                         <span class="material-icons-round" style="color: #00d4ff; margin-right: 8px; font-size: 18px;">sync_alt</span>
                         <span style="position: relative; top: -3px;">Trading Mode</span>
@@ -137,7 +150,7 @@
                 </div>
                 
                 <!-- MT5 Account 연결 -->
-                <div class="card" id="mt5AccountSection">
+                <div class="card trading-mode-card" id="mt5AccountSection">
                     <div class="card-title" style="font-size: 16px; font-weight: 700;">
                         <span class="material-icons-round" style="color: #00d4ff; margin-right: 8px; font-size: 18px;">link</span>
                         <span style="position: relative; top: -3px;">MT5 Account</span>
@@ -197,7 +210,7 @@
                 </div>
                 
                 <!-- Account Overview (통합) -->
-                <div class="card">
+                <div class="card trading-mode-card" id="accountOverview">
                     <div class="card-title" style="font-size: 16px; font-weight: 700;">
                         <span class="material-icons-round" style="color: #00d4ff; margin-right: 8px; font-size: 18px;">account_balance</span>
                         <span style="position: relative; top: -3px;">Account Overview</span>
@@ -221,7 +234,7 @@
                 </div>
                 
                 <!-- Demo 충전 버튼 (Demo 모드에서만 표시) -->
-                <div class="card" id="demoControlCard" style="display: none;">
+                <div class="card trading-mode-card" id="demoControlCard" style="display: none;">
                     <div class="card-title" style="font-size: 16px; font-weight: 700;">
                         <span class="material-icons-round" style="color: #00d4ff; margin-right: 8px; font-size: 18px;">monetization_on</span><span style="position: relative; top: -3px;">Demo Control</span>
                     </div>

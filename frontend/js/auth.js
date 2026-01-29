@@ -6,7 +6,20 @@
 // ========== Auth Variables ==========
 let token = localStorage.getItem('access_token');  // const → let 변경
 const refreshToken = localStorage.getItem('refresh_token');
-const isGuest = sessionStorage.getItem('guest_mode') === 'true';
+
+// URL 파라미터에서 게스트 모드 체크
+const urlParams = new URLSearchParams(window.location.search);
+const isGuestParam = urlParams.get('guest') === 'true';
+
+// 게스트 파라미터가 있으면 세션에 저장
+if (isGuestParam) {
+    sessionStorage.setItem('guest_mode', 'true');
+}
+
+// 세션 또는 URL에서 게스트 모드 확인
+const isGuest = isGuestParam || sessionStorage.getItem('guest_mode') === 'true';
+window.isGuest = isGuest;
+
 let isDemo = true;
 
 // ========== Session Config ==========

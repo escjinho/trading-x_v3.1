@@ -344,10 +344,10 @@
 }
 
 /* ========== 차트 컨테이너 ========== */
-#chart-container { 
-    width: 100%; 
-    height: 720px; 
-    background: var(--bg-primary); 
+#chart-container {
+    width: 100%;
+    height: clamp(400px, 90vw, 720px);
+    background: var(--bg-primary);
     border: 1px solid rgba(0, 212, 255, 0.4);
     border-radius: 8px;
     box-shadow: 0 0 20px rgba(0, 212, 255, 0.1), inset 0 0 30px rgba(0, 0, 0, 0.3);
@@ -370,7 +370,7 @@
 }
 .chart-symbol-info { display: flex; align-items: center; gap: 10px; cursor: pointer; }
 .chart-symbol-icon { font-size: 24px; }
-.chart-symbol-name { font-size: 22px; font-weight: bold; }
+.chart-symbol-name { font-size: clamp(18px, 5.5vw, 22px); font-weight: bold; }
 .chart-symbol-id { font-size: 11px; color: var(--text-muted); }
 .chart-symbol-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: var(--bg-secondary); border: 1px solid var(--accent-cyan); border-radius: 8px; margin-top: 5px; z-index: 50; max-height: 300px; overflow-y: auto; display: none; }
 .chart-symbol-option { display: flex; align-items: center; gap: 10px; padding: 12px 15px; cursor: pointer; border-bottom: 1px solid var(--border-color); }
@@ -383,17 +383,17 @@
 .chart-signal-section { padding: 15px; background: var(--bg-primary); }
 .chart-signal-title { font-size: 16px; font-weight: 700; color: var(--accent-cyan); margin-bottom: 15px; letter-spacing: 0.5px; }
 .chart-gauge-container { text-align: center; padding: 10px 0; }
-.chart-gauge-status { font-size: 24px; font-weight: 900; letter-spacing: 2px; margin-top: 5px; transition: color 0.5s ease, text-shadow 0.5s ease; }
+.chart-gauge-status { font-size: clamp(18px, 5.5vw, 24px); font-weight: 900; letter-spacing: clamp(1px, 0.5vw, 2px); margin-top: 5px; transition: color 0.5s ease, text-shadow 0.5s ease; }
 .chart-indicator-summary { display: flex; background: var(--bg-secondary); border-radius: 10px; overflow: hidden; margin-top: 15px; border: 1px solid var(--border-color); }
 .chart-indicator-item { flex: 1; text-align: center; padding: 10px; }
 .chart-indicator-item:not(:last-child) { border-right: 1px solid var(--border-color); }
-.chart-indicator-count { font-size: 24px; font-weight: bold; }
+.chart-indicator-count { font-size: clamp(18px, 5.5vw, 24px); font-weight: bold; }
 .chart-indicator-label { font-size: 10px; color: var(--text-muted); }
 .price-box { flex: 1; text-align: center; padding: 10px 15px; border-radius: 8px; }
 .price-box.sell { background: linear-gradient(180deg, #ff5252, #d32f2f); }
 .price-box.buy { background: linear-gradient(180deg, #00c853, #00a844); }
 .price-label { font-size: 10px; opacity: 0.9; }
-.price-value { font-size: 18px; font-weight: bold; }
+.price-value { font-size: clamp(14px, 4vw, 18px); font-weight: bold; }
 
 /* 차트 상세 컨테이너 */
 .chart-detail-container {
@@ -1236,22 +1236,22 @@
 
 /* 패널 지표가 없을 때 */
 #chart-wrapper.panels-0 #chart-container {
-    height: 720px !important;
+    height: clamp(400px, 90vw, 720px) !important;
 }
 
 /* 패널 지표 1개 */
 #chart-wrapper.panels-1 #chart-container {
-    height: 520px !important;
+    height: clamp(320px, 65vw, 520px) !important;
 }
 
 /* 패널 지표 2개 */
 #chart-wrapper.panels-2 #chart-container {
-    height: 420px !important;
+    height: clamp(280px, 52vw, 420px) !important;
 }
 
 /* 패널 지표 3개 */
 #chart-wrapper.panels-3 #chart-container {
-    height: 320px !important;
+    height: clamp(220px, 40vw, 320px) !important;
 }
 
 /* ========== 패널 지표 영역 ========== */
@@ -1265,7 +1265,7 @@
 /* 개별 패널 지표 */
 .indicator-panel {
     position: relative;
-    height: 120px;
+    height: clamp(90px, 15vw, 120px);
     background: #0d1421;
     border: 1px solid rgba(0, 212, 255, 0.3);
     border-radius: 6px;
@@ -1505,4 +1505,161 @@
 .ind-item.selected {
     background: rgba(0, 212, 255, 0.1);
     border-color: rgba(0, 212, 255, 0.3);
+}
+
+/* ========== 차트 모바일 반응형 ========== */
+@media screen and (max-width: 400px) {
+    /* 심볼 행 */
+    .chart-symbol-row {
+        padding: 10px 12px;
+    }
+    .chart-symbol-icon {
+        font-size: 20px;
+    }
+    .chart-symbol-id {
+        font-size: 10px;
+    }
+
+    /* 차트 글로우 박스 */
+    .chart-glow-box {
+        margin: 8px 1px;
+        padding: 6px;
+        border-radius: 12px;
+    }
+
+    /* 차트 컨테이너 */
+    #chart-container {
+        margin: 8px 4px;
+        border-radius: 6px;
+    }
+
+    /* 타임프레임 버튼 */
+    .tf-popup-btn {
+        padding: 8px 12px;
+        font-size: 13px;
+        gap: 6px;
+    }
+
+    /* 보조지표 버튼 */
+    .ind-popup-btn {
+        padding: 8px 10px;
+        font-size: 12px;
+        gap: 4px;
+    }
+
+    /* 가격 바 */
+    .price-bar {
+        padding: 8px 10px;
+        gap: 8px;
+    }
+    .price-box {
+        padding: 8px 10px;
+    }
+    .price-label {
+        font-size: 9px;
+    }
+
+    /* 신호 섹션 */
+    .chart-signal-section {
+        padding: 12px;
+    }
+    .chart-signal-title {
+        font-size: 14px;
+        margin-bottom: 12px;
+    }
+
+    /* 지표 요약 */
+    .chart-indicator-item {
+        padding: 8px;
+    }
+    .chart-indicator-label {
+        font-size: 9px;
+    }
+
+    /* 모달 */
+    .tf-modal {
+        width: 95%;
+        max-width: 300px;
+    }
+    .tf-modal-grid {
+        gap: 8px;
+        padding: 15px;
+    }
+    .tf-modal-item {
+        padding: 12px 15px;
+        font-size: 14px;
+    }
+
+    /* 지표 모달 */
+    .ind-modal {
+        width: 95%;
+        max-width: 320px;
+    }
+
+    /* 패널 지표 */
+    .indicator-panel-header {
+        padding: 3px 8px;
+    }
+    .indicator-panel-title {
+        font-size: 10px;
+    }
+
+    /* 활성 지표 태그 */
+    .active-indicator-tag {
+        padding: 4px 8px;
+        font-size: 10px;
+        gap: 4px;
+    }
+    .active-indicator-tag .tag-color {
+        width: 6px;
+        height: 6px;
+    }
+
+    /* 차트 툴 버튼 */
+    .chart-tool-btn,
+    .chart-tool-btn-v2 {
+        padding: 6px 10px;
+        font-size: 12px;
+        gap: 4px;
+    }
+
+    /* 드롭다운 메뉴 */
+    .chart-tool-menu,
+    .chart-tool-menu-v2 {
+        min-width: 120px;
+        padding: 10px;
+    }
+    .tool-menu-title,
+    .tool-menu-title-v2 {
+        font-size: 10px;
+        margin-bottom: 10px;
+        padding-bottom: 8px;
+    }
+    .tf-item,
+    .tf-item-v2 {
+        padding: 8px 4px;
+        font-size: 11px;
+    }
+
+    /* 종목 정보 섹션 */
+    .symbol-info-section {
+        margin: 12px 1px;
+        padding: 6px;
+    }
+    .info-section-header {
+        padding: 12px 14px;
+    }
+    .info-section-title .text {
+        font-size: 13px;
+    }
+    .info-group {
+        padding: 10px 12px;
+    }
+    .info-group-title {
+        font-size: 13px;
+    }
+    .symbol-info-section .info-label,
+    .symbol-info-section .info-value {
+        font-size: 12px;
+    }
 }

@@ -1,10 +1,10 @@
 /* Navigation Styles */
 
-        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-secondary); border-top: 1px solid var(--border-color); display: flex; justify-content: space-around; padding: 8px 0; padding-bottom: env(safe-area-inset-bottom, 8px); max-width: 480px; margin: 0 auto; z-index: 100; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 15px; cursor: pointer; color: var(--text-muted); transition: all 0.2s; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-secondary); border-top: 1px solid rgba(255, 255, 255, 0.2); display: flex; justify-content: space-around; padding: 5px 0 12px 0; padding-bottom: env(safe-area-inset-bottom, 12px); max-width: 480px; margin: 0 auto; z-index: 100; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 0px; padding: 8px 15px; cursor: pointer; color: var(--text-muted); transition: all 0.2s; }
         .nav-item.active { color: var(--accent-cyan); }
         .nav-icon { font-size: 24px; }
-        .nav-label { font-size: 10px; }
+        .nav-label { font-size: 10px; margin-top: -2px; }
         
         /* Toast */
         .submenu-overlay {
@@ -214,9 +214,9 @@
         }
         .multi-order-title {
             font-family: 'Orbitron', sans-serif;
-            font-size: 18px;
+            font-size: clamp(14px, 4.5vw, 18px);
             font-weight: 900;
-            letter-spacing: 2px;
+            letter-spacing: clamp(1px, 0.5vw, 2px);
             color: var(--accent-cyan);
             text-shadow: 0 0 20px var(--accent-cyan-glow);
         }
@@ -251,13 +251,13 @@
         }
         .multi-order-order-btn {
             flex: 1;
-            padding: 20px 15px;
+            padding: clamp(14px, 4.5vw, 20px) clamp(10px, 3vw, 15px);
             border: none;
             border-radius: 12px;
-            font-size: 18px;
+            font-size: clamp(14px, 4.5vw, 18px);
             font-weight: 900;
             font-family: 'Orbitron', sans-serif;
-            letter-spacing: 2px;
+            letter-spacing: clamp(1px, 0.5vw, 2px);
             cursor: pointer;
             transition: all 0.2s;
             display: flex;
@@ -282,7 +282,7 @@
             box-shadow: 0 4px 20px rgba(220, 50, 70, 0.5);
         }
         .multi-order-order-price {
-            font-size: 14px;
+            font-size: clamp(12px, 3.5vw, 14px);
             font-weight: 600;
             font-family: 'Rajdhani', sans-serif;
             letter-spacing: 0;
@@ -299,10 +299,10 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
-            padding: 14px 12px;
+            gap: clamp(4px, 1.5vw, 6px);
+            padding: clamp(10px, 3vw, 14px) clamp(8px, 2.5vw, 12px);
             border-radius: 10px;
-            font-size: 13px;
+            font-size: clamp(11px, 3.2vw, 13px);
             font-weight: 700;
             cursor: pointer;
             transition: all 0.2s;
@@ -361,8 +361,8 @@
             margin-bottom: 10px;
         }
         .multi-order-sltp-label {
-            width: 80px;
-            font-size: 13px;
+            width: clamp(60px, 18vw, 80px);
+            font-size: clamp(11px, 3.2vw, 13px);
             font-weight: 600;
             color: var(--text-muted);
         }
@@ -374,12 +374,12 @@
         }
         .multi-order-sltp-input {
             flex: 1;
-            padding: 10px 12px;
+            padding: clamp(8px, 2.5vw, 10px) clamp(8px, 2.5vw, 12px);
             background: var(--bg-tertiary);
             border: 1px solid var(--border-color);
             border-radius: 8px;
             color: var(--text-primary);
-            font-size: 14px;
+            font-size: clamp(12px, 3.5vw, 14px);
             font-weight: 600;
             text-align: center;
         }
@@ -441,7 +441,7 @@
             flex: 1;
         }
         .multi-order-position-symbol-name {
-            font-size: 14px;
+            font-size: clamp(12px, 3.5vw, 14px);
             font-weight: 700;
             color: var(--text-primary);
         }
@@ -466,9 +466,9 @@
             color: var(--sell-color);
         }
         .multi-order-position-profit {
-            font-size: 15px;
+            font-size: clamp(13px, 3.8vw, 15px);
             font-weight: 700;
-            min-width: 70px;
+            min-width: clamp(55px, 16vw, 70px);
             text-align: right;
         }
         .multi-order-position-profit.positive {
@@ -478,8 +478,8 @@
             color: var(--sell-color);
         }
         .multi-order-position-close {
-            width: 32px;
-            height: 32px;
+            width: clamp(28px, 8vw, 32px);
+            height: clamp(28px, 8vw, 32px);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -488,7 +488,7 @@
             border-radius: 8px;
             color: var(--sell-color);
             cursor: pointer;
-            margin-left: 10px;
+            margin-left: clamp(6px, 2vw, 10px);
             transition: all 0.2s;
         }
         .multi-order-position-close:hover {
@@ -571,7 +571,7 @@
             color: var(--text-muted);
         }
         .multi-order-total-pl-value {
-            font-size: 18px;
+            font-size: clamp(15px, 4.5vw, 18px);
             font-weight: 700;
         }
         .multi-order-total-pl-value.positive {
@@ -586,3 +586,100 @@
             border-color: var(--accent-cyan);
             background: rgba(0, 212, 255, 0.05);
         }
+
+/* ========== Multi Order 모바일 반응형 ========== */
+@media screen and (max-width: 400px) {
+    /* 패널 패딩 */
+    .multi-order-panel {
+        padding: 10px;
+    }
+
+    /* 헤더 */
+    .multi-order-title-bar {
+        padding: 12px 15px;
+    }
+
+    /* 컨텐츠 */
+    .multi-order-content {
+        padding: 10px;
+    }
+
+    /* 섹션 타이틀 */
+    .multi-order-section-title {
+        font-size: 12px;
+        margin-bottom: 8px;
+        padding-bottom: 6px;
+    }
+    .multi-order-section-title .material-icons-round {
+        font-size: 16px;
+    }
+
+    /* 주문 버튼 */
+    .multi-order-order-buttons {
+        gap: 8px;
+    }
+    .multi-order-order-btn {
+        border-radius: 10px;
+    }
+
+    /* 청산 버튼 그리드 */
+    .multi-order-close-grid {
+        gap: 6px;
+    }
+    .multi-order-close-btn {
+        border-radius: 8px;
+    }
+    .multi-order-close-btn .material-icons-round {
+        font-size: 16px;
+    }
+
+    /* SL/TP 설정 */
+    .multi-order-sltp-row {
+        gap: 6px;
+    }
+    .multi-order-sltp-unit {
+        font-size: 11px;
+        width: 35px;
+    }
+    .multi-order-sltp-apply {
+        padding: 10px;
+        font-size: 13px;
+    }
+
+    /* 포지션 리스트 */
+    .multi-order-position-item {
+        padding: 10px;
+    }
+    .multi-order-position-type {
+        padding: 3px 8px;
+        font-size: 10px;
+        margin-right: 8px;
+    }
+    .multi-order-position-close .material-icons-round {
+        font-size: 16px;
+    }
+
+    /* 총 손익 바 */
+    .multi-order-total-pl {
+        padding: 10px 12px;
+    }
+    .multi-order-total-pl-label {
+        font-size: 12px;
+    }
+
+    /* 서브메뉴 */
+    .submenu-item {
+        padding: 14px 15px;
+    }
+    .submenu-item-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+    }
+    .submenu-item-title {
+        font-size: 15px;
+    }
+    .submenu-item-hint {
+        font-size: 11px;
+    }
+}

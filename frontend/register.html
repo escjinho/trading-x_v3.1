@@ -504,8 +504,15 @@
     </div>
     
     <script>
-        const API_URL = 'http://127.0.0.1:8000/api';
-        
+        const getApiUrl = () => {
+            const hostname = window.location.hostname;
+            if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.startsWith('192.168.') || hostname.startsWith('10.')) {
+                return `http://${hostname}:8000/api`;
+            }
+            return 'http://localhost:8000/api';
+        };
+        const API_URL = getApiUrl();
+
         // 이미 로그인되어 있으면 앱으로 이동
         if (localStorage.getItem('access_token')) {
             window.location.href = 'index.html';

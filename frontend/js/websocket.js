@@ -12,7 +12,8 @@ let balance = 10000;
 // ========== Connect WebSocket ==========
 function connectWebSocket() {
     // Demo 모드와 Live 모드에 따라 다른 WebSocket URL 사용
-    let wsUrl = isDemo ? 'ws://localhost:8000/api/demo/ws' : 'ws://localhost:8000/api/mt5/ws';
+    const wsPath = isDemo ? '/api/demo/ws' : '/api/mt5/ws';
+    let wsUrl = typeof getWsUrl === 'function' ? getWsUrl(wsPath) : `ws://localhost:8000${wsPath}`;
 
     // Demo 모드면 토큰 추가
     if (isDemo && token) {

@@ -47,7 +47,9 @@ const ChartPanel = {
             },
             timeScale: {
                 borderColor: '#00d4ff',
-                timeVisible: true
+                timeVisible: true,
+                rightOffset: 5,          // 오른쪽 여백 (캔들 5개 정도)
+                shiftVisibleRangeOnNewBar: true  // 새 캔들 생성 시 자동 이동
             },
             localization: {
                 priceFormatter: (price) => price.toFixed(getDecimalsForSymbol(chartSymbol)),
@@ -123,12 +125,12 @@ const ChartPanel = {
                     if (data.indicators.lwma) lwmaSeries.setData(data.indicators.lwma);
                 }
 
-                // 보이는 범위 설정 (최근 50개 캔들)
+                // 보이는 범위 설정 (최근 50개 캔들) + 오른쪽 여백 유지
                 const visibleBars = 50;
                 if (data.candles.length > visibleBars) {
                     const from = data.candles[data.candles.length - visibleBars].time;
-                    const to = data.candles[data.candles.length - 1].time;
-                    chart.timeScale().setVisibleRange({ from, to });
+                    // setVisibleRange 대신 scrollToRealTime 사용 (rightOffset 유지)
+                    chart.timeScale().scrollToRealTime();
                 }
 
                 // 마지막 가격 업데이트

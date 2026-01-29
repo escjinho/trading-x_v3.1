@@ -196,13 +196,47 @@ async def get_indicators(symbol: str = "BTCUSD"):
     """인디케이터만 조회 (게스트 모드용)"""
     if not mt5.initialize():
         return {"buy": 0, "sell": 0, "neutral": 0, "score": 50}
-    
+
     try:
         indicators = IndicatorService.calculate_all_indicators(symbol)
         return indicators
     except Exception as e:
         print(f"인디케이터 오류: {e}")
         return {"buy": 33, "sell": 33, "neutral": 34, "score": 50}
+
+
+# ========== 브릿지 데이터 수신 (인증 불필요) ==========
+@router.post("/bridge/{symbol}")
+async def receive_bridge_data(symbol: str, data: dict):
+    """
+    Windows MT5 브릿지에서 전송된 데이터 수신
+
+    데이터 형식:
+    {
+        "symbol": "BTCUSD",
+        "candles": [...],
+        "tick": {...},
+        "timestamp": "2024-01-01T00:00:00"
+    }
+    """
+    try:
+        # 받은 데이터를 로그에 기록
+        print(f"[Bridge] {symbol} 데이터 수신: {data.get('timestamp')}")
+
+        # 여기서 받은 데이터를 저장하거나 처리할 수 있습니다
+        # 예: 데이터베이스 저장, 캐시 업데이트 등
+
+        return {
+            "status": "success",
+            "message": f"{symbol} 데이터 수신 완료",
+            "timestamp": data.get("timestamp")
+        }
+    except Exception as e:
+        print(f"[Bridge] 데이터 수신 오류: {e}")
+        return {
+            "status": "error",
+            "message": str(e)
+        }
 
 
 # ========== 주문 실행 ==========
