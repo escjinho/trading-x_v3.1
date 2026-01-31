@@ -3,6 +3,76 @@ let ws = null;
 let wsRetryCount = 0;
 const maxRetries = 5;
 
+// ========== MT5 자동 백오프 재연결 ==========
+const RECONNECT_DELAYS = [1000, 5000, 30000, 60000, 300000]; // 1초, 5초, 30초, 1분, 5분
+let reconnectAttempt = 0;
+let reconnectTimer = null;
+
+function reconnectWithBackoff() {
+    if (reconnectAttempt >= 5) {
+        console.log('[MT5] 5회 연속 실패 - 자동 재연결 중지');
+        updateConnectionStatus('disconnected');
+        return;
+    }
+
+    const delay = RECONNECT_DELAYS[reconnectAttempt] || 300000;
+    console.log(`[MT5] 연결 실패 (${reconnectAttempt + 1}/5) - ${delay/1000}초 후 재시도`);
+
+    reconnectTimer = setTimeout(() => {
+        reconnectAttempt++;
+        connectMT5();
+    }, delay);
+}
+
+// 연결 상태 업데이트 헬퍼 함수
+function updateConnectionStatus(status) {
+    const statusDot = document.getElementById('statusDot');
+    const headerStatus = document.getElementById('headerStatus');
+
+    if (status === 'disconnected') {
+        if (statusDot) statusDot.classList.add('disconnected');
+        if (headerStatus) headerStatus.textContent = 'Disconnected';
+    } else if (status === 'connected') {
+        if (statusDot) statusDot.classList.remove('disconnected');
+        if (headerStatus) headerStatus.textContent = 'Connected';
+    }
+}
+
+// MT5 연결 함수 (기존 connectWebSocket을 감싸는 래퍼)
+function connectMT5() {
+    console.log(`[MT5] 연결 시도 (${reconnectAttempt + 1}/5)`);
+
+    try {
+        connectWebSocket();
+        // 연결 성공 시 카운터 리셋은 ws.onopen에서 처리
+    } catch (e) {
+        console.error('[MT5] 연결 오류:', e);
+        reconnectWithBackoff();
+    }
+}
+
+// 테스트용 전역 함수
+window.testDisconnect = function() {
+    console.log('[TEST] 강제 연결 끊김 시뮬레이션');
+    if (ws) ws.close();
+    reconnectWithBackoff();
+};
+
+window.manualReconnect = function() {
+    console.log('[TEST] 수동 재연결');
+    reconnectAttempt = 0;
+    if (reconnectTimer) clearTimeout(reconnectTimer);
+    connectMT5();
+};
+
+window.getReconnectStatus = function() {
+    return {
+        attempt: reconnectAttempt,
+        maxAttempts: 5,
+        nextDelay: RECONNECT_DELAYS[reconnectAttempt] || 300000
+    };
+};
+
 function connectWebSocket() {
     // Demo 모드와 Live 모드에 따라 다른 WebSocket URL 사용
     const wsPath = isDemo ? '/api/demo/ws' : '/api/mt5/ws';
@@ -15,11 +85,27 @@ function connectWebSocket() {
         document.getElementById('statusDot').classList.remove('disconnected');
         document.getElementById('headerStatus').textContent = 'Connected';
         wsRetryCount = 0;
+        reconnectAttempt = 0; // 백오프 카운터 리셋
+        if (reconnectTimer) {
+            clearTimeout(reconnectTimer);
+            reconnectTimer = null;
+        }
     };
-    
+
     ws.onmessage = function(event) {
         const data = JSON.parse(event.data);
         console.log('[WebSocket] Received data:', data);
+
+        // MT5 연결 상태 확인
+        if (data.mt5_connected === false) {
+        document.getElementById('statusDot').classList.add('disconnected');
+        document.getElementById('headerStatus').textContent = 'Disconnected';
+        console.log('[MT5] 서버 연결 실패:', data.mt5_error);
+        return;
+    } else if (data.mt5_connected === true) {
+        document.getElementById('statusDot').classList.remove('disconnected');
+        document.getElementById('headerStatus').textContent = 'Connected';
+    }
 
         // 마지막 WebSocket 데이터 저장 (navigation.js에서 사용)
         if (typeof lastWebSocketData !== 'undefined') {
@@ -258,12 +344,10 @@ function connectWebSocket() {
         document.getElementById('statusDot').classList.add('disconnected');
         document.getElementById('headerStatus').textContent = 'Disconnected';
         
-        if (wsRetryCount < maxRetries) {
-            wsRetryCount++;
-            setTimeout(connectWebSocket, 3000);
-        }
+        // 백오프 로직으로 재연결
+        reconnectWithBackoff();
     };
-    
+
     ws.onerror = function(error) {
         console.error('WebSocket error:', error);
     };

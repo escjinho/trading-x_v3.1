@@ -38,7 +38,7 @@ body {
 .header-status { display: flex; align-items: center; gap: 6px; font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600; color: #ffffff; letter-spacing: 0.3px; }
 #modeBadge { font-family: 'Rajdhani', sans-serif !important; font-weight: 700 !important; letter-spacing: 0.5px !important; }
 .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-cyan); box-shadow: 0 0 8px var(--accent-cyan); animation: pulse 2s infinite; }
-.status-dot.disconnected { background: var(--sell-color); box-shadow: 0 0 8px var(--sell-color); }
+.status-dot.disconnected { background: var(--sell-color) !important; box-shadow: 0 0 8px var(--sell-color) !important; animation: none !important; }
 
 .content { flex: 1; overflow-y: auto; padding-bottom: 70px; }
 .page { display: none; padding: 15px 0px; }

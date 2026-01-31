@@ -979,6 +979,11 @@ async def websocket_endpoint(websocket: WebSocket):
     while True:
         try:
             if not mt5_initialize_safe():
+                error_data = {
+                    "mt5_connected": False,
+                    "mt5_error": "MT5 서버 연결 실패"
+                }
+                await websocket.send_text(json.dumps(error_data))
                 await asyncio.sleep(1)
                 continue
             
@@ -1046,6 +1051,7 @@ async def websocket_endpoint(websocket: WebSocket):
             martin_state = martin_service.get_state()
             
             data = {
+                "mt5_connected": True,
                 "broker": account.company if account else "N/A",
                 "account": account.login if account else 0,
                 "balance": account.balance if account else 0,
