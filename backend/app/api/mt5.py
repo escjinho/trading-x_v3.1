@@ -19,6 +19,19 @@ from ..utils.security import decode_token
 from ..services.indicator_service import IndicatorService
 from ..services.martin_service import martin_service
 
+# ============================================================
+# MT5 비활성화 플래그 import
+# 다시 활성화하려면 mt5_service.py의 MT5_DISABLED = False로 변경
+# ============================================================
+from ..services.mt5_service import MT5_DISABLED
+
+def mt5_initialize_safe() -> bool:
+    """MT5 초기화 래퍼 함수 (비활성화 체크 포함)"""
+    if MT5_DISABLED:
+        print("[MT5 비활성화됨] MT5 초기화를 건너뜁니다.")
+        return False
+    return mt5.initialize()
+
 router = APIRouter(prefix="/mt5", tags=["MT5"])
 security = HTTPBearer()
 
@@ -60,7 +73,7 @@ async def get_current_user(
 async def get_account_info(current_user: User = Depends(get_current_user)):
     """MT5 계정 정보 + 인디케이터 + 포지션 조회"""
     try:
-        if not mt5.initialize():
+        if not mt5_initialize_safe():
             raise HTTPException(status_code=500, detail="MT5 초기화 실패")
         
         account = mt5.account_info()
@@ -145,7 +158,7 @@ async def get_candles(
     count: int = 200
 ):
     """캔들 데이터 + 인디케이터 조회"""
-    if not mt5.initialize():
+    if not mt5_initialize_safe():
         return {"candles": [], "indicators": {}}
     
     tf_map = {
@@ -194,7 +207,7 @@ async def get_candles(
 @router.get("/indicators/{symbol}")
 async def get_indicators(symbol: str = "BTCUSD"):
     """인디케이터만 조회 (게스트 모드용)"""
-    if not mt5.initialize():
+    if not mt5_initialize_safe():
         return {"buy": 0, "sell": 0, "neutral": 0, "score": 50}
 
     try:
@@ -366,7 +379,7 @@ async def get_positions(
     current_user: User = Depends(get_current_user)
 ):
     """모든 열린 포지션 조회 (magic 필터 옵션)"""
-    if not mt5.initialize():
+    if not mt5_initialize_safe():
         return {"success": False, "positions": [], "message": "MT5 초기화 실패"}
     
     positions = mt5.positions_get()
@@ -424,7 +437,7 @@ async def close_all_positions(
     current_user: User = Depends(get_current_user)
 ):
     """모든 포지션 청산 (magic 필터 옵션)"""
-    if not mt5.initialize():
+    if not mt5_initialize_safe():
         return JSONResponse({"success": False, "message": "MT5 초기화 실패"})
     
     positions = mt5.positions_get()
@@ -485,7 +498,7 @@ async def close_by_type(
     current_user: User = Depends(get_current_user)
 ):
     """BUY 또는 SELL 포지션만 청산"""
-    if not mt5.initialize():
+    if not mt5_initialize_safe():
         return JSONResponse({"success": False, "message": "MT5 초기화 실패"})
     
     positions = mt5.positions_get()
@@ -549,7 +562,7 @@ async def close_by_profit(
     current_user: User = Depends(get_current_user)
 ):
     """수익 또는 손실 포지션만 청산"""
-    if not mt5.initialize():
+    if not mt5_initialize_safe():
         return JSONResponse({"success": False, "message": "MT5 초기화 실패"})
     
     positions = mt5.positions_get()
@@ -822,7 +835,7 @@ def get_symbol_category(symbol_name: str):
 @router.get("/symbols/search")
 def search_symbols(query: str = ""):
     """MT5 종목 검색 API"""
-    if not mt5.initialize():
+    if not mt5_initialize_safe():
         return {"success": False, "symbols": [], "message": "MT5 not connected"}
     
     try:
@@ -859,7 +872,7 @@ def search_symbols(query: str = ""):
 @router.get("/symbols/all")
 def get_all_symbols():
     """MT5 전체 종목 목록 API"""
-    if not mt5.initialize():
+    if not mt5_initialize_safe():
         return {"success": False, "symbols": [], "message": "MT5 not connected"}
     
     try:
@@ -903,7 +916,7 @@ async def connect_mt5_account(
     if not request.account or not request.password:
         return JSONResponse({"success": False, "message": "계좌번호와 비밀번호를 입력하세요"})
     
-    if not mt5.initialize():
+    if not mt5_initialize_safe():
         return JSONResponse({"success": False, "message": "MT5 초기화 실패"})
     
     # DB에 has_mt5_account = True 저장
@@ -922,7 +935,7 @@ async def connect_mt5_account(
     if not account or not password:
         return JSONResponse({"success": False, "message": "계좌번호와 비밀번호를 입력하세요"})
     
-    if not mt5.initialize():
+    if not mt5_initialize_safe():
         return JSONResponse({"success": False, "message": "MT5 초기화 실패"})
     
     # DB에 has_mt5_account = True 저장
@@ -965,7 +978,7 @@ async def websocket_endpoint(websocket: WebSocket):
     
     while True:
         try:
-            if not mt5.initialize():
+            if not mt5_initialize_safe():
                 await asyncio.sleep(1)
                 continue
             

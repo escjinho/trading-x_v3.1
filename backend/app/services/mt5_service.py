@@ -2,43 +2,68 @@ import MetaTrader5 as mt5
 from typing import Optional, List, Dict
 from datetime import datetime, timedelta
 
+# ============================================================
+# MT5 비활성화 플래그 (True = MT5 비활성화, False = MT5 활성화)
+# 다시 활성화하려면 이 값을 False로 변경하세요
+# ============================================================
+MT5_DISABLED = True
+
 class MT5Service:
     """MT5 연동 서비스"""
-    
+
     _initialized = False
-    
+
     @classmethod
     def initialize(cls) -> bool:
         """MT5 초기화"""
+        # === MT5 비활성화됨 (MT5_DISABLED = True) ===
+        # 다시 활성화하려면 파일 상단의 MT5_DISABLED = False로 변경
+        if MT5_DISABLED:
+            print("[MT5 비활성화됨] MT5 초기화를 건너뜁니다.")
+            return False
+        # === 비활성화 끝 ===
+
         if cls._initialized:
             return True
-        
+
         if not mt5.initialize():
             print(f"MT5 초기화 실패: {mt5.last_error()}")
             return False
-        
+
         cls._initialized = True
         print("MT5 초기화 성공!")
         return True
-    
+
     @classmethod
     def shutdown(cls):
         """MT5 종료"""
+        # === MT5 비활성화됨 ===
+        if MT5_DISABLED:
+            print("[MT5 비활성화됨] MT5 종료를 건너뜁니다.")
+            return
+        # === 비활성화 끝 ===
+
         if cls._initialized:
             mt5.shutdown()
             cls._initialized = False
-    
+
     @classmethod
     def login(cls, account: int, password: str, server: str) -> bool:
         """MT5 계정 로그인"""
+        # === MT5 비활성화됨 ===
+        if MT5_DISABLED:
+            print("[MT5 비활성화됨] 로그인을 건너뜁니다.")
+            return False
+        # === 비활성화 끝 ===
+
         if not cls._initialized:
             cls.initialize()
-        
+
         authorized = mt5.login(account, password=password, server=server)
         if not authorized:
             print(f"로그인 실패: {mt5.last_error()}")
             return False
-        
+
         print(f"계정 {account} 로그인 성공!")
         return True
     

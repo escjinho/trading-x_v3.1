@@ -114,14 +114,30 @@ body {
 }
 .ea-header {
     padding: 15px 20px; text-align: center;
-    border-bottom: 2px solid var(--accent-cyan);
+    border-bottom: none;
     position: relative;
 }
+.ea-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 5%;
+    right: 5%;
+    height: 2px;
+    background: var(--accent-cyan);
+}
+.ea-version {
+    font-size: 0.5em;
+    opacity: 0.6;
+    vertical-align: super;
+    font-weight: 400;
+}
+
 .ea-header::before {
     content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
     background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
 }
-.ea-title { font-size: clamp(16px, 5vw, 20px); font-weight: 900; letter-spacing: clamp(1.5px, 0.8vw, 3px); text-shadow: 0 0 20px var(--accent-cyan-glow); }
+.ea-title { font-size: clamp(20px, 6vw, 26px); font-weight: 900; letter-spacing: clamp(1.5px, 0.8vw, 3px); text-shadow: 0 0 20px var(--accent-cyan-glow); }
 .ea-content { padding: 15px; }
 .ea-footer { padding: 10px; text-align: center; font-size: 11px; color: var(--text-dim); border-top: 1px solid var(--border-color); background: var(--bg-secondary); }
 
@@ -3160,7 +3176,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
 }
 
 /* ========== 모바일 반응형 (360px 이하) ========== */
-@media screen and (max-width: 400px) {
+@media screen and (max-width: 480px) {
     /* 헤더 */
     .header {
         padding: 6px 12px;
@@ -3585,5 +3601,141 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
     }
     .guide-title {
         font-size: 24px;
+    }
+}
+
+/* ========== FUMA 패널 모바일 최적화 (Galaxy S20 360x800) ========== */
+@media screen and (max-width: 400px) {
+    /* EA 패널 전체 */
+    .ea-panel {
+        border-radius: 10px;
+        border-width: 1px;
+    }
+    .ea-header {
+        padding: 10px 15px;
+    }
+    .ea-title {
+        font-size: 15px;
+        letter-spacing: 1px;
+    }
+    .ea-content {
+        padding: 10px;
+    }
+    .ea-footer {
+        padding: 6px;
+        font-size: 10px;
+    }
+
+    /* 심볼 행 */
+    .symbol-row {
+        padding: 8px 40px 8px 10px;
+        margin-bottom: 10px;
+        border-radius: 8px;
+    }
+    .symbol-text {
+        font-size: 18px;
+    }
+    .symbol-icon {
+        font-size: 20px;
+    }
+
+    /* Stats Bar */
+    .stats-bar {
+        margin-bottom: 10px;
+        border-radius: 8px;
+    }
+    .stat-item {
+        padding: 8px 4px;
+    }
+    .stat-label {
+        font-size: 10px;
+        margin-bottom: 2px;
+    }
+    .stat-value {
+        font-size: 13px;
+    }
+
+    /* 게이지 - 핵심 축소 */
+    .gauge-container {
+        padding: 5px 0;
+        margin-bottom: 10px;
+    }
+    .gauge-container svg {
+        width: 240px !important;
+        height: 100px !important;
+    }
+    .gauge-status {
+        font-size: 18px;
+        letter-spacing: 1px;
+        margin-top: 3px;
+    }
+
+    /* 인디케이터 */
+    .indicator-summary {
+        margin-bottom: 10px;
+        border-radius: 8px;
+    }
+    .indicator-item {
+        padding: 6px;
+    }
+    .indicator-count {
+        font-size: 20px;
+    }
+    .indicator-label {
+        font-size: 9px;
+    }
+
+    /* 타겟 섹션 */
+    .target-section {
+        margin-bottom: 10px;
+    }
+    .target-label {
+        font-size: 10px;
+        margin-bottom: 5px;
+    }
+    .target-display {
+        gap: 10px;
+        margin-bottom: 6px;
+    }
+    .target-btn {
+        width: 36px;
+        height: 34px;
+        font-size: 16px;
+        border-radius: 6px;
+    }
+    .target-value {
+        font-size: 26px;
+        min-width: 100px;
+    }
+    .lot-display {
+        font-size: 12px;
+        margin-bottom: 8px;
+    }
+
+    /* 슬라이더 */
+    .slider-container {
+        margin-bottom: 10px;
+    }
+    input[type="range"] {
+        height: 6px;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+        width: 16px;
+        height: 16px;
+    }
+    .slider-labels {
+        margin-top: 5px;
+        font-size: 10px;
+    }
+
+    /* 트레이드 버튼 */
+    .trade-buttons {
+        gap: 8px;
+    }
+    .trade-btn {
+        padding: 10px;
+        font-size: 14px;
+        letter-spacing: 1px;
+        border-radius: 8px;
     }
 }

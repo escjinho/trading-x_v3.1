@@ -1982,7 +1982,7 @@
                 <div class="ea-panel">
                     <!-- EA Header -->
                     <div class="ea-header">
-                        <div class="ea-title title-font">FUMA Buy/Sell v3.2</div>
+                        <div class="ea-title title-font">FUMA Buy/Sell</div>
                     </div>
                     
                     <div class="ea-content">
@@ -2615,9 +2615,9 @@
         
         <!-- MT5 연결 모달 -->
         <div class="modal-overlay" id="mt5ConnectModal">
-            <div style="background: linear-gradient(180deg, #1e2127 0%, #15171c 100%); border: 2px solid var(--accent-cyan); border-radius: 16px; padding: 0; margin: 15px; max-width: 420px; width: 100%; box-shadow: 0 0 60px rgba(0,212,255,0.2); overflow: hidden;">
+            <div style="background: linear-gradient(180deg, #1e2127 0%, #15171c 100%); border: 2px solid var(--accent-cyan); border-radius: 16px; padding: 0; margin: 10px; max-width: 420px; width: 100%; box-shadow: 0 0 60px rgba(0,212,255,0.2); overflow: hidden;">
                 <!-- 헤더 -->
-                <div style="background: #000; padding: 15px 18px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="background: #000; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center;">
                     <div style="display: flex; align-items: center; gap: 9px;">
                         <span class="material-icons-round" style="color: var(--accent-cyan); font-size: 26px;">link</span>
                         <span style="font-size: 18px; font-weight: bold;">MT5 계좌 연결</span>
@@ -2626,7 +2626,7 @@
                 </div>
                 
                 <!-- 선택 화면 -->
-                <div id="mt5Step1" style="padding: 20px;">
+                <div id="mt5Step1" style="padding: 15px;">
                     <div style="text-align: center; margin-bottom: 20px;">
                         <div style="font-size: 15px; color: var(--text-muted);">계좌 보유 여부를 선택해주세요</div>
                     </div>
@@ -2653,7 +2653,7 @@
                 </div>
                 
                 <!-- 기존 계좌 연결 폼 -->
-                <div id="mt5Step2Existing" style="display: none; padding: 18px 20px;">
+                <div id="mt5Step2Existing" style="display: none; padding: 15px;">
                     <div style="margin-bottom: 16px;">
                         <label style="display: block; font-size: 14px; color: white; margin-bottom: 6px;">Server (서버)</label>
                         <select id="mt5Server" style="width: 100%; padding: 11px 12px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px; color: white; font-size: 15px;">
@@ -2692,7 +2692,7 @@
                 </div>
                 
                 <!-- 신규 계좌 개설 안내 -->
-                <div id="mt5Step2New" style="display: none; padding: 25px;">
+                <div id="mt5Step2New" style="display: none; padding: 18px;">
                     <div style="text-align: center; margin-bottom: 25px;">
                         <div style="width: 70px; height: 70px; margin: 0 auto 15px; background: linear-gradient(135deg, rgba(0, 180, 80, 0.2) 0%, rgba(0, 180, 80, 0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
                             <span class="material-icons-round" style="font-size: 36px; color: var(--buy-color);">rocket_launch</span>
@@ -2744,7 +2744,7 @@
 
         <!-- MT5 연결 성공 모달 -->
         <div class="modal-overlay" id="mt5SuccessModal">
-            <div style="background: linear-gradient(180deg, #1e2127 0%, #15171c 100%); border: 2px solid var(--buy-color); border-radius: 16px; padding: 25px; margin: 20px; max-width: 340px; width: 100%; text-align: center; box-shadow: 0 0 60px rgba(0, 180, 80, 0.3);">
+            <div style="background: linear-gradient(180deg, #1e2127 0%, #15171c 100%); border: 2px solid var(--buy-color); border-radius: 16px; padding: 18px; margin: 10px; max-width: 340px; width: 100%; text-align: center; box-shadow: 0 0 60px rgba(0, 180, 80, 0.3);">
                 <div style="width: 70px; height: 70px; margin: 0 auto 15px; background: linear-gradient(135deg, rgba(0, 180, 80, 0.2) 0%, rgba(0, 180, 80, 0.05) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
                     <span class="material-icons-round" style="font-size: 36px; color: var(--buy-color);">check_circle</span>
                 </div>
@@ -5192,21 +5192,24 @@
                 });
                 const data = await response.json();
                 
-                if (data.has_mt5) {
-                    // MT5 계정 연결됨 → Live 모드
-                    isDemo = false;
-                    document.getElementById('headerStatus').textContent = 'Connected';
-                    document.getElementById('statusDot').style.background = '#00ff88';
-                    
-                    // Live 배지 표시
-                    const badge = document.getElementById('modeBadge');
-                    badge.textContent = 'LIVE';
-                    badge.className = 'mode-badge-live';
-                    badge.style.display = 'inline';
-                    connectWebSocket();
-                    fetchAccountData();
-                    setInterval(fetchAccountData, 2000);
-                } else {
+                // [TEMP DISABLED] MT5 자동 연결 - 나중에 복구 필요
+                // if (data.has_mt5) {
+                //     // MT5 계정 연결됨 → Live 모드
+                //     isDemo = false;
+                //     document.getElementById('headerStatus').textContent = 'Connected';
+                //     document.getElementById('statusDot').style.background = '#00ff88';
+                //
+                //     // Live 배지 표시
+                //     const badge = document.getElementById('modeBadge');
+                //     badge.textContent = 'LIVE';
+                //     badge.className = 'mode-badge-live';
+                //     badge.style.display = 'inline';
+                //     connectWebSocket();
+                //     fetchAccountData();
+                //     setInterval(fetchAccountData, 2000);
+                // } else {
+                // [TEMP DISABLED] 위 코드 복구 시 아래 if문을 else로 변경
+                if (true) {
                     // MT5 없음 → Demo 모드
                     isDemo = true;
                     document.getElementById('headerStatus').textContent = 'Connected';
