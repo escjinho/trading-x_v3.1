@@ -113,7 +113,10 @@ body {
     box-shadow: 0 0 40px var(--accent-cyan-glow), 0 25px 60px rgba(0,0,0,0.6);
 }
 .ea-header {
-    padding: 15px 20px; text-align: center;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     border-bottom: none;
     position: relative;
 }
@@ -121,8 +124,8 @@ body {
     content: '';
     position: absolute;
     bottom: 0;
-    left: 5%;
-    right: 5%;
+    left: 15px;
+    right: 15px;
     height: 2px;
     background: var(--accent-cyan);
 }
@@ -144,16 +147,29 @@ body {
 /* Symbol Row */
 .symbol-row {
     position: relative; display: flex; align-items: center;
-    padding: 10px 50px 10px 15px; background: var(--bg-secondary);
-    border-radius: 10px; margin-bottom: 15px; border: 1px solid var(--border-color);
+    justify-content: flex-start;
+    padding: 0 !important; 
+    margin: 0 0 15px 0 !important;
 }
-.symbol-info { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.symbol-info { 
+    display: flex; align-items: center; gap: 8px; cursor: pointer;
+    padding: 8px 12px;
+    margin-left: 0 !important;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+}
 .symbol-icon { font-size: 24px; }
 .symbol-text { font-size: clamp(18px, 5.5vw, 22px); font-weight: bold; }
 .settings-btn { 
-    position: absolute; right: 12px; top: 50%; transform: translateY(-50%); 
-    background: transparent; border: none; color: var(--text-muted); 
-    width: 40px; height: 40px; padding: 0; border-radius: 6px; cursor: pointer; 
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent; 
+    border: none; 
+    color: var(--text-muted); 
+    width: 40px; height: 40px; padding: 0; border-radius: 8px; cursor: pointer; 
     transition: all 0.2s; display: flex; align-items: center; justify-content: center; 
 }
 .settings-btn:hover { background: rgba(255,255,255,0.1); color: var(--text-primary); }
@@ -165,44 +181,105 @@ body {
 .stat-label { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
 .stat-value { font-size: clamp(14px, 4vw, 16px); font-weight: bold; }
 
+/* Symbol & Stats Bar (통합) */
+.symbol-stats-bar {
+    display: flex;
+    align-items: stretch;
+    gap: 6px;
+    margin-bottom: 15px;
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+/* 종목명 (컴팩트) */
+.symbol-info-compact {
+    flex: 1 1 0;
+    text-align: center;
+    padding: 8px 6px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+}
+.symbol-icon-sm {
+    font-size: 18px;
+    flex-shrink: 0;
+}
+.symbol-text-sm {
+    font-size: 14px;
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 계좌정보 아이템 (컴팩트) */
+.stat-item-compact {
+    flex: 1 1 0;
+    text-align: center;
+    padding: 8px 6px;
+    border-left: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.stat-label-sm {
+    font-size: 9px;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+    white-space: nowrap;
+}
+.stat-value-sm {
+    font-size: 13px;
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 /* Gauge */
-.gauge-container { text-align: center; padding: 10px 0; margin-bottom: 15px; }
-.gauge-status { font-size: clamp(20px, 6.5vw, 26px); font-weight: 900; letter-spacing: clamp(1px, 0.5vw, 2px); margin-top: 5px; transition: color 0.5s ease, text-shadow 0.5s ease; }
+.gauge-container { text-align: center; padding: 0; margin-bottom: 10px; }
+.gauge-status { font-size: clamp(20px, 6.5vw, 26px); font-weight: 900; letter-spacing: clamp(1px, 0.5vw, 2px); margin-top: -8px; transition: color 0.5s ease, text-shadow 0.5s ease; }
 
 /* Indicator Summary */
 .indicator-summary {
     display: flex;
     background: var(--bg-secondary);
-    border-radius: 10px;
+    border-radius: 8px;
     overflow: hidden;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
     border: 1px solid var(--border-color);
+    width: 66%;
+    margin-left: auto;
+    margin-right: auto;
 }
 .indicator-item {
     flex: 1;
     text-align: center;
-    padding: 10px;
+    padding: 3px 6px;
     position: relative;
 }
 .indicator-item:not(:last-child) { border-right: 1px solid var(--border-color); }
-.indicator-count { font-size: clamp(22px, 7vw, 28px); font-weight: bold; margin-bottom: 2px; }
+.indicator-count { font-size: clamp(15px, 4.2vw, 17px); font-weight: bold; margin-bottom: 0; }
 .indicator-count.sell { color: var(--sell-color); text-shadow: 0 0 10px rgba(220,50,70,0.5); }
 .indicator-count.neutral { color: var(--neutral-color); }
 .indicator-count.buy { color: var(--buy-color); text-shadow: 0 0 10px rgba(0,180,80,0.5); }
-.indicator-label { font-size: 10px; color: var(--text-muted); }
+.indicator-label { font-size: 8px; color: var(--text-muted); line-height: 1; }
 
 /* Target Section */
 .target-section { margin-bottom: 15px; }
-.target-label { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; font-weight: 600; }
-.target-display { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 10px; }
+.target-label { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; font-weight: 600; padding-top: 10px; }
+.target-display { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; width: 60%; margin-left: auto; margin-right: auto; }
 .target-btn { width: clamp(38px, 11vw, 44px); height: clamp(36px, 10vw, 40px); border-radius: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary); font-size: clamp(16px, 5vw, 20px); font-weight: bold; cursor: pointer; transition: all 0.2s; }
 .target-btn:hover { transform: scale(1.05); }
 .target-btn:active { transform: scale(0.95); }
 .target-value { font-size: clamp(28px, 9vw, 36px); font-weight: 300; min-width: clamp(100px, 35vw, 140px); text-align: center; }
-.lot-display { text-align: center; font-size: 14px; color: var(--text-muted); margin-bottom: 12px; }
+.lot-display { text-align: center; font-size: 14px; color: #ffffff; margin-bottom: 8px; margin-top: -5px; }
 
 /* Slider */
-.slider-container { margin-bottom: 15px; }
+.slider-container { margin-bottom: 5px; }
 input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 8px; border-radius: 4px; outline: none; cursor: pointer; background: #2d3139; transition: background 0.15s ease-out; }
 input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; border-radius: 50%; background: var(--accent-cyan); cursor: pointer; box-shadow: 0 0 10px var(--accent-cyan), 0 0 20px rgba(0,212,255,0.5); border: 2px solid white; margin-top: 0px; }
 .slider-labels { display: flex; justify-content: space-between; margin-top: 8px; font-size: 11px; color: var(--text-muted); }
@@ -228,7 +305,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
 
 /* Trade Buttons */
 .trade-buttons { display: flex; gap: 12px; }
-.trade-btn { flex: 1; padding: clamp(12px, 4vw, 16px); border: none; border-radius: 10px; font-size: clamp(15px, 4.5vw, 18px); font-weight: 900; letter-spacing: clamp(1px, 0.5vw, 2px); cursor: pointer; transition: all 0.2s; }
+.trade-btn { flex: 1; padding: clamp(8px, 2.5vw, 10px); border: none; border-radius: 10px; font-size: clamp(15px, 4.5vw, 18px); font-weight: 900; letter-spacing: clamp(1px, 0.5vw, 2px); cursor: pointer; transition: all 0.2s; }
 .trade-btn:hover { transform: scale(1.02); }
 .trade-btn:active { transform: scale(0.98); }
 .trade-btn.sell-btn { background: linear-gradient(135deg, var(--sell-color) 0%, #a52030 100%); color: white; box-shadow: 0 4px 20px rgba(220,50,70,0.5); }
@@ -278,11 +355,35 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
 .modal-overlay.show { display: flex; }
 .settings-panel { background: #2d3035; border: 2px solid var(--accent-cyan); border-radius: 8px; width: 90%; max-width: 400px; max-height: 90vh; overflow-y: auto; box-shadow: 0 0 40px var(--accent-cyan-glow); }
 .settings-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: #000; }
-.settings-title { font-size: 14px; font-weight: bold; color: white; }
+.settings-title { font-size: 18px; font-weight: bold; color: white; }
 .settings-close { background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; }
 .settings-content { padding: 15px; }
 .settings-section { margin-bottom: 15px; }
-.settings-label { font-size: 11px; color: var(--accent-cyan); margin-bottom: 8px; font-weight: bold; }
+.settings-label { font-size: 14px; color: var(--accent-cyan); margin-bottom: 10px; font-weight: bold; letter-spacing: 1px; }
+
+/* Settings 글로우 박스 */
+.settings-glow-box {
+    background: linear-gradient(145deg, #12151a 0%, #0a0d12 100%);
+    border-radius: 12px;
+    border: 1px solid rgba(0, 212, 255, 0.25);
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.1), 0 4px 20px rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    margin-bottom: 10px;
+    position: relative;
+}
+.settings-glow-box:last-child {
+    margin-bottom: 5px;
+}
+.settings-glow-box::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
+    border-radius: 12px 12px 0 0;
+}
 .mode-option { padding: 10px 12px; background: var(--bg-tertiary); border: 1px solid transparent; border-radius: 6px; margin-bottom: 6px; cursor: pointer; transition: all 0.2s; }
 .mode-option:hover { background: rgba(255,255,255,0.05); }
 .mode-option.selected { background: rgba(0,212,255,0.15); border-color: var(--accent-cyan); }
@@ -3209,7 +3310,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
 
     /* 심볼 행 */
     .symbol-row {
-        padding: 8px 40px 8px 12px;
+        padding: 0;
     }
 
     /* 통계 바 */
@@ -3220,12 +3321,35 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
         font-size: 10px;
     }
 
+    /* 게이지 상태 텍스트 */
+    .gauge-status {
+        font-size: 21px;
+        letter-spacing: 1px;
+    }
+
+    /* 인디케이터 카드 */
+    .indicator-summary {
+        width: 75%;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
     /* 지표 아이템 */
     .indicator-item {
-        padding: 8px;
+        padding: 6px 6px;
+    }
+    .indicator-count {
+        font-size: 18px;
     }
     .indicator-label {
-        font-size: 9px;
+        font-size: 8px;
+    }
+
+    /* 타겟 버튼 위치 */
+    .target-display {
+        width: 68%;
+        margin-left: auto;
+        margin-right: auto;
     }
 
     /* 타겟 섹션 */
@@ -3234,6 +3358,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
     }
     .target-label {
         font-size: 10px;
+        padding-top: 10px;
     }
     .lot-display {
         font-size: 12px;
@@ -3674,15 +3799,25 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
     .indicator-summary {
         margin-bottom: 10px;
         border-radius: 8px;
+        width: 80%;
+        margin-left: auto;
+        margin-right: auto;
     }
     .indicator-item {
-        padding: 6px;
+        padding: 6px 6px;
     }
     .indicator-count {
-        font-size: 20px;
+        font-size: 18px;
     }
     .indicator-label {
-        font-size: 9px;
+        font-size: 8px;
+    }
+
+    /* 타겟 버튼 위치 */
+    .target-display {
+        width: 72%;
+        margin-left: auto;
+        margin-right: auto;
     }
 
     /* 타겟 섹션 */
@@ -3692,6 +3827,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
     .target-label {
         font-size: 10px;
         margin-bottom: 5px;
+        padding-top: 10px;
     }
     .target-display {
         gap: 10px;
@@ -3709,12 +3845,14 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
     }
     .lot-display {
         font-size: 12px;
-        margin-bottom: 8px;
+        color: #ffffff;
+        margin-bottom: 6px;
+        margin-top: -5px;
     }
 
     /* 슬라이더 */
     .slider-container {
-        margin-bottom: 10px;
+        margin-bottom: 2px;
     }
     input[type="range"] {
         height: 6px;
@@ -3733,7 +3871,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
         gap: 8px;
     }
     .trade-btn {
-        padding: 10px;
+        padding: 6px;
         font-size: 14px;
         letter-spacing: 1px;
         border-radius: 8px;

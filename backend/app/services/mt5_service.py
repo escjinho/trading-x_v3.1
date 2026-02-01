@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 # MT5 비활성화 플래그 (True = MT5 비활성화, False = MT5 활성화)
 # 다시 활성화하려면 이 값을 False로 변경하세요
 # ============================================================
-MT5_DISABLED = True
+MT5_DISABLED = False
 
 class MT5Service:
     """MT5 연동 서비스"""

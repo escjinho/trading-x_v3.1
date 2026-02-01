@@ -15,7 +15,10 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     HOST: str = "0.0.0.0"
     PORT: int = 8000
-    
+
+    # MT5 설정
+    MT5_ENABLED: bool = True
+
     class Config:
         env_file = ".env"
 

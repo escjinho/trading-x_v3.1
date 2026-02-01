@@ -13,7 +13,7 @@
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css?v=8">
+    <link rel="stylesheet" href="css/styles.css?v=14">
     <link rel="stylesheet" href="css/chart.css">
 </head>
 <body>
@@ -546,28 +546,38 @@
                     <!-- EA Header -->
                     <div class="ea-header">
                         <div class="ea-title title-font">FUMA Buy/Sell</div>
+                        <button class="settings-btn" onclick="openSettings()">
+                            <svg width="20" height="16" viewBox="0 0 20 16" fill="currentColor">
+                                <rect y="0" width="20" height="2" rx="1"/>
+                                <rect y="7" width="20" height="2" rx="1"/>
+                                <rect y="14" width="20" height="2" rx="1"/>
+                            </svg>
+                        </button>
                     </div>
                     
                     <div class="ea-content">
-                        <!-- Symbol Row -->
-                        <div class="symbol-row">
-                            <div class="symbol-info" onclick="toggleSymbolDropdown()">
-                                <span class="symbol-icon" id="tradeSymbolIcon" style="color: #f7931a;">₿</span>
-                                <div>
-                                    <div style="display: flex; align-items: center; gap: 5px;">
-                                        <span class="symbol-text" id="tradeSymbolName">Bitcoin</span>
-                                        <span style="color: var(--text-muted); font-size: 12px;">▼</span>
-                                    </div>
-                                    <div style="font-size: 11px; color: var(--text-muted);" id="tradeSymbolId">BTCUSD</div>
+                        <!-- Symbol & Stats Bar (통합) -->
+                        <div class="symbol-stats-bar">
+                            <div class="stat-item-compact" style="border-left: none;">
+                                <div class="stat-label-sm">Symbol</div>
+                                <div class="stat-value-sm" style="display: flex; align-items: center; justify-content: center; gap: 4px;">
+                                    <span id="tradeSymbolIcon" style="color: #f7931a; font-size: 14px;">₿</span>
+                                    <span id="tradeSymbolName">Bitcoin</span>
                                 </div>
+                                <span id="tradeSymbolId" style="display: none;">BTCUSD</span>
                             </div>
-                            <button class="settings-btn" onclick="openSettings()">
-                                <svg width="20" height="16" viewBox="0 0 20 16" fill="currentColor">
-                                    <rect y="0" width="20" height="2" rx="1"/>
-                                    <rect y="7" width="20" height="2" rx="1"/>
-                                    <rect y="14" width="20" height="2" rx="1"/>
-                                </svg>
-                            </button>
+                            <div class="stat-item-compact">
+                                <div class="stat-label-sm">Balance</div>
+                                <div class="stat-value-sm" id="tradeBalance">$0</div>
+                            </div>
+                            <div class="stat-item-compact">
+                                <div class="stat-label-sm">Lot Size</div>
+                                <div class="stat-value-sm" id="tradeLotSize">0.01</div>
+                            </div>
+                            <div class="stat-item-compact">
+                                <div class="stat-label-sm">Today</div>
+                                <div class="stat-value-sm" id="tradeTodayPL" style="color: var(--buy-color);">+$0</div>
+                            </div>
                         </div>
                         
                         <!-- Symbol Dropdown -->
@@ -596,22 +606,6 @@
                                 <span class="symbol-option-icon" style="color: #00b450;">⬡</span>
                                 <div><div class="symbol-option-name">NASDAQ</div><div style="font-size:11px;color:var(--text-muted);">US100.</div></div>
                                 <span class="symbol-option-check" style="display:none;">✓</span>
-                            </div>
-                        </div>
-                        
-                        <!-- Stats Bar -->
-                        <div class="stats-bar">
-                            <div class="stat-item">
-                                <div class="stat-label">Balance</div>
-                                <div class="stat-value" id="tradeBalance">$0</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-label">Lot Size</div>
-                                <div class="stat-value" id="tradeLotSize">0.01</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-label">Today</div>
-                                <div class="stat-value" id="tradeTodayPL" style="color: var(--buy-color);">+$0</div>
                             </div>
                         </div>
                         
@@ -691,7 +685,7 @@
                                     </div>
                                 </div>
                                 
-                                <div class="target-label" style="margin-top: 15px;">Leverage<span style="float:right;color:var(--accent-cyan);font-weight:bold;" id="leverageDisplay">x5</span></div>
+                                <div class="target-label" style="margin-top: -5px;">Leverage<span style="float:right;color:var(--accent-cyan);font-weight:bold;font-size:14px;" id="leverageDisplay">x5</span></div>
                                 <div class="slider-container">
                                     <input type="range" id="leverageSlider" min="1" max="20" value="5" oninput="updateLeverageFromSlider(this.value)">
                                     <div class="slider-labels">
@@ -1480,6 +1474,7 @@
                 
                 <div class="settings-content">
                     <!-- Strategy Mode -->
+                    <div class="settings-glow-box">
                     <div class="settings-section">
                         <div class="settings-label">STRATEGY MODE</div>
                         
@@ -1507,8 +1502,10 @@
                             </div>
                         </div>
                     </div>
+                    </div>
                     
                     <!-- Trading Settings -->
+                    <div class="settings-glow-box">
                     <div class="settings-section">
                         <div class="settings-label">TRADING SETTINGS</div>
                         
@@ -1583,6 +1580,7 @@
                         </div>
                         
                         <div class="martin-info">Martin Level: Max recovery steps for Martingale mode</div>
+                    </div>
                     </div>
                 </div>
                 
