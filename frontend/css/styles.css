@@ -226,13 +226,13 @@ body {
     justify-content: center;
 }
 .stat-label-sm {
-    font-size: 9px;
+    font-size: 10px;
     color: var(--text-muted);
     margin-bottom: 2px;
     white-space: nowrap;
 }
 .stat-value-sm {
-    font-size: 13px;
+    font-size: 15px;
     font-weight: bold;
     white-space: nowrap;
     overflow: hidden;
@@ -246,11 +246,11 @@ body {
 /* Indicator Summary */
 .indicator-summary {
     display: flex;
-    background: var(--bg-secondary);
+    background: transparent;
     border-radius: 8px;
     overflow: hidden;
-    margin-bottom: 10px;
-    border: 1px solid var(--border-color);
+    margin-bottom: 14px;
+    border: none;
     width: 66%;
     margin-left: auto;
     margin-right: auto;
@@ -258,20 +258,52 @@ body {
 .indicator-item {
     flex: 1;
     text-align: center;
-    padding: 3px 6px;
+    padding: 1px 6px;
     position: relative;
 }
-.indicator-item:not(:last-child) { border-right: 1px solid var(--border-color); }
-.indicator-count { font-size: clamp(15px, 4.2vw, 17px); font-weight: bold; margin-bottom: 0; }
+.indicator-item:not(:last-child) { border-right: none; }
+.indicator-count { font-size: clamp(18px, 5vw, 22px); font-weight: bold; margin-bottom: 0; }
 .indicator-count.sell { color: var(--sell-color); text-shadow: 0 0 10px rgba(220,50,70,0.5); }
 .indicator-count.neutral { color: var(--neutral-color); }
 .indicator-count.buy { color: var(--buy-color); text-shadow: 0 0 10px rgba(0,180,80,0.5); }
-.indicator-label { font-size: 8px; color: var(--text-muted); line-height: 1; }
+.indicator-label { font-size: 10px; color: var(--text-muted); line-height: 1; }
 
 /* Target Section */
 .target-section { margin-bottom: 15px; }
 .target-label { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; font-weight: 600; padding-top: 10px; }
-.target-display { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; width: 60%; margin-left: auto; margin-right: auto; }
+/* Target 글로우 박스 */
+.target-glow-box {
+    background: linear-gradient(145deg, #12151a 0%, #0a0d12 100%);
+    border-radius: 12px;
+    border: 1px solid rgba(0, 212, 255, 0.25);
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.1), 0 4px 20px rgba(0, 0, 0, 0.3);
+    padding: 10px 20px 15px 20px;
+    margin-bottom: 15px;
+    position: relative;
+}
+/*
+.target-glow-box::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
+    border-radius: 12px 12px 0 0;
+}
+*/
+.target-glow-box .target-label {
+    padding-left: 0;
+}
+.target-glow-box .slider-container {
+    width: 100%;
+}
+.target-glow-box .slider-labels {
+    width: 100%;
+}
+
+.target-display { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; width: 70%; margin-left: auto; margin-right: auto; }
 .target-btn { width: clamp(38px, 11vw, 44px); height: clamp(36px, 10vw, 40px); border-radius: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary); font-size: clamp(16px, 5vw, 20px); font-weight: bold; cursor: pointer; transition: all 0.2s; }
 .target-btn:hover { transform: scale(1.05); }
 .target-btn:active { transform: scale(0.95); }
@@ -279,13 +311,13 @@ body {
 .lot-display { text-align: center; font-size: 14px; color: #ffffff; margin-bottom: 8px; margin-top: -5px; }
 
 /* Slider */
-.slider-container { margin-bottom: 5px; }
+.slider-container { margin-bottom: 2px; }
 input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 8px; border-radius: 4px; outline: none; cursor: pointer; background: #2d3139; transition: background 0.15s ease-out; }
 input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; border-radius: 50%; background: var(--accent-cyan); cursor: pointer; box-shadow: 0 0 10px var(--accent-cyan), 0 0 20px rgba(0,212,255,0.5); border: 2px solid white; margin-top: 0px; }
 .slider-labels { display: flex; justify-content: space-between; margin-top: 8px; font-size: 11px; color: var(--text-muted); }
 
 /* Position Info */
-.position-card { border-radius: 10px; padding: 15px; margin-bottom: 15px; }
+.position-card { border-radius: 10px; padding: 10px 15px; margin-bottom: 15px; }
 .position-card.buy-pos { background: var(--buy-bg); border: 1px solid rgba(0,180,80,0.4); }
 .position-card.sell-pos { background: var(--sell-bg); border: 1px solid rgba(220,50,70,0.4); }
 .position-row { display: flex; justify-content: space-between; }
@@ -294,7 +326,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
 .position-value { font-size: clamp(15px, 4.5vw, 18px); font-weight: bold; }
 
 /* P/L Gauge */
-.pl-gauge { margin-bottom: 15px; }
+.pl-gauge { margin-bottom: 35px; }
 .pl-labels { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 11px; font-weight: bold; }
 .pl-bar-container { position: relative; height: 12px; background: var(--bg-tertiary); border-radius: 6px; overflow: visible; }
 .pl-bar-center { position: absolute; top: 0; left: 50%; width: 2px; height: 100%; background: var(--text-muted); transform: translateX(-50%); z-index: 5; }
@@ -3332,24 +3364,41 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
         width: 75%;
         margin-left: auto;
         margin-right: auto;
+        margin-bottom: 12px;
     }
 
     /* 지표 아이템 */
     .indicator-item {
-        padding: 6px 6px;
+        padding: 2px 6px;
     }
     .indicator-count {
-        font-size: 18px;
+        font-size: 22px;
     }
     .indicator-label {
-        font-size: 8px;
+        font-size: 10px;
+    }
+
+    /* 타겟 글로우 박스 */
+    .target-glow-box {
+        padding: 12px 15px;
+        margin-bottom: 12px;
     }
 
     /* 타겟 버튼 위치 */
     .target-display {
-        width: 68%;
+        width: 75%;
         margin-left: auto;
         margin-right: auto;
+    }
+
+    /* 포지션 카드 */
+    .position-card {
+        padding: 10px 15px;
+    }
+
+    /* P/L 게이지 */
+    .pl-gauge {
+        margin-bottom: 30px;
     }
 
     /* 타겟 섹션 */
@@ -3797,27 +3846,43 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
 
     /* 인디케이터 */
     .indicator-summary {
-        margin-bottom: 10px;
+        margin-bottom: 12px;
         border-radius: 8px;
         width: 80%;
         margin-left: auto;
         margin-right: auto;
     }
     .indicator-item {
-        padding: 6px 6px;
+        padding: 2px 6px;
     }
     .indicator-count {
-        font-size: 18px;
+        font-size: 20px;
     }
     .indicator-label {
-        font-size: 8px;
+        font-size: 10px;
+    }
+
+    /* 타겟 글로우 박스 */
+    .target-glow-box {
+        padding: 10px 12px;
+        margin-bottom: 10px;
     }
 
     /* 타겟 버튼 위치 */
     .target-display {
-        width: 72%;
+        width: 78%;
         margin-left: auto;
         margin-right: auto;
+    }
+
+    /* 포지션 카드 */
+    .position-card {
+        padding: 8px 12px;
+    }
+
+    /* P/L 게이지 */
+    .pl-gauge {
+        margin-bottom: 28px;
     }
 
     /* 타겟 섹션 */
@@ -3852,7 +3917,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
 
     /* 슬라이더 */
     .slider-container {
-        margin-bottom: 2px;
+        margin-bottom: 0px;
     }
     input[type="range"] {
         height: 6px;

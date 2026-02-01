@@ -13,7 +13,7 @@
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css?v=14">
+    <link rel="stylesheet" href="css/styles.css?v=21">
     <link rel="stylesheet" href="css/chart.css">
 </head>
 <body>
@@ -670,8 +670,8 @@
                             
                             <!-- 기본/무제한 모드 UI -->
                             <div id="normalModeUI">
-                                <div class="target-label">Profit Target</div>
-                                <div class="target-display">
+                                <div class="target-glow-box">
+                                <div class="target-display" style="margin-top: 5px;">
                                     <button class="target-btn" onclick="adjustTarget(-10)">−</button>
                                     <div class="target-value title-font" id="targetValue">$100</div>
                                     <button class="target-btn" onclick="adjustTarget(10)">+</button>
@@ -685,12 +685,13 @@
                                     </div>
                                 </div>
                                 
-                                <div class="target-label" style="margin-top: -5px;">Leverage<span style="float:right;color:var(--accent-cyan);font-weight:bold;font-size:14px;" id="leverageDisplay">x5</span></div>
+                                <div class="target-label" style="margin-top: -2px;">Leverage<span style="float:right;color:var(--accent-cyan);font-weight:bold;font-size:14px;" id="leverageDisplay">x5</span></div>
                                 <div class="slider-container">
                                     <input type="range" id="leverageSlider" min="1" max="20" value="5" oninput="updateLeverageFromSlider(this.value)">
                                     <div class="slider-labels">
                                         <span>x0</span><span>x5</span><span>x10</span><span>x15</span><span>x20</span>
                                     </div>
+                                </div>
                                 </div>
                             </div>
                         </div>
