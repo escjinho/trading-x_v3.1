@@ -993,6 +993,9 @@
 
 .ind-info {
     flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .ind-name {
@@ -1002,9 +1005,8 @@
 }
 
 .ind-desc {
-    font-size: 11px;
-    color: #6b7280;
-    margin-top: 1px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.45);
 }
 
 .ind-modal-footer {
@@ -1491,11 +1493,19 @@
     padding: 12px 16px 8px;
     font-size: 12px;
     font-weight: 700;
-    color: #00d4ff;
-    background: rgba(0, 212, 255, 0.05);
-    border-top: 1px solid rgba(0, 212, 255, 0.1);
-    border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.03);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ind-category-header .material-icons-round {
+    font-size: 16px;
+    opacity: 0.8;
 }
 
 .ind-category-header:first-child {
@@ -1505,7 +1515,7 @@
 
 .ind-category-header .panel-count {
     font-weight: 400;
-    color: #FF9800;
+    color: #00d4ff;
 }
 
 /* 패널 지표 항목 비활성화 상태 */
@@ -1535,20 +1545,7 @@
     flex: 1;
 }
 
-/* 패널 뱃지 */
-.ind-item[data-type="panel"]::after {
-    content: '패널';
-    position: absolute;
-    right: 16px;
-    top: 50%;
-    transform: translateY(-50%);
-    padding: 3px 8px;
-    background: rgba(255, 152, 0, 0.2);
-    color: #FF9800;
-    font-size: 10px;
-    font-weight: 600;
-    border-radius: 4px;
-}
+/* 패널 뱃지 - 삭제됨 */
 
 /* 선택된 지표 하이라이트 */
 .ind-item.selected {

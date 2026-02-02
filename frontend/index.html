@@ -2040,8 +2040,21 @@
     }
     
     function resetIndicators() {
+        console.log('[resetIndicators] 초기화 버튼 클릭');
+
         // 지표 설정 localStorage 초기화
         localStorage.removeItem('indicator_config');
+
+        // 모든 체크박스 해제
+        document.querySelectorAll('.ind-checkbox.checked').forEach(cb => {
+            cb.classList.remove('checked');
+        });
+
+        // IndicatorConfig 설정 초기화
+        if (typeof IndicatorConfig !== 'undefined') {
+            Object.values(IndicatorConfig.overlay).forEach(ind => ind.enabled = false);
+            Object.values(IndicatorConfig.panel).forEach(ind => ind.enabled = false);
+        }
 
         // 모든 지표 제거
         if (typeof IndicatorManager !== 'undefined') {
@@ -2053,7 +2066,12 @@
             ChartPanel.loadCandles();
         }
 
-        closeIndicatorModal();
+        // 패널 카운트 업데이트
+        if (typeof updatePanelCount === 'function') {
+            updatePanelCount();
+        }
+
+        closeIndPopup();
         showToast('초기화 완료', 'info');
     }
     
@@ -2946,12 +2964,6 @@
                 <button class="ind-modal-close" onclick="closeIndPopup()">✕</button>
             </div>
             
-            <!-- 패널 지표 개수 안내 -->
-            <div class="ind-panel-limit-notice">
-                <span class="material-icons-round" style="font-size: 14px;">info</span>
-                <span>패널 지표(RSI, MACD 등)는 최대 <strong>3개</strong>까지 추가 가능</span>
-            </div>
-            
             <!-- 검색 -->
             <div class="ind-modal-search">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2">
@@ -2960,178 +2972,164 @@
                 </svg>
                 <input type="text" id="indSearchInput" placeholder="지표 검색..." oninput="filterIndicators(this.value)">
             </div>
+
+            <!-- 패널 지표 개수 안내 -->
+            <div class="ind-panel-limit-notice">
+                <span class="material-icons-round" style="font-size: 14px;">info</span>
+                <span>패널 지표(RSI, MACD 등)는 최대 <strong>3개</strong>까지 추가 가능</span>
+            </div>
             
             <!-- 지표 리스트 -->
             <div class="ind-modal-list" id="indModalList">
                 
                 <!-- ===== 오버레이 지표 (차트 위) ===== -->
-                <div class="ind-category-header">📈 오버레이 지표</div>
+                <div class="ind-category-header"><span class="material-icons-round">show_chart</span> 오버레이 지표</div>
                 
                 <!-- 이동평균 계열 -->
                 <div class="ind-item" data-ind="sma" data-type="overlay" onclick="toggleIndicator(this)">
                     <div class="ind-checkbox"></div>
                     <div class="ind-color-dot" style="background: #9C27B0;"></div>
                     <div class="ind-info">
-                        <div class="ind-name">SMA (200)</div>
-                        <div class="ind-desc">단순이동평균</div>
+                        <span class="ind-name">SMA (200)</span><span class="ind-desc">· 단순이동평균</span>
                     </div>
                 </div>
                 <div class="ind-item" data-ind="ema" data-type="overlay" onclick="toggleIndicator(this)">
                     <div class="ind-checkbox"></div>
                     <div class="ind-color-dot" style="background: #E91E63;"></div>
                     <div class="ind-info">
-                        <div class="ind-name">EMA (20)</div>
-                        <div class="ind-desc">지수이동평균</div>
+                        <span class="ind-name">EMA (20)</span><span class="ind-desc">· 지수이동평균</span>
                     </div>
                 </div>
                 <div class="ind-item" data-ind="lwma" data-type="overlay" onclick="toggleIndicator(this)">
                     <div class="ind-checkbox checked"></div>
                     <div class="ind-color-dot" style="background: #FFC107;"></div>
                     <div class="ind-info">
-                        <div class="ind-name">LWMA (50)</div>
-                        <div class="ind-desc">선형가중이동평균</div>
+                        <span class="ind-name">LWMA (50)</span><span class="ind-desc">· 선형가중이동평균</span>
                     </div>
                 </div>
                 <div class="ind-item" data-ind="wma" data-type="overlay" onclick="toggleIndicator(this)">
                     <div class="ind-checkbox"></div>
                     <div class="ind-color-dot" style="background: #FF5722;"></div>
                     <div class="ind-info">
-                        <div class="ind-name">WMA (14)</div>
-                        <div class="ind-desc">가중이동평균</div>
+                        <span class="ind-name">WMA (14)</span><span class="ind-desc">· 가중이동평균</span>
                     </div>
                 </div>
-                
+
                 <!-- 밴드/채널 계열 -->
                 <div class="ind-item" data-ind="bb" data-type="overlay" onclick="toggleIndicator(this)">
                     <div class="ind-checkbox checked"></div>
                     <div class="ind-color-dot" style="background: #2196F3;"></div>
                     <div class="ind-info">
-                        <div class="ind-name">Bollinger Bands</div>
-                        <div class="ind-desc">볼린저 밴드 (20, 2)</div>
+                        <span class="ind-name">Bollinger Bands</span><span class="ind-desc">· 볼린저 밴드</span>
                     </div>
                 </div>
                 <div class="ind-item" data-ind="keltner" data-type="overlay" onclick="toggleIndicator(this)">
                     <div class="ind-checkbox"></div>
                     <div class="ind-color-dot" style="background: #00ACC1;"></div>
                     <div class="ind-info">
-                        <div class="ind-name">Keltner Channel</div>
-                        <div class="ind-desc">켈트너 채널</div>
+                        <span class="ind-name">Keltner Channel</span><span class="ind-desc">· 켈트너 채널</span>
                     </div>
                 </div>
                 <div class="ind-item" data-ind="donchian" data-type="overlay" onclick="toggleIndicator(this)">
                     <div class="ind-checkbox"></div>
                     <div class="ind-color-dot" style="background: #26A69A;"></div>
                     <div class="ind-info">
-                        <div class="ind-name">Donchian Channel</div>
-                        <div class="ind-desc">돈치안 채널 (20)</div>
+                        <span class="ind-name">Donchian Channel</span><span class="ind-desc">· 돈치안 채널</span>
                     </div>
                 </div>
                 <div class="ind-item" data-ind="envelope" data-type="overlay" onclick="toggleIndicator(this)">
                     <div class="ind-checkbox"></div>
                     <div class="ind-color-dot" style="background: #7E57C2;"></div>
                     <div class="ind-info">
-                        <div class="ind-name">Envelope</div>
-                        <div class="ind-desc">엔벨로프 (20, 2.5%)</div>
+                        <span class="ind-name">Envelope</span><span class="ind-desc">· 엔벨로프</span>
                     </div>
                 </div>
                 <div class="ind-item" data-ind="psar" data-type="overlay" onclick="toggleIndicator(this)">
                     <div class="ind-checkbox"></div>
                     <div class="ind-color-dot" style="background: #FFEB3B;"></div>
                     <div class="ind-info">
-                        <div class="ind-name">Parabolic SAR</div>
-                        <div class="ind-desc">파라볼릭 SAR</div>
+                        <span class="ind-name">Parabolic SAR</span><span class="ind-desc">· 파라볼릭</span>
                     </div>
                 </div>
                 <div class="ind-item" data-ind="ichimoku" data-type="overlay" onclick="toggleIndicator(this)">
                     <div class="ind-checkbox"></div>
                     <div class="ind-color-dot" style="background: #E040FB;"></div>
                     <div class="ind-info">
-                        <div class="ind-name">Ichimoku Cloud</div>
-                        <div class="ind-desc">일목균형표</div>
+                        <span class="ind-name">Ichimoku Cloud</span><span class="ind-desc">· 일목균형표</span>
                     </div>
                 </div>
                 <div class="ind-item" data-ind="vwap" data-type="overlay" onclick="toggleIndicator(this)">
                     <div class="ind-checkbox"></div>
                     <div class="ind-color-dot" style="background: #673AB7;"></div>
                     <div class="ind-info">
-                        <div class="ind-name">VWAP</div>
-                        <div class="ind-desc">거래량가중평균가격</div>
+                        <span class="ind-name">VWAP</span><span class="ind-desc">· 거래량가중평균</span>
                     </div>
                 </div>
-                
+
                 <!-- ===== 패널 지표 (차트 아래) ===== -->
-                <div class="ind-category-header">📊 패널 지표 <span class="panel-count">(0/3)</span></div>
-                
+                <div class="ind-category-header"><span class="material-icons-round">analytics</span> 패널 지표 <span class="panel-count">(0/3)</span></div>
+
                 <div class="ind-item" data-ind="rsi" data-type="panel" onclick="toggleIndicator(this)">
                     <div class="ind-checkbox"></div>
                     <div class="ind-color-dot" style="background: #00BCD4;"></div>
                     <div class="ind-info">
-                        <div class="ind-name">RSI (14)</div>
-                        <div class="ind-desc">상대강도지수</div>
+                        <span class="ind-name">RSI (14)</span><span class="ind-desc">· 상대강도지수</span>
                     </div>
                 </div>
                 <div class="ind-item" data-ind="macd" data-type="panel" onclick="toggleIndicator(this)">
                     <div class="ind-checkbox"></div>
                     <div class="ind-color-dot" style="background: #4CAF50;"></div>
                     <div class="ind-info">
-                        <div class="ind-name">MACD</div>
-                        <div class="ind-desc">이동평균수렴확산 (12,26,9)</div>
+                        <span class="ind-name">MACD</span><span class="ind-desc">· 이동평균수렴확산</span>
                     </div>
                 </div>
                 <div class="ind-item" data-ind="stoch" data-type="panel" onclick="toggleIndicator(this)">
                     <div class="ind-checkbox"></div>
                     <div class="ind-color-dot" style="background: #FF9800;"></div>
                     <div class="ind-info">
-                        <div class="ind-name">Stochastic</div>
-                        <div class="ind-desc">스토캐스틱 (14,3,3)</div>
+                        <span class="ind-name">Stochastic</span><span class="ind-desc">· 스토캐스틱</span>
                     </div>
                 </div>
                 <div class="ind-item" data-ind="cci" data-type="panel" onclick="toggleIndicator(this)">
                     <div class="ind-checkbox"></div>
                     <div class="ind-color-dot" style="background: #8BC34A;"></div>
                     <div class="ind-info">
-                        <div class="ind-name">CCI (20)</div>
-                        <div class="ind-desc">상품채널지수</div>
+                        <span class="ind-name">CCI (20)</span><span class="ind-desc">· 상품채널지수</span>
                     </div>
                 </div>
                 <div class="ind-item" data-ind="williams" data-type="panel" onclick="toggleIndicator(this)">
                     <div class="ind-checkbox"></div>
                     <div class="ind-color-dot" style="background: #F44336;"></div>
                     <div class="ind-info">
-                        <div class="ind-name">Williams %R</div>
-                        <div class="ind-desc">윌리엄스 %R (14)</div>
+                        <span class="ind-name">Williams %R</span><span class="ind-desc">· 윌리엄스</span>
                     </div>
                 </div>
                 <div class="ind-item" data-ind="mfi" data-type="panel" onclick="toggleIndicator(this)">
                     <div class="ind-checkbox"></div>
                     <div class="ind-color-dot" style="background: #009688;"></div>
                     <div class="ind-info">
-                        <div class="ind-name">MFI (14)</div>
-                        <div class="ind-desc">자금흐름지수</div>
+                        <span class="ind-name">MFI (14)</span><span class="ind-desc">· 자금흐름지수</span>
                     </div>
                 </div>
                 <div class="ind-item" data-ind="atr" data-type="panel" onclick="toggleIndicator(this)">
                     <div class="ind-checkbox"></div>
                     <div class="ind-color-dot" style="background: #795548;"></div>
                     <div class="ind-info">
-                        <div class="ind-name">ATR (14)</div>
-                        <div class="ind-desc">평균진폭</div>
+                        <span class="ind-name">ATR (14)</span><span class="ind-desc">· 평균진폭</span>
                     </div>
                 </div>
                 <div class="ind-item" data-ind="adx" data-type="panel" onclick="toggleIndicator(this)">
                     <div class="ind-checkbox"></div>
                     <div class="ind-color-dot" style="background: #607D8B;"></div>
                     <div class="ind-info">
-                        <div class="ind-name">ADX (14)</div>
-                        <div class="ind-desc">평균방향지수</div>
+                        <span class="ind-name">ADX (14)</span><span class="ind-desc">· 평균방향지수</span>
                     </div>
                 </div>
                 <div class="ind-item" data-ind="obv" data-type="panel" onclick="toggleIndicator(this)">
                     <div class="ind-checkbox"></div>
                     <div class="ind-color-dot" style="background: #3F51B5;"></div>
                     <div class="ind-info">
-                        <div class="ind-name">OBV</div>
-                        <div class="ind-desc">거래량균형지표</div>
+                        <span class="ind-name">OBV</span><span class="ind-desc">· 거래량균형</span>
                     </div>
                 </div>
             </div>
