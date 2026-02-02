@@ -115,16 +115,16 @@ function getDecimalsForSymbol(symbol) {
 }
 
 function getSymbolInfo(symbol) {
-    const defaultInfo = { name: symbol, icon: '📈', color: '#00d4ff' };
+    const defaultInfo = { name: symbol, icon: '📈', color: '#00d4ff', category: 'Currency' };
 
     const symbolMap = {
-        'BTCUSD': { name: 'Bitcoin', icon: '₿', color: '#f7931a' },
-        'EURUSD.r': { name: 'Euro/Dollar', icon: '€', color: '#0052cc' },
-        'USDJPY.r': { name: 'Dollar/Yen', icon: '¥', color: '#dc143c' },
-        'XAUUSD.r': { name: 'Gold', icon: '✦', color: '#ffd700' },
-        'US100.': { name: 'NASDAQ', icon: '⬡', color: '#00b450' },
-        'GBPUSD.r': { name: 'Pound/Dollar', icon: '£', color: '#9c27b0' },
-        'ETHUSD': { name: 'Ethereum', icon: 'Ξ', color: '#627eea' }
+        'BTCUSD': { name: 'Bitcoin', icon: '₿', color: '#f7931a', category: 'Crypto Currency' },
+        'ETHUSD': { name: 'Ethereum', icon: 'Ξ', color: '#627eea', category: 'Crypto Currency' },
+        'EURUSD.r': { name: 'Euro/Dollar', icon: '€', color: '#0052cc', category: 'Forex' },
+        'USDJPY.r': { name: 'Dollar/Yen', icon: '¥', color: '#dc143c', category: 'Forex' },
+        'GBPUSD.r': { name: 'Pound/Dollar', icon: '£', color: '#9c27b0', category: 'Forex' },
+        'XAUUSD.r': { name: 'Gold', icon: '✦', color: '#ffd700', category: 'Metals' },
+        'US100.': { name: 'NASDAQ', icon: '⬡', color: '#00b450', category: 'Indices' }
     };
 
     return symbolMap[symbol] || defaultInfo;

@@ -124,15 +124,18 @@ function connectWebSocket() {
             // Chart prices만 업데이트
             if (data.all_prices && data.all_prices[chartSymbol]) {
                 const symbolPrice = data.all_prices[chartSymbol];
-                const decimals = getDecimalsForSymbol(chartSymbol);
-                document.getElementById('chartBid').textContent = symbolPrice.bid.toFixed(decimals);
-                document.getElementById('chartAsk').textContent = symbolPrice.ask.toFixed(decimals);
+                // ChartPanel.updateChartPrice()로 오버레이 업데이트 (천 단위 콤마 포함)
+                if (typeof ChartPanel !== 'undefined' && ChartPanel.updateChartPrice) {
+                    ChartPanel.updateChartPrice(symbolPrice.bid);
+                }
             }
-            
-            // Realtime candle update + indicators
-            if (candleSeries && data.all_candles && data.all_candles[chartSymbol]) {
-                candleSeries.update(data.all_candles[chartSymbol]);
-                
+
+            // Realtime candle update + indicators (안전한 업데이트)
+            if (data.all_candles && data.all_candles[chartSymbol]) {
+                if (typeof ChartPanel !== 'undefined' && ChartPanel.safeUpdateCandle) {
+                    ChartPanel.safeUpdateCandle(data.all_candles[chartSymbol]);
+                }
+
                 if (!window.lastIndicatorUpdate || Date.now() - window.lastIndicatorUpdate > 30000) {
                     window.lastIndicatorUpdate = Date.now();
                     loadCandles();
@@ -190,18 +193,20 @@ function connectWebSocket() {
             window.allPrices = data.all_prices;
         }
         
-        // Chart prices
+        // Chart prices - ChartPanel.updateChartPrice()로 오버레이 업데이트
         if (data.all_prices && data.all_prices[chartSymbol]) {
             const symbolPrice = data.all_prices[chartSymbol];
-            const decimals = getDecimalsForSymbol(chartSymbol);
-            document.getElementById('chartBid').textContent = symbolPrice.bid.toFixed(decimals);
-            document.getElementById('chartAsk').textContent = symbolPrice.ask.toFixed(decimals);
+            if (typeof ChartPanel !== 'undefined' && ChartPanel.updateChartPrice) {
+                ChartPanel.updateChartPrice(symbolPrice.bid);
+            }
         }
-        
-        // Realtime candle update + indicators
-        if (candleSeries && data.all_candles && data.all_candles[chartSymbol]) {
-            candleSeries.update(data.all_candles[chartSymbol]);
-            
+
+        // Realtime candle update + indicators (안전한 업데이트)
+        if (data.all_candles && data.all_candles[chartSymbol]) {
+            if (typeof ChartPanel !== 'undefined' && ChartPanel.safeUpdateCandle) {
+                ChartPanel.safeUpdateCandle(data.all_candles[chartSymbol]);
+            }
+
             // 보조지표도 함께 업데이트 (30초마다)
             if (!window.lastIndicatorUpdate || Date.now() - window.lastIndicatorUpdate > 30000) {
                 window.lastIndicatorUpdate = Date.now();

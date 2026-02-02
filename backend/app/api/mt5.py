@@ -155,7 +155,7 @@ async def get_account_info(current_user: User = Depends(get_current_user)):
 async def get_candles(
     symbol: str,
     timeframe: str = "M1",
-    count: int = 200
+    count: int = 1000
 ):
     """캔들 데이터 + 인디케이터 조회"""
     if not mt5_initialize_safe():
@@ -163,8 +163,10 @@ async def get_candles(
     
     tf_map = {
         "M1": mt5.TIMEFRAME_M1, "M5": mt5.TIMEFRAME_M5,
-        "M15": mt5.TIMEFRAME_M15, "H1": mt5.TIMEFRAME_H1,
-        "H4": mt5.TIMEFRAME_H4, "D1": mt5.TIMEFRAME_D1,
+        "M15": mt5.TIMEFRAME_M15, "M30": mt5.TIMEFRAME_M30,
+        "H1": mt5.TIMEFRAME_H1, "H4": mt5.TIMEFRAME_H4,
+        "D1": mt5.TIMEFRAME_D1, "W1": mt5.TIMEFRAME_W1,
+        "MN1": mt5.TIMEFRAME_MN1,
     }
     tf = tf_map.get(timeframe, mt5.TIMEFRAME_M1)
     

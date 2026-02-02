@@ -232,6 +232,11 @@ function openChartFromWatchlist(symbol, name, icon, color) {
     if (typeof SymbolSelectorPanel !== 'undefined' && SymbolSelectorPanel.updateSymbolInfoSection) {
         SymbolSelectorPanel.updateSymbolInfoSection(symbol);
     }
+    
+    // 즐겨찾기 아이콘 상태 업데이트 (DOM 렌더링 후)
+    setTimeout(() => {
+        updateZmFavoriteIcon();
+    }, 100);
 }
 
 function backToWatchlist() {
@@ -420,3 +425,221 @@ function updateWatchlistPricesFromData(allPrices) {
         renderWatchlist();
     }
 }
+
+// ========== 제로마켓 스타일 하단 바 함수 ==========
+
+// 더보기 메뉴
+function openZmMoreMenu() {
+    document.getElementById('zmMoreSheet').classList.add('active');
+}
+
+function closeZmMoreMenu() {
+    document.getElementById('zmMoreSheet').classList.remove('active');
+}
+
+// 타임프레임 메뉴
+function openZmTimeframe() {
+    document.getElementById('zmTfSheet').classList.add('active');
+}
+
+function closeZmTimeframe() {
+    document.getElementById('zmTfSheet').classList.remove('active');
+}
+
+function selectZmTimeframe(tf) {
+    // 버튼 텍스트 업데이트
+    document.getElementById('zmTfText').textContent = tf;
+
+    // 활성 버튼 스타일 변경 (기존 + 새 클래스 모두 지원)
+    document.querySelectorAll('.zm-tf-item, .zm-center-tf-item').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.textContent === tf) {
+            btn.classList.add('active');
+        }
+    });
+
+    // 타임프레임 형식 변환 (UI → API)
+    const tfMap = {
+        '1m': 'M1', '5m': 'M5', '15m': 'M15', '30m': 'M30',
+        '1H': 'H1', '4H': 'H4', '1D': 'D1', '1W': 'W1', 'MN': 'MN1'
+    };
+    const apiTimeframe = tfMap[tf] || tf;
+
+    // 전역 타임프레임 변수 업데이트
+    currentTimeframe = apiTimeframe;
+    console.log('[Timeframe] Changed to:', apiTimeframe);
+
+    // 차트 데이터 새로 로드
+    if (typeof ChartPanel !== 'undefined' && ChartPanel.loadCandles) {
+        ChartPanel.loadCandles();
+    } else if (typeof loadCandles === 'function') {
+        loadCandles();
+    }
+
+    closeZmTimeframe();
+}
+
+// 매도/매수 버튼
+function openSellOrder() {
+    // Trading 탭으로 이동하거나 주문 모달 열기
+    console.log('매도 주문');
+    // TODO: 실제 매도 로직 연결
+}
+
+function openBuyOrder() {
+    // Trading 탭으로 이동하거나 주문 모달 열기
+    console.log('매수 주문');
+    // TODO: 실제 매수 로직 연결
+}
+
+// 더보기 메뉴 항목들
+function openDrawingTools() {
+    closeZmMoreMenu();
+    console.log('추세선 그리기');
+    // TODO: 추세선 기능 연결
+}
+
+function openIndicators() {
+    closeZmMoreMenu();
+    console.log('보조지표');
+    // TODO: 보조지표 기능 연결
+}
+
+function openChartType() {
+    closeZmMoreMenu();
+    console.log('차트 종류');
+    // TODO: 차트 종류 기능 연결
+}
+
+// ========== 제로마켓 상단 아이콘 함수 ==========
+
+// 즐겨찾기 토글 (상단 아이콘용 - 종목목록과 연동)
+function zmToggleFavorite() {
+    const icon = document.getElementById('zmFavoriteIcon');
+    const currentSymbol = document.getElementById('chartSymbolId')?.textContent || 'BTCUSD';
+    
+    // 기존 isFavorite 함수 사용
+    if (isFavorite(currentSymbol)) {
+        // 즐겨찾기에서 제거
+        const index = favoriteSymbols.findIndex(item => item.symbol === currentSymbol);
+        if (index > -1) {
+            favoriteSymbols.splice(index, 1);
+        }
+        icon.textContent = 'star_border';
+        icon.style.color = '';
+        showToast(currentSymbol + ' 즐겨찾기에서 제거됨', '');
+    } else {
+        // 즐겨찾기에 추가 - 현재 차트의 정보 가져오기
+        const chartIcon = document.getElementById('chartSymbolIcon')?.textContent || '₿';
+        const chartColor = document.getElementById('chartSymbolIcon')?.style.color || '#f7931a';
+        const chartName = document.getElementById('chartSymbolName')?.textContent || currentSymbol;
+        
+        favoriteSymbols.push({
+            symbol: currentSymbol,
+            name: currentSymbol,
+            fullName: chartName,
+            icon: chartIcon,
+            color: chartColor
+        });
+        
+        icon.textContent = 'star';
+        icon.style.color = '#00b894';
+        showToast('⭐ ' + currentSymbol + ' 즐겨찾기 추가!', 'success');
+    }
+    
+    // localStorage에 저장 (기존 함수 사용)
+    saveFavorites(favoriteSymbols);
+    
+    // 왓치리스트 새로고침
+    renderWatchlist();
+}
+
+// 차트 종목 변경 시 즐겨찾기 아이콘 상태 업데이트
+function updateZmFavoriteIcon() {
+    const icon = document.getElementById('zmFavoriteIcon');
+    const currentSymbol = document.getElementById('chartSymbolId')?.textContent || 'BTCUSD';
+    
+    if (!icon) return;
+    
+    // 기존 isFavorite 함수 사용
+    if (isFavorite(currentSymbol)) {
+        icon.textContent = 'star';
+        icon.style.color = '#00b894';
+    } else {
+        icon.textContent = 'star_border';
+        icon.style.color = '';
+    }
+}
+
+// 종목 정보 슬라이드 패널 열기
+function zmOpenSymbolInfo() {
+    const panel = document.getElementById('zmInfoPanel');
+    const body = document.getElementById('zmInfoBody');
+    const symbolInfoContent = document.getElementById('symbolInfoContent');
+    
+    if (panel && body && symbolInfoContent) {
+        // 종목 정보 내용 복사
+        body.innerHTML = symbolInfoContent.innerHTML;
+        panel.classList.add('active');
+    }
+}
+
+// 종목 정보 슬라이드 패널 닫기
+function closeZmInfoPanel() {
+    const panel = document.getElementById('zmInfoPanel');
+    if (panel) {
+        panel.classList.remove('active');
+    }
+}
+
+// 차트 가로보기 (준비중)
+function zmRotateScreen() {
+    showToast('준비중입니다', '');
+}
+
+// Toast 메시지 (없으면 추가)
+function showToast(message, type) {
+    // 기존 토스트 제거
+    const existingToast = document.querySelector('.zm-toast');
+    if (existingToast) {
+        existingToast.remove();
+    }
+    
+    // 새 토스트 생성
+    const toast = document.createElement('div');
+    toast.className = 'zm-toast' + (type === 'success' ? ' success' : '');
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    // 3초 후 제거
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+
+// 돋보기 버튼 - 왓치리스트로 이동 (상단 아이콘용)
+function zmOpenSearch() {
+    const watchlistContainer = document.getElementById('watchlistContainer');
+    const chartDetailContainer = document.getElementById('chartDetailContainer');
+    
+    if (watchlistContainer && chartDetailContainer) {
+        watchlistContainer.style.display = 'block';
+        chartDetailContainer.style.display = 'none';
+        
+        // 종목 리스트 즉시 렌더링
+        if (typeof renderWatchlist === 'function') {
+            renderWatchlist();
+        } else if (typeof loadWatchlistSymbols === 'function') {
+            loadWatchlistSymbols();
+        } else if (typeof showWatchlist === 'function') {
+            showWatchlist();
+        }
+    }
+}
+
+// 페이지 로드 시 즐겨찾기 아이콘 상태 업데이트
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+        updateZmFavoriteIcon();
+    }, 500);
+});

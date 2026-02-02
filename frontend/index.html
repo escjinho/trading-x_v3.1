@@ -13,8 +13,8 @@
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css?v=21">
-    <link rel="stylesheet" href="css/chart.css">
+    <link rel="stylesheet" href="css/styles.css?v=30">
+    <link rel="stylesheet" href="css/chart.css?v=30">
 </head>
 <body>
     <div class="app">
@@ -251,7 +251,7 @@
             </div>
             
             <!-- ========== 차트 탭 ========== -->
-            <div class="page" id="page-chart">
+            <div class="page zm-mode" id="page-chart">
                 
                 <!-- 종목 목록 (Watchlist) -->
                 <div class="watchlist-container" id="watchlistContainer">
@@ -279,83 +279,67 @@
                 
                 <!-- 차트 글로우 박스 (헤더 + 차트 + 호가) -->
                 <div class="chart-glow-box">
+
+                <!-- 가로모드 닫기 버튼 -->
+                <button class="zm-close-landscape" onclick="zmRotateScreen()">
+                    <span class="material-icons-round">close</span>
+                </button>    
                 
                 <!-- Symbol Row -->
                 <div class="chart-symbol-row">
-                    <div class="chart-symbol-info" onclick="toggleChartSymbolDropdown()">
+                    <div class="chart-symbol-info">
                         <span class="chart-symbol-icon" id="chartSymbolIcon" style="color: #f7931a;">₿</span>
                         <div>
-                            <div style="display: flex; align-items: center; gap: 5px;">
-                                <span class="chart-symbol-name" id="chartSymbolName">Bitcoin</span>
-                                <span style="color: var(--text-muted); font-size: 12px;">▼</span>
-                            </div>
+                            <span class="chart-symbol-name" id="chartSymbolName">Bitcoin</span>
                             <div class="chart-symbol-id" id="chartSymbolId">BTCUSD</div>
                         </div>
                     </div>
                     
-                    <!-- 버튼 그룹 (보조지표 + 타임프레임) -->
-                    <div class="chart-btn-group">
-                        <!-- 보조지표 버튼 -->
-                        <button class="ind-popup-btn" id="indPopupBtn" onclick="openIndPopup()">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M3 3v18h18"/>
-                                <path d="M18 9l-5 5-4-4-3 3"/>
-                            </svg>
-                            <span>지표</span>
+                    <!-- 버튼 그룹 (제로마켓 스타일 아이콘) -->
+                    <div class="chart-btn-group zm-icons">
+                        <button class="zm-icon-btn zm-icon-lg" onclick="zmOpenSearch()">
+                            <span class="material-icons-round">search</span>
                         </button>
-                        
-                        <!-- 타임프레임 버튼 -->
-                        <button class="tf-popup-btn" id="tfPopupBtn" onclick="openTfPopup()">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <polyline points="12 6 12 12 16 14"></polyline>
-                            </svg>
-                            <span id="tfBtnText">1M</span>
+                        <button class="zm-icon-btn zm-icon-lg" onclick="zmToggleFavorite()">
+                            <span class="material-icons-round" id="zmFavoriteIcon">star_border</span>
+                        </button>
+                        <button class="zm-icon-btn zm-icon-lg" onclick="zmOpenSymbolInfo()">
+                            <span class="material-icons-round">info_outline</span>
+                        </button>
+                        <button class="zm-icon-btn zm-icon-sm" onclick="zmRotateScreen()">
+                            <span class="material-icons-round">screen_rotation</span>
                         </button>
                     </div>
                     
-                    <!-- Symbol Dropdown -->
-                    <div class="chart-symbol-dropdown" id="chartSymbolDropdown">
-                        <div style="padding: 10px 15px; font-size: 11px; color: var(--accent-cyan); border-bottom: 1px solid var(--border-color);">⭐ 즐겨찾기</div>
-                        <div class="chart-symbol-option favorite" data-symbol="BTCUSD" data-name="Bitcoin" data-icon="₿" data-color="#f7931a" onclick="selectChartSymbol(this); updateSymbolInfo(this.dataset.symbol);">
-                            <span style="font-size: 20px; color: #f7931a;">₿</span>
-                            <div><div style="font-weight: bold;">Bitcoin</div><div style="font-size:11px;color:var(--text-muted);">BTCUSD</div></div>
-                            <span class="favorite-star">⭐</span>
-                        </div>
-                        <div class="chart-symbol-option favorite" data-symbol="EURUSD.r" data-name="Euro/Dollar" data-icon="€" data-color="#0052cc" onclick="selectChartSymbol(this); updateSymbolInfo(this.dataset.symbol);">
-                            <span style="font-size: 20px; color: #0052cc;">€</span>
-                            <div><div style="font-weight: bold;">Euro/Dollar</div><div style="font-size:11px;color:var(--text-muted);">EURUSD.r</div></div>
-                            <span class="favorite-star">⭐</span>
-                        </div>
-                        <div class="chart-symbol-option favorite" data-symbol="USDJPY.r" data-name="Dollar/Yen" data-icon="¥" data-color="#dc143c" onclick="selectChartSymbol(this); updateSymbolInfo(this.dataset.symbol);">
-                            <span style="font-size: 20px; color: #dc143c;">¥</span>
-                            <div><div style="font-weight: bold;">Dollar/Yen</div><div style="font-size:11px;color:var(--text-muted);">USDJPY.r</div></div>
-                            <span class="favorite-star">⭐</span>
-                        </div>
-                        <div class="chart-symbol-option favorite" data-symbol="XAUUSD.r" data-name="Gold" data-icon="✦" data-color="#ffd700" onclick="selectChartSymbol(this); updateSymbolInfo(this.dataset.symbol);">
-                            <span style="font-size: 20px; color: #ffd700;">✦</span>
-                            <div><div style="font-weight: bold;">Gold</div><div style="font-size:11px;color:var(--text-muted);">XAUUSD.r</div></div>
-                            <span class="favorite-star">⭐</span>
-                        </div>
-                        <div class="chart-symbol-option favorite" data-symbol="US100." data-name="NASDAQ" data-icon="⬡" data-color="#00b450" onclick="selectChartSymbol(this); updateSymbolInfo(this.dataset.symbol);">
-                            <span style="font-size: 20px; color: #00b450;">⬡</span>
-                            <div><div style="font-weight: bold;">NASDAQ</div><div style="font-size:11px;color:var(--text-muted);">US100.</div></div>
-                            <span class="favorite-star">⭐</span>
-                        </div>
-                        <div style="padding: 10px 15px; font-size: 11px; color: var(--text-muted); border-bottom: 1px solid var(--border-color); border-top: 1px solid var(--border-color);">기타 종목</div>
-                        <div class="chart-symbol-option" data-symbol="GBPUSD.r" data-name="Pound/Dollar" data-icon="£" data-color="#9c27b0" onclick="selectChartSymbol(this); updateSymbolInfo(this.dataset.symbol);">
-                            <span style="font-size: 20px; color: #9c27b0;">£</span>
-                            <div><div style="font-weight: bold;">Pound/Dollar</div><div style="font-size:11px;color:var(--text-muted);">GBPUSD.r</div></div>
-                        </div>
-                        <div class="chart-symbol-option" data-symbol="ETHUSD" data-name="Ethereum" data-icon="Ξ" data-color="#627eea" onclick="selectChartSymbol(this); updateSymbolInfo(this.dataset.symbol);">
-                            <span style="font-size: 20px; color: #627eea;">Ξ</span>
-                            <div><div style="font-weight: bold;">Ethereum</div><div style="font-size:11px;color:var(--text-muted);">ETHUSD</div></div>
-                        </div>
-                    </div>
                 </div>
                 
                 <!-- Chart Wrapper (메인 + 패널 지표) -->
-                <div id="chart-wrapper">
+                <div id="chart-wrapper" style="position: relative;">
+                    <!-- TradingView 공식 로고 (왼쪽 하단 - 제로마켓 스타일) -->
+                    <div id="tradingview-logo" style="position: absolute; bottom: 35px; left: 10px; z-index: 100; pointer-events: none; opacity: 0.9;">
+                        <div style="width: 36px; height: 36px; background: #1e222d; border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.4);">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="#ffffff" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M15.8654 8.2789c0 1.3541-1.0978 2.4519-2.452 2.4519-1.354 0-2.4519-1.0978-2.4519-2.452 0-1.354 1.0978-2.4518 2.452-2.4518 1.3541 0 2.4519 1.0977 2.4519 2.4519zM9.75 6H0v4.9038h4.8462v7.2692H9.75Zm8.5962 0H24l-5.1058 12.173h-5.6538z"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <!-- 현재가 오버레이 (제로마켓 스타일) -->
+                    <div id="chart-price-overlay" style="position: absolute; top: 8px; left: 10px; z-index: 100; pointer-events: none;">
+                        <!-- 1줄: 현재가 + 등락 -->
+                        <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 2px;">
+                            <span id="overlayPrice" style="font-size: 22px; font-weight: 700; color: #ffffff;">-</span>
+                            <span id="overlayChange" style="font-size: 13px; font-weight: 600;">-</span>
+                        </div>
+                        <!-- 2줄: 심볼 · 타임프레임 · 카테고리 ● -->
+                        <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: rgba(255,255,255,0.9);">
+                            <span id="overlaySymbol">BTCUSD</span>
+                            <span style="color: #999;">·</span>
+                            <span id="overlayTimeframe">M5</span>
+                            <span style="color: #999;">·</span>
+                            <span id="overlayCategory">Crypto Currency</span>
+                            <span id="overlayMarketStatus" class="market-status-dot"></span>
+                        </div>
+                    </div>
                     <!-- 메인 차트 -->
                     <div id="chart-container"></div>
                     
@@ -534,7 +518,36 @@
                     </div>
                 </div>
                 
+                <!-- 제로마켓 스타일 하단 바 -->
+                <div class="zm-bottom-bar">
+                    <button class="zm-more-btn" onclick="openZmTimeframe()">
+                        <span class="material-icons-round">bar_chart</span>
+                        <span id="zmTfText">5m</span>
+                    </button>
+                    <button class="zm-tf-btn" onclick="openZmMoreMenu()">
+                        <span class="material-icons-round">tune</span>
+                    </button>
+                    <div class="zm-trade-buttons">
+                        <button class="zm-sell-btn" onclick="openSellOrder()">SELL</button>
+                        <button class="zm-buy-btn" onclick="openBuyOrder()">BUY</button>
+                    </div>
+                </div>
+
+                <!-- 종목 정보 슬라이드 패널 -->
+                <div class="zm-info-panel" id="zmInfoPanel">
+                    <div class="zm-info-header">
+                        <button class="zm-back-btn" onclick="closeZmInfoPanel()">
+                            <span class="material-icons-round">arrow_back</span>
+                            <span>종목 정보</span>
+                        </button>
+                    </div>
+                    <div class="zm-info-body" id="zmInfoBody">
+                        <!-- 종목 정보 내용이 여기에 복사됨 -->
+                    </div>
+                </div>
+
                 </div><!-- chartDetailContainer 닫기 -->
+
             </div>
             
             <!-- ========== Trade 탭 ========== -->
@@ -1106,6 +1119,73 @@
                         <span style="color: var(--sell-color);">Logout</span>
                     </div>
                     <span class="menu-arrow" style="color: var(--sell-color);">›</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 더보기 바텀시트 (body 레벨) -->
+        <div class="zm-bottomsheet" id="zmMoreSheet">
+            <div class="zm-bottomsheet-overlay" onclick="closeZmMoreMenu()"></div>
+            <div class="zm-bottomsheet-content zm-more-content">
+                <div class="zm-handle-bar"></div>
+                <div class="zm-bottomsheet-header">
+                    <span>Settings ㅣ 차트설정</span>
+                    <button class="zm-close-btn" onclick="closeZmMoreMenu()">✕</button>
+                </div>
+                <div class="zm-more-menu-list">
+                    <button class="zm-more-menu-item" onclick="closeZmMoreMenu(); openDrawingTools();">
+                        <div class="zm-more-icon-box">
+                            <span class="material-icons-round">timeline</span>
+                        </div>
+                        <div class="zm-more-menu-text">
+                            <span class="zm-more-menu-title">추세선</span>
+                            <span class="zm-more-menu-sub">Trendline</span>
+                        </div>
+                        <span class="material-icons-round zm-more-arrow">chevron_right</span>
+                    </button>
+                    <button class="zm-more-menu-item" onclick="closeZmMoreMenu(); openIndPopup();">
+                        <div class="zm-more-icon-box">
+                            <span class="material-icons-round">analytics</span>
+                        </div>
+                        <div class="zm-more-menu-text">
+                            <span class="zm-more-menu-title">보조지표</span>
+                            <span class="zm-more-menu-sub">Indicators</span>
+                        </div>
+                        <span class="material-icons-round zm-more-arrow">chevron_right</span>
+                    </button>
+                    <button class="zm-more-menu-item" onclick="closeZmMoreMenu(); openChartType();">
+                        <div class="zm-more-icon-box">
+                            <span class="material-icons-round">candlestick_chart</span>
+                        </div>
+                        <div class="zm-more-menu-text">
+                            <span class="zm-more-menu-title">차트종류</span>
+                            <span class="zm-more-menu-sub">Chart Type</span>
+                        </div>
+                        <span class="material-icons-round zm-more-arrow">chevron_right</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 타임프레임 바텀시트 (body 레벨) -->
+        <div class="zm-bottomsheet" id="zmTfSheet">
+            <div class="zm-bottomsheet-overlay" onclick="closeZmTimeframe()"></div>
+            <div class="zm-bottomsheet-content">
+                <div class="zm-handle-bar"></div>
+                <div class="zm-bottomsheet-header">
+                    <span>Timeframe ㅣ 분봉</span>
+                    <button class="zm-close-btn" onclick="closeZmTimeframe()">✕</button>
+                </div>
+                <div class="zm-tf-grid">
+                    <button class="zm-tf-item" onclick="selectZmTimeframe('1m')">1m</button>
+                    <button class="zm-tf-item active" onclick="selectZmTimeframe('5m')">5m</button>
+                    <button class="zm-tf-item" onclick="selectZmTimeframe('15m')">15m</button>
+                    <button class="zm-tf-item" onclick="selectZmTimeframe('30m')">30m</button>
+                    <button class="zm-tf-item" onclick="selectZmTimeframe('1H')">1H</button>
+                    <button class="zm-tf-item" onclick="selectZmTimeframe('4H')">4H</button>
+                    <button class="zm-tf-item" onclick="selectZmTimeframe('1D')">1D</button>
+                    <button class="zm-tf-item" onclick="selectZmTimeframe('1W')">1W</button>
+                    <button class="zm-tf-item" onclick="selectZmTimeframe('MN')">MN</button>
                 </div>
             </div>
         </div>
@@ -1763,17 +1843,17 @@
 </div>
 
     <script src="js/config.js"></script>
-    <script src="js/state.js"></script>
+    <script src="js/state.js?v=2"></script>
     <script src="js/auth.js"></script>
     <script src="js/api.js"></script>
     <script src="js/utils.js"></script>
-    <script src="js/watchlist.js"></script>
+    <script src="js/watchlist.js?v=1.4"></script>
     <script src="js/navigation.js"></script>
 
     <!-- Chart Panels (모듈화) -->
     <script src="js/panels/gaugePanel.js"></script>
     <script src="js/panels/chartGaugePanel.js"></script>
-    <script src="js/panels/chartPanel.js"></script>
+    <script src="js/panels/chartPanel.js?v=1.7"></script>
     <script src="js/panels/symbolSelectorPanel.js"></script>
     <script src="js/panels/randomWalkPanel.js"></script>
     <script src="js/panels/multiOrderPanelV5.js"></script>
@@ -2555,13 +2635,17 @@
         // 메인 차트 리사이즈
         if (typeof chart !== 'undefined' && chart) {
             setTimeout(() => {
-                const container = document.getElementById('chart-container');
-                if (container) {
-                    chart.applyOptions({ 
-                        height: container.clientHeight 
-                    });
-                }
-            }, 350);  // CSS transition 이후
+                    const container = document.getElementById('chart-container');
+                    if (container) {
+                        // 모바일 화면 감지
+                        const isMobile = window.innerWidth <= 480;
+                        const chartHeight = isMobile ? 280 : container.clientHeight;
+                        
+                        chart.applyOptions({
+                            height: chartHeight
+                        });
+                    }
+                }, 350); // CSS transition 이후
         }
     }
     
@@ -2784,6 +2868,11 @@
         
         // 종목 정보 섹션 업데이트
         updateSymbolInfo(symbol);
+        
+        // 즐겨찾기 아이콘 상태 업데이트
+        if (typeof updateZmFavoriteIcon === 'function') {
+            updateZmFavoriteIcon();
+        }
         
         showToast(name + ' 차트로 변경', 'success');
     }
@@ -3021,7 +3110,7 @@
 
     <script src="js/account.js"></script>
     <script src="js/trading.js"></script>
-    <script src="js/connection.js"></script>
+    <script src="js/connection.js?v=3"></script>
     <script src="js/init.js"></script>
 </body>
 </html>

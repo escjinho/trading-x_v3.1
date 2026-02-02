@@ -33,6 +33,21 @@ body {
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid var(--border-color);
+    transition: padding 0.15s ease;
+}
+
+/* 차트 모드에서 헤더 축소 */
+body.chart-mode .header {
+    padding: 3px 15px;
+}
+
+body.chart-mode .header-title {
+    font-size: 20px !important;
+}
+
+body.chart-mode .header-title svg {
+    width: 28px;
+    height: 20px;
 }
 .header-title { font-family: 'Rajdhani', sans-serif; font-size: 23px; font-weight: 700; color: #ffffff; display: flex; align-items: center; letter-spacing: 0.5px; }
 .header-status { display: flex; align-items: center; gap: 6px; font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600; color: #ffffff; letter-spacing: 0.3px; }
@@ -43,6 +58,7 @@ body {
 .content { flex: 1; overflow-y: auto; padding-bottom: 70px; }
 .page { display: none; padding: 15px 0px; }
 .page.active { display: block; }
+.page.zm-mode { padding: 0; }
 
 .card {
     background: #1e2127;
@@ -75,18 +91,18 @@ body {
 #chart-container { width: 100%; height: 720px; background: var(--bg-primary); }
 .price-bar { display: flex; padding: 10px 15px; gap: 10px; }
 
-/* Chart Symbol Selector */
-.chart-symbol-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); position: relative; }
-.chart-symbol-info { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-.chart-symbol-icon { font-size: 24px; }
-.chart-symbol-name { font-size: 22px; font-weight: bold; }
+/* Chart Symbol Selector - 상세 스타일은 chart.css에서 관리 */
+.chart-symbol-row { display: flex; align-items: center; justify-content: space-between; padding: 4px 12px; margin-top: -5px; background: #000000; border-bottom: none; position: relative; }
+.chart-symbol-info { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.chart-symbol-icon { font-size: 20px; }
+.chart-symbol-name { font-size: 16px; font-weight: 700; }
 .chart-symbol-id { font-size: 11px; color: var(--text-muted); }
 .chart-symbol-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: var(--bg-secondary); border: 1px solid var(--accent-cyan); border-radius: 8px; margin-top: 5px; z-index: 50; max-height: 300px; overflow-y: auto; display: none; }
 .chart-symbol-option { display: flex; align-items: center; gap: 10px; padding: 12px 15px; cursor: pointer; border-bottom: 1px solid var(--border-color); }
 .chart-symbol-option:hover { background: rgba(255,255,255,0.1); }
 .chart-symbol-option:last-child { border-bottom: none; }
 .chart-symbol-option.favorite { background: rgba(0,212,255,0.1); }
-.favorite-star { color: #ffd700; margin-left: auto; }
+.favorite-star { color: #00b894; margin-left: auto; }
 
 /* Chart Signal Section */
 .chart-signal-section { padding: 15px; background: var(--bg-primary); }
@@ -99,8 +115,8 @@ body {
 .chart-indicator-count { font-size: 24px; font-weight: bold; }
 .chart-indicator-label { font-size: 10px; color: var(--text-muted); }
 .price-box { flex: 1; text-align: center; padding: 10px 15px; border-radius: 8px; }
-.price-box.sell { background: linear-gradient(180deg, #ff5252, #d32f2f); }
-.price-box.buy { background: linear-gradient(180deg, #00c853, #00a844); }
+.price-box.sell { background: linear-gradient(180deg, #dc3545, #c82333); }
+.price-box.buy { background: linear-gradient(180deg, #00b894, #00a383); }
 .price-label { font-size: 10px; opacity: 0.9; }
 .price-value { font-size: 18px; font-weight: bold; }
 
@@ -706,6 +722,8 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
 
 .chart-detail-container {
     display: none;
+    margin: 0;
+    padding: 0;
 }
 
 /* 종목 검색 모달 */
@@ -3113,7 +3131,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
 .v5-close-all-btn {
     width: 100%;
     padding: 14px;
-    background: linear-gradient(135deg, #ff5252 0%, #c62828 100%);
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
     border: none;
     border-radius: 10px;
     color: white;

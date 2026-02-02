@@ -51,10 +51,13 @@ document.querySelectorAll('.nav-item').forEach(item => {
             
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             this.classList.add('active');
-            
+
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById('page-' + page).classList.add('active');
-            
+
+            // 차트 모드 클래스 제거 (차트 탭이 아닌 경우)
+            document.body.classList.remove('chart-mode');
+
             // 페이지별 초기화
             if (page === 'account') {
                 loadHistory();
@@ -98,6 +101,9 @@ function selectSubmenuItem(view) {
     document.querySelector('.nav-item[data-page="chart"]').classList.add('active');
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById('page-chart').classList.add('active');
+
+    // 차트 모드 활성화 (헤더 축소용)
+    document.body.classList.add('chart-mode');
 
     if (view === 'watchlist') {
         showWatchlist();

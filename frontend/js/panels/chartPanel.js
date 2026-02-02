@@ -4,13 +4,64 @@
    ======================================== */
 
 const ChartPanel = {
+    // 마지막 캔들 데이터 저장
+    lastCandleTime: 0,
+    lastCandleData: null,
+
     /**
      * 차트 패널 초기화
      */
     init() {
         this.initChart();
         this.setupTimeframeButtons();
+        this.lastCandleTime = 0;
+        this.lastCandleData = null;
         console.log('[ChartPanel] Initialized');
+    },
+
+    /**
+     * 안전한 캔들 업데이트 (모든 타임프레임 지원)
+     * 현재 캔들의 close 가격을 실시간으로 업데이트하고, high/low도 조정
+     */
+    safeUpdateCandle(candleData) {
+        if (!candleSeries || !candleData) {
+            return false;
+        }
+
+        try {
+            const newClose = candleData.close;
+
+            // 마지막 캔들 데이터가 있으면 현재 캔들 업데이트
+            if (this.lastCandleData && this.lastCandleTime > 0) {
+                const updatedCandle = {
+                    time: this.lastCandleTime,
+                    open: this.lastCandleData.open,
+                    high: Math.max(this.lastCandleData.high, newClose),
+                    low: Math.min(this.lastCandleData.low, newClose),
+                    close: newClose
+                };
+
+                candleSeries.update(updatedCandle);
+
+                // 마지막 캔들 데이터 갱신
+                this.lastCandleData = updatedCandle;
+                return true;
+            }
+        } catch (e) {
+            console.warn('[ChartPanel] Candle update skipped:', e.message);
+        }
+        return false;
+    },
+
+    /**
+     * 타임프레임 표시 형식 변환 (API → UI)
+     */
+    getTimeframeDisplay(tf) {
+        const displayMap = {
+            'M1': '1m', 'M5': '5m', 'M15': '15m', 'M30': '30m',
+            'H1': '1H', 'H4': '4H', 'D1': '1D', 'W1': '1W', 'MN1': 'MN'
+        };
+        return displayMap[tf] || tf;
     },
 
     /**
@@ -27,43 +78,47 @@ const ChartPanel = {
 
         chart = LightweightCharts.createChart(container, {
             width: container.clientWidth,
-            height: 720,
+            height: window.innerWidth <= 480 ? 500 : 720, // 모바일: 500px, PC: 720px
             layout: {
-                background: { color: '#0d1421' },
-                textColor: '#8899a6'
+                background: { color: '#000000' },
+                textColor: '#b0b0b0'  // 더 밝은 회색
             },
             grid: {
-                vertLines: { color: '#1e2d3d' },
-                horzLines: { color: '#1e2d3d' }
+                vertLines: { visible: false },
+                horzLines: { visible: false }
             },
             crosshair: {
                 mode: LightweightCharts.CrosshairMode.Normal
             },
             rightPriceScale: {
-                borderColor: '#00d4ff',
+                borderColor: 'rgba(255,255,255,0.2)',
+                borderVisible: false,  // Y축 경계선 제거
                 autoScale: true,
                 visible: true,
                 scaleMargins: { top: 0.1, bottom: 0.2 },
             },
             timeScale: {
-                borderColor: '#00d4ff',
+                borderColor: 'rgba(255,255,255,0.4)',
+                borderVisible: false,    // CSS로 연장 구분선 처리 (#chart-wrapper::after)
                 timeVisible: true,
-                rightOffset: 5,          // 오른쪽 여백 (캔들 5개 정도)
-                shiftVisibleRangeOnNewBar: true  // 새 캔들 생성 시 자동 이동
+                rightOffset: 5,
+                shiftVisibleRangeOnNewBar: true,
+                fixRightEdge: false,
+                fixLeftEdge: false
             },
             localization: {
                 priceFormatter: (price) => price.toFixed(getDecimalsForSymbol(chartSymbol)),
             },
         });
 
-        // 캔들스틱 시리즈
+        // 캔들스틱 시리즈 (제로마켓 색상)
         candleSeries = chart.addCandlestickSeries({
-            upColor: '#00c853',
-            downColor: '#ff5252',
-            borderUpColor: '#00c853',
-            borderDownColor: '#ff5252',
-            wickUpColor: '#00c853',
-            wickDownColor: '#ff5252',
+            upColor: '#00b894',
+            downColor: '#dc3545',
+            borderUpColor: '#00b894',
+            borderDownColor: '#dc3545',
+            wickUpColor: '#00b894',
+            wickDownColor: '#dc3545',
             priceFormat: {
                 type: 'price',
                 precision: decimals,
@@ -111,11 +166,19 @@ const ChartPanel = {
      */
     async loadCandles() {
         try {
-            const data = await apiCall(`/mt5/candles/${chartSymbol}?timeframe=${currentTimeframe}&count=200`);
+            const data = await apiCall(`/mt5/candles/${chartSymbol}?timeframe=${currentTimeframe}&count=1000`);
 
             if (candleSeries && data && data.candles && data.candles.length > 0) {
                 // 캔들 데이터 설정
                 candleSeries.setData(data.candles);
+
+                // 마지막 캔들 데이터 저장 (실시간 업데이트용)
+                const lastCandle = data.candles[data.candles.length - 1];
+                this.lastCandleTime = lastCandle.time;
+                this.lastCandleData = { ...lastCandle };
+
+                // 기준가격 설정 (첫 번째 캔들의 시가)
+                this.referencePrice = data.candles[0].open;
 
                 // 인디케이터 데이터 설정
                 if (data.indicators) {
@@ -125,8 +188,8 @@ const ChartPanel = {
                     if (data.indicators.lwma) lwmaSeries.setData(data.indicators.lwma);
                 }
 
-                // 보이는 범위 설정 (최근 50개 캔들) + 오른쪽 여백 유지
-                const visibleBars = 50;
+                // 보이는 범위 설정 (최근 150개 캔들) + 오른쪽 여백 유지
+                const visibleBars = 150;
                 if (data.candles.length > visibleBars) {
                     const from = data.candles[data.candles.length - visibleBars].time;
                     // setVisibleRange 대신 scrollToRealTime 사용 (rightOffset 유지)
@@ -143,16 +206,79 @@ const ChartPanel = {
         }
     },
 
+    // 기준가격 (첫 번째 캔들의 시가 또는 이전 종가)
+    referencePrice: null,
+
     /**
-     * 차트 가격 업데이트
+     * 숫자에 천 단위 콤마 추가
+     */
+    formatWithComma(num, decimals) {
+        const parts = num.toFixed(decimals).split('.');
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        return parts.join('.');
+    },
+
+    /**
+     * 차트 가격 업데이트 (제로마켓 스타일)
      */
     updateChartPrice(price) {
         const decimals = getDecimalsForSymbol(chartSymbol);
         const spread = chartSymbol === 'BTCUSD' ? 15 :
                       chartSymbol === 'XAUUSD.r' ? 0.50 : 0.00020;
 
-        document.getElementById('chartBid').textContent = price.toFixed(decimals);
-        document.getElementById('chartAsk').textContent = (price + spread).toFixed(decimals);
+        document.getElementById('chartBid').textContent = this.formatWithComma(price, decimals);
+        document.getElementById('chartAsk').textContent = this.formatWithComma(price + spread, decimals);
+
+        // 오버레이 요소들
+        const overlaySymbol = document.getElementById('overlaySymbol');
+        const overlayTimeframe = document.getElementById('overlayTimeframe');
+        const overlayCategory = document.getElementById('overlayCategory');
+        const overlayMarketStatus = document.getElementById('overlayMarketStatus');
+        const overlayPrice = document.getElementById('overlayPrice');
+        const overlayChange = document.getElementById('overlayChange');
+
+        // 심볼 정보 가져오기
+        const symbolInfo = typeof getSymbolInfo === 'function' ? getSymbolInfo(chartSymbol) : null;
+
+        // 2줄: 심볼, 타임프레임, 카테고리
+        if (overlaySymbol) {
+            overlaySymbol.textContent = chartSymbol;
+        }
+        if (overlayTimeframe && typeof currentTimeframe !== 'undefined') {
+            // 버튼과 동일한 형식으로 표시 (1m, 5m, 1H 등)
+            overlayTimeframe.textContent = this.getTimeframeDisplay(currentTimeframe);
+        }
+        if (overlayCategory && symbolInfo) {
+            overlayCategory.textContent = symbolInfo.category || 'Currency';
+        }
+
+        // 장 운영 상태 (CSS 클래스로 처리)
+        if (overlayMarketStatus) {
+            const now = new Date();
+            const hour = now.getUTCHours();
+            // Crypto는 24시간, 나머지는 대략적인 시장 시간
+            const isCrypto = symbolInfo && symbolInfo.category === 'Crypto Currency';
+            const isMarketOpen = isCrypto || (hour >= 0 && hour < 22); // 대략적인 FX 시간
+            overlayMarketStatus.classList.toggle('closed', !isMarketOpen);
+        }
+
+        // 1줄: 현재가 (천 단위 콤마)
+        if (overlayPrice) {
+            overlayPrice.textContent = this.formatWithComma(price, decimals);
+        }
+
+        // 변동폭/변동률 계산 (천 단위 콤마)
+        if (overlayChange && this.referencePrice) {
+            const change = price - this.referencePrice;
+            const changePercent = (change / this.referencePrice) * 100;
+            const isPositive = change >= 0;
+            const color = isPositive ? '#00b894' : '#dc3545';
+            const sign = isPositive ? '+' : '';
+
+            const changeFormatted = this.formatWithComma(Math.abs(change), decimals);
+            overlayChange.textContent = sign + changeFormatted + ' (' + sign + changePercent.toFixed(2) + '%)';
+            overlayChange.style.color = color;
+        }
     },
 
     /**
