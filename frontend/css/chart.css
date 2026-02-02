@@ -1310,14 +1310,15 @@
     background: var(--bg-primary);
 }
 
-/* 개별 패널 지표 */
+/* 개별 패널 지표 (연속된 차트 스타일) */
 .indicator-panel {
     position: relative;
     height: clamp(90px, 15vw, 120px);
-    background: #0d1421;
-    border: 1px solid rgba(0, 212, 255, 0.3);
-    border-radius: 6px;
-    margin: 2px 5px;
+    background: #000000;
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 0;
+    margin: 0;
     overflow: hidden;
 }
 

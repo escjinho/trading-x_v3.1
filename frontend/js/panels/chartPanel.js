@@ -159,6 +159,12 @@ const ChartPanel = {
                 chart.applyOptions({ width: container.clientWidth });
             }
         });
+
+        // IndicatorManager 초기화
+        if (typeof IndicatorManager !== 'undefined') {
+            IndicatorManager.init(chart, candleSeries);
+            console.log('[ChartPanel] IndicatorManager initialized');
+        }
     },
 
     /**
@@ -199,6 +205,11 @@ const ChartPanel = {
                 // 마지막 가격 업데이트
                 if (data.candles.length > 0) {
                     this.updateChartPrice(data.candles[data.candles.length - 1].close);
+                }
+
+                // IndicatorManager에 캔들 데이터 전달
+                if (typeof IndicatorManager !== 'undefined') {
+                    IndicatorManager.updateCandleData(data.candles);
                 }
             }
         } catch (e) {

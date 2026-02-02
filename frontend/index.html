@@ -1853,7 +1853,13 @@
     <!-- Chart Panels (모듈화) -->
     <script src="js/panels/gaugePanel.js"></script>
     <script src="js/panels/chartGaugePanel.js"></script>
-    <script src="js/panels/chartPanel.js?v=1.7"></script>
+
+    <!-- Indicator System -->
+    <script src="js/indicators/config.js"></script>
+    <script src="js/indicators/calculator.js"></script>
+    <script src="js/indicators/index.js"></script>
+
+    <script src="js/panels/chartPanel.js?v=1.8"></script>
     <script src="js/panels/symbolSelectorPanel.js"></script>
     <script src="js/panels/randomWalkPanel.js"></script>
     <script src="js/panels/multiOrderPanelV5.js"></script>
@@ -2053,42 +2059,73 @@
     }
     
     function applyIndicators() {
+        console.log('[applyIndicators] 시작');
+
         const selectedOverlay = [];
         const selectedPanel = [];
-        
+
         document.querySelectorAll('.ind-checkbox.checked').forEach(cb => {
             const item = cb.closest('.ind-item');
             const indId = item.dataset.ind;
             const indType = item.dataset.type;
-            
+
             if (indType === 'overlay') {
                 selectedOverlay.push(indId);
             } else if (indType === 'panel') {
                 selectedPanel.push(indId);
             }
         });
-        
+
         // 활성 지표 업데이트
         activeIndicators.overlay = selectedOverlay;
         activeIndicators.panel = selectedPanel;
-        
-        console.log('적용된 오버레이 지표:', selectedOverlay);
-        console.log('적용된 패널 지표:', selectedPanel);
-        
-        // 오버레이 지표 적용 (ChartPanel)
-        applyOverlayIndicators(selectedOverlay);
-        
-        // 패널 지표 적용
-        applyPanelIndicators(selectedPanel);
-        
-        
+
+        console.log('[applyIndicators] 오버레이:', selectedOverlay);
+        console.log('[applyIndicators] 패널:', selectedPanel);
+
+        // IndicatorManager 사용 (새 시스템)
+        if (typeof IndicatorManager !== 'undefined') {
+            console.log('[applyIndicators] IndicatorManager 존재');
+            console.log('[applyIndicators] mainChart:', IndicatorManager.mainChart ? 'OK' : 'NULL');
+
+            // mainChart가 null이면 초기화 시도
+            if (!IndicatorManager.mainChart && typeof chart !== 'undefined' && chart) {
+                console.log('[applyIndicators] mainChart 재초기화 시도');
+                IndicatorManager.init(chart, candleSeries);
+            }
+
+            // 여전히 null이면 폴백
+            if (!IndicatorManager.mainChart) {
+                console.warn('[applyIndicators] mainChart가 없어서 폴백 사용');
+                applyOverlayIndicators(selectedOverlay);
+                applyPanelIndicators(selectedPanel);
+            } else {
+                // 모든 지표 비활성화 후 선택된 것만 활성화
+                IndicatorManager.removeAll();
+
+                selectedOverlay.forEach(id => {
+                    IndicatorManager.addIndicator(id, 'overlay');
+                });
+
+                selectedPanel.forEach(id => {
+                    IndicatorManager.addIndicator(id, 'panel');
+                });
+
+                console.log('[applyIndicators] IndicatorManager로 지표 적용 완료');
+            }
+        } else {
+            console.log('[applyIndicators] IndicatorManager 없음, 폴백 사용');
+            applyOverlayIndicators(selectedOverlay);
+            applyPanelIndicators(selectedPanel);
+        }
+
         // 차트 래퍼 클래스 업데이트 (높이 조절)
         updateChartWrapperClass(selectedPanel.length);
-        
+
         closeIndPopup();
-        
+
         const totalCount = selectedOverlay.length + selectedPanel.length;
-        showToast('✅ ' + totalCount + '개 지표가 적용되었습니다', 'success');
+        showToast(totalCount + '개 지표가 적용되었습니다', 'success');
     }
     
     // 오버레이 지표 적용
