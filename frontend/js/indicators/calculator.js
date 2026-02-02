@@ -332,11 +332,20 @@ const IndicatorCalculator = {
 
     /**
      * RSI (Relative Strength Index)
+     * 데이터 패딩: 메인 캔들과 동일한 개수, 처음 period개는 null
      */
     rsi(closes, times, period) {
         const result = [];
         const gains = [];
         const losses = [];
+
+        // 처음 period개는 null로 패딩
+        for (let i = 0; i <= period; i++) {
+            result.push({ time: times[i], value: null });
+        }
+
+        let prevAvgGain = 0;
+        let prevAvgLoss = 0;
 
         for (let i = 1; i < closes.length; i++) {
             const change = closes[i] - closes[i - 1];
@@ -352,20 +361,19 @@ const IndicatorCalculator = {
                     avgLoss = losses.slice(-period).reduce((a, b) => a + b, 0) / period;
                 } else {
                     // Wilder's smoothing
-                    const prevAvgGain = result[result.length - 1]?._avgGain || 0;
-                    const prevAvgLoss = result[result.length - 1]?._avgLoss || 0;
                     avgGain = (prevAvgGain * (period - 1) + gains[i - 1]) / period;
                     avgLoss = (prevAvgLoss * (period - 1) + losses[i - 1]) / period;
                 }
+
+                prevAvgGain = avgGain;
+                prevAvgLoss = avgLoss;
 
                 const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
                 const rsi = 100 - (100 / (1 + rs));
 
                 result.push({
                     time: times[i],
-                    value: rsi,
-                    _avgGain: avgGain,
-                    _avgLoss: avgLoss
+                    value: rsi
                 });
             }
         }
@@ -375,6 +383,7 @@ const IndicatorCalculator = {
 
     /**
      * MACD (Moving Average Convergence Divergence)
+     * 데이터 패딩: 메인 캔들과 동일한 개수
      */
     macd(closes, times, fastPeriod, slowPeriod, signalPeriod) {
         const fastEMA = this.ema(closes, times, fastPeriod);
@@ -384,9 +393,12 @@ const IndicatorCalculator = {
         const signalLine = [];
         const histogram = [];
 
-        // MACD Line = Fast EMA - Slow EMA
-        const startIndex = slowPeriod - 1;
+        // 처음 slowPeriod-1개는 null로 패딩 (MACD line용)
+        for (let i = 0; i < slowPeriod - 1; i++) {
+            macdLine.push({ time: times[i], value: null });
+        }
 
+        // MACD Line = Fast EMA - Slow EMA
         for (let i = 0; i < slowEMA.length; i++) {
             const slowVal = slowEMA[i];
             const fastVal = fastEMA.find(f => f.time === slowVal.time);
@@ -399,23 +411,27 @@ const IndicatorCalculator = {
             }
         }
 
-        // Signal Line = EMA of MACD
-        if (macdLine.length >= signalPeriod) {
-            const macdValues = macdLine.map(m => m.value);
-            const macdTimes = macdLine.map(m => m.time);
+        // Signal Line - 처음 slowPeriod+signalPeriod-2개는 null
+        const signalStartIndex = slowPeriod + signalPeriod - 2;
+        for (let i = 0; i < signalStartIndex; i++) {
+            signalLine.push({ time: times[i], value: null });
+            histogram.push({ time: times[i], value: null });
+        }
+
+        // Signal Line = EMA of MACD (null 제외)
+        const validMacd = macdLine.filter(m => m.value !== null);
+        if (validMacd.length >= signalPeriod) {
+            const macdValues = validMacd.map(m => m.value);
+            const macdTimes = validMacd.map(m => m.time);
             const signalData = this.ema(macdValues, macdTimes, signalPeriod);
 
-            signalData.forEach(s => signalLine.push(s));
-
-            // Histogram = MACD - Signal
-            signalLine.forEach(sig => {
-                const macdVal = macdLine.find(m => m.time === sig.time);
-                if (macdVal) {
-                    histogram.push({
-                        time: sig.time,
-                        value: macdVal.value - sig.value
-                    });
-                }
+            signalData.forEach(s => {
+                signalLine.push(s);
+                const macdVal = macdLine.find(m => m.time === s.time);
+                histogram.push({
+                    time: s.time,
+                    value: macdVal ? macdVal.value - s.value : null
+                });
             });
         }
 
@@ -424,12 +440,13 @@ const IndicatorCalculator = {
 
     /**
      * Stochastic Oscillator
+     * 데이터 패딩: 메인 캔들과 동일한 개수
      */
     stochastic(highs, lows, closes, times, kPeriod, dPeriod, smooth) {
         const kLine = [];
         const dLine = [];
 
-        // Raw %K
+        // Raw %K 계산
         const rawK = [];
         for (let i = kPeriod - 1; i < closes.length; i++) {
             let highestHigh = -Infinity;
@@ -447,27 +464,42 @@ const IndicatorCalculator = {
         }
 
         // Smoothed %K (SMA of raw %K)
+        const smoothedK = [];
         for (let i = smooth - 1; i < rawK.length; i++) {
             let sum = 0;
             for (let j = 0; j < smooth; j++) {
                 sum += rawK[i - j].value;
             }
-            kLine.push({
+            smoothedK.push({
                 time: rawK[i].time,
                 value: sum / smooth
             });
         }
 
         // %D (SMA of %K)
-        for (let i = dPeriod - 1; i < kLine.length; i++) {
+        const dValues = [];
+        for (let i = dPeriod - 1; i < smoothedK.length; i++) {
             let sum = 0;
             for (let j = 0; j < dPeriod; j++) {
-                sum += kLine[i - j].value;
+                sum += smoothedK[i - j].value;
             }
-            dLine.push({
-                time: kLine[i].time,
+            dValues.push({
+                time: smoothedK[i].time,
                 value: sum / dPeriod
             });
+        }
+
+        // 패딩 적용: 전체 times 배열에 맞춤
+        const kTimeSet = new Set(smoothedK.map(k => k.time));
+        const dTimeSet = new Set(dValues.map(d => d.time));
+
+        for (let i = 0; i < times.length; i++) {
+            const time = times[i];
+            const kData = smoothedK.find(k => k.time === time);
+            const dData = dValues.find(d => d.time === time);
+
+            kLine.push({ time, value: kData ? kData.value : null });
+            dLine.push({ time, value: dData ? dData.value : null });
         }
 
         return { k: kLine, d: dLine };
@@ -475,9 +507,15 @@ const IndicatorCalculator = {
 
     /**
      * CCI (Commodity Channel Index)
+     * 데이터 패딩: 메인 캔들과 동일한 개수
      */
     cci(highs, lows, closes, times, period) {
         const result = [];
+
+        // 처음 period-1개는 null로 패딩
+        for (let i = 0; i < period - 1; i++) {
+            result.push({ time: times[i], value: null });
+        }
 
         for (let i = period - 1; i < closes.length; i++) {
             // Typical Price
@@ -506,9 +544,15 @@ const IndicatorCalculator = {
 
     /**
      * Williams %R
+     * 데이터 패딩: 메인 캔들과 동일한 개수
      */
     williamsR(highs, lows, closes, times, period) {
         const result = [];
+
+        // 처음 period-1개는 null로 패딩
+        for (let i = 0; i < period - 1; i++) {
+            result.push({ time: times[i], value: null });
+        }
 
         for (let i = period - 1; i < closes.length; i++) {
             let highestHigh = -Infinity;
@@ -533,10 +577,18 @@ const IndicatorCalculator = {
 
     /**
      * ATR (Average True Range)
+     * 데이터 패딩: 메인 캔들과 동일한 개수
      */
     atr(highs, lows, closes, times, period) {
         const result = [];
         const trList = [];
+
+        // 처음 period개는 null로 패딩
+        for (let i = 0; i <= period; i++) {
+            result.push({ time: times[i], value: null });
+        }
+
+        let prevAtr = 0;
 
         for (let i = 1; i < closes.length; i++) {
             const tr = Math.max(
@@ -551,9 +603,10 @@ const IndicatorCalculator = {
                 if (i === period) {
                     atr = trList.slice(-period).reduce((a, b) => a + b, 0) / period;
                 } else {
-                    const prevAtr = result[result.length - 1]?.value || 0;
                     atr = (prevAtr * (period - 1) + tr) / period;
                 }
+
+                prevAtr = atr;
 
                 result.push({
                     time: times[i],
@@ -581,6 +634,167 @@ const IndicatorCalculator = {
         });
 
         return { volume };
+    },
+
+    /**
+     * MFI (Money Flow Index)
+     * MFI = 100 - (100 / (1 + Money Flow Ratio))
+     * 데이터 패딩: 메인 캔들과 동일한 개수
+     */
+    mfi(highs, lows, closes, volumes, times, period) {
+        const result = [];
+
+        // 처음 period개는 null로 패딩
+        for (let i = 0; i < period; i++) {
+            result.push({ time: times[i], value: null });
+        }
+
+        for (let i = period; i < closes.length; i++) {
+            let positiveFlow = 0;
+            let negativeFlow = 0;
+
+            for (let j = 0; j < period; j++) {
+                const idx = i - j;
+                const prevIdx = idx - 1;
+                if (prevIdx < 0) continue;
+
+                const typicalPrice = (highs[idx] + lows[idx] + closes[idx]) / 3;
+                const prevTypicalPrice = (highs[prevIdx] + lows[prevIdx] + closes[prevIdx]) / 3;
+                const rawMoneyFlow = typicalPrice * (volumes[idx] || 0);
+
+                if (typicalPrice > prevTypicalPrice) {
+                    positiveFlow += rawMoneyFlow;
+                } else if (typicalPrice < prevTypicalPrice) {
+                    negativeFlow += rawMoneyFlow;
+                }
+            }
+
+            const mfr = negativeFlow === 0 ? 100 : positiveFlow / negativeFlow;
+            const mfi = 100 - (100 / (1 + mfr));
+
+            result.push({
+                time: times[i],
+                value: mfi
+            });
+        }
+
+        return result;
+    },
+
+    /**
+     * ADX (Average Directional Index)
+     * 데이터 패딩: 메인 캔들과 동일한 개수
+     */
+    adx(highs, lows, closes, times, period) {
+        const trList = [];
+        const plusDMList = [];
+        const minusDMList = [];
+
+        // TR, +DM, -DM 계산 (i=1부터)
+        for (let i = 1; i < closes.length; i++) {
+            const tr = Math.max(
+                highs[i] - lows[i],
+                Math.abs(highs[i] - closes[i - 1]),
+                Math.abs(lows[i] - closes[i - 1])
+            );
+
+            const upMove = highs[i] - highs[i - 1];
+            const downMove = lows[i - 1] - lows[i];
+
+            const plusDM = upMove > downMove && upMove > 0 ? upMove : 0;
+            const minusDM = downMove > upMove && downMove > 0 ? downMove : 0;
+
+            trList.push(tr);
+            plusDMList.push(plusDM);
+            minusDMList.push(minusDM);
+        }
+
+        // Smoothed TR, +DM, -DM 및 DX 계산
+        let smoothedTR = 0;
+        let smoothedPlusDM = 0;
+        let smoothedMinusDM = 0;
+        const dxList = [];
+
+        for (let i = 0; i < trList.length; i++) {
+            if (i < period - 1) {
+                smoothedTR += trList[i];
+                smoothedPlusDM += plusDMList[i];
+                smoothedMinusDM += minusDMList[i];
+            } else if (i === period - 1) {
+                smoothedTR += trList[i];
+                smoothedPlusDM += plusDMList[i];
+                smoothedMinusDM += minusDMList[i];
+            } else {
+                smoothedTR = smoothedTR - (smoothedTR / period) + trList[i];
+                smoothedPlusDM = smoothedPlusDM - (smoothedPlusDM / period) + plusDMList[i];
+                smoothedMinusDM = smoothedMinusDM - (smoothedMinusDM / period) + minusDMList[i];
+            }
+
+            if (i >= period - 1) {
+                const plusDI = smoothedTR === 0 ? 0 : (smoothedPlusDM / smoothedTR) * 100;
+                const minusDI = smoothedTR === 0 ? 0 : (smoothedMinusDM / smoothedTR) * 100;
+                const diSum = plusDI + minusDI;
+                const dx = diSum === 0 ? 0 : Math.abs(plusDI - minusDI) / diSum * 100;
+                // i+1은 원본 캔들 인덱스 (trList는 i=1부터 시작하므로)
+                dxList.push({ time: times[i + 1], value: dx });
+            }
+        }
+
+        // ADX = Smoothed DX
+        const adxValues = [];
+        let adxVal = 0;
+        for (let i = 0; i < dxList.length; i++) {
+            if (i < period - 1) {
+                adxVal += dxList[i].value;
+            } else if (i === period - 1) {
+                adxVal = (adxVal + dxList[i].value) / period;
+                adxValues.push({ time: dxList[i].time, value: adxVal });
+            } else {
+                adxVal = ((adxVal * (period - 1)) + dxList[i].value) / period;
+                adxValues.push({ time: dxList[i].time, value: adxVal });
+            }
+        }
+
+        // 전체 times 배열에 맞춰 패딩 적용
+        const result = [];
+        const adxTimeSet = new Set(adxValues.map(a => a.time));
+
+        for (let i = 0; i < times.length; i++) {
+            const time = times[i];
+            const adxData = adxValues.find(a => a.time === time);
+            result.push({ time, value: adxData ? adxData.value : null });
+        }
+
+        return result;
+    },
+
+    /**
+     * OBV (On Balance Volume)
+     * 데이터 패딩 불필요 (첫 캔들부터 계산 가능)
+     */
+    obv(closes, volumes, times) {
+        const result = [];
+        let obv = 0;
+
+        for (let i = 0; i < closes.length; i++) {
+            if (i === 0) {
+                obv = volumes[i] || 0;
+            } else {
+                if (closes[i] > closes[i - 1]) {
+                    obv += volumes[i] || 0;
+                } else if (closes[i] < closes[i - 1]) {
+                    obv -= volumes[i] || 0;
+                }
+                // closes[i] === closes[i-1] 이면 OBV 변화 없음
+            }
+
+            result.push({
+                time: times[i],
+                value: obv
+            });
+        }
+
+        return result;
     }
 };
 

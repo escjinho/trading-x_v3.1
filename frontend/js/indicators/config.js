@@ -288,6 +288,57 @@ const IndicatorConfig = {
             panelHeight: 100,
             minValue: -100,
             maxValue: 0
+        },
+        mfi: {
+            id: 'mfi',
+            name: 'MFI',
+            fullName: 'Money Flow Index',
+            type: 'panel',
+            enabled: false,
+            params: {
+                period: 14,
+                overbought: 80,
+                oversold: 20
+            },
+            style: {
+                lineColor: '#9C27B0',
+                lineWidth: 2,
+                overboughtColor: 'rgba(255, 82, 82, 0.3)',
+                oversoldColor: 'rgba(76, 175, 80, 0.3)'
+            },
+            panelHeight: 100,
+            minValue: 0,
+            maxValue: 100
+        },
+        adx: {
+            id: 'adx',
+            name: 'ADX',
+            fullName: 'Average Directional Index',
+            type: 'panel',
+            enabled: false,
+            params: {
+                period: 14
+            },
+            style: {
+                lineColor: '#FF9800',
+                lineWidth: 2
+            },
+            panelHeight: 100,
+            minValue: 0,
+            maxValue: 100
+        },
+        obv: {
+            id: 'obv',
+            name: 'OBV',
+            fullName: 'On Balance Volume',
+            type: 'panel',
+            enabled: false,
+            params: {},
+            style: {
+                lineColor: '#4CAF50',
+                lineWidth: 2
+            },
+            panelHeight: 80
         }
     },
 

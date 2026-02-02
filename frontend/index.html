@@ -2040,22 +2040,21 @@
     }
     
     function resetIndicators() {
-        // 모든 체크 해제
-        document.querySelectorAll('.ind-checkbox').forEach(cb => {
-            cb.classList.remove('checked');
-        });
-        
-        // 기본값 (BB, LWMA)만 체크
-        const defaultIndicators = ['bb', 'lwma'];
-        defaultIndicators.forEach(indId => {
-            const item = document.querySelector(`.ind-item[data-ind="${indId}"]`);
-            if (item) {
-                item.querySelector('.ind-checkbox').classList.add('checked');
-            }
-        });
-        
-        updatePanelCount();
-        showToast('기본 지표로 초기화되었습니다', 'info');
+        // 지표 설정 localStorage 초기화
+        localStorage.removeItem('indicator_config');
+
+        // 모든 지표 제거
+        if (typeof IndicatorManager !== 'undefined') {
+            IndicatorManager.removeAll();
+        }
+
+        // 차트 다시 로드
+        if (typeof ChartPanel !== 'undefined') {
+            ChartPanel.loadCandles();
+        }
+
+        closeIndicatorModal();
+        showToast('초기화 완료', 'info');
     }
     
     function applyIndicators() {

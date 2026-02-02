@@ -671,6 +671,40 @@ const IndicatorManager = {
                     }));
                 }
                 break;
+
+            case 'mfi':
+                // 기준선 추가 (80, 20, 50)
+                indicator.referenceLines.push(this.addPanelReferenceLine(panelChart, 80, 'rgba(255, 82, 82, 0.5)', 1));
+                indicator.referenceLines.push(this.addPanelReferenceLine(panelChart, 20, 'rgba(76, 175, 80, 0.5)', 1));
+                indicator.referenceLines.push(this.addPanelReferenceLine(panelChart, 50, 'rgba(255, 255, 255, 0.2)', 1, 2));
+                // MFI 라인
+                indicator.series.push(panelChart.addLineSeries({
+                    color: config.style.lineColor,
+                    lineWidth: config.style.lineWidth,
+                    priceLineVisible: false,
+                    lastValueVisible: true
+                }));
+                break;
+
+            case 'adx':
+                // ADX 라인
+                indicator.series.push(panelChart.addLineSeries({
+                    color: config.style.lineColor,
+                    lineWidth: config.style.lineWidth,
+                    priceLineVisible: false,
+                    lastValueVisible: true
+                }));
+                break;
+
+            case 'obv':
+                // OBV 라인
+                indicator.series.push(panelChart.addLineSeries({
+                    color: config.style.lineColor,
+                    lineWidth: config.style.lineWidth,
+                    priceLineVisible: false,
+                    lastValueVisible: true
+                }));
+                break;
         }
 
         this.activeIndicators[indicatorId] = indicator;
@@ -820,6 +854,12 @@ const IndicatorManager = {
         const volumes = this.candleData.map(c => c.volume || 0);
         const times = this.candleData.map(c => c.time);
 
+        // 디버깅: 메인 캔들 데이터 정보
+        console.log(`[calculatePanelIndicator] ${indicatorId}`);
+        console.log('  Main candle count:', this.candleData.length);
+        console.log('  Main candle first time:', times[0]);
+        console.log('  Main candle last time:', times[times.length - 1]);
+
         let data;
 
         switch (indicatorId) {
@@ -870,10 +910,47 @@ const IndicatorManager = {
                 data = IndicatorCalculator.williamsR(highs, lows, closes, times, config.params.period);
                 indicator.series[0].setData(data);
                 break;
+
+            case 'mfi':
+                data = IndicatorCalculator.mfi(highs, lows, closes, volumes, times, config.params.period);
+                indicator.series[0].setData(data);
+                break;
+
+            case 'adx':
+                data = IndicatorCalculator.adx(highs, lows, closes, times, config.params.period);
+                indicator.series[0].setData(data);
+                break;
+
+            case 'obv':
+                data = IndicatorCalculator.obv(closes, volumes, times);
+                indicator.series[0].setData(data);
+                break;
+        }
+
+        // 디버깅: 패널 데이터 정보
+        if (data) {
+            const panelData = Array.isArray(data) ? data : (data.k || data.macd || data.volume || []);
+            console.log('  Panel data count:', panelData.length);
+            console.log('  Panel data first time:', panelData[0]?.time);
+            console.log('  Panel data last time:', panelData[panelData.length - 1]?.time);
+            console.log('  Time diff (candle - panel):', this.candleData.length - panelData.length);
         }
 
         // 기준선 시리즈 업데이트 (캔들 시간 범위에 맞춤)
         this.updatePanelReferenceLines(indicatorId);
+
+        // 패널 차트 시간 범위를 메인 차트와 동기화
+        const panelChart = this.panelCharts[indicatorId];
+        if (panelChart && this.mainChart) {
+            try {
+                const mainRange = this.mainChart.timeScale().getVisibleLogicalRange();
+                if (mainRange) {
+                    panelChart.timeScale().setVisibleLogicalRange(mainRange);
+                }
+            } catch (e) {
+                // 무시
+            }
+        }
     },
 
     /**
