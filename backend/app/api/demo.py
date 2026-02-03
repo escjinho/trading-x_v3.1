@@ -18,8 +18,69 @@ except ImportError:
 import asyncio
 import json
 import random
+import httpx
+import time
 
 from ..database import get_db
+
+# ========== 외부 API 가격 캐시 ==========
+price_cache = {
+    "prices": {},
+    "last_update": 0
+}
+
+async def fetch_external_prices():
+    """Binance API에서 실시간 가격 조회"""
+    global price_cache
+
+    # 1초 이내 캐시 사용
+    if time.time() - price_cache["last_update"] < 1:
+        return price_cache["prices"]
+
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            # Binance API로 BTC, ETH 가격 조회
+            response = await client.get("https://api.binance.com/api/v3/ticker/price", params={
+                "symbols": '["BTCUSDT","ETHUSDT"]'
+            })
+            if response.status_code == 200:
+                data = response.json()
+                prices = {}
+                for item in data:
+                    if item["symbol"] == "BTCUSDT":
+                        price = float(item["price"])
+                        prices["BTCUSD"] = {"bid": price - 5, "ask": price + 5, "last": price}
+                    elif item["symbol"] == "ETHUSDT":
+                        price = float(item["price"])
+                        prices["ETHUSD"] = {"bid": price - 1, "ask": price + 1, "last": price}
+
+                # 다른 심볼은 더미 데이터
+                prices["EURUSD.r"] = {"bid": 1.0850, "ask": 1.0852, "last": 1.0851}
+                prices["USDJPY.r"] = {"bid": 149.50, "ask": 149.52, "last": 149.51}
+                prices["XAUUSD.r"] = {"bid": 2025.50, "ask": 2026.00, "last": 2025.75}
+                prices["US100."] = {"bid": 17850.0, "ask": 17852.0, "last": 17851.0}
+                prices["GBPUSD.r"] = {"bid": 1.2650, "ask": 1.2652, "last": 1.2651}
+                prices["AUDUSD.r"] = {"bid": 0.6550, "ask": 0.6552, "last": 0.6551}
+                prices["USDCAD.r"] = {"bid": 1.3450, "ask": 1.3452, "last": 1.3451}
+
+                price_cache["prices"] = prices
+                price_cache["last_update"] = time.time()
+                return prices
+    except Exception as e:
+        print(f"[External API] Error: {e}")
+
+    # 실패시 더미 데이터
+    return {
+        "BTCUSD": {"bid": 97000.0, "ask": 97010.0, "last": 97005.0},
+        "ETHUSD": {"bid": 3200.0, "ask": 3202.0, "last": 3201.0},
+        "EURUSD.r": {"bid": 1.0850, "ask": 1.0852, "last": 1.0851},
+        "USDJPY.r": {"bid": 149.50, "ask": 149.52, "last": 149.51},
+        "XAUUSD.r": {"bid": 2025.50, "ask": 2026.00, "last": 2025.75},
+        "US100.": {"bid": 17850.0, "ask": 17852.0, "last": 17851.0},
+        "GBPUSD.r": {"bid": 1.2650, "ask": 1.2652, "last": 1.2651},
+        "AUDUSD.r": {"bid": 0.6550, "ask": 0.6552, "last": 0.6551},
+        "USDCAD.r": {"bid": 1.3450, "ask": 1.3452, "last": 1.3451}
+    }
 from ..models.user import User
 from ..models.demo_trade import DemoTrade, DemoPosition
 from ..utils.security import decode_token
@@ -1282,6 +1343,23 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                                 "low": float(latest["low"]),
                                 "close": float(latest["close"])
                             }
+            else:
+                # MT5 없음 - 외부 API에서 가격 가져오기
+                all_prices = await fetch_external_prices()
+
+                # 현재 시간 기준 캔들 데이터 생성
+                current_time = int(time.time()) // 3600 * 3600  # 1시간 단위로 정렬
+                for symbol, price_data in all_prices.items():
+                    price = price_data["last"]
+                    # 약간의 변동폭 추가
+                    variation = price * 0.001  # 0.1% 변동
+                    all_candles[symbol] = {
+                        "time": current_time,
+                        "open": price - variation,
+                        "high": price + variation,
+                        "low": price - variation * 2,
+                        "close": price
+                    }
 
             # Demo 계정 정보 (DB에서 실제 데이터 가져오기)
             demo_balance = 10000.0
