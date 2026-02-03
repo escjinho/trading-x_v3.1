@@ -83,7 +83,7 @@ from ..services.mt5_service import MT5_DISABLED
 # Windows MT5 브릿지에서 전송된 데이터를 저장
 bridge_cache = {
     "prices": {},      # {"BTCUSD": {"bid": 97000, "ask": 97010, "last": 97005, "time": 1234567890}}
-    "candles": {},     # {"BTCUSD": [{"time": ..., "open": ..., ...}, ...]}
+    "candles": {},     # {"BTCUSD": {"M1": [...], "M5": [...], "H1": [...], ...}}
     "last_update": 0   # 마지막 업데이트 시간
 }
 
@@ -91,9 +91,10 @@ def get_bridge_prices():
     """브릿지 캐시에서 가격 데이터 조회"""
     return bridge_cache["prices"]
 
-def get_bridge_candles(symbol: str):
-    """브릿지 캐시에서 캔들 데이터 조회"""
-    return bridge_cache["candles"].get(symbol, [])
+def get_bridge_candles(symbol: str, timeframe: str = "M5"):
+    """브릿지 캐시에서 캔들 데이터 조회 (타임프레임별)"""
+    symbol_data = bridge_cache["candles"].get(symbol, {})
+    return symbol_data.get(timeframe, [])
 
 def mt5_initialize_safe() -> bool:
     """MT5 초기화 래퍼 함수 (비활성화 체크 포함)"""
@@ -268,16 +269,17 @@ async def get_candles(
                 highs.append(r['high'])
                 lows.append(r['low'])
     else:
-        # MT5 없음 - 브릿지 캐시에서 가져오기
-        cached_candles = get_bridge_candles(symbol)
+        # MT5 없음 - 브릿지 캐시에서 가져오기 (타임프레임별)
+        cached_candles = get_bridge_candles(symbol, timeframe)
         if cached_candles:
             candles = cached_candles[-count:] if len(cached_candles) > count else cached_candles
             closes = [c['close'] for c in candles]
             highs = [c['high'] for c in candles]
             lows = [c['low'] for c in candles]
+            print(f"[Candles] {symbol}/{timeframe} - 브릿지 캐시에서 {len(candles)}개 로드")
 
     if not candles:
-        return {"candles": [], "indicators": {}, "source": "no_data"}
+        return {"candles": [], "indicators": {}, "source": "no_data", "timeframe": timeframe}
 
     # 인디케이터 계산
     indicators = IndicatorService.calculate_chart_indicators(candles, closes, highs, lows)
@@ -351,23 +353,35 @@ async def receive_bridge_data(symbol: str, data: dict):
 
 
 @router.post("/bridge/{symbol}/candles")
-async def receive_bridge_candles(symbol: str, candles: List[dict] = Body(...)):
-    """
-    Windows MT5 브릿지에서 전송된 캔들 데이터 수신
+async def receive_bridge_candles_default(symbol: str, candles: List[dict] = Body(...)):
+    """캔들 데이터 수신 (기본 M5 타임프레임)"""
+    return await receive_bridge_candles_tf(symbol, "M5", candles)
 
+
+@router.post("/bridge/{symbol}/candles/{timeframe}")
+async def receive_bridge_candles_tf(symbol: str, timeframe: str, candles: List[dict] = Body(...)):
+    """
+    Windows MT5 브릿지에서 전송된 캔들 데이터 수신 (타임프레임별)
+
+    URL: /api/mt5/bridge/BTCUSD/candles/M5
     데이터 형식: [{"time": ..., "open": ..., "high": ..., "low": ..., "close": ..., "volume": ...}, ...]
     """
     import time as time_module
     try:
-        # 캔들 데이터 캐시에 저장
-        bridge_cache["candles"][symbol] = candles
+        # 심볼별 딕셔너리 초기화
+        if symbol not in bridge_cache["candles"]:
+            bridge_cache["candles"][symbol] = {}
+
+        # 타임프레임별 캔들 데이터 저장
+        bridge_cache["candles"][symbol][timeframe] = candles
         bridge_cache["last_update"] = time_module.time()
 
-        print(f"[Bridge] {symbol} 캔들 {len(candles)}개 수신")
+        print(f"[Bridge] {symbol}/{timeframe} 캔들 {len(candles)}개 수신")
 
         return {
             "status": "success",
             "symbol": symbol,
+            "timeframe": timeframe,
             "total_candles": len(candles)
         }
     except Exception as e:
@@ -384,11 +398,20 @@ async def get_bridge_status():
     last_update = bridge_cache["last_update"]
     age = time_module.time() - last_update if last_update > 0 else -1
 
+    # 타임프레임별 캔들 개수
+    candles_detail = {}
+    for symbol, tf_data in bridge_cache["candles"].items():
+        if isinstance(tf_data, dict):
+            candles_detail[symbol] = {tf: len(candles) for tf, candles in tf_data.items()}
+        else:
+            candles_detail[symbol] = {"M5": len(tf_data)}
+
     return {
         "prices_count": len(symbols_with_prices),
         "candles_count": len(symbols_with_candles),
         "symbols_prices": symbols_with_prices,
         "symbols_candles": symbols_with_candles,
+        "candles_detail": candles_detail,
         "last_update": last_update,
         "age_seconds": round(age, 1)
     }

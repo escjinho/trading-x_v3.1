@@ -1348,9 +1348,9 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                 # MT5 없음 - 브릿지 캐시에서 가격 가져오기
                 all_prices = get_bridge_prices()
 
-                # 브릿지 캐시에서 캔들 데이터 가져오기
+                # 브릿지 캐시에서 캔들 데이터 가져오기 (M5 타임프레임)
                 for symbol in symbols_list:
-                    cached_candles = get_bridge_candles(symbol)
+                    cached_candles = get_bridge_candles(symbol, "M5")
                     if cached_candles and len(cached_candles) > 0:
                         latest = cached_candles[-1]
                         all_candles[symbol] = {
