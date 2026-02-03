@@ -352,12 +352,7 @@ async def receive_bridge_data(symbol: str, data: dict):
         return {"status": "error", "message": str(e)}
 
 
-@router.post("/bridge/{symbol}/candles")
-async def receive_bridge_candles_default(symbol: str, candles: List[dict] = Body(...)):
-    """캔들 데이터 수신 (기본 M5 타임프레임)"""
-    return await receive_bridge_candles_tf(symbol, "M5", candles)
-
-
+# 중요: 구체적인 경로가 먼저 와야 함 (FastAPI 라우터 순서)
 @router.post("/bridge/{symbol}/candles/{timeframe}")
 async def receive_bridge_candles_tf(symbol: str, timeframe: str, candles: List[dict] = Body(...)):
     """
@@ -387,6 +382,12 @@ async def receive_bridge_candles_tf(symbol: str, timeframe: str, candles: List[d
     except Exception as e:
         print(f"[Bridge] 캔들 수신 오류: {e}")
         return {"status": "error", "message": str(e)}
+
+
+@router.post("/bridge/{symbol}/candles")
+async def receive_bridge_candles_default(symbol: str, candles: List[dict] = Body(...)):
+    """캔들 데이터 수신 (기본 M5 타임프레임)"""
+    return await receive_bridge_candles_tf(symbol, "M5", candles)
 
 
 @router.get("/bridge/status")
