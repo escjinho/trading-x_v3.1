@@ -32,6 +32,9 @@ from ..services.mt5_service import MT5_DISABLED
 
 def mt5_initialize_safe() -> bool:
     """MT5 초기화 래퍼 함수 (비활성화 체크 포함)"""
+    if not MT5_AVAILABLE:
+        print("[MT5] MetaTrader5 모듈을 사용할 수 없습니다 (Linux 환경)")
+        return False
     if MT5_DISABLED:
         print("[MT5 비활성화됨] MT5 초기화를 건너뜁니다.")
         return False
@@ -270,6 +273,10 @@ async def place_order(
     current_user: User = Depends(get_current_user)
 ):
     """일반 주문 실행 (BUY/SELL)"""
+    if not MT5_AVAILABLE:
+        return JSONResponse({"success": False, "message": "MT5를 사용할 수 없습니다 (Linux 환경)"})
+    if not mt5_initialize_safe():
+        return JSONResponse({"success": False, "message": "MT5 초기화 실패"})
     tick = mt5.symbol_info_tick(symbol)
     symbol_info = mt5.symbol_info(symbol)
     
@@ -341,6 +348,10 @@ async def close_position(
     current_user: User = Depends(get_current_user)
 ):
     """포지션 청산 (magic 필터 옵션)"""
+    if not MT5_AVAILABLE:
+        return JSONResponse({"success": False, "message": "MT5를 사용할 수 없습니다 (Linux 환경)"})
+    if not mt5_initialize_safe():
+        return JSONResponse({"success": False, "message": "MT5 초기화 실패"})
     positions = mt5.positions_get(symbol=symbol)
     if not positions:
         return JSONResponse({"success": False, "message": "열린 포지션 없음"})
@@ -632,9 +643,14 @@ async def close_by_profit(
 @router.get("/history")
 async def get_history(current_user: User = Depends(get_current_user)):
     """거래 내역 조회"""
+    if not MT5_AVAILABLE:
+        return {"history": []}
+    if not mt5_initialize_safe():
+        return {"history": []}
+
     from_date = datetime.now() - timedelta(days=30)
     to_date = datetime.now() + timedelta(days=1)  # 미래 1일 추가 (시간대 문제 방지)
-    
+
     deals = mt5.history_deals_get(from_date, to_date)
     
     print(f"[MT5 History] from: {from_date}, to: {to_date}")
