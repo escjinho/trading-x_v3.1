@@ -83,8 +83,8 @@ async def get_demo_account(
         # 현재가 조회
         print(f"[DEBUG] Position found: {position.symbol}, target: {position.target_profit}")
         
-        if not mt5.initialize():
-            print("[DEBUG] MT5 initialize FAILED!")
+        if not MT5_AVAILABLE or not mt5.initialize():
+            print("[DEBUG] MT5 not available or initialize FAILED!")
             # MT5 연결 실패해도 포지션 정보는 반환
             position_data = {
                 "id": position.id,
@@ -266,8 +266,8 @@ async def get_demo_account(
     
     for pos in all_positions:
         pos_price_data = {"profit": 0, "current": pos.entry_price, "margin": 0}
-        
-        if mt5.initialize():
+
+        if MT5_AVAILABLE and mt5.initialize():
             tick = mt5.symbol_info_tick(pos.symbol)
             symbol_info = mt5.symbol_info(pos.symbol)
             
@@ -353,16 +353,18 @@ async def place_demo_order(
     # 중복 주문 허용 - 체크 로직 제거됨
 
     # 현재가 조회
-    if not mt5.initialize():
-        print("[DEMO ORDER] ❌ MT5 initialize FAILED!")
-        return JSONResponse({"success": False, "message": "MT5 연결 실패"})
-
-    tick = mt5.symbol_info_tick(symbol)
-    if not tick:
-        print(f"[DEMO ORDER] ❌ Tick FAILED for {symbol}!")
-        return JSONResponse({"success": False, "message": "가격 정보 없음"})
-
-    entry_price = tick.ask if order_type.upper() == "BUY" else tick.bid
+    entry_price = 0.0
+    if MT5_AVAILABLE and mt5.initialize():
+        tick = mt5.symbol_info_tick(symbol)
+        if tick:
+            entry_price = tick.ask if order_type.upper() == "BUY" else tick.bid
+        else:
+            print(f"[DEMO ORDER] ⚠️ Tick FAILED for {symbol}, using dummy price")
+            entry_price = 50000.0 if "BTC" in symbol else 1.0
+    else:
+        print("[DEMO ORDER] ⚠️ MT5 not available, using dummy price")
+        # MT5 없을 때 더미 가격 사용
+        entry_price = 50000.0 if "BTC" in symbol else 1.0
     print(f"[DEMO ORDER] 📊 Entry price: {entry_price}")
 
     # 포지션 생성 (Basic/NoLimit 모드용 - target 그대로 사용)
@@ -410,47 +412,48 @@ async def get_demo_positions(
         query = query.filter(DemoPosition.magic == magic)
     
     positions = query.all()
-    
-    if not mt5.initialize():
-        return {"positions": [], "message": "MT5 연결 실패", "total_margin": 0}
-    
+
+    mt5_connected = MT5_AVAILABLE and mt5.initialize() if MT5_AVAILABLE else False
+
     leverage = 500  # 데모 기본 레버리지
-    
+
     positions_data = []
     total_margin = 0
-    
+
     for pos in positions:
-        tick = mt5.symbol_info_tick(pos.symbol)
-        symbol_info = mt5.symbol_info(pos.symbol)
-        
-        if tick:
-            current_price = tick.bid if pos.trade_type == "BUY" else tick.ask
-            
-            # 손익 계산
-            if symbol_info and symbol_info.trade_tick_size > 0:
-                if pos.trade_type == "BUY":
-                    price_diff = current_price - pos.entry_price
+        current_price = pos.entry_price
+        profit = 0
+        margin = 0
+
+        if mt5_connected:
+            tick = mt5.symbol_info_tick(pos.symbol)
+            symbol_info = mt5.symbol_info(pos.symbol)
+
+            if tick:
+                current_price = tick.bid if pos.trade_type == "BUY" else tick.ask
+
+                # 손익 계산
+                if symbol_info and symbol_info.trade_tick_size > 0:
+                    if pos.trade_type == "BUY":
+                        price_diff = current_price - pos.entry_price
+                    else:
+                        price_diff = pos.entry_price - current_price
+                    ticks = price_diff / symbol_info.trade_tick_size
+                    profit = ticks * symbol_info.trade_tick_value * pos.volume
                 else:
-                    price_diff = pos.entry_price - current_price
-                ticks = price_diff / symbol_info.trade_tick_size
-                profit = ticks * symbol_info.trade_tick_value * pos.volume
-            else:
-                if pos.trade_type == "BUY":
-                    profit = (current_price - pos.entry_price) * pos.volume
-                else:
-                    profit = (pos.entry_price - current_price) * pos.volume
-            
-            profit = round(profit, 2)
-        else:
-            current_price = pos.entry_price
-            profit = 0
-        
-        # MT5 함수로 정확한 마진 계산 (종목별 레버리지 자동 적용)
-        order_type = mt5.ORDER_TYPE_BUY if pos.trade_type == "BUY" else mt5.ORDER_TYPE_SELL
-        margin = mt5.order_calc_margin(order_type, pos.symbol, pos.volume, current_price)
-        if margin is None:
-            margin = 0
-        
+                    if pos.trade_type == "BUY":
+                        profit = (current_price - pos.entry_price) * pos.volume
+                    else:
+                        profit = (pos.entry_price - current_price) * pos.volume
+
+                profit = round(profit, 2)
+
+            # MT5 함수로 정확한 마진 계산 (종목별 레버리지 자동 적용)
+            order_type = mt5.ORDER_TYPE_BUY if pos.trade_type == "BUY" else mt5.ORDER_TYPE_SELL
+            margin = mt5.order_calc_margin(order_type, pos.symbol, pos.volume, current_price)
+            if margin is None:
+                margin = 0
+
         margin = round(margin, 2)
         total_margin += margin
         
@@ -518,42 +521,45 @@ async def close_demo_position(
     
     if not position:
         return JSONResponse({"success": False, "message": "열린 포지션 없음"})
-    
+
     # 현재가 조회
-    if not mt5.initialize():
-        return JSONResponse({"success": False, "message": "MT5 연결 실패"})
-    
-    tick = mt5.symbol_info_tick(position.symbol)
-    if not tick:
-        return JSONResponse({"success": False, "message": "가격 정보 없음"})
-    
-    exit_price = tick.bid if position.trade_type == "BUY" else tick.ask
     entry_price = position.entry_price
-    
-    # MT5에서 심볼 정보 가져와서 정확한 손익 계산
-    symbol_info = mt5.symbol_info(position.symbol)
-    if symbol_info:
-        contract_size = symbol_info.trade_contract_size
-        tick_size = symbol_info.trade_tick_size
-        tick_value = symbol_info.trade_tick_value
-        
-        if position.trade_type == "BUY":
-            price_diff = exit_price - entry_price
-        else:
-            price_diff = entry_price - exit_price
-        
-        # 정확한 손익 계산
-        if tick_size > 0:
-            ticks = price_diff / tick_size
-            profit = ticks * tick_value * position.volume
-        else:
-            profit = price_diff * contract_size * position.volume
+    exit_price = entry_price  # 기본값
+    profit = 0
+
+    if MT5_AVAILABLE and mt5.initialize():
+        tick = mt5.symbol_info_tick(position.symbol)
+        if tick:
+            exit_price = tick.bid if position.trade_type == "BUY" else tick.ask
+
+            # MT5에서 심볼 정보 가져와서 정확한 손익 계산
+            symbol_info = mt5.symbol_info(position.symbol)
+            if symbol_info:
+                contract_size = symbol_info.trade_contract_size
+                tick_size = symbol_info.trade_tick_size
+                tick_value = symbol_info.trade_tick_value
+
+                if position.trade_type == "BUY":
+                    price_diff = exit_price - entry_price
+                else:
+                    price_diff = entry_price - exit_price
+
+                # 정확한 손익 계산
+                if tick_size > 0:
+                    ticks = price_diff / tick_size
+                    profit = ticks * tick_value * position.volume
+                else:
+                    profit = price_diff * contract_size * position.volume
+            else:
+                # 심볼 정보 없으면 간단 계산
+                if position.trade_type == "BUY":
+                    profit = (exit_price - entry_price) * position.volume
+                else:
+                    profit = (entry_price - exit_price) * position.volume
     else:
-        # 심볼 정보 없으면 간단 계산
-        if position.trade_type == "BUY":
-            profit = (exit_price - entry_price) * position.volume
-        else:
-            profit = (entry_price - exit_price) * position.volume
+        # MT5 없음 - 진입가로 청산 (손익 0)
+        exit_price = entry_price
+        profit = 0
     
     profit = round(profit, 2)
     
@@ -761,16 +767,18 @@ async def place_demo_martin_order(
             "success": False,
             "message": "이미 열린 포지션이 있습니다. 먼저 청산해주세요."
         })
-    
+
     # 현재가 조회
-    if not mt5.initialize():
-        return JSONResponse({"success": False, "message": "MT5 연결 실패"})
-    
-    tick = mt5.symbol_info_tick(symbol)
-    if not tick:
-        return JSONResponse({"success": False, "message": "가격 정보 없음"})
-    
-    entry_price = tick.ask if order_type.upper() == "BUY" else tick.bid
+    entry_price = 0.0
+    if MT5_AVAILABLE and mt5.initialize():
+        tick = mt5.symbol_info_tick(symbol)
+        if tick:
+            entry_price = tick.ask if order_type.upper() == "BUY" else tick.bid
+        else:
+            entry_price = 50000.0 if "BTC" in symbol else 1.0
+    else:
+        # MT5 없음 - 더미 가격 사용
+        entry_price = 50000.0 if "BTC" in symbol else 1.0
     
     # 마틴 랏 계산
     step = current_user.demo_martin_step or 1
@@ -944,36 +952,36 @@ async def close_all_demo_positions(
     
     if not positions:
         return JSONResponse({"success": False, "message": "열린 포지션 없음"})
-    
+
     total_profit = 0
     closed_count = 0
-    
-    if not mt5.initialize():
-        return JSONResponse({"success": False, "message": "MT5 연결 실패"})
-    
+    mt5_connected = MT5_AVAILABLE and mt5.initialize() if MT5_AVAILABLE else False
+
     for position in positions:
-        tick = mt5.symbol_info_tick(position.symbol)
-        if not tick:
-            continue
-        
-        exit_price = tick.bid if position.trade_type == "BUY" else tick.ask
         entry_price = position.entry_price
-        
-        # 손익 계산
-        symbol_info = mt5.symbol_info(position.symbol)
-        if symbol_info and symbol_info.trade_tick_size > 0:
-            if position.trade_type == "BUY":
-                price_diff = exit_price - entry_price
-            else:
-                price_diff = entry_price - exit_price
-            ticks = price_diff / symbol_info.trade_tick_size
-            profit = ticks * symbol_info.trade_tick_value * position.volume
-        else:
-            if position.trade_type == "BUY":
-                profit = (exit_price - entry_price) * position.volume
-            else:
-                profit = (entry_price - exit_price) * position.volume
-        
+        exit_price = entry_price
+        profit = 0
+
+        if mt5_connected:
+            tick = mt5.symbol_info_tick(position.symbol)
+            if tick:
+                exit_price = tick.bid if position.trade_type == "BUY" else tick.ask
+
+                # 손익 계산
+                symbol_info = mt5.symbol_info(position.symbol)
+                if symbol_info and symbol_info.trade_tick_size > 0:
+                    if position.trade_type == "BUY":
+                        price_diff = exit_price - entry_price
+                    else:
+                        price_diff = entry_price - exit_price
+                    ticks = price_diff / symbol_info.trade_tick_size
+                    profit = ticks * symbol_info.trade_tick_value * position.volume
+                else:
+                    if position.trade_type == "BUY":
+                        profit = (exit_price - entry_price) * position.volume
+                    else:
+                        profit = (entry_price - exit_price) * position.volume
+
         profit = round(profit, 2)
         total_profit += profit
         
@@ -1028,39 +1036,39 @@ async def close_demo_by_type(
     
     if not positions:
         return JSONResponse({"success": False, "message": f"{type} 포지션 없음"})
-    
+
     total_profit = 0
     closed_count = 0
-    
-    if not mt5.initialize():
-        return JSONResponse({"success": False, "message": "MT5 연결 실패"})
-    
+    mt5_connected = MT5_AVAILABLE and mt5.initialize() if MT5_AVAILABLE else False
+
     for position in positions:
-        tick = mt5.symbol_info_tick(position.symbol)
-        if not tick:
-            continue
-        
-        exit_price = tick.bid if position.trade_type == "BUY" else tick.ask
         entry_price = position.entry_price
-        
-        # 손익 계산
-        symbol_info = mt5.symbol_info(position.symbol)
-        if symbol_info and symbol_info.trade_tick_size > 0:
-            if position.trade_type == "BUY":
-                price_diff = exit_price - entry_price
-            else:
-                price_diff = entry_price - exit_price
-            ticks = price_diff / symbol_info.trade_tick_size
-            profit = ticks * symbol_info.trade_tick_value * position.volume
-        else:
-            if position.trade_type == "BUY":
-                profit = (exit_price - entry_price) * position.volume
-            else:
-                profit = (entry_price - exit_price) * position.volume
-        
+        exit_price = entry_price
+        profit = 0
+
+        if mt5_connected:
+            tick = mt5.symbol_info_tick(position.symbol)
+            if tick:
+                exit_price = tick.bid if position.trade_type == "BUY" else tick.ask
+
+                # 손익 계산
+                symbol_info = mt5.symbol_info(position.symbol)
+                if symbol_info and symbol_info.trade_tick_size > 0:
+                    if position.trade_type == "BUY":
+                        price_diff = exit_price - entry_price
+                    else:
+                        price_diff = entry_price - exit_price
+                    ticks = price_diff / symbol_info.trade_tick_size
+                    profit = ticks * symbol_info.trade_tick_value * position.volume
+                else:
+                    if position.trade_type == "BUY":
+                        profit = (exit_price - entry_price) * position.volume
+                    else:
+                        profit = (entry_price - exit_price) * position.volume
+
         profit = round(profit, 2)
         total_profit += profit
-        
+
         # 거래 내역 저장
         trade = DemoTrade(
             user_id=current_user.id,
@@ -1111,46 +1119,47 @@ async def close_demo_by_profit(
     
     if not positions:
         return JSONResponse({"success": False, "message": "열린 포지션 없음"})
-    
-    if not mt5.initialize():
-        return JSONResponse({"success": False, "message": "MT5 연결 실패"})
-    
+
+    mt5_connected = MT5_AVAILABLE and mt5.initialize() if MT5_AVAILABLE else False
+
     total_profit = 0
     closed_count = 0
-    
+
     for position in positions:
-        tick = mt5.symbol_info_tick(position.symbol)
-        if not tick:
-            continue
-        
-        exit_price = tick.bid if position.trade_type == "BUY" else tick.ask
         entry_price = position.entry_price
-        
-        # 손익 계산
-        symbol_info = mt5.symbol_info(position.symbol)
-        if symbol_info and symbol_info.trade_tick_size > 0:
-            if position.trade_type == "BUY":
-                price_diff = exit_price - entry_price
-            else:
-                price_diff = entry_price - exit_price
-            ticks = price_diff / symbol_info.trade_tick_size
-            profit = ticks * symbol_info.trade_tick_value * position.volume
-        else:
-            if position.trade_type == "BUY":
-                profit = (exit_price - entry_price) * position.volume
-            else:
-                profit = (entry_price - exit_price) * position.volume
-        
+        exit_price = entry_price
+        profit = 0
+
+        if mt5_connected:
+            tick = mt5.symbol_info_tick(position.symbol)
+            if tick:
+                exit_price = tick.bid if position.trade_type == "BUY" else tick.ask
+
+                # 손익 계산
+                symbol_info = mt5.symbol_info(position.symbol)
+                if symbol_info and symbol_info.trade_tick_size > 0:
+                    if position.trade_type == "BUY":
+                        price_diff = exit_price - entry_price
+                    else:
+                        price_diff = entry_price - exit_price
+                    ticks = price_diff / symbol_info.trade_tick_size
+                    profit = ticks * symbol_info.trade_tick_value * position.volume
+                else:
+                    if position.trade_type == "BUY":
+                        profit = (exit_price - entry_price) * position.volume
+                    else:
+                        profit = (entry_price - exit_price) * position.volume
+
         profit = round(profit, 2)
-        
+
         # 조건 체크: positive면 수익만, negative면 손실만
         if profit_type == "positive" and profit <= 0:
             continue
         if profit_type == "negative" and profit >= 0:
             continue
-        
+
         total_profit += profit
-        
+
         # 거래 내역 저장
         trade = DemoTrade(
             user_id=current_user.id,
@@ -1211,59 +1220,68 @@ async def demo_websocket_endpoint(websocket: WebSocket):
 
     while True:
         try:
-            # MT5 초기화 (가격 정보 가져오기 위해)
-            if not mt5.initialize():
-                await asyncio.sleep(1)
-                continue
+            # MT5 사용 가능 여부 체크
+            mt5_connected = False
+            if MT5_AVAILABLE and mt5 is not None:
+                try:
+                    mt5_connected = mt5.initialize()
+                except:
+                    mt5_connected = False
 
-            # 인디케이터 분석 (실제 계산 로직 사용) - 매번 전송!
-            try:
-                indicators = IndicatorService.calculate_all_indicators("BTCUSD")
-                buy_count = indicators["buy"]
-                sell_count = indicators["sell"]
-                neutral_count = indicators["neutral"]
-                base_score = indicators["score"]
+            # 인디케이터 분석
+            if mt5_connected:
+                try:
+                    indicators = IndicatorService.calculate_all_indicators("BTCUSD")
+                    buy_count = indicators["buy"]
+                    sell_count = indicators["sell"]
+                    neutral_count = indicators["neutral"]
+                    base_score = indicators["score"]
 
-                # 실시간 변동을 위한 랜덤 조정 (±3% 범위로 축소)
-                variation = random.randint(-3, 3)
-                buy_count = max(5, min(80, buy_count + variation))
-                sell_count = max(5, min(80, sell_count - variation // 2))
-                neutral_count = 100 - buy_count - sell_count
+                    # 실시간 변동을 위한 랜덤 조정 (±3% 범위로 축소)
+                    variation = random.randint(-3, 3)
+                    buy_count = max(5, min(80, buy_count + variation))
+                    sell_count = max(5, min(80, sell_count - variation // 2))
+                    neutral_count = 100 - buy_count - sell_count
 
-                # 디버깅용 로그
-                print(f"[DEMO WS] 📊 Indicators - Sell: {sell_count}, Neutral: {neutral_count}, Buy: {buy_count}, Score: {base_score:.1f}")
-            except Exception as e:
-                print(f"[DEMO WS] ⚠️ Indicator calculation error: {e}")
-                # 오류 발생 시 랜덤값 사용 (합이 100)
-                sell_count = random.randint(20, 40)
-                buy_count = random.randint(20, 40)
+                    print(f"[DEMO WS] 📊 Indicators - Sell: {sell_count}, Neutral: {neutral_count}, Buy: {buy_count}, Score: {base_score:.1f}")
+                except Exception as e:
+                    print(f"[DEMO WS] ⚠️ Indicator calculation error: {e}")
+                    sell_count = random.randint(20, 40)
+                    buy_count = random.randint(20, 40)
+                    neutral_count = 100 - sell_count - buy_count
+                    base_score = 50.0
+            else:
+                # MT5 없음 - 랜덤 인디케이터 값 사용
+                sell_count = random.randint(25, 40)
+                buy_count = random.randint(25, 40)
                 neutral_count = 100 - sell_count - buy_count
-                base_score = 50.0
+                base_score = 50.0 + random.randint(-10, 10)
 
             # 모든 심볼 가격 정보
             all_prices = {}
             all_candles = {}
 
-            for symbol in symbols_list:
-                tick = mt5.symbol_info_tick(symbol)
-                if tick:
-                    all_prices[symbol] = {
-                        "bid": tick.bid,
-                        "ask": tick.ask,
-                        "last": tick.last
-                    }
-
-                    # 최신 캔들
-                    rates = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_H1, 0, 1)
-                    if rates is not None and len(rates) > 0:
-                        latest = rates[-1]
-                        all_candles[symbol] = {
-                            "time": int(latest["time"]),
-                            "open": float(latest["open"]),
-                            "high": float(latest["high"]),
-                            "low": float(latest["low"]),
-                            "close": float(latest["close"])
+            if mt5_connected:
+                for symbol in symbols_list:
+                    tick = mt5.symbol_info_tick(symbol)
+                    if tick:
+                        all_prices[symbol] = {
+                            "bid": tick.bid,
+                            "ask": tick.ask,
+                            "last": tick.last
                         }
+
+                        # 최신 캔들
+                        rates = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_H1, 0, 1)
+                        if rates is not None and len(rates) > 0:
+                            latest = rates[-1]
+                            all_candles[symbol] = {
+                                "time": int(latest["time"]),
+                                "open": float(latest["open"]),
+                                "high": float(latest["high"]),
+                                "low": float(latest["low"]),
+                                "close": float(latest["close"])
+                            }
 
             # Demo 계정 정보 (DB에서 실제 데이터 가져오기)
             demo_balance = 10000.0
@@ -1295,46 +1313,58 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                             # 포지션들의 실시간 profit 계산
                             total_profit = 0.0
                             for pos in positions:
-                                if all_prices.get(pos.symbol):
-                                    current_price = all_prices[pos.symbol]
-                                    entry = pos.entry_price
-                                    volume = pos.volume
+                                current_price = all_prices.get(pos.symbol)
+                                entry = pos.entry_price
+                                volume = pos.volume
+                                profit = 0.0
 
-                                    # 정확한 손익 계산
-                                    symbol_info = mt5.symbol_info(pos.symbol)
-                                    if symbol_info and symbol_info.trade_tick_size > 0:
-                                        if pos.trade_type == "BUY":
-                                            price_diff = current_price['bid'] - entry
+                                if current_price:
+                                    # MT5 연결 시 정확한 손익 계산
+                                    if mt5_connected:
+                                        symbol_info = mt5.symbol_info(pos.symbol)
+                                        if symbol_info and symbol_info.trade_tick_size > 0:
+                                            if pos.trade_type == "BUY":
+                                                price_diff = current_price['bid'] - entry
+                                            else:
+                                                price_diff = entry - current_price['ask']
+                                            ticks = price_diff / symbol_info.trade_tick_size
+                                            profit = ticks * symbol_info.trade_tick_value * volume
                                         else:
-                                            price_diff = entry - current_price['ask']
-                                        ticks = price_diff / symbol_info.trade_tick_size
-                                        profit = ticks * symbol_info.trade_tick_value * volume
+                                            if pos.trade_type == "BUY":
+                                                profit = (current_price['bid'] - entry) * volume
+                                            else:
+                                                profit = (entry - current_price['ask']) * volume
                                     else:
+                                        # MT5 없음 - 단순 계산
                                         if pos.trade_type == "BUY":
                                             profit = (current_price['bid'] - entry) * volume
                                         else:
                                             profit = (entry - current_price['ask']) * volume
 
-                                    profit = round(profit, 2)
-                                    total_profit += profit
+                                profit = round(profit, 2)
+                                total_profit += profit
 
-                                    # 포지션 데이터 추가
-                                    pos_data = {
-                                        "id": pos.id,
-                                        "ticket": pos.id,
-                                        "type": pos.trade_type,
-                                        "symbol": pos.symbol,
-                                        "volume": pos.volume,
-                                        "entry": entry,
-                                        "current": current_price['bid'] if pos.trade_type == "BUY" else current_price['ask'],
-                                        "profit": profit,
-                                        "target": pos.target_profit
-                                    }
-                                    positions_data.append(pos_data)
+                                # 포지션 데이터 추가
+                                current_px = entry  # 기본값
+                                if current_price:
+                                    current_px = current_price['bid'] if pos.trade_type == "BUY" else current_price['ask']
 
-                                    # 첫 번째 포지션을 position으로 설정 (하위 호환성)
-                                    if demo_position is None:
-                                        demo_position = pos_data
+                                pos_data = {
+                                    "id": pos.id,
+                                    "ticket": pos.id,
+                                    "type": pos.trade_type,
+                                    "symbol": pos.symbol,
+                                    "volume": pos.volume,
+                                    "entry": entry,
+                                    "current": current_px,
+                                    "profit": profit,
+                                    "target": pos.target_profit
+                                }
+                                positions_data.append(pos_data)
+
+                                # 첫 번째 포지션을 position으로 설정 (하위 호환성)
+                                if demo_position is None:
+                                    demo_position = pos_data
 
                             # Equity 업데이트
                             demo_equity = demo_balance + total_profit
