@@ -6,7 +6,12 @@
 
 from typing import Dict, List, Optional
 from dataclasses import dataclass, field
-import MetaTrader5 as mt5
+try:
+    import MetaTrader5 as mt5
+    MT5_AVAILABLE = True
+except ImportError:
+    mt5 = None
+    MT5_AVAILABLE = False
 
 
 @dataclass

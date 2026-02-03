@@ -5,7 +5,12 @@ RSI, MACD, Bollinger Band, Stochastic 등 10개 인디케이터
 """
 
 from typing import Dict, List, Optional
-import MetaTrader5 as mt5
+try:
+    import MetaTrader5 as mt5
+    MT5_AVAILABLE = True
+except ImportError:
+    mt5 = None
+    MT5_AVAILABLE = False
 
 
 class IndicatorService:

@@ -1,7 +1,12 @@
 # mt5_bridge.py - Windows에서 실행
 # MT5 시세 데이터를 Linux 서버로 전송
 
-import MetaTrader5 as mt5
+try:
+    import MetaTrader5 as mt5
+    MT5_AVAILABLE = True
+except ImportError:
+    mt5 = None
+    MT5_AVAILABLE = False
 import requests
 import time
 from datetime import datetime

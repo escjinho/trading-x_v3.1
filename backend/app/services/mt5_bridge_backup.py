@@ -3,7 +3,12 @@ MT5 Bridge Service
 Windows MT5에서 실시간 시세를 수집하여 Linux 서버로 전송
 """
 
-import MetaTrader5 as mt5
+try:
+    import MetaTrader5 as mt5
+    MT5_AVAILABLE = True
+except ImportError:
+    mt5 = None
+    MT5_AVAILABLE = False
 import httpx
 import asyncio
 import time
