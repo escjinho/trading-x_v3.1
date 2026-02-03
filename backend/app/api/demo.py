@@ -85,6 +85,7 @@ from ..models.user import User
 from ..models.demo_trade import DemoTrade, DemoPosition
 from ..utils.security import decode_token
 from ..services.indicator_service import IndicatorService
+from .mt5 import get_bridge_prices, get_bridge_candles, bridge_cache
 
 router = APIRouter(prefix="/demo", tags=["Demo"])
 security = HTTPBearer()
@@ -1344,22 +1345,25 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                                 "close": float(latest["close"])
                             }
             else:
-                # MT5 없음 - 외부 API에서 가격 가져오기
-                all_prices = await fetch_external_prices()
+                # MT5 없음 - 브릿지 캐시에서 가격 가져오기
+                all_prices = get_bridge_prices()
 
-                # 현재 시간 기준 캔들 데이터 생성
-                current_time = int(time.time()) // 3600 * 3600  # 1시간 단위로 정렬
-                for symbol, price_data in all_prices.items():
-                    price = price_data["last"]
-                    # 약간의 변동폭 추가
-                    variation = price * 0.001  # 0.1% 변동
-                    all_candles[symbol] = {
-                        "time": current_time,
-                        "open": price - variation,
-                        "high": price + variation,
-                        "low": price - variation * 2,
-                        "close": price
-                    }
+                # 브릿지 캐시에서 캔들 데이터 가져오기
+                for symbol in symbols_list:
+                    cached_candles = get_bridge_candles(symbol)
+                    if cached_candles and len(cached_candles) > 0:
+                        latest = cached_candles[-1]
+                        all_candles[symbol] = {
+                            "time": latest.get("time", int(time.time())),
+                            "open": latest.get("open", 0),
+                            "high": latest.get("high", 0),
+                            "low": latest.get("low", 0),
+                            "close": latest.get("close", 0)
+                        }
+
+                # 캐시가 비어있으면 로그 출력
+                if not all_prices:
+                    print("[DEMO WS] ⚠️ Bridge cache empty - waiting for MT5 bridge data")
 
             # Demo 계정 정보 (DB에서 실제 데이터 가져오기)
             demo_balance = 10000.0

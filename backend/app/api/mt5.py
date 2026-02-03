@@ -78,6 +78,22 @@ from ..services.martin_service import martin_service
 # ============================================================
 from ..services.mt5_service import MT5_DISABLED
 
+# ========== MT5 브릿지 데이터 캐시 (전역) ==========
+# Windows MT5 브릿지에서 전송된 데이터를 저장
+bridge_cache = {
+    "prices": {},      # {"BTCUSD": {"bid": 97000, "ask": 97010, "last": 97005, "time": 1234567890}}
+    "candles": {},     # {"BTCUSD": [{"time": ..., "open": ..., ...}, ...]}
+    "last_update": 0   # 마지막 업데이트 시간
+}
+
+def get_bridge_prices():
+    """브릿지 캐시에서 가격 데이터 조회"""
+    return bridge_cache["prices"]
+
+def get_bridge_candles(symbol: str):
+    """브릿지 캐시에서 캔들 데이터 조회"""
+    return bridge_cache["candles"].get(symbol, [])
+
 def mt5_initialize_safe() -> bool:
     """MT5 초기화 래퍼 함수 (비활성화 체크 포함)"""
     if not MT5_AVAILABLE:
@@ -251,15 +267,16 @@ async def get_candles(
                 highs.append(r['high'])
                 lows.append(r['low'])
     else:
-        # MT5 없음 - Binance API에서 가져오기
-        candles = await fetch_binance_candles(symbol, timeframe, count)
-        if candles:
+        # MT5 없음 - 브릿지 캐시에서 가져오기
+        cached_candles = get_bridge_candles(symbol)
+        if cached_candles:
+            candles = cached_candles[-count:] if len(cached_candles) > count else cached_candles
             closes = [c['close'] for c in candles]
             highs = [c['high'] for c in candles]
             lows = [c['low'] for c in candles]
 
     if not candles:
-        return {"candles": [], "indicators": {}}
+        return {"candles": [], "indicators": {}, "source": "no_data"}
 
     # 인디케이터 계산
     indicators = IndicatorService.calculate_chart_indicators(candles, closes, highs, lows)
@@ -299,34 +316,81 @@ async def get_indicators(symbol: str = "BTCUSD"):
 @router.post("/bridge/{symbol}")
 async def receive_bridge_data(symbol: str, data: dict):
     """
-    Windows MT5 브릿지에서 전송된 데이터 수신
+    Windows MT5 브릿지에서 전송된 시세 데이터 수신
 
     데이터 형식:
     {
-        "symbol": "BTCUSD",
-        "candles": [...],
-        "tick": {...},
-        "timestamp": "2024-01-01T00:00:00"
+        "bid": 97000.0,
+        "ask": 97010.0,
+        "last": 97005.0,
+        "volume": 100,
+        "time": 1234567890
     }
     """
+    import time as time_module
     try:
-        # 받은 데이터를 로그에 기록
-        print(f"[Bridge] {symbol} 데이터 수신: {data.get('timestamp')}")
-
-        # 여기서 받은 데이터를 저장하거나 처리할 수 있습니다
-        # 예: 데이터베이스 저장, 캐시 업데이트 등
+        # 가격 데이터 캐시에 저장
+        bridge_cache["prices"][symbol] = {
+            "bid": data.get("bid", 0),
+            "ask": data.get("ask", 0),
+            "last": data.get("last", 0),
+            "time": data.get("time", int(time_module.time()))
+        }
+        bridge_cache["last_update"] = time_module.time()
 
         return {
             "status": "success",
-            "message": f"{symbol} 데이터 수신 완료",
-            "timestamp": data.get("timestamp")
+            "symbol": symbol,
+            "bid": data.get("bid"),
+            "ask": data.get("ask")
         }
     except Exception as e:
         print(f"[Bridge] 데이터 수신 오류: {e}")
+        return {"status": "error", "message": str(e)}
+
+
+@router.post("/bridge/{symbol}/candles")
+async def receive_bridge_candles(symbol: str, candles: list):
+    """
+    Windows MT5 브릿지에서 전송된 캔들 데이터 수신
+
+    데이터 형식: [{"time": ..., "open": ..., "high": ..., "low": ..., "close": ..., "volume": ...}, ...]
+    """
+    import time as time_module
+    try:
+        # 캔들 데이터 캐시에 저장
+        bridge_cache["candles"][symbol] = candles
+        bridge_cache["last_update"] = time_module.time()
+
+        print(f"[Bridge] {symbol} 캔들 {len(candles)}개 수신")
+
         return {
-            "status": "error",
-            "message": str(e)
+            "status": "success",
+            "symbol": symbol,
+            "total_candles": len(candles)
         }
+    except Exception as e:
+        print(f"[Bridge] 캔들 수신 오류: {e}")
+        return {"status": "error", "message": str(e)}
+
+
+@router.get("/bridge/status")
+async def get_bridge_status():
+    """브릿지 캐시 상태 조회"""
+    import time as time_module
+    symbols_with_prices = list(bridge_cache["prices"].keys())
+    symbols_with_candles = list(bridge_cache["candles"].keys())
+    last_update = bridge_cache["last_update"]
+    age = time_module.time() - last_update if last_update > 0 else -1
+
+    return {
+        "prices_count": len(symbols_with_prices),
+        "candles_count": len(symbols_with_candles),
+        "symbols_prices": symbols_with_prices,
+        "symbols_candles": symbols_with_candles,
+        "last_update": last_update,
+        "age_seconds": round(age, 1)
+    }
 
 
 # ========== 주문 실행 ==========
