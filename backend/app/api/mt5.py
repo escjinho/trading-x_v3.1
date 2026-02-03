@@ -390,6 +390,12 @@ async def receive_bridge_candles_default(symbol: str, candles: List[dict] = Body
     return await receive_bridge_candles_tf(symbol, "M5", candles)
 
 
+@router.get("/bridge/prices")
+async def get_bridge_prices_api():
+    """브릿지 캐시에서 실시간 가격 데이터 반환"""
+    return bridge_cache.get("prices", {})
+
+
 @router.get("/bridge/status")
 async def get_bridge_status():
     """브릿지 캐시 상태 조회"""
