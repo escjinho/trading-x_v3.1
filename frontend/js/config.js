@@ -23,7 +23,7 @@ const getWsUrl = (path) => {
     }
 
     // 실제 서버 환경
-    return `wss://${hostname}/api${path}`;
+    return `wss://${hostname}${path}`;
 };
 
 const API_URL = getApiUrl();
