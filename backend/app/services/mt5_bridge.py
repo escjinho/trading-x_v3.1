@@ -136,7 +136,7 @@ def main():
     # 초기 캔들 히스토리 전송
     print("\n캔들 히스토리 전송 중...")
     for symbol in SYMBOLS:
-        send_candles(symbol, "M5", 500)
+        send_candles(symbol, "M5", 1000)
 
     print(f"\n실시간 시세 전송 시작 (주기: {INTERVAL}초)")
     print("-" * 50)
