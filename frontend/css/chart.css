@@ -2533,3 +2533,136 @@
     color: #000000;
     font-weight: 700;
 }
+
+/* ========== 차트 타입 모달 ========== */
+.ct-modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    z-index: 99999;
+    justify-content: center;
+    align-items: center;
+}
+
+.ct-modal {
+    background: #121212;
+    border-radius: 20px;
+    min-width: 320px;
+    max-width: 360px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    overflow: hidden;
+}
+
+.ct-modal-handle {
+    width: 40px;
+    height: 4px;
+    background: #3a3a3a;
+    border-radius: 2px;
+    margin: 12px auto 0;
+}
+
+.ct-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px 12px;
+}
+
+.ct-modal-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #ffffff;
+    letter-spacing: -0.3px;
+}
+
+.ct-modal-close {
+    width: 32px;
+    height: 32px;
+    background: #2a2a2a;
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.ct-modal-close:hover {
+    background: #3a3a3a;
+}
+
+.ct-modal-close .material-icons-round {
+    font-size: 18px;
+    color: #888888;
+}
+
+.ct-modal-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    padding: 8px 16px 20px;
+}
+
+.ct-modal-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 14px;
+    padding: 16px 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.ct-modal-item:hover {
+    background: #252525;
+    transform: scale(0.98);
+}
+
+.ct-modal-item.active {
+    background: rgba(0, 212, 255, 0.1);
+    border-color: #00d4ff;
+}
+
+.ct-icon-box {
+    width: 48px;
+    height: 48px;
+    background: #0d3d4d;
+    border: 1px solid #00d4ff;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ct-icon-box .material-icons-round,
+.ct-icon-box svg {
+    font-size: 24px;
+    color: #00d4ff;
+}
+
+.ct-item-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.ct-item-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.ct-item-sub {
+    font-size: 11px;
+    color: #666666;
+}

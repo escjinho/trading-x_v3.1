@@ -24,7 +24,7 @@ const ChartPanel = {
      * 현재 캔들의 close 가격을 실시간으로 업데이트하고, high/low도 조정
      */
     safeUpdateCandle(candleData) {
-        if (!candleSeries || !candleData) {
+        if (!candleData) {
             return false;
         }
 
@@ -41,7 +41,12 @@ const ChartPanel = {
                     close: newClose
                 };
 
-                candleSeries.update(updatedCandle);
+                // ChartTypeManager를 통해 업데이트
+                if (typeof ChartTypeManager !== 'undefined') {
+                    ChartTypeManager.updateLastCandle(updatedCandle);
+                } else if (candleSeries) {
+                    candleSeries.update(updatedCandle);
+                }
 
                 // 마지막 캔들 데이터 갱신
                 this.lastCandleData = updatedCandle;
@@ -111,20 +116,69 @@ const ChartPanel = {
             },
         });
 
-        // 캔들스틱 시리즈 (제로마켓 색상)
-        candleSeries = chart.addCandlestickSeries({
-            upColor: '#00b894',
-            downColor: '#dc3545',
-            borderUpColor: '#00b894',
-            borderDownColor: '#dc3545',
-            wickUpColor: '#00b894',
-            wickDownColor: '#dc3545',
-            priceFormat: {
+        // ChartTypeManager 초기화 및 시리즈 생성
+        if (typeof ChartTypeManager !== 'undefined') {
+            ChartTypeManager.init(chart);
+            // 차트 스타일 오버라이드 (제로마켓 색상)
+            ChartTypeManager.styles.candlestick = {
+                upColor: '#00b894',
+                downColor: '#dc3545',
+                borderUpColor: '#00b894',
+                borderDownColor: '#dc3545',
+                wickUpColor: '#00b894',
+                wickDownColor: '#dc3545',
+                priceFormat: {
+                    type: 'price',
+                    precision: decimals,
+                    minMove: decimals === 5 ? 0.00001 : decimals === 3 ? 0.001 : 0.01,
+                }
+            };
+            ChartTypeManager.styles.hollowCandle = {
+                upColor: 'transparent',
+                downColor: 'transparent',
+                borderUpColor: '#00b894',
+                borderDownColor: '#dc3545',
+                wickUpColor: '#00b894',
+                wickDownColor: '#dc3545',
+                priceFormat: {
+                    type: 'price',
+                    precision: decimals,
+                    minMove: decimals === 5 ? 0.00001 : decimals === 3 ? 0.001 : 0.01,
+                }
+            };
+            ChartTypeManager.styles.line.priceFormat = {
                 type: 'price',
                 precision: decimals,
                 minMove: decimals === 5 ? 0.00001 : decimals === 3 ? 0.001 : 0.01,
-            },
-        });
+            };
+            ChartTypeManager.styles.bar = {
+                upColor: '#00b894',
+                downColor: '#dc3545',
+                openVisible: true,
+                thinBars: false,
+                priceFormat: {
+                    type: 'price',
+                    precision: decimals,
+                    minMove: decimals === 5 ? 0.00001 : decimals === 3 ? 0.001 : 0.01,
+                }
+            };
+            candleSeries = ChartTypeManager.createSeries();
+        } else {
+            // ChartTypeManager 없으면 기본 캔들스틱
+            candleSeries = chart.addCandlestickSeries({
+                upColor: '#00b894',
+                downColor: '#dc3545',
+                borderUpColor: '#00b894',
+                borderDownColor: '#dc3545',
+                wickUpColor: '#00b894',
+                wickDownColor: '#dc3545',
+                priceFormat: {
+                    type: 'price',
+                    precision: decimals,
+                    minMove: decimals === 5 ? 0.00001 : decimals === 3 ? 0.001 : 0.01,
+                },
+            });
+        }
 
         // 볼린저 밴드 및 LWMA 지표
         bbUpperSeries = chart.addLineSeries({
@@ -174,9 +228,14 @@ const ChartPanel = {
         try {
             const data = await apiCall(`/mt5/candles/${chartSymbol}?timeframe=${currentTimeframe}&count=1000`);
 
-            if (candleSeries && data && data.candles && data.candles.length > 0) {
-                // 캔들 데이터 설정
-                candleSeries.setData(data.candles);
+            if (data && data.candles && data.candles.length > 0) {
+                // ChartTypeManager를 통해 데이터 설정
+                if (typeof ChartTypeManager !== 'undefined') {
+                    ChartTypeManager.setData(data.candles);
+                    candleSeries = ChartTypeManager.series;
+                } else if (candleSeries) {
+                    candleSeries.setData(data.candles);
+                }
 
                 // 마지막 캔들 데이터 저장 (실시간 업데이트용)
                 const lastCandle = data.candles[data.candles.length - 1];
@@ -383,6 +442,43 @@ setIndicators(settings) {
         this.smaSeries.applyOptions({ visible: settings.sma });
     }
 },
+
+/**
+     * 차트 타입 변경
+     */
+    changeChartType(newType) {
+        if (typeof ChartTypeManager !== 'undefined') {
+            const changed = ChartTypeManager.changeType(newType);
+            if (changed) {
+                candleSeries = ChartTypeManager.series;
+                console.log('[ChartPanel] Chart type changed to:', newType);
+
+                // 차트 타입 버튼 UI 업데이트
+                this.updateChartTypeUI(newType);
+            }
+            return changed;
+        }
+        return false;
+    },
+
+    /**
+     * 차트 타입 UI 업데이트
+     */
+    updateChartTypeUI(activeType) {
+        document.querySelectorAll('.chart-type-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.type === activeType);
+        });
+    },
+
+    /**
+     * 현재 차트 타입 가져오기
+     */
+    getChartType() {
+        if (typeof ChartTypeManager !== 'undefined') {
+            return ChartTypeManager.getType();
+        }
+        return 'candlestick';
+    },
 
 /**
  * 패널 정리

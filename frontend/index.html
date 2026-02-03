@@ -13,8 +13,8 @@
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css?v=30">
-    <link rel="stylesheet" href="css/chart.css?v=30">
+    <link rel="stylesheet" href="css/styles.css?v=31">
+    <link rel="stylesheet" href="css/chart.css?v=31">
 </head>
 <body>
     <div class="app">
@@ -1133,7 +1133,8 @@
                     <button class="zm-close-btn" onclick="closeZmMoreMenu()">✕</button>
                 </div>
                 <div class="zm-more-menu-list">
-                    <button class="zm-more-menu-item" onclick="closeZmMoreMenu(); openDrawingTools();">
+                    <!-- 추세선 메뉴 (임시 숨김) -->
+                    <button class="zm-more-menu-item" onclick="closeZmMoreMenu(); openDrawingTools();" style="display: none;">
                         <div class="zm-more-icon-box">
                             <span class="material-icons-round">timeline</span>
                         </div>
@@ -1843,11 +1844,11 @@
 </div>
 
     <script src="js/config.js"></script>
-    <script src="js/state.js?v=2"></script>
+    <script src="js/state.js?v=3"></script>
     <script src="js/auth.js"></script>
     <script src="js/api.js"></script>
     <script src="js/utils.js"></script>
-    <script src="js/watchlist.js?v=1.4"></script>
+    <script src="js/watchlist.js?v=1.5"></script>
     <script src="js/navigation.js"></script>
 
     <!-- Chart Panels (모듈화) -->
@@ -1859,7 +1860,10 @@
     <script src="js/indicators/calculator.js"></script>
     <script src="js/indicators/index.js"></script>
 
-    <script src="js/panels/chartPanel.js?v=1.8"></script>
+    <!-- Chart Type System -->
+    <script src="js/chartTypes/index.js"></script>
+
+    <script src="js/panels/chartPanel.js?v=1.9"></script>
     <script src="js/panels/symbolSelectorPanel.js"></script>
     <script src="js/panels/randomWalkPanel.js"></script>
     <script src="js/panels/multiOrderPanelV5.js"></script>
@@ -1933,12 +1937,53 @@
         
         showToast(label + ' 타임프레임 적용', 'success');
     }
-    
+
+    // ========== 차트 타입 변경 ==========
+    function changeChartType(type) {
+        if (typeof ChartPanel !== 'undefined') {
+            const changed = ChartPanel.changeChartType(type);
+            if (changed) {
+                const typeNames = {
+                    candlestick: '캔들',
+                    line: '라인',
+                    hollowCandle: '할로우 캔들',
+                    bar: 'OHLC 바'
+                };
+                showToast(typeNames[type] + ' 차트 적용', 'success');
+            }
+        }
+    }
+
+    // 차트 타입 팝업 열기/닫기
+    function openChartType() {
+        document.getElementById('chartTypeModalOverlay').style.display = 'flex';
+    }
+
+    function closeChartType() {
+        document.getElementById('chartTypeModalOverlay').style.display = 'none';
+    }
+
+    // 차트 타입 선택
+    function selectChartType(type) {
+        changeChartType(type);
+
+        // 버튼 활성 상태 업데이트
+        document.querySelectorAll('.ct-modal-item').forEach(item => {
+            item.classList.remove('active');
+            if (item.dataset.type === type) {
+                item.classList.add('active');
+            }
+        });
+
+        closeChartType();
+    }
+
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') closeTfPopup();
         if (e.key === 'Escape') closeIndPopup();
+        if (e.key === 'Escape') closeChartType();
     });
-    
+
     // ========== 보조지표 모달 ==========
     const MAX_PANEL_INDICATORS = 3;  // 패널 지표 최대 개수
     
@@ -2707,7 +2752,16 @@
     document.addEventListener('DOMContentLoaded', function() {
         // 차트 래퍼 초기 클래스 설정
         updateChartWrapperClass(0);
-        
+
+        // 저장된 차트 타입으로 UI 초기화
+        const savedChartType = localStorage.getItem('chart_type') || 'candlestick';
+        document.querySelectorAll('.ct-modal-item').forEach(item => {
+            if (item.dataset.type === savedChartType) {
+                item.classList.add('active');
+            } else {
+                item.classList.remove('active');
+            }
+        });
     });
     
     // ========== 종목 정보 섹션 ==========
@@ -2931,6 +2985,64 @@
         showToast(name + ' 차트로 변경', 'success');
     }
     </script>
+
+    <!-- 차트 타입 모달 -->
+    <div id="chartTypeModalOverlay" class="ct-modal-overlay" onclick="closeChartType()">
+        <div class="ct-modal" onclick="event.stopPropagation()">
+            <!-- 핸들바 -->
+            <div class="ct-modal-handle"></div>
+            <!-- 헤더 -->
+            <div class="ct-modal-header">
+                <span class="ct-modal-title">차트 종류</span>
+                <button class="ct-modal-close" onclick="closeChartType()">
+                    <span class="material-icons-round">close</span>
+                </button>
+            </div>
+            <!-- 카드 그리드 -->
+            <div class="ct-modal-grid">
+                <button class="ct-modal-item active" data-type="candlestick" onclick="selectChartType('candlestick')">
+                    <div class="ct-icon-box">
+                        <span class="material-icons-round">candlestick_chart</span>
+                    </div>
+                    <div class="ct-item-text">
+                        <span class="ct-item-title">캔들</span>
+                        <span class="ct-item-sub">Candlestick</span>
+                    </div>
+                </button>
+                <button class="ct-modal-item" data-type="hollowCandle" onclick="selectChartType('hollowCandle')">
+                    <div class="ct-icon-box">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="8" y="4" width="8" height="16" rx="1" fill="none"/>
+                            <line x1="12" y1="1" x2="12" y2="4"/>
+                            <line x1="12" y1="20" x2="12" y2="23"/>
+                        </svg>
+                    </div>
+                    <div class="ct-item-text">
+                        <span class="ct-item-title">할로우 캔들</span>
+                        <span class="ct-item-sub">Hollow Candle</span>
+                    </div>
+                </button>
+                <button class="ct-modal-item" data-type="line" onclick="selectChartType('line')">
+                    <div class="ct-icon-box">
+                        <span class="material-icons-round">show_chart</span>
+                    </div>
+                    <div class="ct-item-text">
+                        <span class="ct-item-title">라인</span>
+                        <span class="ct-item-sub">Line Chart</span>
+                    </div>
+                </button>
+                <button class="ct-modal-item" data-type="bar" onclick="selectChartType('bar')">
+                    <div class="ct-icon-box">
+                        <span class="material-icons-round">bar_chart</span>
+                    </div>
+                    <div class="ct-item-text">
+                        <span class="ct-item-title">OHLC 바</span>
+                        <span class="ct-item-sub">Bar Chart</span>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- 타임프레임 모달 (새 디자인) -->
     <div id="tfModalOverlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.75); backdrop-filter:blur(8px); z-index:99999; justify-content:center; align-items:center;" onclick="closeTfPopup()">
