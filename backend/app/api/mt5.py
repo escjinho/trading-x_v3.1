@@ -16,9 +16,57 @@ except ImportError:
     MT5_AVAILABLE = False
 import asyncio
 import json
+import httpx
 from datetime import datetime, timedelta
 
 from ..database import get_db
+
+# ========== 외부 API 캔들 데이터 조회 ==========
+async def fetch_binance_candles(symbol: str, timeframe: str, count: int):
+    """Binance API에서 캔들 데이터 조회"""
+    # 심볼 매핑
+    binance_symbol = None
+    if "BTC" in symbol:
+        binance_symbol = "BTCUSDT"
+    elif "ETH" in symbol:
+        binance_symbol = "ETHUSDT"
+    else:
+        return []
+
+    # 타임프레임 매핑
+    interval_map = {
+        "M1": "1m", "M5": "5m", "M15": "15m", "M30": "30m",
+        "H1": "1h", "H4": "4h", "D1": "1d", "W1": "1w", "MN1": "1M"
+    }
+    interval = interval_map.get(timeframe, "5m")
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(
+                "https://api.binance.com/api/v3/klines",
+                params={
+                    "symbol": binance_symbol,
+                    "interval": interval,
+                    "limit": min(count, 1000)
+                }
+            )
+            if response.status_code == 200:
+                data = response.json()
+                candles = []
+                for item in data:
+                    candles.append({
+                        "time": int(item[0] / 1000),  # ms -> s
+                        "open": float(item[1]),
+                        "high": float(item[2]),
+                        "low": float(item[3]),
+                        "close": float(item[4]),
+                        "volume": int(float(item[5]))
+                    })
+                return candles
+    except Exception as e:
+        print(f"[Binance API] Error: {e}")
+
+    return []
 from ..models.user import User
 from ..utils.security import decode_token
 from ..services.indicator_service import IndicatorService
@@ -166,50 +214,56 @@ async def get_candles(
     count: int = 1000
 ):
     """캔들 데이터 + 인디케이터 조회"""
-    if not mt5_initialize_safe():
-        return {"candles": [], "indicators": {}}
-    
-    tf_map = {
-        "M1": mt5.TIMEFRAME_M1, "M5": mt5.TIMEFRAME_M5,
-        "M15": mt5.TIMEFRAME_M15, "M30": mt5.TIMEFRAME_M30,
-        "H1": mt5.TIMEFRAME_H1, "H4": mt5.TIMEFRAME_H4,
-        "D1": mt5.TIMEFRAME_D1, "W1": mt5.TIMEFRAME_W1,
-        "MN1": mt5.TIMEFRAME_MN1,
-    }
-    tf = tf_map.get(timeframe, mt5.TIMEFRAME_M1)
-    
-    if not mt5.symbol_select(symbol, True):
-        import time
-        time.sleep(0.5)
-        if not mt5.symbol_select(symbol, True):
-            return {"candles": [], "indicators": {}}
-    
-    rates = mt5.copy_rates_from_pos(symbol, tf, 0, count)
-    
-    if rates is None or len(rates) == 0:
-        return {"candles": [], "indicators": {}}
-    
     candles = []
     closes = []
     highs = []
     lows = []
-    
-    for r in rates:
-        candles.append({
-            "time": int(r['time']),
-            "open": float(r['open']),
-            "high": float(r['high']),
-            "low": float(r['low']),
-            "close": float(r['close']),
-            "volume": int(r['tick_volume'])
-        })
-        closes.append(r['close'])
-        highs.append(r['high'])
-        lows.append(r['low'])
-    
+
+    if mt5_initialize_safe():
+        # MT5 사용 가능
+        tf_map = {
+            "M1": mt5.TIMEFRAME_M1, "M5": mt5.TIMEFRAME_M5,
+            "M15": mt5.TIMEFRAME_M15, "M30": mt5.TIMEFRAME_M30,
+            "H1": mt5.TIMEFRAME_H1, "H4": mt5.TIMEFRAME_H4,
+            "D1": mt5.TIMEFRAME_D1, "W1": mt5.TIMEFRAME_W1,
+            "MN1": mt5.TIMEFRAME_MN1,
+        }
+        tf = tf_map.get(timeframe, mt5.TIMEFRAME_M1)
+
+        if not mt5.symbol_select(symbol, True):
+            import time
+            time.sleep(0.5)
+            mt5.symbol_select(symbol, True)
+
+        rates = mt5.copy_rates_from_pos(symbol, tf, 0, count)
+
+        if rates is not None and len(rates) > 0:
+            for r in rates:
+                candles.append({
+                    "time": int(r['time']),
+                    "open": float(r['open']),
+                    "high": float(r['high']),
+                    "low": float(r['low']),
+                    "close": float(r['close']),
+                    "volume": int(r['tick_volume'])
+                })
+                closes.append(r['close'])
+                highs.append(r['high'])
+                lows.append(r['low'])
+    else:
+        # MT5 없음 - Binance API에서 가져오기
+        candles = await fetch_binance_candles(symbol, timeframe, count)
+        if candles:
+            closes = [c['close'] for c in candles]
+            highs = [c['high'] for c in candles]
+            lows = [c['low'] for c in candles]
+
+    if not candles:
+        return {"candles": [], "indicators": {}}
+
     # 인디케이터 계산
     indicators = IndicatorService.calculate_chart_indicators(candles, closes, highs, lows)
-    
+
     return {"candles": candles, "indicators": indicators}
 
 
@@ -217,15 +271,28 @@ async def get_candles(
 @router.get("/indicators/{symbol}")
 async def get_indicators(symbol: str = "BTCUSD"):
     """인디케이터만 조회 (게스트 모드용)"""
-    if not mt5_initialize_safe():
-        return {"buy": 0, "sell": 0, "neutral": 0, "score": 50}
+    if mt5_initialize_safe():
+        try:
+            indicators = IndicatorService.calculate_all_indicators(symbol)
+            return indicators
+        except Exception as e:
+            print(f"인디케이터 오류: {e}")
 
-    try:
-        indicators = IndicatorService.calculate_all_indicators(symbol)
-        return indicators
-    except Exception as e:
-        print(f"인디케이터 오류: {e}")
-        return {"buy": 33, "sell": 33, "neutral": 34, "score": 50}
+    # MT5 없을 때 - Binance 캔들로 인디케이터 계산
+    candles = await fetch_binance_candles(symbol, "M5", 100)
+    if candles:
+        closes = [c['close'] for c in candles]
+        highs = [c['high'] for c in candles]
+        lows = [c['low'] for c in candles]
+        indicators = IndicatorService.calculate_chart_indicators(candles, closes, highs, lows)
+        # 기본 형식으로 변환
+        buy = indicators.get("summary", {}).get("buy", 35)
+        sell = indicators.get("summary", {}).get("sell", 30)
+        neutral = 100 - buy - sell
+        score = 50 + (buy - sell) / 2
+        return {"buy": buy, "sell": sell, "neutral": neutral, "score": score}
+
+    return {"buy": 35, "sell": 30, "neutral": 35, "score": 52}
 
 
 # ========== 브릿지 데이터 수신 (인증 불필요) ==========
