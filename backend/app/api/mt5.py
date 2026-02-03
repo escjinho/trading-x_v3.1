@@ -4,7 +4,8 @@ MT5 연동 API - 마틴게일, WebSocket 포함 완벽 버전
 Trading-X Backend
 """
 
-from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, Query, status
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, Query, status, Body
+from typing import List
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
@@ -350,7 +351,7 @@ async def receive_bridge_data(symbol: str, data: dict):
 
 
 @router.post("/bridge/{symbol}/candles")
-async def receive_bridge_candles(symbol: str, candles: list):
+async def receive_bridge_candles(symbol: str, candles: List[dict] = Body(...)):
     """
     Windows MT5 브릿지에서 전송된 캔들 데이터 수신
 
