@@ -101,18 +101,17 @@ function connectWebSocket() {
 
     ws.onmessage = function(event) {
         const data = JSON.parse(event.data);
-        console.log('[WebSocket] Received data:', data);
+        // console.log('[WebSocket] Received data:', data);  // 너무 많은 로그 방지
 
-        // MT5 연결 상태 확인
+        // MT5 연결 상태 확인 (가격 업데이트는 계속 진행)
         if (data.mt5_connected === false) {
-        document.getElementById('statusDot').classList.add('disconnected');
-        document.getElementById('headerStatus').textContent = 'Disconnected';
-        console.log('[MT5] 서버 연결 실패:', data.mt5_error);
-        return;
-    } else if (data.mt5_connected === true) {
-        document.getElementById('statusDot').classList.remove('disconnected');
-        document.getElementById('headerStatus').textContent = 'Connected';
-    }
+            document.getElementById('statusDot').classList.add('disconnected');
+            document.getElementById('headerStatus').textContent = 'Disconnected';
+            // ★ return 제거 - 가격 데이터는 계속 업데이트
+        } else if (data.mt5_connected === true) {
+            document.getElementById('statusDot').classList.remove('disconnected');
+            document.getElementById('headerStatus').textContent = 'Connected';
+        }
 
         // 마지막 WebSocket 데이터 저장 (navigation.js에서 사용)
         if (typeof lastWebSocketData !== 'undefined') {
