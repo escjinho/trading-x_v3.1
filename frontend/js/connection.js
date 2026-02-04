@@ -43,8 +43,10 @@ function updateConnectionStatus(status) {
 function connectMT5() {
     console.log(`[MT5] 연결 시도 (${reconnectAttempt + 1}/5)`);
 
-    try {
-        connectWebSocket();
+    console.log("[checkUserMode] About to try connectWebSocket - Live mode");
+            try {
+        console.log("[checkUserMode] Calling connectWebSocket...");
+            connectWebSocket();
         // 연결 성공 시 카운터 리셋은 ws.onopen에서 처리
     } catch (e) {
         console.error('[MT5] 연결 오류:', e);
@@ -393,7 +395,8 @@ async function fetchAccountData() {
     // Demo 모드면 실행 안 함
     if (isDemo) return;
     
-    try {
+    console.log("[checkUserMode] About to try connectWebSocket - Live mode");
+            try {
         const data = await apiCall('/mt5/account-info');
         if (data) {
             balance = data.balance;
@@ -516,6 +519,7 @@ async function fetchAccountData() {
             document.getElementById('headerStatus').textContent = 'Connected';
         }
     } catch (error) {
+        console.error("[checkUserMode] Error:", error);
         console.error('Fetch error:', error);
         // 에러가 나도 바로 Disconnected로 바꾸지 않음 (일시적 오류일 수 있음)
         console.log('Fetch error, will retry...');
@@ -525,7 +529,8 @@ async function fetchAccountData() {
 // ========== Demo/Live 모드 확인 ==========
 async function checkUserMode() {
     console.log('[checkUserMode] Start');
-    try {
+    console.log("[checkUserMode] About to try connectWebSocket - Live mode");
+            try {
         // 먼저 Demo 계정 정보 조회
         const response = await fetch(`${API_URL}/demo/account-info`, {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -577,8 +582,10 @@ async function checkUserMode() {
             updateHeroCTA('live');
             
             // WebSocket 연결 (실패해도 폴링으로 대체)
+            console.log("[checkUserMode] About to try connectWebSocket - Live mode");
             try {
-                connectWebSocket();
+                console.log("[checkUserMode] Calling connectWebSocket...");
+            connectWebSocket();
             } catch (e) {
                 console.log('WebSocket connection failed, using polling');
                 // ★ WebSocket 실패 시에만 폴링 시작
@@ -638,6 +645,7 @@ async function checkUserMode() {
             badge.className = 'mode-badge-demo';
             badge.style.display = 'inline';
             
+            console.log("[checkUserMode] Calling connectWebSocket...");
             connectWebSocket();
 
             // ★ Demo 데이터 즉시 로드 (Account Overview 업데이트)
@@ -657,6 +665,7 @@ async function checkUserMode() {
             }, 1000);
         }
     } catch (error) {
+        console.error("[checkUserMode] Error:", error);
         console.error('Mode check error:', error);
         isDemo = true;
         fetchDemoData();
@@ -672,7 +681,8 @@ async function fetchDemoData() {
     }
 
     console.log('[fetchDemoData] 🔵 START - Fetching account info...');
-    try {
+    console.log("[checkUserMode] About to try connectWebSocket - Live mode");
+            try {
         const response = await fetch(`${API_URL}/demo/account-info`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -838,6 +848,7 @@ async function fetchDemoData() {
             }
 
             // ========== 인디케이터 업데이트 추가 ==========
+            console.log("[checkUserMode] About to try connectWebSocket - Live mode");
             try {
                 const indResponse = await fetch(`${API_URL}/mt5/indicators/${currentSymbol || 'BTCUSD'}`);
                 const indData = await indResponse.json();
@@ -862,7 +873,8 @@ async function fetchDemoData() {
             
             // Demo 마틴 상태 조회 (변경된 경우에만 업데이트)
             if (currentMode === 'martin' && martinEnabled) {
-                try {
+                console.log("[checkUserMode] About to try connectWebSocket - Live mode");
+            try {
                     const martinRes = await fetch(`${API_URL}/demo/martin/state`, {
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
@@ -889,6 +901,7 @@ async function fetchDemoData() {
             }
         }
     } catch (error) {
+        console.error("[checkUserMode] Error:", error);
         console.error('[fetchDemoData] ❌ ERROR:', error);
     }
 
@@ -923,7 +936,8 @@ if (!isGuest && token) {
     
     // 게스트 모드 인디케이터 업데이트
     async function fetchGuestIndicators() {
-        try {
+        console.log("[checkUserMode] About to try connectWebSocket - Live mode");
+            try {
             const response = await fetch(`${API_URL}/mt5/indicators/BTCUSD`);
             const data = await response.json();
             if (data) {
@@ -1082,7 +1096,8 @@ function switchTradingMode(mode) {
 }
 
 async function checkMT5Connection() {
-    try {
+    console.log("[checkUserMode] About to try connectWebSocket - Live mode");
+            try {
         const response = await fetch(`${API_URL}/demo/account-info`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -1140,7 +1155,8 @@ function updateMT5AccountUI(hasMT5, mt5Data = null) {
 async function disconnectMT5() {
     if (!confirm('MT5 계좌 연결을 해제하시겠습니까?')) return;
     
-    try {
+    console.log("[checkUserMode] About to try connectWebSocket - Live mode");
+            try {
         const response = await fetch(`${API_URL}/mt5/disconnect`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` }
@@ -1162,7 +1178,8 @@ async function disconnectMT5() {
 
 // MT5 상태 확인 및 UI 업데이트
 async function checkAndUpdateMT5Status() {
-    try {
+    console.log("[checkUserMode] About to try connectWebSocket - Live mode");
+            try {
         const response = await fetch(`${API_URL}/demo/account-info`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -1238,7 +1255,8 @@ async function connectMT5Account() {
     
     showToast('연결 중...', '');
     
-    try {
+    console.log("[checkUserMode] About to try connectWebSocket - Live mode");
+            try {
         // 실제 API 호출
         const response = await fetch(`${API_URL}/mt5/connect`, {
             method: 'POST',
@@ -1307,6 +1325,7 @@ async function connectMT5Account() {
             if (ws) {
                 ws.close();
             }
+            console.log("[checkUserMode] Calling connectWebSocket...");
             connectWebSocket();
             
             // Live 데이터 조회 시작
@@ -1320,6 +1339,7 @@ async function connectMT5Account() {
         }
         
     } catch (error) {
+        console.error("[checkUserMode] Error:", error);
         console.error('MT5 Connect error:', error);
         showToast('연결 실패: ' + error.message, 'error');
     }
