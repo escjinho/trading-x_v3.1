@@ -184,9 +184,25 @@ function connectWebSocket() {
         if (homeBroker) homeBroker.textContent = data.broker;
         if (homeAccount) homeAccount.textContent = data.account;
         if (homeLeverage) homeLeverage.textContent = '1:' + data.leverage;
+
+        // ★ homeServer 추가
+        const homeServer = document.getElementById('homeServer');
+        if (homeServer) homeServer.textContent = data.server || '-';
+
         if (homeEquity) homeEquity.textContent = '$' + data.equity.toLocaleString(undefined, {minimumFractionDigits: 2});
         if (homeFreeMargin) homeFreeMargin.textContent = '$' + data.free_margin.toLocaleString(undefined, {minimumFractionDigits: 2});
         if (homePositions) homePositions.textContent = data.positions_count;
+
+        // ★ MT5 Account 섹션 업데이트
+        const mt5Broker = document.getElementById('mt5Broker');
+        const mt5Account = document.getElementById('mt5Account');
+        const mt5Server = document.getElementById('mt5Server');
+        const mt5Leverage = document.getElementById('mt5Leverage');
+
+        if (mt5Broker) mt5Broker.textContent = data.broker || '-';
+        if (mt5Account) mt5Account.textContent = data.account || '-';
+        if (mt5Server) mt5Server.textContent = data.server || '-';
+        if (mt5Leverage) mt5Leverage.textContent = data.leverage ? `1:${data.leverage}` : '-';
 
         // ★ 전역 가격 저장 (V5 패널에서 사용)
         if (data.all_prices) {

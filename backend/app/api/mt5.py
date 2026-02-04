@@ -1211,10 +1211,19 @@ async def websocket_endpoint(websocket: WebSocket):
         try:
             import time as time_module
             mt5_connected = mt5_initialize_safe()
-            
-            # ★ 브릿지 연결 상태 확인
-            bridge_age = time_module.time() - bridge_cache.get("last_update", 0)
-            bridge_connected = bridge_age < 30  # 30초 이내 데이터 있으면 연결됨
+
+            # ★ 브릿지 연결 상태 확인 (개선)
+            last_update = bridge_cache.get("last_update", 0)
+            current_time = time_module.time()
+
+            # last_update가 0이면 아직 브릿지 데이터 없음
+            # last_update가 있으면 30초 이내인지 확인
+            if last_update == 0:
+                bridge_connected = False
+                bridge_age = -1
+            else:
+                bridge_age = current_time - last_update
+                bridge_connected = bridge_age < 30  # 30초 이내 데이터 있으면 연결됨
             
             # ★ 계정 정보: MT5 직접 또는 브릿지 캐시
             if mt5_connected:
@@ -1274,16 +1283,21 @@ async def websocket_endpoint(websocket: WebSocket):
                         }
             else:
                 # ★ 브릿지 캐시에서 각 심볼의 마지막 캔들 가져오기
+                # 실시간 가격으로 close 업데이트
                 for sym in symbols_list:
                     cached = get_bridge_candles(sym, "M1")
                     if cached and len(cached) > 0:
                         last_candle = cached[-1]
+                        # 실시간 가격으로 close/high/low 업데이트
+                        current_price = all_prices.get(sym, {}).get("bid", last_candle.get("close", 0))
+                        candle_high = max(last_candle.get("high", 0), current_price)
+                        candle_low = min(last_candle.get("low", float('inf')), current_price) if last_candle.get("low", 0) > 0 else current_price
                         all_candles[sym] = {
                             "time": last_candle.get("time", 0),
                             "open": last_candle.get("open", 0),
-                            "high": last_candle.get("high", 0),
-                            "low": last_candle.get("low", 0),
-                            "close": last_candle.get("close", 0)
+                            "high": candle_high,
+                            "low": candle_low,
+                            "close": current_price  # ★ 실시간 가격으로 close 업데이트
                         }
             
             # 포지션 정보 (MT5 직접 연결 시에만)

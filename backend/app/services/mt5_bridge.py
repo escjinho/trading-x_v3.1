@@ -114,6 +114,70 @@ def send_candles(symbol: str, timeframe: str, count: int = 1000):
         print(f"[{symbol}/{timeframe}] 캔들 전송 오류: {e}")
         return False
 
+# ★★★ 추가 시작 ★★★
+def send_symbol_info(symbol: str):
+    """심볼의 계약 정보를 서버로 전송 (손익 계산용)"""
+    info = mt5.symbol_info(symbol)
+    if not info:
+        return False
+
+    data = {
+        "symbol": symbol,
+        "contract_size": info.trade_contract_size,
+        "tick_size": info.trade_tick_size,
+        "tick_value": info.trade_tick_value,
+        "digits": info.digits,
+        "volume_min": info.volume_min,
+        "volume_max": info.volume_max,
+        "volume_step": info.volume_step,
+    }
+
+    try:
+        url = f"{SERVER_URL}/api/mt5/bridge/{symbol}/info"
+        response = requests.post(url, json=data, timeout=5)
+        return response.status_code == 200
+    except Exception as e:
+        print(f"[{symbol}] symbol_info 전송 오류: {e}")
+        return False
+
+def send_all_symbol_info():
+    """모든 심볼의 계약 정보 전송"""
+    print("\n심볼 계약 정보 전송 중...")
+    success = 0
+    for symbol in SYMBOLS:
+        if send_symbol_info(symbol):
+            print(f"  [OK] {symbol} symbol_info")
+            success += 1
+        else:
+            print(f"  [FAIL] {symbol} symbol_info")
+    return success
+# ★★★ 추가 끝 ★★★
+
+def send_account_info():
+    """MT5 계정 정보를 서버로 전송"""
+    account = mt5.account_info()
+    if not account:
+        return False
+
+    data = {
+        "broker": account.company,
+        "login": account.login,
+        "server": account.server,
+        "balance": account.balance,
+        "equity": account.equity,
+        "margin": account.margin,
+        "free_margin": account.margin_free,
+        "leverage": account.leverage
+    }
+
+    try:
+        url = f"{SERVER_URL}/api/mt5/bridge/account"
+        response = requests.post(url, json=data, timeout=5)
+        return response.status_code == 200
+    except Exception as e:
+        print(f"[Account] 전송 오류: {e}")
+        return False
+    
 def send_all_candles(symbol: str, count: int = 1000):
     """모든 타임프레임의 캔들 전송"""
     success = 0
@@ -141,6 +205,9 @@ def main():
         else:
             print(f"  [FAIL] {symbol}")
 
+    # ★★★ 추가 ★★★
+    send_all_symbol_info()
+
     # 초기 캔들 히스토리 전송 (모든 타임프레임)
     print("\n캔들 히스토리 전송 중 (모든 타임프레임)...")
     for symbol in SYMBOLS:
@@ -160,8 +227,11 @@ def main():
                 if send_quote(symbol):
                     success_count += 1
 
+            # ★ 계정 정보도 함께 전송
+            send_account_info()
+
             timestamp = datetime.now().strftime("%H:%M:%S")
-            print(f"[{timestamp}] {success_count}/{len(SYMBOLS)} 심볼 전송 완료", end="\r")
+            print(f"[{timestamp}] {success_count}/{len(SYMBOLS)} 심볼 + Account 전송", end="\r")
 
             # 주기적으로 캔들 업데이트 (1분마다)
             if time.time() - last_candle_update > CANDLE_INTERVAL:

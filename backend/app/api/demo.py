@@ -424,9 +424,18 @@ async def place_demo_order(
             print(f"[DEMO ORDER] ⚠️ Tick FAILED for {symbol}, using dummy price")
             entry_price = 50000.0 if "BTC" in symbol else 1.0
     else:
-        print("[DEMO ORDER] ⚠️ MT5 not available, using dummy price")
-        # MT5 없을 때 더미 가격 사용
-        entry_price = 50000.0 if "BTC" in symbol else 1.0
+        print("[DEMO ORDER] ⚠️ MT5 not available, using bridge cache")
+        # MT5 없음 - bridge cache에서 가격 가져오기
+        bridge_prices = get_bridge_prices()
+        if bridge_prices and symbol in bridge_prices:
+            price_data = bridge_prices[symbol]
+            entry_price = price_data.get('ask', 0) if order_type.upper() == "BUY" else price_data.get('bid', 0)
+            print(f"[DEMO ORDER] 📊 Using bridge cache price: {entry_price}")
+        
+        # bridge cache도 없으면 더미 가격 사용
+        if entry_price <= 0:
+            entry_price = 50000.0 if "BTC" in symbol else 1.0
+            print(f"[DEMO ORDER] ⚠️ Bridge cache empty, using dummy: {entry_price}")
     print(f"[DEMO ORDER] 📊 Entry price: {entry_price}")
 
     # 포지션 생성 (Basic/NoLimit 모드용 - target 그대로 사용)
@@ -619,9 +628,35 @@ async def close_demo_position(
                 else:
                     profit = (entry_price - exit_price) * position.volume
     else:
-        # MT5 없음 - 진입가로 청산 (손익 0)
-        exit_price = entry_price
-        profit = 0
+        # MT5 없음 - bridge cache에서 가격 가져오기
+        bridge_prices = get_bridge_prices()
+        if bridge_prices and position.symbol in bridge_prices:
+            price_data = bridge_prices[position.symbol]
+            exit_price = price_data.get('bid', entry_price) if position.trade_type == "BUY" else price_data.get('ask', entry_price)
+            
+            # 손익 계산 (bridge cache 사용)
+            symbol_info = bridge_cache.get("symbol_info", {}).get(position.symbol)
+            if symbol_info:
+                tick_size = symbol_info.get('tick_size', 0.01)
+                tick_value = symbol_info.get('tick_value', 1)
+                if position.trade_type == "BUY":
+                    price_diff = exit_price - entry_price
+                else:
+                    price_diff = entry_price - exit_price
+                if tick_size > 0:
+                    ticks = price_diff / tick_size
+                    profit = ticks * tick_value * position.volume
+                else:
+                    profit = price_diff * position.volume
+            else:
+                # symbol_info 없으면 간단 계산
+                if position.trade_type == "BUY":
+                    profit = (exit_price - entry_price) * position.volume
+                else:
+                    profit = (entry_price - exit_price) * position.volume
+        else:
+            exit_price = entry_price
+            profit = 0
     
     profit = round(profit, 2)
     
