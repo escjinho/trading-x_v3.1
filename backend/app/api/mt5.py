@@ -88,6 +88,13 @@ bridge_cache = {
     "last_update": 0   # 마지막 업데이트 시간
 }
 
+# ========== 주문 대기열 (브릿지용) ==========
+# Linux에서 주문을 받아 Windows 브릿지가 실행
+import uuid
+
+order_queue = []  # 대기 중인 주문 목록
+order_results = {}  # 주문 결과 저장 {order_id: result}
+
 def get_bridge_prices():
     """브릿지 캐시에서 가격 데이터 조회"""
     return bridge_cache["prices"]
@@ -462,6 +469,40 @@ async def get_bridge_status():
         "age_seconds": round(age, 1)
     }
 
+
+# ========== 브릿지 주문 API ==========
+@router.get("/bridge/orders/pending")
+async def get_pending_orders():
+    """브릿지가 대기 중인 주문을 가져감"""
+    if not order_queue:
+        return {"orders": []}
+
+    # 대기열에서 주문 꺼내기
+    pending = order_queue.copy()
+    order_queue.clear()
+
+    return {"orders": pending}
+
+
+@router.post("/bridge/orders/result")
+async def submit_order_result(result: dict):
+    """브릿지가 주문 실행 결과를 전송"""
+    order_id = result.get("order_id")
+    if order_id:
+        order_results[order_id] = result
+        print(f"[Bridge] 주문 결과 수신: {order_id} - {result.get('success')}")
+    return {"status": "ok"}
+
+
+@router.get("/bridge/orders/result/{order_id}")
+async def get_order_result(order_id: str):
+    """주문 결과 조회 (클라이언트 폴링용)"""
+    if order_id in order_results:
+        result = order_results.pop(order_id)  # 결과 가져오고 삭제
+        return result
+    return {"status": "pending"}
+
+
 # ========== 주문 실행 ==========
 @router.post("/order")
 async def place_order(
@@ -473,8 +514,40 @@ async def place_order(
     current_user: User = Depends(get_current_user)
 ):
     """일반 주문 실행 (BUY/SELL)"""
+    import time as time_module
+
+    # ★ Linux 환경 (MT5 없음) → 브릿지 모드
     if not MT5_AVAILABLE:
-        return JSONResponse({"success": False, "message": "MT5를 사용할 수 없습니다 (Linux 환경)"})
+        # 브릿지 연결 확인
+        bridge_age = time_module.time() - bridge_cache.get("last_update", 0)
+        if bridge_age > 30:
+            return JSONResponse({"success": False, "message": "MT5 브릿지 연결 없음"})
+
+        # 주문 ID 생성
+        order_id = str(uuid.uuid4())[:8]
+
+        # 주문을 대기열에 추가
+        order_data = {
+            "order_id": order_id,
+            "action": "order",
+            "symbol": symbol,
+            "order_type": order_type.upper(),
+            "volume": volume,
+            "target": target,
+            "magic": magic,
+            "user_id": current_user.id,
+            "timestamp": time_module.time()
+        }
+        order_queue.append(order_data)
+
+        print(f"[Bridge Order] 주문 대기열에 추가: {order_id} - {order_type} {symbol} {volume}")
+
+        return JSONResponse({
+            "success": True,
+            "message": f"{order_type.upper()} 주문 전송 중...",
+            "order_id": order_id,
+            "bridge_mode": True
+        })
     if not mt5_initialize_safe():
         return JSONResponse({"success": False, "message": "MT5 초기화 실패"})
     tick = mt5.symbol_info_tick(symbol)
@@ -548,8 +621,33 @@ async def close_position(
     current_user: User = Depends(get_current_user)
 ):
     """포지션 청산 (magic 필터 옵션)"""
+    import time as time_module
+
+    # ★ Linux 환경 (MT5 없음) → 브릿지 모드
     if not MT5_AVAILABLE:
-        return JSONResponse({"success": False, "message": "MT5를 사용할 수 없습니다 (Linux 환경)"})
+        bridge_age = time_module.time() - bridge_cache.get("last_update", 0)
+        if bridge_age > 30:
+            return JSONResponse({"success": False, "message": "MT5 브릿지 연결 없음"})
+
+        order_id = str(uuid.uuid4())[:8]
+        order_data = {
+            "order_id": order_id,
+            "action": "close",
+            "symbol": symbol,
+            "magic": magic,
+            "user_id": current_user.id,
+            "timestamp": time_module.time()
+        }
+        order_queue.append(order_data)
+
+        print(f"[Bridge Order] 청산 주문 추가: {order_id} - {symbol}")
+
+        return JSONResponse({
+            "success": True,
+            "message": "청산 주문 전송 중...",
+            "order_id": order_id,
+            "bridge_mode": True
+        })
     if not mt5_initialize_safe():
         return JSONResponse({"success": False, "message": "MT5 초기화 실패"})
     positions = mt5.positions_get(symbol=symbol)

@@ -2,6 +2,7 @@
 let ws = null;
 let wsRetryCount = 0;
 const maxRetries = 5;
+let pollingInterval = null;  // ★ 폴링 인터벌 저장용
 
 // ========== MT5 자동 백오프 재연결 ==========
 const RECONNECT_DELAYS = [1000, 5000, 30000, 60000, 300000]; // 1초, 5초, 30초, 1분, 5분
@@ -89,6 +90,12 @@ function connectWebSocket() {
         if (reconnectTimer) {
             clearTimeout(reconnectTimer);
             reconnectTimer = null;
+        }
+        // ★ WebSocket 연결 성공 시 폴링 중지
+        if (pollingInterval) {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+            console.log('[WS] Polling stopped - WebSocket connected');
         }
     };
 
@@ -364,7 +371,13 @@ function connectWebSocket() {
         console.log('WebSocket disconnected');
         document.getElementById('statusDot').classList.add('disconnected');
         document.getElementById('headerStatus').textContent = 'Disconnected';
-        
+
+        // ★ WebSocket 끊어지면 폴링 시작 (Live 모드일 때만)
+        if (!isDemo && !pollingInterval) {
+            pollingInterval = setInterval(fetchAccountData, 2000);
+            console.log('[WS] Polling started - WebSocket disconnected');
+        }
+
         // 백오프 로직으로 재연결
         reconnectWithBackoff();
     };
@@ -564,16 +577,20 @@ async function checkUserMode() {
                 connectWebSocket();
             } catch (e) {
                 console.log('WebSocket connection failed, using polling');
+                // ★ WebSocket 실패 시에만 폴링 시작
+                if (!pollingInterval) {
+                    pollingInterval = setInterval(fetchAccountData, 2000);
+                }
             }
-            
-            fetchAccountData();
-            
+
+            fetchAccountData();  // 초기 데이터 1회 로드
+
             // ★ 히스토리 로드 (Today P/L 계산)
             if (typeof loadHistory === 'function') {
                 loadHistory();
             }
-            
-            setInterval(fetchAccountData, 2000);
+
+            // ★ 폴링은 ws.onclose에서 자동 시작됨 (여기서는 시작하지 않음)
             
         } else {
             // MT5 없음 → Demo 모드
@@ -1287,8 +1304,8 @@ async function connectMT5Account() {
             
             // Live 데이터 조회 시작
             fetchAccountData();
-            setInterval(fetchAccountData, 2000);
-            
+            // ★ 폴링은 ws.onclose에서 자동 시작됨 (중복 방지)
+
             showToast('🎉 MT5 계정 연결 완료!', 'success');
             
         } else {

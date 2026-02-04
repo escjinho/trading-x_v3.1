@@ -186,6 +186,150 @@ def send_all_candles(symbol: str, count: int = 1000):
             success += 1
     return success
 
+
+# ========== 주문 처리 함수들 ==========
+def fetch_pending_orders():
+    """서버에서 대기 중인 주문 가져오기"""
+    try:
+        url = f"{SERVER_URL}/api/mt5/bridge/orders/pending"
+        response = requests.get(url, timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            return data.get("orders", [])
+    except Exception as e:
+        print(f"[Order] 주문 조회 오류: {e}")
+    return []
+
+
+def execute_order(order_data: dict):
+    """MT5에서 주문 실행"""
+    symbol = order_data.get("symbol", "BTCUSD")
+    order_type = order_data.get("order_type", "BUY")
+    volume = order_data.get("volume", 0.01)
+    magic = order_data.get("magic", 100001)
+
+    tick = mt5.symbol_info_tick(symbol)
+    if not tick:
+        return {"success": False, "message": "가격 정보 없음"}
+
+    if order_type == "BUY":
+        mt5_type = mt5.ORDER_TYPE_BUY
+        price = tick.ask
+    else:
+        mt5_type = mt5.ORDER_TYPE_SELL
+        price = tick.bid
+
+    request = {
+        "action": mt5.TRADE_ACTION_DEAL,
+        "symbol": symbol,
+        "volume": volume,
+        "type": mt5_type,
+        "price": price,
+        "deviation": 20,
+        "magic": magic,
+        "comment": f"Trading-X {order_type}",
+        "type_time": mt5.ORDER_TIME_GTC,
+        "type_filling": mt5.ORDER_FILLING_IOC,
+    }
+
+    result = mt5.order_send(request)
+
+    if result and result.retcode == mt5.TRADE_RETCODE_DONE:
+        return {
+            "success": True,
+            "message": f"{order_type} 성공! {volume} lot @ {result.price:,.2f}",
+            "ticket": result.order,
+            "price": result.price
+        }
+    else:
+        error_code = result.retcode if result else "Unknown"
+        error_comment = result.comment if result else "No result"
+        return {
+            "success": False,
+            "message": f"주문 실패: {error_code} - {error_comment}"
+        }
+
+
+def execute_close(order_data: dict):
+    """MT5에서 포지션 청산"""
+    symbol = order_data.get("symbol", "BTCUSD")
+    magic = order_data.get("magic")
+
+    positions = mt5.positions_get(symbol=symbol)
+    if not positions:
+        return {"success": False, "message": "열린 포지션 없음"}
+
+    for pos in positions:
+        if magic is not None and pos.magic != magic:
+            continue
+
+        tick = mt5.symbol_info_tick(symbol)
+        if not tick:
+            continue
+
+        close_type = mt5.ORDER_TYPE_SELL if pos.type == 0 else mt5.ORDER_TYPE_BUY
+        close_price = tick.bid if pos.type == 0 else tick.ask
+
+        request = {
+            "action": mt5.TRADE_ACTION_DEAL,
+            "symbol": symbol,
+            "volume": pos.volume,
+            "type": close_type,
+            "position": pos.ticket,
+            "price": close_price,
+            "deviation": 20,
+            "magic": 123456,
+            "comment": "Trading-X CLOSE",
+            "type_time": mt5.ORDER_TIME_GTC,
+            "type_filling": mt5.ORDER_FILLING_IOC,
+        }
+
+        result = mt5.order_send(request)
+
+        if result and result.retcode == mt5.TRADE_RETCODE_DONE:
+            return {
+                "success": True,
+                "message": f"청산 성공! P/L: ${pos.profit:,.2f}",
+                "profit": pos.profit
+            }
+
+    return {"success": False, "message": "청산 실패"}
+
+
+def send_order_result(order_id: str, result: dict):
+    """주문 결과를 서버로 전송"""
+    try:
+        result["order_id"] = order_id
+        url = f"{SERVER_URL}/api/mt5/bridge/orders/result"
+        response = requests.post(url, json=result, timeout=5)
+        return response.status_code == 200
+    except Exception as e:
+        print(f"[Order] 결과 전송 오류: {e}")
+        return False
+
+
+def process_pending_orders():
+    """대기 중인 주문 처리"""
+    orders = fetch_pending_orders()
+
+    for order_data in orders:
+        order_id = order_data.get("order_id")
+        action = order_data.get("action")
+
+        print(f"\n[Order] 처리 중: {order_id} - {action}")
+
+        if action == "order":
+            result = execute_order(order_data)
+        elif action == "close":
+            result = execute_close(order_data)
+        else:
+            result = {"success": False, "message": f"알 수 없는 액션: {action}"}
+
+        # 결과 전송
+        send_order_result(order_id, result)
+        print(f"[Order] 완료: {order_id} - {result.get('success')} - {result.get('message')}")
+
+
 def main():
     print("=" * 50)
     print("MT5 Bridge - Windows to Linux")
@@ -229,6 +373,9 @@ def main():
 
             # ★ 계정 정보도 함께 전송
             send_account_info()
+
+            # ★ 대기 중인 주문 처리
+            process_pending_orders()
 
             timestamp = datetime.now().strftime("%H:%M:%S")
             print(f"[{timestamp}] {success_count}/{len(SYMBOLS)} 심볼 + Account 전송", end="\r")
