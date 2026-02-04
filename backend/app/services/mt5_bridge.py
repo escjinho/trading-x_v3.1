@@ -39,7 +39,7 @@ if MT5_AVAILABLE:
         "D1": mt5.TIMEFRAME_D1,
     }
 
-INTERVAL = 1  # 시세 전송 주기 (초)
+INTERVAL = 0.5  # 시세 전송 주기 (초) - 실시간 업데이트용
 CANDLE_INTERVAL = 60  # 캔들 전송 주기 (초)
 
 def init_mt5():

@@ -1457,10 +1457,10 @@ async def websocket_endpoint(websocket: WebSocket):
             }
             
             await websocket.send_text(json.dumps(data))
-            await asyncio.sleep(1)
-            
+            await asyncio.sleep(0.5)  # ★ 0.5초마다 전송 (실시간 업데이트)
+
         except WebSocketDisconnect:
             break
         except Exception as e:
             print(f"WebSocket Error: {e}")
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.5)
