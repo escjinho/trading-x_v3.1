@@ -78,7 +78,8 @@ function connectWebSocket() {
     // Demo 모드와 Live 모드에 따라 다른 WebSocket URL 사용
     const wsPath = isDemo ? '/api/demo/ws' : '/api/mt5/ws';
     const wsUrl = typeof getWsUrl === 'function' ? getWsUrl(wsPath) : `ws://localhost:8000${wsPath}`;
-    console.log(`[connection.js] Connecting to: ${wsUrl} (Demo: ${isDemo})`);
+    console.log(`[WS] Connecting to: ${wsUrl} (isDemo: ${isDemo})`);
+    console.log(`[WS] getWsUrl defined: ${typeof getWsUrl === 'function'}`);
     ws = new WebSocket(wsUrl);
     
     ws.onopen = function() {
@@ -382,7 +383,8 @@ function connectWebSocket() {
     };
 
     ws.onerror = function(error) {
-        console.error('WebSocket error:', error);
+        console.error('[WS] WebSocket error:', error);
+        console.log('[WS] readyState:', ws.readyState);
     };
 }
 
