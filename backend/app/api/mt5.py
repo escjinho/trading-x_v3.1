@@ -84,6 +84,7 @@ from ..services.mt5_service import MT5_DISABLED
 bridge_cache = {
     "prices": {},      # {"BTCUSD": {"bid": 97000, "ask": 97010, "last": 97005, "time": 1234567890}}
     "candles": {},     # {"BTCUSD": {"M1": [...], "M5": [...], "H1": [...], ...}}
+    "account": {},     # {"broker": "...", "login": ..., "balance": ..., ...}
     "last_update": 0   # 마지막 업데이트 시간
 }
 
@@ -316,6 +317,44 @@ async def get_indicators(symbol: str = "BTCUSD"):
 
 
 # ========== 브릿지 데이터 수신 (인증 불필요) ==========
+# 중요: 구체적인 경로(/bridge/account)가 동적 경로(/bridge/{symbol})보다 먼저 와야 함!
+@router.post("/bridge/account")
+async def receive_bridge_account(data: dict):
+    """
+    Windows MT5 브릿지에서 전송된 계정 정보 수신
+    """
+    import time as time_module
+    try:
+        bridge_cache["account"] = {
+            "broker": data.get("broker", ""),
+            "login": data.get("login", 0),
+            "server": data.get("server", ""),
+            "balance": data.get("balance", 0),
+            "equity": data.get("equity", 0),
+            "margin": data.get("margin", 0),
+            "free_margin": data.get("free_margin", 0),
+            "leverage": data.get("leverage", 0)
+        }
+        bridge_cache["last_update"] = time_module.time()
+
+        print(f"[Bridge] Account 수신: {data.get('login')} @ {data.get('broker')}")
+
+        return {
+            "status": "success",
+            "account": data.get("login"),
+            "balance": data.get("balance")
+        }
+    except Exception as e:
+        print(f"[Bridge] Account 수신 오류: {e}")
+        return {"status": "error", "message": str(e)}
+
+
+@router.get("/bridge/account")
+async def get_bridge_account():
+    """브릿지 캐시에서 계정 정보 반환"""
+    return bridge_cache.get("account", {})
+
+
 @router.post("/bridge/{symbol}")
 async def receive_bridge_data(symbol: str, data: dict):
     """
@@ -422,7 +461,6 @@ async def get_bridge_status():
         "last_update": last_update,
         "age_seconds": round(age, 1)
     }
-
 
 # ========== 주문 실행 ==========
 @router.post("/order")
@@ -1101,8 +1139,16 @@ async def connect_mt5_account(
     if not request.account or not request.password:
         return JSONResponse({"success": False, "message": "계좌번호와 비밀번호를 입력하세요"})
     
-    if not mt5_initialize_safe():
-        return JSONResponse({"success": False, "message": "MT5 초기화 실패"})
+    # ★MT5 직접 연결 체크 제거 - 브릿지가 연결되어 있으면 OK
+    # Linux에서는 MT5 직접 연결이 불가능하므로, 브릿지 연결 상태만 확인
+    import time as time_module
+    bridge_age = time_module.time() - bridge_cache.get("last_update", 0)
+    
+    if bridge_age > 60:  # 브릿지 데이터가 1분 이상 오래됨
+        return JSONResponse({
+            "success": False,
+            "message": "MT5 브릿지 연결 없음. Windows 서버에서 브릿지를 실행해주세요."
+        })
     
     # DB에 has_mt5_account = True 저장
     current_user.has_mt5_account = True
@@ -1163,47 +1209,103 @@ async def websocket_endpoint(websocket: WebSocket):
     
     while True:
         try:
-            if not mt5_initialize_safe():
-                error_data = {
-                    "mt5_connected": False,
-                    "mt5_error": "MT5 서버 연결 실패"
-                }
-                await websocket.send_text(json.dumps(error_data))
-                await asyncio.sleep(1)
-                continue
+            import time as time_module
+            mt5_connected = mt5_initialize_safe()
             
-            account = mt5.account_info()
+            # ★ 브릿지 연결 상태 확인
+            bridge_age = time_module.time() - bridge_cache.get("last_update", 0)
+            bridge_connected = bridge_age < 30  # 30초 이내 데이터 있으면 연결됨
             
-            # 모든 심볼 가격
+            # ★ 계정 정보: MT5 직접 또는 브릿지 캐시
+            if mt5_connected:
+                account = mt5.account_info()
+                broker = account.company if account else "N/A"
+                login = account.login if account else 0
+                server = account.server if account else "N/A"
+                balance = account.balance if account else 0
+                equity = account.equity if account else 0
+                margin = account.margin if account else 0
+                free_margin = account.margin_free if account else 0
+                leverage = account.leverage if account else 0
+            elif bridge_connected and bridge_cache.get("account"):
+                # ★ 브릿지 캐시에서 계정 정보 사용
+                acc = bridge_cache["account"]
+                broker = acc.get("broker", "N/A")
+                login = acc.get("login", 0)
+                server = acc.get("server", "N/A")
+                balance = acc.get("balance", 0)
+                equity = acc.get("equity", 0)
+                margin = acc.get("margin", 0)
+                free_margin = acc.get("free_margin", 0)
+                leverage = acc.get("leverage", 0)
+            else:
+                broker = "N/A"
+                login = 0
+                server = "N/A"
+                balance = 0
+                equity = 0
+                margin = 0
+                free_margin = 0
+                leverage = 0
+            
+            # ★ 가격 정보: MT5 직접 또는 브릿지 캐시
             all_prices = {}
-            for sym in symbols_list:
-                tick = mt5.symbol_info_tick(sym)
-                if tick:
-                    all_prices[sym] = {"bid": tick.bid, "ask": tick.ask}
+            if mt5_connected:
+                for sym in symbols_list:
+                    tick = mt5.symbol_info_tick(sym)
+                    if tick:
+                        all_prices[sym] = {"bid": tick.bid, "ask": tick.ask}
+            else:
+                all_prices = get_bridge_prices()
             
-            # 포지션 정보
-            positions = mt5.positions_get()
-            positions_count = len(positions) if positions else 0
+            # ★ 캔들 정보: MT5 직접 또는 브릿지 캐시
+            all_candles = {}
+            if mt5_connected:
+                for sym in symbols_list:
+                    rates = mt5.copy_rates_from_pos(sym, mt5.TIMEFRAME_M1, 0, 1)
+                    if rates is not None and len(rates) > 0:
+                        r = rates[0]
+                        all_candles[sym] = {
+                            "time": int(r['time']),
+                            "open": float(r['open']),
+                            "high": float(r['high']),
+                            "low": float(r['low']),
+                            "close": float(r['close'])
+                        }
+            else:
+                # ★ 브릿지 캐시에서 각 심볼의 마지막 캔들 가져오기
+                for sym in symbols_list:
+                    cached = get_bridge_candles(sym, "M1")
+                    if cached and len(cached) > 0:
+                        last_candle = cached[-1]
+                        all_candles[sym] = {
+                            "time": last_candle.get("time", 0),
+                            "open": last_candle.get("open", 0),
+                            "high": last_candle.get("high", 0),
+                            "low": last_candle.get("low", 0),
+                            "close": last_candle.get("close", 0)
+                        }
             
+            # 포지션 정보 (MT5 직접 연결 시에만)
+            positions_count = 0
             position_data = None
-            if positions and len(positions) > 0:
-                # Buy/Sell 패널용 포지션 (magic=100001)
-                buysell_pos = None
-                for pos in positions:
-                    if pos.magic == 100001:
-                        buysell_pos = pos
-                        break
+            if mt5_connected:
+                positions = mt5.positions_get()
+                positions_count = len(positions) if positions else 0
                 
-                if buysell_pos:
-                    position_data = {
-                        "type": "BUY" if buysell_pos.type == 0 else "SELL",
-                        "symbol": buysell_pos.symbol,
-                        "volume": buysell_pos.volume,
-                        "entry": buysell_pos.price_open,
-                        "profit": buysell_pos.profit,
-                        "ticket": buysell_pos.ticket,
-                        "magic": buysell_pos.magic
-                    }
+                if positions and len(positions) > 0:
+                    for pos in positions:
+                        if pos.magic == 100001:
+                            position_data = {
+                                "type": "BUY" if pos.type == 0 else "SELL",
+                                "symbol": pos.symbol,
+                                "volume": pos.volume,
+                                "entry": pos.price_open,
+                                "profit": pos.profit,
+                                "ticket": pos.ticket,
+                                "magic": pos.magic
+                            }
+                            break
             
             # 인디케이터 계산
             try:
@@ -1218,32 +1320,19 @@ async def websocket_endpoint(websocket: WebSocket):
                 neutral_count = 34
                 base_score = 50
             
-            # 모든 종목 마지막 캔들
-            all_candles = {}
-            for sym in symbols_list:
-                rates = mt5.copy_rates_from_pos(sym, mt5.TIMEFRAME_M1, 0, 1)
-                if rates is not None and len(rates) > 0:
-                    r = rates[0]
-                    all_candles[sym] = {
-                        "time": int(r['time']),
-                        "open": float(r['open']),
-                        "high": float(r['high']),
-                        "low": float(r['low']),
-                        "close": float(r['close'])
-                    }
-            
             # 마틴 상태
             martin_state = martin_service.get_state()
             
             data = {
-                "mt5_connected": True,
-                "broker": account.company if account else "N/A",
-                "account": account.login if account else 0,
-                "balance": account.balance if account else 0,
-                "equity": account.equity if account else 0,
-                "margin": account.margin if account else 0,
-                "free_margin": account.margin_free if account else 0,
-                "leverage": account.leverage if account else 0,
+                "mt5_connected": mt5_connected or bridge_connected,
+                "broker": broker,
+                "account": login,
+                "server": server,
+                "balance": balance,
+                "equity": equity,
+                "margin": margin,
+                "free_margin": free_margin,
+                "leverage": leverage,
                 "positions_count": positions_count,
                 "position": position_data,
                 "buy_count": buy_count,
