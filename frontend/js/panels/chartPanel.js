@@ -79,11 +79,17 @@ const ChartPanel = {
             return;
         }
 
-        const decimals = getDecimalsForSymbol(chartSymbol);
+        // ★ 컨테이너 크기 체크 - 0이면 기본값 사용
+        const containerWidth = container.clientWidth || 800;
+        const containerHeight = window.innerWidth <= 480 ? 500 : 720;
+
+        console.log('[ChartPanel] Init chart - width:', containerWidth, 'height:', containerHeight);
+
+        const decimals = typeof getDecimalsForSymbol === 'function' ? getDecimalsForSymbol(chartSymbol) : 2;
 
         chart = LightweightCharts.createChart(container, {
-            width: container.clientWidth,
-            height: window.innerWidth <= 480 ? 500 : 720, // 모바일: 500px, PC: 720px
+            width: containerWidth,
+            height: containerHeight, // 모바일: 500px, PC: 720px
             layout: {
                 background: { color: '#000000' },
                 textColor: '#b0b0b0'  // 더 밝은 회색

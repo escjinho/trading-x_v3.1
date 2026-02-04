@@ -524,14 +524,17 @@ async function fetchAccountData() {
 
 // ========== Demo/Live 모드 확인 ==========
 async function checkUserMode() {
+    console.log('[checkUserMode] Start');
     try {
         // 먼저 Demo 계정 정보 조회
         const response = await fetch(`${API_URL}/demo/account-info`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.json();
-        
+        console.log('[checkUserMode] Response:', data);
+
         if (data.has_mt5) {
+            console.log('[checkUserMode] Live mode - has_mt5=true');
             // MT5 계정 연결됨 → Live 모드
             isDemo = false;
             document.getElementById('headerStatus').textContent = 'Connected';
@@ -898,10 +901,13 @@ async function fetchDemoData() {
 }
 
 // Initialize
+console.log('[Init] Starting connection.js - isGuest:', isGuest, 'token:', !!token);
 if (!isGuest && token) {
     // 로그인 사용자 - Demo인지 Live인지 확인
+    console.log('[Init] Calling checkUserMode()');
     checkUserMode();
 } else if (isGuest) {
+    console.log('[Init] Guest mode');
     // 게스트 모드 - 데모 데이터 표시
     document.getElementById('homeBalance').textContent = '$10,000.00';
     document.getElementById('homeBroker').textContent = 'Demo Broker';
