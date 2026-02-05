@@ -213,7 +213,9 @@ function openChartFromWatchlist(symbol, name, icon, color) {
 
     document.getElementById('chartSymbolIcon').textContent = icon;
     document.getElementById('chartSymbolIcon').style.color = color;
-    document.getElementById('chartSymbolName').textContent = name;
+    // symbolData에서 종목명 가져오기
+    const displayName = (typeof symbolData !== 'undefined' && symbolData[symbol]) ? symbolData[symbol].name : name;
+    document.getElementById('chartSymbolName').textContent = displayName;
     document.getElementById('chartSymbolId').textContent = symbol;
 
     showChartDetail();

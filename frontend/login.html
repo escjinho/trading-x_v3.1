@@ -482,7 +482,7 @@
             if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.startsWith('192.168.') || hostname.startsWith('10.')) {
                 return `http://${hostname}:8000/api`;
             }
-            return 'http://localhost:8000/api';
+            return `https://${hostname}/api`;
         };
         const API_URL = getApiUrl();
 

@@ -87,49 +87,6 @@ from ..utils.security import decode_token
 from ..services.indicator_service import IndicatorService
 from .mt5 import get_bridge_prices, get_bridge_candles, bridge_cache
 
-# ========== 심볼별 기본 스펙 (bridge_cache에 symbol_info 없을 때 사용) ==========
-DEFAULT_SYMBOL_SPECS = {
-    "BTCUSD":   {"tick_size": 0.01,    "tick_value": 0.01},
-    "ETHUSD":   {"tick_size": 0.01,    "tick_value": 0.01},
-    "XAUUSD.r": {"tick_size": 0.01,    "tick_value": 1.0},
-    "EURUSD.r": {"tick_size": 0.00001, "tick_value": 1.0},
-    "USDJPY.r": {"tick_size": 0.001,   "tick_value": 0.67},
-    "GBPUSD.r": {"tick_size": 0.00001, "tick_value": 1.0},
-    "AUDUSD.r": {"tick_size": 0.00001, "tick_value": 1.0},
-    "USDCAD.r": {"tick_size": 0.00001, "tick_value": 0.74},
-    "US100.":   {"tick_size": 0.01,    "tick_value": 0.01},
-}
-
-def calculate_demo_profit(symbol: str, entry_price: float, trade_type: str, volume: float):
-    """Bridge 가격 기반 데모 손익 계산. Returns: (current_price, profit)"""
-    current_price = 0
-    bridge_prices = get_bridge_prices()
-    if bridge_prices and symbol in bridge_prices:
-        price_data = bridge_prices[symbol]
-        current_price = price_data.get('bid', 0) if trade_type == "BUY" else price_data.get('ask', 0)
-
-    if not current_price or current_price <= 0:
-        return entry_price, 0.0
-
-    # symbol_info 우선, 없으면 DEFAULT_SYMBOL_SPECS 사용
-    sym_info = bridge_cache.get("symbol_info", {}).get(symbol)
-    if sym_info and sym_info.get('tick_size', 0) > 0 and sym_info.get('tick_value', 0) > 0:
-        tick_size = sym_info['tick_size']
-        tick_value = sym_info['tick_value']
-    else:
-        specs = DEFAULT_SYMBOL_SPECS.get(symbol, {"tick_size": 0.01, "tick_value": 0.01})
-        tick_size = specs['tick_size']
-        tick_value = specs['tick_value']
-
-    if trade_type == "BUY":
-        price_diff = current_price - entry_price
-    else:
-        price_diff = entry_price - current_price
-
-    ticks = price_diff / tick_size
-    profit = ticks * tick_value * volume
-    return current_price, round(profit, 2)
-
 router = APIRouter(prefix="/demo", tags=["Demo"])
 security = HTTPBearer()
 
@@ -189,103 +146,17 @@ async def get_demo_account(
         print(f"[DEBUG] Position found: {position.symbol}, target: {position.target_profit}")
         
         if not MT5_AVAILABLE or not mt5.initialize():
-            print("[DEBUG] MT5 not available - using bridge for profit calculation")
-            current_price, profit = calculate_demo_profit(
-                position.symbol, position.entry_price, position.trade_type, position.volume
-            )
-            target = position.target_profit or 0
-            print(f"[DEBUG-BRIDGE] Symbol: {position.symbol}, Entry: {position.entry_price}, Current: {current_price}, Profit: {profit}, Target: {target}")
-
-            # 목표 수익/손실 도달시 자동 청산 (양방향)
-            should_close = False
-            is_win = False
-
-            if target > 0:
-                if profit >= target:
-                    should_close = True
-                    is_win = True
-                    print(f"[DEBUG-BRIDGE] WIN! Profit {profit} >= Target {target}")
-                elif profit <= -target:
-                    should_close = True
-                    is_win = False
-                    print(f"[DEBUG-BRIDGE] LOSE! Profit {profit} <= -Target {-target}")
-
-            if should_close:
-                print(f"[DEBUG-BRIDGE] AUTO CLOSING! {'WIN' if is_win else 'LOSE'} - Profit: {profit}")
-
-                # 마틴 모드 상태 업데이트
-                martin_reset = False
-                martin_step_up = False
-
-                if current_user.demo_martin_step and current_user.demo_martin_step >= 1:
-                    if is_win:
-                        current_user.demo_martin_step = 1
-                        current_user.demo_martin_accumulated_loss = 0.0
-                        martin_reset = True
-                    else:
-                        max_steps = current_user.demo_martin_max_steps or 5
-                        current_step = current_user.demo_martin_step or 1
-                        accumulated = current_user.demo_martin_accumulated_loss or 0.0
-                        new_accumulated = accumulated + abs(profit)
-                        new_step = current_step + 1
-                        if new_step > max_steps:
-                            current_user.demo_martin_step = 1
-                            current_user.demo_martin_accumulated_loss = 0.0
-                            martin_reset = True
-                        else:
-                            current_user.demo_martin_step = new_step
-                            current_user.demo_martin_accumulated_loss = new_accumulated
-                            martin_step_up = True
-
-                # 거래 내역 저장
-                trade = DemoTrade(
-                    user_id=current_user.id,
-                    symbol=position.symbol,
-                    trade_type=position.trade_type,
-                    volume=position.volume,
-                    entry_price=position.entry_price,
-                    exit_price=current_price,
-                    profit=profit,
-                    is_closed=True,
-                    closed_at=datetime.now()
-                )
-                db.add(trade)
-
-                current_user.demo_balance = (current_user.demo_balance or 10000.0) + profit
-                current_user.demo_equity = current_user.demo_balance
-                current_user.demo_today_profit = (current_user.demo_today_profit or 0.0) + profit
-                db.delete(position)
-                db.commit()
-
-                message = f"🎯 목표 도달! +${profit:,.2f}" if is_win else f"💔 손절! ${profit:,.2f}"
-                return {
-                    "balance": current_user.demo_balance,
-                    "equity": current_user.demo_equity,
-                    "today_profit": current_user.demo_today_profit,
-                    "broker": "Trading-X Demo",
-                    "account": f"DEMO-{current_user.id}",
-                    "server": "Demo Server",
-                    "leverage": 500,
-                    "position": None,
-                    "positions_count": 0,
-                    "has_mt5": current_user.has_mt5_account or False,
-                    "auto_closed": True,
-                    "closed_profit": profit,
-                    "is_win": is_win,
-                    "martin_reset": martin_reset,
-                    "martin_step_up": martin_step_up if not is_win else False,
-                    "message": message
-                }
-
+            print("[DEBUG] MT5 not available or initialize FAILED!")
+            # MT5 연결 실패해도 포지션 정보는 반환
             position_data = {
                 "id": position.id,
                 "type": position.trade_type,
                 "symbol": position.symbol,
                 "volume": position.volume,
                 "entry": position.entry_price,
-                "current": current_price,
-                "profit": profit,
-                "target": target
+                "current": position.entry_price,
+                "profit": 0,
+                "target": position.target_profit
             }
         else:
             tick = mt5.symbol_info_tick(position.symbol)
@@ -461,10 +332,10 @@ async def get_demo_account(
         if MT5_AVAILABLE and mt5.initialize():
             tick = mt5.symbol_info_tick(pos.symbol)
             symbol_info = mt5.symbol_info(pos.symbol)
-
+            
             if tick:
                 current_price = tick.bid if pos.trade_type == "BUY" else tick.ask
-
+                
                 if symbol_info and symbol_info.trade_tick_size > 0:
                     if pos.trade_type == "BUY":
                         price_diff = current_price - pos.entry_price
@@ -477,28 +348,18 @@ async def get_demo_account(
                         profit = (current_price - pos.entry_price) * pos.volume
                     else:
                         profit = (pos.entry_price - current_price) * pos.volume
-
+                
                 # MT5 함수로 정확한 마진 계산 (종목별 레버리지 자동 적용)
                 order_type = mt5.ORDER_TYPE_BUY if pos.trade_type == "BUY" else mt5.ORDER_TYPE_SELL
                 margin = mt5.order_calc_margin(order_type, pos.symbol, pos.volume, current_price)
                 if margin is None:
                     margin = 0
-
+                
                 pos_price_data = {
-                    "profit": round(profit, 2),
+                    "profit": round(profit, 2), 
                     "current": current_price,
                     "margin": round(margin, 2)
                 }
-        else:
-            # MT5 없음 - bridge 기반 계산
-            cur_px, cur_profit = calculate_demo_profit(
-                pos.symbol, pos.entry_price, pos.trade_type, pos.volume
-            )
-            pos_price_data = {
-                "profit": cur_profit,
-                "current": cur_px,
-                "margin": 0
-            }
         
         total_margin += pos_price_data["margin"]
         
@@ -571,21 +432,10 @@ async def place_demo_order(
             entry_price = price_data.get('ask', 0) if order_type.upper() == "BUY" else price_data.get('bid', 0)
             print(f"[DEMO ORDER] 📊 Using bridge cache price: {entry_price}")
         
-        # bridge cache도 없으면 → Binance API fallback
-        if entry_price <= 0:
-            try:
-                external_prices = await fetch_external_prices()
-                if external_prices and symbol in external_prices:
-                    price_data = external_prices[symbol]
-                    entry_price = price_data.get('ask', 0) if order_type.upper() == "BUY" else price_data.get('bid', 0)
-                    print(f"[DEMO ORDER] 📡 Using Binance API price: {entry_price}")
-            except Exception as e:
-                print(f"[DEMO ORDER] ⚠️ Binance API error: {e}")
-        
-        # 그래도 없으면 더미 가격 사용
+        # bridge cache도 없으면 더미 가격 사용
         if entry_price <= 0:
             entry_price = 50000.0 if "BTC" in symbol else 1.0
-            print(f"[DEMO ORDER] ⚠️ All sources empty, using dummy: {entry_price}")
+            print(f"[DEMO ORDER] ⚠️ Bridge cache empty, using dummy: {entry_price}")
     print(f"[DEMO ORDER] 📊 Entry price: {entry_price}")
 
     # 포지션 생성 (Basic/NoLimit 모드용 - target 그대로 사용)
@@ -653,6 +503,7 @@ async def get_demo_positions(
             if tick:
                 current_price = tick.bid if pos.trade_type == "BUY" else tick.ask
 
+                # 손익 계산
                 if symbol_info and symbol_info.trade_tick_size > 0:
                     if pos.trade_type == "BUY":
                         price_diff = current_price - pos.entry_price
@@ -668,19 +519,15 @@ async def get_demo_positions(
 
                 profit = round(profit, 2)
 
+            # MT5 함수로 정확한 마진 계산 (종목별 레버리지 자동 적용)
             order_type = mt5.ORDER_TYPE_BUY if pos.trade_type == "BUY" else mt5.ORDER_TYPE_SELL
             margin = mt5.order_calc_margin(order_type, pos.symbol, pos.volume, current_price)
             if margin is None:
                 margin = 0
-        else:
-            # MT5 없음 - bridge 기반 계산
-            current_price, profit = calculate_demo_profit(
-                pos.symbol, pos.entry_price, pos.trade_type, pos.volume
-            )
 
         margin = round(margin, 2)
         total_margin += margin
-
+        
         positions_data.append({
             "id": pos.id,
             "ticket": pos.id,
@@ -808,25 +655,8 @@ async def close_demo_position(
                 else:
                     profit = (entry_price - exit_price) * position.volume
         else:
-            # bridge cache도 없으면 → Binance API fallback
-            try:
-                external_prices = await fetch_external_prices()
-                if external_prices and position.symbol in external_prices:
-                    price_data = external_prices[position.symbol]
-                    exit_price = price_data.get('bid', entry_price) if position.trade_type == "BUY" else price_data.get('ask', entry_price)
-                    
-                    if position.trade_type == "BUY":
-                        profit = (exit_price - entry_price) * position.volume
-                    else:
-                        profit = (entry_price - exit_price) * position.volume
-                    print(f"[DEMO CLOSE] 📡 Using Binance API price: {exit_price}")
-                else:
-                    exit_price = entry_price
-                    profit = 0
-            except Exception as e:
-                print(f"[DEMO CLOSE] ⚠️ Binance API error: {e}")
-                exit_price = entry_price
-                profit = 0
+            exit_price = entry_price
+            profit = 0
     
     profit = round(profit, 2)
     
@@ -1234,6 +1064,7 @@ async def close_all_demo_positions(
             if tick:
                 exit_price = tick.bid if position.trade_type == "BUY" else tick.ask
 
+                # 손익 계산
                 symbol_info = mt5.symbol_info(position.symbol)
                 if symbol_info and symbol_info.trade_tick_size > 0:
                     if position.trade_type == "BUY":
@@ -1247,15 +1078,10 @@ async def close_all_demo_positions(
                         profit = (exit_price - entry_price) * position.volume
                     else:
                         profit = (entry_price - exit_price) * position.volume
-        else:
-            # MT5 없음 - bridge 기반 계산
-            exit_price, profit = calculate_demo_profit(
-                position.symbol, entry_price, position.trade_type, position.volume
-            )
 
         profit = round(profit, 2)
         total_profit += profit
-
+        
         # 거래 내역 저장
         trade = DemoTrade(
             user_id=current_user.id,
@@ -1271,14 +1097,14 @@ async def close_all_demo_positions(
         db.add(trade)
         db.delete(position)
         closed_count += 1
-
+    
     # 잔고 업데이트
     current_user.demo_balance = (current_user.demo_balance or 10000.0) + total_profit
     current_user.demo_equity = current_user.demo_balance
     current_user.demo_today_profit = (current_user.demo_today_profit or 0.0) + total_profit
-
+    
     db.commit()
-
+    
     return JSONResponse({
         "success": True,
         "message": f"[DEMO] {closed_count}개 포지션 청산 완료! P/L: ${total_profit:+,.2f}",
@@ -1322,6 +1148,7 @@ async def close_demo_by_type(
             if tick:
                 exit_price = tick.bid if position.trade_type == "BUY" else tick.ask
 
+                # 손익 계산
                 symbol_info = mt5.symbol_info(position.symbol)
                 if symbol_info and symbol_info.trade_tick_size > 0:
                     if position.trade_type == "BUY":
@@ -1335,11 +1162,6 @@ async def close_demo_by_type(
                         profit = (exit_price - entry_price) * position.volume
                     else:
                         profit = (entry_price - exit_price) * position.volume
-        else:
-            # MT5 없음 - bridge 기반 계산
-            exit_price, profit = calculate_demo_profit(
-                position.symbol, entry_price, position.trade_type, position.volume
-            )
 
         profit = round(profit, 2)
         total_profit += profit
@@ -1359,14 +1181,14 @@ async def close_demo_by_type(
         db.add(trade)
         db.delete(position)
         closed_count += 1
-
+    
     # 잔고 업데이트
     current_user.demo_balance = (current_user.demo_balance or 10000.0) + total_profit
     current_user.demo_equity = current_user.demo_balance
     current_user.demo_today_profit = (current_user.demo_today_profit or 0.0) + total_profit
-
+    
     db.commit()
-
+    
     return JSONResponse({
         "success": True,
         "message": f"[DEMO] {type} {closed_count}개 청산! P/L: ${total_profit:+,.2f}",
@@ -1561,45 +1383,22 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                 # MT5 없음 - 브릿지 캐시에서 가격 가져오기
                 all_prices = get_bridge_prices()
 
-                # 브릿지 캐시도 비어있으면 → Binance API fallback
-                if not all_prices:
-                    all_prices = await fetch_external_prices()
-                    print("[DEMO WS] 📡 Using Binance API fallback for prices")
-
                 # 브릿지 캐시에서 캔들 데이터 가져오기 (M5 타임프레임)
                 for symbol in symbols_list:
                     cached_candles = get_bridge_candles(symbol, "M5")
                     if cached_candles and len(cached_candles) > 0:
                         latest = cached_candles[-1]
-                        # ★ 실시간 가격으로 close/high/low 업데이트 (mt5.py와 동일)
-                        current_price = all_prices.get(symbol, {}).get("bid", latest.get("close", 0))
-                        candle_high = max(latest.get("high", 0), current_price)
-                        candle_low = min(latest.get("low", float('inf')), current_price) if latest.get("low", 0) > 0 else current_price
                         all_candles[symbol] = {
                             "time": latest.get("time", int(time.time())),
                             "open": latest.get("open", 0),
-                            "high": candle_high,
-                            "low": candle_low,
-                            "close": current_price
+                            "high": latest.get("high", 0),
+                            "low": latest.get("low", 0),
+                            "close": latest.get("close", 0)
                         }
 
-                # 캔들도 비어있으면 → 현재 가격으로 합성 캔들 생성
-                if not all_candles and all_prices:
-                    current_time = int(time.time())
-                    # 현재 분의 시작 시간 (60초 단위)
-                    candle_time = current_time - (current_time % 60)
-                    for symbol in symbols_list:
-                        if symbol in all_prices:
-                            price = all_prices[symbol].get("bid", 0)
-                            if price > 0:
-                                all_candles[symbol] = {
-                                    "time": candle_time,
-                                    "open": price,
-                                    "high": price,
-                                    "low": price,
-                                    "close": price
-                                }
-                    print("[DEMO WS] 📡 Generated synthetic candles from prices")
+                # 캐시가 비어있으면 로그 출력
+                if not all_prices:
+                    print("[DEMO WS] ⚠️ Bridge cache empty - waiting for MT5 bridge data")
 
             # Demo 계정 정보 (DB에서 실제 데이터 가져오기)
             demo_balance = 10000.0
@@ -1653,25 +1452,11 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                                             else:
                                                 profit = (entry - current_price['ask']) * volume
                                     else:
-                                        # MT5 없음 - bridge symbol_info 기반 계산
-                                        sym_info = bridge_cache.get("symbol_info", {}).get(pos.symbol)
-                                        if sym_info and sym_info.get('tick_size', 0) > 0 and sym_info.get('tick_value', 0) > 0:
-                                            ts = sym_info['tick_size']
-                                            tv = sym_info['tick_value']
-                                            if pos.trade_type == "BUY":
-                                                pd = current_price['bid'] - entry
-                                            else:
-                                                pd = entry - current_price['ask']
-                                            profit = (pd / ts) * tv * volume
+                                        # MT5 없음 - 단순 계산
+                                        if pos.trade_type == "BUY":
+                                            profit = (current_price['bid'] - entry) * volume
                                         else:
-                                            specs = DEFAULT_SYMBOL_SPECS.get(pos.symbol, {"tick_size": 0.01, "tick_value": 0.01})
-                                            ts = specs['tick_size']
-                                            tv = specs['tick_value']
-                                            if pos.trade_type == "BUY":
-                                                pd = current_price['bid'] - entry
-                                            else:
-                                                pd = entry - current_price['ask']
-                                            profit = (pd / ts) * tv * volume
+                                            profit = (entry - current_price['ask']) * volume
 
                                 profit = round(profit, 2)
                                 total_profit += profit
@@ -1730,7 +1515,7 @@ async def demo_websocket_endpoint(websocket: WebSocket):
             }
 
             await websocket.send_text(json.dumps(data))
-            await asyncio.sleep(0.3)
+            await asyncio.sleep(1)
 
         except Exception as e:
             print(f"[DEMO WS] Error: {e}")

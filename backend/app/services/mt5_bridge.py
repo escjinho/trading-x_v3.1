@@ -9,6 +9,7 @@ except ImportError:
     MT5_AVAILABLE = False
 import requests
 import time
+import threading
 from datetime import datetime
 
 # ========= 설정 =========
@@ -78,7 +79,7 @@ def send_quote(symbol: str):
     except:
         return False
 
-def send_candles(symbol: str, timeframe: str, count: int = 1000):
+def send_candles(symbol: str, timeframe: str, count: int = 100):
     """심볼의 캔들 히스토리를 서버로 전송 (타임프레임 포함)"""
     tf = TIMEFRAMES.get(timeframe)
     if tf is None:
@@ -178,7 +179,7 @@ def send_account_info():
         print(f"[Account] 전송 오류: {e}")
         return False
     
-def send_all_candles(symbol: str, count: int = 1000):
+def send_all_candles(symbol: str, count: int = 100):
     """모든 타임프레임의 캔들 전송"""
     success = 0
     for tf_name in TIMEFRAMES.keys():
@@ -330,6 +331,24 @@ def process_pending_orders():
         print(f"[Order] 완료: {order_id} - {result.get('success')} - {result.get('message')}")
 
 
+def candle_thread_func(stop_event):
+    """별도 스레드: 캔들 데이터를 CANDLE_INTERVAL 초마다 전송"""
+    print(f"[Candle Thread] 시작 (주기: {CANDLE_INTERVAL}초)")
+    while not stop_event.is_set():
+        try:
+            timestamp = datetime.now().strftime("%H:%M:%S")
+            print(f"\n[{timestamp}] [Candle Thread] 캔들 데이터 업데이트...")
+            for symbol in SYMBOLS:
+                send_candles(symbol, "M1", 100)
+                send_candles(symbol, "M5", 100)
+            print(f"[{timestamp}] [Candle Thread] 완료 ({len(SYMBOLS)} 심볼 × 2 TF)")
+        except Exception as e:
+            print(f"\n[Candle Thread] 오류: {e}")
+
+        # CANDLE_INTERVAL 동안 대기하되, stop_event로 즉시 종료 가능
+        stop_event.wait(CANDLE_INTERVAL)
+
+
 def main():
     print("=" * 50)
     print("MT5 Bridge - Windows to Linux")
@@ -358,40 +377,86 @@ def main():
         tf_count = send_all_candles(symbol, 1000)
         print(f"  [{symbol}] {tf_count}/{len(TIMEFRAMES)} 타임프레임 전송 완료")
 
+    # ★ 캔들 전송 스레드 시작
+    stop_event = threading.Event()
+    candle_thread = threading.Thread(target=candle_thread_func, args=(stop_event,), daemon=True)
+    candle_thread.start()
+
     print(f"\n실시간 시세 전송 시작 (주기: {INTERVAL}초)")
     print("-" * 50)
 
-    last_candle_update = time.time()
-
-    # 실시간 시세 전송 루프
+    # 실시간 시세 전송 루프 (가격 + 계정 + 포지션 + 주문만)
     while True:
         try:
-            success_count = 0
+            # ★ 배치 전송: 모든 가격 + 계정 + 포지션을 한번에!
+            batch_data = {"prices": {}, "account": None, "positions": []}
+
+            # 모든 심볼 가격 수집
             for symbol in SYMBOLS:
-                if send_quote(symbol):
-                    success_count += 1
+                tick = mt5.symbol_info_tick(symbol)
+                if tick:
+                    batch_data["prices"][symbol] = {
+                        "bid": tick.bid,
+                        "ask": tick.ask,
+                        "last": tick.last,
+                        "volume": tick.volume,
+                        "time": tick.time
+                    }
 
-            # ★ 계정 정보도 함께 전송
-            send_account_info()
+            # 계정 정보 수집
+            account = mt5.account_info()
+            if account:
+                batch_data["account"] = {
+                    "broker": account.company,
+                    "login": account.login,
+                    "server": account.server,
+                    "balance": account.balance,
+                    "equity": account.equity,
+                    "margin": account.margin,
+                    "free_margin": account.margin_free,
+                    "leverage": account.leverage
+                }
 
-            # ★ 대기 중인 주문 처리
+            # 포지션 수집
+            positions = mt5.positions_get()
+            if positions:
+                batch_data["positions"] = [
+                    {
+                        "ticket": pos.ticket,
+                        "symbol": pos.symbol,
+                        "type": pos.type,
+                        "volume": pos.volume,
+                        "price_open": pos.price_open,
+                        "profit": pos.profit,
+                        "magic": pos.magic,
+                        "comment": pos.comment
+                    }
+                    for pos in positions
+                ]
+
+            # ★ 한번에 전송! (11개 → 1개 HTTP)
+            try:
+                response = requests.post(
+                    f"{SERVER_URL}/api/mt5/bridge/batch",
+                    json=batch_data,
+                    timeout=5
+                )
+                symbol_count = len(batch_data["prices"])
+            except Exception as e:
+                symbol_count = 0
+                print(f"\n[Batch] 전송 실패: {e}")
+
+            # ★ 주문 처리 (이건 별도 요청 필요)
             process_pending_orders()
 
             timestamp = datetime.now().strftime("%H:%M:%S")
-            print(f"[{timestamp}] {success_count}/{len(SYMBOLS)} 심볼 + Account 전송", end="\r")
-
-            # 주기적으로 캔들 업데이트 (1분마다)
-            if time.time() - last_candle_update > CANDLE_INTERVAL:
-                print(f"\n[{timestamp}] 캔들 데이터 업데이트...")
-                for symbol in SYMBOLS:
-                    # M1, M5만 자주 업데이트 (나머지는 초기 로드로 충분)
-                    send_candles(symbol, "M1", 100)
-                    send_candles(symbol, "M5", 100)
-                last_candle_update = time.time()
+            print(f"[{timestamp}] Batch: {symbol_count} 심볼 전송", end="\r")
 
             time.sleep(INTERVAL)
         except KeyboardInterrupt:
             print("\n\n브릿지 종료...")
+            stop_event.set()
+            candle_thread.join(timeout=5)
             break
         except Exception as e:
             print(f"\n오류: {e}")

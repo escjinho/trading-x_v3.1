@@ -11,8 +11,11 @@ function initApp() {
     // Initialize Home
     initHome();
     
-    // Initialize Chart module
-    initChartModule();
+    // Initialize Chart module (단 1회만 실행)
+    if (!window._chartModuleInitialized) {
+        window._chartModuleInitialized = true;
+        initChartModule();
+    }
     
     // Initialize sliders
     const targetSlider = document.getElementById('targetSlider');

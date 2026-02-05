@@ -24,34 +24,48 @@ const ChartPanel = {
      * 현재 캔들의 close 가격을 실시간으로 업데이트하고, high/low도 조정
      */
     safeUpdateCandle(candleData) {
-        if (!candleData) {
+        if (!candleData || !chart || !candleSeries) {
             return false;
         }
 
         try {
             const newClose = candleData.close;
 
-            // 마지막 캔들 데이터가 있으면 현재 캔들 업데이트
-            if (this.lastCandleData && this.lastCandleTime > 0) {
-                const updatedCandle = {
-                    time: this.lastCandleTime,
-                    open: this.lastCandleData.open,
-                    high: Math.max(this.lastCandleData.high, newClose),
-                    low: Math.min(this.lastCandleData.low, newClose),
-                    close: newClose
-                };
-
-                // ChartTypeManager를 통해 업데이트
-                if (typeof ChartTypeManager !== 'undefined') {
-                    ChartTypeManager.updateLastCandle(updatedCandle);
-                } else if (candleSeries) {
-                    candleSeries.update(updatedCandle);
+            // ★ lastCandleData가 없으면 WebSocket 데이터로 초기화
+            if (!this.lastCandleData || this.lastCandleTime === 0) {
+                if (candleData.time && candleData.open) {
+                    this.lastCandleTime = candleData.time;
+                    this.lastCandleData = {
+                        time: candleData.time,
+                        open: candleData.open,
+                        high: candleData.high || candleData.open,
+                        low: candleData.low || candleData.open,
+                        close: newClose || candleData.open
+                    };
+                    console.log('[ChartPanel] lastCandleData initialized from WebSocket');
                 }
-
-                // 마지막 캔들 데이터 갱신
-                this.lastCandleData = updatedCandle;
-                return true;
+                return false;
             }
+
+            // 마지막 캔들 데이터가 있으면 현재 캔들 업데이트
+            const updatedCandle = {
+                time: this.lastCandleTime,
+                open: this.lastCandleData.open,
+                high: Math.max(this.lastCandleData.high, newClose),
+                low: Math.min(this.lastCandleData.low, newClose),
+                close: newClose
+            };
+
+            // ChartTypeManager를 통해 업데이트
+            if (typeof ChartTypeManager !== 'undefined') {
+                ChartTypeManager.updateLastCandle(updatedCandle);
+            } else if (candleSeries) {
+                candleSeries.update(updatedCandle);
+            }
+
+            // 마지막 캔들 데이터 갱신
+            this.lastCandleData = updatedCandle;
+            return true;
         } catch (e) {
             console.warn('[ChartPanel] Candle update skipped:', e.message);
         }
@@ -79,9 +93,9 @@ const ChartPanel = {
             return;
         }
 
-        // ★ 컨테이너 크기 체크 - 0이면 기본값 사용
-        const containerWidth = container.clientWidth || 800;
-        const containerHeight = window.innerWidth <= 480 ? 500 : 720;
+    // ★ 컨테이너 크기 체크 - 0이면 기본값 사용
+    const containerWidth = container.clientWidth || 800;
+        const containerHeight = window.innerWidth <= 480 ? 530 : 720;
 
         console.log('[ChartPanel] Init chart - width:', containerWidth, 'height:', containerHeight);
 
@@ -251,12 +265,12 @@ const ChartPanel = {
                 // 기준가격 설정 (첫 번째 캔들의 시가)
                 this.referencePrice = data.candles[0].open;
 
-                // 인디케이터 데이터 설정
+                // 인디케이터 데이터 설정 (★ null 체크 추가)
                 if (data.indicators) {
-                    if (data.indicators.bb_upper) bbUpperSeries.setData(data.indicators.bb_upper);
-                    if (data.indicators.bb_middle) bbMiddleSeries.setData(data.indicators.bb_middle);
-                    if (data.indicators.bb_lower) bbLowerSeries.setData(data.indicators.bb_lower);
-                    if (data.indicators.lwma) lwmaSeries.setData(data.indicators.lwma);
+                    if (data.indicators.bb_upper && bbUpperSeries) bbUpperSeries.setData(data.indicators.bb_upper);
+                    if (data.indicators.bb_middle && bbMiddleSeries) bbMiddleSeries.setData(data.indicators.bb_middle);
+                    if (data.indicators.bb_lower && bbLowerSeries) bbLowerSeries.setData(data.indicators.bb_lower);
+                    if (data.indicators.lwma && lwmaSeries) lwmaSeries.setData(data.indicators.lwma);
                 }
 
                 // 보이는 범위 설정 (최근 150개 캔들) + 오른쪽 여백 유지

@@ -82,9 +82,11 @@ from ..services.mt5_service import MT5_DISABLED
 # ========== MT5 브릿지 데이터 캐시 (전역) ==========
 # Windows MT5 브릿지에서 전송된 데이터를 저장
 bridge_cache = {
-    "prices": {},      # {"BTCUSD": {"bid": 97000, "ask": 97010, "last": 97005, "time": 1234567890}}
+    "prices": {},
+    "positions": [],  # ★Bridge 포지션 캐시
     "candles": {},     # {"BTCUSD": {"M1": [...], "M5": [...], "H1": [...], ...}}
     "account": {},     # {"broker": "...", "login": ..., "balance": ..., ...}
+    "symbol_info": {}, # {"BTCUSD": {"tick_size": ..., "tick_value": ..., ...}}
     "last_update": 0   # 마지막 업데이트 시간
 }
 
@@ -156,8 +158,54 @@ async def get_account_info(current_user: User = Depends(get_current_user)):
     """MT5 계정 정보 + 인디케이터 + 포지션 조회"""
     try:
         if not mt5_initialize_safe():
-            raise HTTPException(status_code=500, detail="MT5 초기화 실패")
-        
+            # MT5 없음 - bridge_cache에서 계정 정보 조회
+            cached_account = bridge_cache.get("account", {})
+            cached_positions = bridge_cache.get("positions", [])
+
+            # 인디케이터 계산
+            try:
+                indicators = IndicatorService.calculate_all_indicators("BTCUSD")
+                buy_count = indicators["buy"]
+                sell_count = indicators["sell"]
+                neutral_count = indicators["neutral"]
+                base_score = indicators["score"]
+            except Exception:
+                buy_count, sell_count, neutral_count, base_score = 33, 33, 34, 50
+
+            # Buy/Sell 패널용 포지션 (magic=100001)
+            position_data = None
+            for pos in cached_positions:
+                if pos.get("magic") == 100001:
+                    position_data = {
+                        "type": "BUY" if pos.get("type", 0) == 0 else "SELL",
+                        "symbol": pos.get("symbol", ""),
+                        "volume": pos.get("volume", 0),
+                        "entry": pos.get("price_open", 0),
+                        "profit": pos.get("profit", 0),
+                        "ticket": pos.get("ticket", 0),
+                        "magic": pos.get("magic", 0)
+                    }
+                    break
+
+            return {
+                "broker": cached_account.get("broker", "Bridge"),
+                "account": cached_account.get("login", "N/A"),
+                "server": cached_account.get("server", "Bridge"),
+                "balance": cached_account.get("balance", 0),
+                "equity": cached_account.get("equity", 0),
+                "margin": cached_account.get("margin", 0),
+                "free_margin": cached_account.get("margin_free", 0),
+                "leverage": cached_account.get("leverage", 500),
+                "positions_count": len(cached_positions),
+                "position": position_data,
+                "buy_count": buy_count,
+                "sell_count": sell_count,
+                "neutral_count": neutral_count,
+                "base_score": base_score,
+                "prices": get_bridge_prices(),
+                "martin": martin_service.get_state()
+            }
+
         account = mt5.account_info()
         if not account:
             raise HTTPException(status_code=500, detail="계정 정보 없음")
@@ -287,6 +335,18 @@ async def get_candles(
             print(f"[Candles] {symbol}/{timeframe} - 브릿지 캐시에서 {len(candles)}개 로드")
 
     if not candles:
+        # MT5도 없고 브릿지 캐시도 없으면 → Binance API fallback
+        try:
+            candles = await fetch_binance_candles(symbol, timeframe, count)
+            if candles:
+                closes = [c['close'] for c in candles]
+                highs = [c['high'] for c in candles]
+                lows = [c['low'] for c in candles]
+                print(f"[Candles] {symbol}/{timeframe} - Binance API에서 {len(candles)}개 로드")
+        except Exception as e:
+            print(f"[Candles] Binance API fallback error: {e}")
+
+    if not candles:
         return {"candles": [], "indicators": {}, "source": "no_data", "timeframe": timeframe}
 
     # 인디케이터 계산
@@ -325,6 +385,14 @@ async def get_indicators(symbol: str = "BTCUSD"):
 
 # ========== 브릿지 데이터 수신 (인증 불필요) ==========
 # 중요: 구체적인 경로(/bridge/account)가 동적 경로(/bridge/{symbol})보다 먼저 와야 함!
+# ★ Bridge 포지션 수신
+@router.post("/bridge/positions")
+async def receive_bridge_positions(data: dict):
+    """Windows 브릿지에서 포지션 데이터 수신"""
+    bridge_cache["positions"] = data.get("positions", [])
+    bridge_cache["last_update"] = time.time()
+    return {"status": "ok", "positions_count": len(bridge_cache["positions"])}
+
 @router.post("/bridge/account")
 async def receive_bridge_account(data: dict):
     """
@@ -361,7 +429,47 @@ async def get_bridge_account():
     """브릿지 캐시에서 계정 정보 반환"""
     return bridge_cache.get("account", {})
 
+@router.post("/bridge/batch")
+async def receive_bridge_batch(data: dict):
+    """Windows 브릿지에서 모든 심볼 가격 + 계정정보 한번에 수신"""
+    import time as time_module
+    try:
+        # 가격 데이터 일괄 업데이트
+        prices = data.get("prices", {})
+        for symbol, price_data in prices.items():
+            bridge_cache["prices"][symbol] = {
+                "bid": price_data.get("bid", 0),
+                "ask": price_data.get("ask", 0),
+                "last": price_data.get("last", 0),
+                "time": price_data.get("time", int(time_module.time()))
+            }
 
+        # 계정 정보 업데이트
+        account = data.get("account")
+        if account:
+            bridge_cache["account"] = {
+                "broker": account.get("broker", "N/A"),
+                "login": account.get("login", 0),
+                "server": account.get("server", "N/A"),
+                "balance": account.get("balance", 0),
+                "equity": account.get("equity", 0),
+                "margin": account.get("margin", 0),
+                "free_margin": account.get("free_margin", 0),
+                "leverage": account.get("leverage", 0),
+            }
+
+        # 포지션 업데이트
+        positions = data.get("positions")
+        if positions is not None:
+            bridge_cache["positions"] = positions
+
+        bridge_cache["last_update"] = time_module.time()
+
+        return {"status": "ok", "symbols": len(prices)}
+    except Exception as e:
+        print(f"[Bridge Batch] 오류: {e}")
+        return {"status": "error", "message": str(e)}
+    
 @router.post("/bridge/{symbol}")
 async def receive_bridge_data(symbol: str, data: dict):
     """
@@ -395,6 +503,20 @@ async def receive_bridge_data(symbol: str, data: dict):
         }
     except Exception as e:
         print(f"[Bridge] 데이터 수신 오류: {e}")
+        return {"status": "error", "message": str(e)}
+
+
+@router.post("/bridge/{symbol}/info")
+async def receive_bridge_symbol_info(symbol: str, data: dict):
+    """Windows MT5 브릿지에서 전송된 심볼 계약 정보 수신"""
+    import time as time_module
+    try:
+        bridge_cache["symbol_info"][symbol] = data
+        bridge_cache["last_update"] = time_module.time()
+        print(f"[Bridge] {symbol} symbol_info 수신")
+        return {"status": "success", "symbol": symbol}
+    except Exception as e:
+        print(f"[Bridge] symbol_info 수신 오류: {e}")
         return {"status": "error", "message": str(e)}
 
 
@@ -491,6 +613,14 @@ async def submit_order_result(result: dict):
     if order_id:
         order_results[order_id] = result
         print(f"[Bridge] 주문 결과 수신: {order_id} - {result.get('success')}")
+
+        # 주문 성공시 bridge에 포지션 갱신 요청을 위해 last_update 기록
+        if result.get("success"):
+            bridge_cache["last_update"] = time.time()
+            # 결과에 포지션 정보가 포함되어 있으면 캐시 업데이트
+            if "positions" in result:
+                bridge_cache["positions"] = result["positions"]
+
     return {"status": "ok"}
 
 
@@ -696,7 +826,37 @@ async def get_positions(
 ):
     """모든 열린 포지션 조회 (magic 필터 옵션)"""
     if not mt5_initialize_safe():
-        return {"success": False, "positions": [], "message": "MT5 초기화 실패"}
+        # MT5 없음 - bridge_cache에서 포지션 조회
+        cached_positions = bridge_cache.get("positions", [])
+        if not cached_positions:
+            return {"success": True, "positions": [], "count": 0, "total_margin": 0, "message": "bridge mode"}
+
+        position_list = []
+        for pos in cached_positions:
+            if magic is not None and pos.get("magic") != magic:
+                continue
+            position_list.append({
+                "ticket": pos.get("ticket", 0),
+                "symbol": pos.get("symbol", ""),
+                "type": "BUY" if pos.get("type", 0) == 0 else "SELL",
+                "volume": pos.get("volume", 0),
+                "entry": pos.get("price_open", 0),
+                "current": pos.get("price_current", 0),
+                "profit": pos.get("profit", 0),
+                "sl": pos.get("sl", 0),
+                "tp": pos.get("tp", 0),
+                "magic": pos.get("magic", 0),
+                "comment": pos.get("comment", ""),
+                "margin": 0
+            })
+
+        return {
+            "success": True,
+            "positions": position_list,
+            "count": len(position_list),
+            "total_margin": 0,
+            "leverage": 500
+        }
     
     positions = mt5.positions_get()
     account = mt5.account_info()
@@ -1305,6 +1465,10 @@ async def websocket_endpoint(websocket: WebSocket):
     
     symbols_list = ["BTCUSD", "EURUSD.r", "USDJPY.r", "XAUUSD.r", "US100.", "GBPUSD.r", "AUDUSD.r", "USDCAD.r", "ETHUSD"]
     
+    # 인디케이터 캐시
+    indicator_cache = {"buy": 33, "sell": 33, "neutral": 34, "score": 50}
+    indicator_last_update = 0
+    
     while True:
         try:
             import time as time_module
@@ -1364,6 +1528,15 @@ async def websocket_endpoint(websocket: WebSocket):
                         all_prices[sym] = {"bid": tick.bid, "ask": tick.ask}
             else:
                 all_prices = get_bridge_prices()
+                
+                # 브릿지 캐시도 비어있으면 → Binance API fallback
+                if not all_prices:
+                    try:
+                        from .demo import fetch_external_prices
+                        all_prices = await fetch_external_prices()
+                        print("[LIVE WS] 📡 Using Binance API fallback for prices")
+                    except Exception as e:
+                        print(f"[LIVE WS] ⚠️ Binance fallback error: {e}")
             
             # ★ 캔들 정보: MT5 직접 또는 브릿지 캐시
             all_candles = {}
@@ -1397,8 +1570,25 @@ async def websocket_endpoint(websocket: WebSocket):
                             "low": candle_low,
                             "close": current_price  # ★ 실시간 가격으로 close 업데이트
                         }
+
+                # 캔들도 비어있으면 → 가격으로 합성
+                if not all_candles and all_prices:
+                    current_ts = int(time_module.time())
+                    candle_time = current_ts - (current_ts % 60)
+                    for sym in symbols_list:
+                        if sym in all_prices:
+                            price = all_prices[sym].get("bid", 0)
+                            if price > 0:
+                                all_candles[sym] = {
+                                    "time": candle_time,
+                                    "open": price,
+                                    "high": price,
+                                    "low": price,
+                                    "close": price
+                                }
+                    print("[LIVE WS] 📡 Generated synthetic candles from prices")
             
-            # 포지션 정보 (MT5 직접 연결 시에만)
+            # 포지션 정보 (MT5 직접 연결 또는 Bridge)
             positions_count = 0
             position_data = None
             if mt5_connected:
@@ -1418,19 +1608,36 @@ async def websocket_endpoint(websocket: WebSocket):
                                 "magic": pos.magic
                             }
                             break
+            elif bridge_connected:
+                # ★ Bridge 포지션 캐시에서 조회 (포맷 변환 추가)
+                bridge_positions = bridge_cache.get("positions", [])
+                positions_count = len(bridge_positions)
+                for pos in bridge_positions:
+                    if pos.get("magic") == 100001:
+                        position_data = {
+                            "type": "BUY" if pos.get("type", 0) == 0 else "SELL",
+                            "symbol": pos.get("symbol", ""),
+                            "volume": pos.get("volume", 0),
+                            "entry": pos.get("price_open", 0),
+                            "profit": pos.get("profit", 0),
+                            "ticket": pos.get("ticket", 0),
+                            "magic": pos.get("magic", 0)
+                        }
+                        break
             
-            # 인디케이터 계산
-            try:
-                indicators = IndicatorService.calculate_all_indicators("BTCUSD")
-                buy_count = indicators["buy"]
-                sell_count = indicators["sell"]
-                neutral_count = indicators["neutral"]
-                base_score = indicators["score"]
-            except Exception as e:
-                buy_count = 33
-                sell_count = 33
-                neutral_count = 34
-                base_score = 50
+            # 인디케이터 계산 (5초마다 캐시)
+            current_time = time_module.time()
+            if current_time - indicator_last_update > 5:
+                try:
+                    indicators = IndicatorService.calculate_all_indicators("BTCUSD")
+                    indicator_cache = indicators
+                    indicator_last_update = current_time
+                except:
+                    pass
+            buy_count = indicator_cache.get("buy", 33)
+            sell_count = indicator_cache.get("sell", 33)
+            neutral_count = indicator_cache.get("neutral", 34)
+            base_score = indicator_cache.get("score", 50)
             
             # 마틴 상태
             martin_state = martin_service.get_state()
@@ -1462,5 +1669,6 @@ async def websocket_endpoint(websocket: WebSocket):
         except WebSocketDisconnect:
             break
         except Exception as e:
-            print(f"WebSocket Error: {e}")
-            await asyncio.sleep(0.5)
+                if str(e):
+                    print(f"WebSocket Error: {e}")
+                await asyncio.sleep(0.5)

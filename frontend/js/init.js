@@ -30,10 +30,7 @@ setInterval(() => {
     }
 }, 10000);
 
-// 차트 모듈 초기화
-if (typeof initChartModule === 'function') {
-    initChartModule();
-}
+// 차트 모듈 초기화는 app.js의 initApp()에서 수행 (중복 호출 방지)
 
 // ========== 홈 슬라이더 + 인사말 시스템 ==========
 

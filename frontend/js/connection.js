@@ -104,7 +104,23 @@ function connectWebSocket() {
 
     ws.onmessage = function(event) {
         const data = JSON.parse(event.data);
-        // console.log('[WebSocket] Received data:', data);  // 너무 많은 로그 방지
+        
+        // ★ 디버깅 로그
+        
+        // ★ 즉시 호가 업데이트 (최상단에서 처리)
+        if (data.all_prices && data.all_prices[chartSymbol]) {
+            const price = data.all_prices[chartSymbol];
+            const decimals = typeof getDecimalsForSymbol === "function" ? getDecimalsForSymbol(chartSymbol) : 2;
+            const bidEl = document.getElementById("chartBid");
+            const askEl = document.getElementById("chartAsk");
+            if (bidEl) {
+                bidEl.textContent = price.bid.toLocaleString(undefined, {minimumFractionDigits: decimals, maximumFractionDigits: decimals});
+            }
+            if (askEl) {
+                askEl.textContent = price.ask.toLocaleString(undefined, {minimumFractionDigits: decimals, maximumFractionDigits: decimals});
+            }
+        } else {
+        }
 
         // MT5 연결 상태 확인 (가격 업데이트는 계속 진행)
         if (data.mt5_connected === false) {
@@ -145,7 +161,8 @@ function connectWebSocket() {
                     ChartPanel.safeUpdateCandle(data.all_candles[chartSymbol]);
                 }
 
-                if (!window.lastIndicatorUpdate || Date.now() - window.lastIndicatorUpdate > 30000) {
+                // ★ chart가 초기화된 후에만 loadCandles 호출
+                if (chart && (!window.lastIndicatorUpdate || Date.now() - window.lastIndicatorUpdate > 30000)) {
                     window.lastIndicatorUpdate = Date.now();
                     loadCandles();
                 }
@@ -167,12 +184,35 @@ function connectWebSocket() {
             document.getElementById('chartIndNeutral').textContent = data.neutral_count;
             document.getElementById('chartIndBuy').textContent = data.buy_count;
 
-            // ★ Demo 모드에서도 포지션 실시간 업데이트
-            fetchDemoData();
+
+            // ★ V5 패널 업데이트 - WS 데이터 직접 사용 (HTTP 요청 제거)
+            if (typeof updateV5PanelFromData === 'function' && data.positions) {
+                updateV5PanelFromData(data);
+            }
             
-            // ★ V5 패널도 실시간 업데이트
-            if (typeof updateMultiOrderPanelV5 === 'function') {
-                updateMultiOrderPanelV5();
+            // ★ Demo 잔고/자산 업데이트
+            if (data.balance !== undefined) {
+                balance = data.balance;
+                const tradeBalance = document.getElementById('tradeBalance');
+                if (tradeBalance) tradeBalance.textContent = '$' + Math.round(data.balance).toLocaleString();
+            }
+            
+            // ★ Demo 포지션 업데이트
+            console.log('[WS Demo] Position data received:', data.position);
+            if (data.position) {
+                console.log('[WS Demo] ✅ Has position - calling updatePositionUI(true)');
+                window.currentProfit = data.position.profit || 0;
+                window.currentTarget = data.position.target || targetAmount;
+                if (typeof updatePositionUI === 'function') {
+                    updatePositionUI(true, data.position);
+                } else {
+                    console.error('[WS Demo] ❌ updatePositionUI is not defined!');
+                }
+            } else {
+                console.log('[WS Demo] ❌ No position - calling updatePositionUI(false)');
+                if (typeof updatePositionUI === 'function') {
+                    updatePositionUI(false, null);
+                }
             }
             
             return;
@@ -232,8 +272,8 @@ function connectWebSocket() {
                 ChartPanel.safeUpdateCandle(data.all_candles[chartSymbol]);
             }
 
-            // 보조지표도 함께 업데이트 (30초마다)
-            if (!window.lastIndicatorUpdate || Date.now() - window.lastIndicatorUpdate > 30000) {
+            // ★ chart가 초기화된 후에만 loadCandles 호출
+            if (chart && (!window.lastIndicatorUpdate || Date.now() - window.lastIndicatorUpdate > 30000)) {
                 window.lastIndicatorUpdate = Date.now();
                 loadCandles();
             }
@@ -263,15 +303,7 @@ function connectWebSocket() {
                 updatePositionUI(true, data.position);
                 window.lastLivePosition = data.position;
                 
-                // 프론트엔드에서도 목표 도달 체크 (백엔드 보완)
-                const pos = data.position;
-                console.log(`[FRONTEND] Position - Profit: ${pos.profit}, Target: ${pos.target}, Should close: ${pos.profit >= pos.target}`);
-                
-                if (pos.target > 0 && pos.profit >= pos.target && !isClosing) {
-                    console.log('[FRONTEND] Target reached! Triggering close...');
-                    isClosing = true;  // 중복 방지
-                    closeDemoPosition();
-                }
+                // ★ 프론트엔드 자동 청산 제거 — 백엔드/MT5 TP/SL에서 처리
             } else {
                 // Live 모드에서 포지션 청산 감지
                 if (!isDemo && window.lastLivePosition) {
@@ -358,9 +390,12 @@ function connectWebSocket() {
             }
         }
         
-        // ★ V5 패널 실시간 업데이트 (라이브 모드)
+        // ★ V5 패널 실시간 업데이트 (라이브 모드) - 3초 쓰로틀
         if (typeof updateMultiOrderPanelV5 === 'function') {
-            updateMultiOrderPanelV5();
+            if (!window._lastV5Update || Date.now() - window._lastV5Update > 3000) {
+                window._lastV5Update = Date.now();
+                updateMultiOrderPanelV5();
+            }
         }
         
         // 패널 동기화 (Today P/L 등)
@@ -657,7 +692,7 @@ async function checkUserMode() {
                     loadHistory();
                 }
                 
-                setInterval(fetchDemoData, 500);
+                setInterval(fetchDemoData, 2000);
             }
 
             setTimeout(() => {
@@ -811,24 +846,8 @@ async function fetchDemoData() {
                 });
                 updatePositionUI(true, data.position);
 
-                // 프론트엔드에서도 목표 도달 체크 (빠른 청산)
-                const pos = data.position;
-                const currentTarget = pos.target || targetAmount;
-
-                // WIN 또는 LOSE 조건 체크
-                if (currentTarget > 0 && !isClosing) {
-                    if (pos.profit >= currentTarget) {
-                        // WIN 조건
-                        console.log('[fetchDemoData] 🎯 WIN Target reached! Profit:', pos.profit, '>=', currentTarget);
-                        isClosing = true;
-                        closeDemoPosition();
-                    } else if (pos.profit <= -currentTarget) {
-                        // LOSE 조건
-                        console.log('[fetchDemoData] 💔 LOSE Target reached! Profit:', pos.profit, '<=', -currentTarget);
-                        isClosing = true;
-                        closeDemoPosition();
-                    }
-                }
+                // ★ 프론트엔드 자동 청산 제거 — 백엔드 account-info에서만 처리
+                // (Race Condition 방지: 프론트/백엔드 이중 청산 문제 해결)
             } else {
                 console.log('[fetchDemoData] ❌ No position');
                 console.log('[fetchDemoData] 📞 Calling updatePositionUI(false, null)');

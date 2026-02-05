@@ -364,7 +364,7 @@ async function checkUserMode() {
             badge.style.display = 'inline';
             connectWebSocket();
             fetchDemoData();
-            setInterval(fetchDemoData, 500);
+            setInterval(fetchDemoData, 2000);
             
             setTimeout(() => {
                 showToast('📊 Demo 모드로 접속했습니다', '가상 $10,000로 연습하세요!');
