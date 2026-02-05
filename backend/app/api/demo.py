@@ -1730,7 +1730,7 @@ async def demo_websocket_endpoint(websocket: WebSocket):
             }
 
             await websocket.send_text(json.dumps(data))
-            await asyncio.sleep(0.3)
+            await asyncio.sleep(random.uniform(1.0, 3.0))
 
         except Exception as e:
             print(f"[DEMO WS] Error: {e}")

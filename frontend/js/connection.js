@@ -79,13 +79,18 @@ window.getReconnectStatus = function() {
 function connectWebSocket() {
     // Demo 모드와 Live 모드에 따라 다른 WebSocket URL 사용
     const wsPath = isDemo ? '/api/demo/ws' : '/api/mt5/ws';
-    const wsUrl = typeof getWsUrl === 'function' ? getWsUrl(wsPath) : `ws://localhost:8000${wsPath}`;
+    let wsUrl = typeof getWsUrl === 'function' ? getWsUrl(wsPath) : `ws://localhost:8000${wsPath}`;
     console.log(`[WS] Connecting to: ${wsUrl} (isDemo: ${isDemo})`);
     console.log(`[WS] getWsUrl defined: ${typeof getWsUrl === 'function'}`);
+    // ★ Demo 모드 토큰 추가 (인증용)
+    if (isDemo && token) {
+        wsUrl += (wsUrl.includes("?") ? "&" : "?") + "token=" + token;
+    }
     ws = new WebSocket(wsUrl);
     
     ws.onopen = function() {
         console.log('WebSocket connected');
+        window.wsConnected = true;  // ★ WS 연결 플래그 (폴링 깜빡임 방지)
         document.getElementById('statusDot').classList.remove('disconnected');
         document.getElementById('headerStatus').textContent = 'Connected';
         wsRetryCount = 0;
@@ -173,16 +178,32 @@ function connectWebSocket() {
                 baseScore = data.base_score;
             }
 
-            // 인디케이터 업데이트 (Trade 탭)
-            document.getElementById('indSell').textContent = data.sell_count;
-            document.getElementById('indNeutral').textContent = data.neutral_count;
-            document.getElementById('indBuy').textContent = data.buy_count;
+            // 인디케이터 숫자 업데이트 (1초 쓰로틀)
+            const now = Date.now();
+            if (!window.lastIndicatorDomUpdate || now - window.lastIndicatorDomUpdate >= 1000) {
+                window.lastIndicatorDomUpdate = now;
+                document.getElementById('indSell').textContent = data.sell_count;
+                document.getElementById('indNeutral').textContent = data.neutral_count;
+                document.getElementById('indBuy').textContent = data.buy_count;
+                chartTargetScore = targetScore;
+                document.getElementById('chartIndSell').textContent = data.sell_count;
+                document.getElementById('chartIndNeutral').textContent = data.neutral_count;
+                document.getElementById('chartIndBuy').textContent = data.buy_count;
+            }
 
-            // Chart 탭 게이지 및 인디케이터 업데이트
-            chartTargetScore = targetScore;
-            document.getElementById('chartIndSell').textContent = data.sell_count;
-            document.getElementById('chartIndNeutral').textContent = data.neutral_count;
-            document.getElementById('chartIndBuy').textContent = data.buy_count;
+            // ★ 게이지 바늘 업데이트 (쓰로틀 없이 매번 호출 - 부드러운 애니메이션)
+            if (typeof GaugePanel !== 'undefined' && GaugePanel.updateGauge) {
+                GaugePanel.updateGauge(data.buy_count, data.sell_count, data.neutral_count);
+                if (!GaugePanel.animationFrameId && GaugePanel.startAnimation) {
+                    GaugePanel.startAnimation();
+                }
+            }
+            if (typeof ChartGaugePanel !== 'undefined' && ChartGaugePanel.updateGauge) {
+                ChartGaugePanel.updateGauge(data.buy_count, data.sell_count, data.neutral_count);
+                if (!ChartGaugePanel.animationFrameId && ChartGaugePanel.startAnimation) {
+                    ChartGaugePanel.startAnimation();
+                }
+            }
 
 
             // ★ V5 패널 업데이트 - WS 데이터 직접 사용 (HTTP 요청 제거)
@@ -190,11 +211,23 @@ function connectWebSocket() {
                 updateV5PanelFromData(data);
             }
             
-            // ★ Demo 잔고/자산 업데이트
+            // ★ Demo 잔고/자산 업데이트 (WS가 단일 소스)
             if (data.balance !== undefined) {
                 balance = data.balance;
                 const tradeBalance = document.getElementById('tradeBalance');
                 if (tradeBalance) tradeBalance.textContent = '$' + Math.round(data.balance).toLocaleString();
+                const homeBalance = document.getElementById('homeBalance');
+                if (homeBalance) homeBalance.textContent = '$' + data.balance.toLocaleString(undefined, {minimumFractionDigits: 2});
+                const accBalance = document.getElementById('accBalance');
+                if (accBalance) accBalance.textContent = '$' + data.balance.toLocaleString(undefined, {minimumFractionDigits: 2});
+                const homeFreeMargin = document.getElementById('homeFreeMargin');
+                if (homeFreeMargin) homeFreeMargin.textContent = '$' + data.balance.toLocaleString(undefined, {minimumFractionDigits: 2});
+            }
+            if (data.equity !== undefined) {
+                const homeEquity = document.getElementById('homeEquity');
+                if (homeEquity) homeEquity.textContent = '$' + data.equity.toLocaleString(undefined, {minimumFractionDigits: 2});
+                const accEquity = document.getElementById('accEquity');
+                if (accEquity) accEquity.textContent = '$' + data.equity.toLocaleString(undefined, {minimumFractionDigits: 2});
             }
             
             // ★ Demo 포지션 업데이트
@@ -287,16 +320,32 @@ function connectWebSocket() {
             baseScore = data.base_score;
         }
 
-        // 인디케이터 업데이트 (Trade 탭)
-        document.getElementById('indSell').textContent = data.sell_count;
-        document.getElementById('indNeutral').textContent = data.neutral_count;
-        document.getElementById('indBuy').textContent = data.buy_count;
+        // 인디케이터 숫자 업데이트 (1초 쓰로틀)
+        const now = Date.now();
+        if (!window.lastIndicatorDomUpdate || now - window.lastIndicatorDomUpdate >= 1000) {
+            window.lastIndicatorDomUpdate = now;
+            document.getElementById('indSell').textContent = data.sell_count;
+            document.getElementById('indNeutral').textContent = data.neutral_count;
+            document.getElementById('indBuy').textContent = data.buy_count;
+            chartTargetScore = targetScore;
+            document.getElementById('chartIndSell').textContent = data.sell_count;
+            document.getElementById('chartIndNeutral').textContent = data.neutral_count;
+            document.getElementById('chartIndBuy').textContent = data.buy_count;
+        }
 
-        // Chart 탭 게이지 및 인디케이터 업데이트
-        chartTargetScore = targetScore;
-        document.getElementById('chartIndSell').textContent = data.sell_count;
-        document.getElementById('chartIndNeutral').textContent = data.neutral_count;
-        document.getElementById('chartIndBuy').textContent = data.buy_count;
+        // ★ 게이지 바늘 업데이트 (쓰로틀 없이 매번 호출 - 부드러운 애니메이션)
+        if (typeof GaugePanel !== 'undefined' && GaugePanel.updateGauge) {
+            GaugePanel.updateGauge(data.buy_count, data.sell_count, data.neutral_count);
+            if (!GaugePanel.animationFrameId && GaugePanel.startAnimation) {
+                GaugePanel.startAnimation();
+            }
+        }
+        if (typeof ChartGaugePanel !== 'undefined' && ChartGaugePanel.updateGauge) {
+            ChartGaugePanel.updateGauge(data.buy_count, data.sell_count, data.neutral_count);
+            if (!ChartGaugePanel.animationFrameId && ChartGaugePanel.startAnimation) {
+                ChartGaugePanel.startAnimation();
+            }
+        }
         
         // 포지션 정보
             if (data.position) {
@@ -406,6 +455,7 @@ function connectWebSocket() {
     
     ws.onclose = function() {
         console.log('WebSocket disconnected');
+        window.wsConnected = false;  // ★ WS 연결 해제 플래그
         document.getElementById('statusDot').classList.add('disconnected');
         document.getElementById('headerStatus').textContent = 'Disconnected';
 
@@ -727,7 +777,11 @@ async function fetchDemoData() {
         console.log('[fetchDemoData] 📊 Positions count:', data.positions_count);
         
         if (data) {
-            // 백엔드에서 자동 청산된 경우
+            // ★ WS 연결 중이면 잔고/포지션 업데이트 건너뛰기 (깜빡임 방지)
+            // auto_closed와 인디케이터만 항상 처리
+            const wsActive = window.wsConnected === true;
+            
+            // 백엔드에서 자동 청산된 경우 (WS 상태와 무관하게 항상 처리)
             if (data.auto_closed) {
                 playSound('close');
                 
@@ -765,7 +819,8 @@ async function fetchDemoData() {
                 updatePositionUI(false, null);
             }
             
-            // Home 탭 업데이트 (null 체크 추가)
+            // Home 탭 업데이트 - ★ WS 연결 중이면 건너뛰기 (깜빡임 방지)
+            if (!wsActive) {
             const homeBalance = document.getElementById('homeBalance');
             const homeBroker = document.getElementById('homeBroker');
             const homeAccount = document.getElementById('homeAccount');
@@ -776,24 +831,26 @@ async function fetchDemoData() {
             const homePositions = document.getElementById('homePositions');
             const tradeBalance = document.getElementById('tradeBalance');
 
-            if (homeBalance) homeBalance.textContent = '$' + (data.balance || 10000).toLocaleString(undefined, {minimumFractionDigits: 2});
+            if (homeBalance) homeBalance.textContent = '$' + (data.balance || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
             if (homeBroker) homeBroker.textContent = data.broker || 'Demo';
             if (homeAccount) homeAccount.textContent = data.account || 'DEMO';
             if (homeLeverage) homeLeverage.textContent = '1:' + (data.leverage || 500);
             if (homeServer) homeServer.textContent = data.server || 'Demo';
-            if (homeEquity) homeEquity.textContent = '$' + (data.equity || 10000).toLocaleString(undefined, {minimumFractionDigits: 2});
-            if (homeFreeMargin) homeFreeMargin.textContent = '$' + (data.balance || 10000).toLocaleString(undefined, {minimumFractionDigits: 2});
+            if (homeEquity) homeEquity.textContent = '$' + (data.equity || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+            if (homeFreeMargin) homeFreeMargin.textContent = '$' + (data.balance || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
             if (homePositions) homePositions.textContent = data.positions_count || 0;
-            if (tradeBalance) tradeBalance.textContent = '$' + Math.round(data.balance || 10000).toLocaleString();
+            if (tradeBalance) tradeBalance.textContent = '$' + Math.round(data.balance || 0).toLocaleString();
+            } // ★ end wsActive guard (Home/Trade balance)
 
-            // Account 탭 업데이트 (null 체크 추가)
+            // Account 탭 + 포지션 업데이트 - ★ WS 연결 중이면 건너뛰기
+            if (!wsActive) {
             const accBalance = document.getElementById('accBalance');
             const accEquity = document.getElementById('accEquity');
             const accFree = document.getElementById('accFree');
             const accCurrentPL = document.getElementById('accCurrentPL');
 
-            if (accBalance) accBalance.textContent = '$' + (data.balance || 10000).toLocaleString(undefined, {minimumFractionDigits: 2});
-            if (accEquity) accEquity.textContent = '$' + (data.equity || 10000).toLocaleString(undefined, {minimumFractionDigits: 2});
+            if (accBalance) accBalance.textContent = '$' + (data.balance || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+            if (accEquity) accEquity.textContent = '$' + (data.equity || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
             
             // Demo 마진: 포지션에서 직접 합산
             if (accFree) {
@@ -816,7 +873,6 @@ async function fetchDemoData() {
                 if (data.position) {
                     currentProfit = data.position.profit || 0;
                 } else if (data.positions && data.positions.length > 0) {
-                    // 다중 포지션인 경우 합계
                     currentProfit = data.positions.reduce((sum, pos) => sum + (pos.profit || 0), 0);
                 }
                 
@@ -831,34 +887,18 @@ async function fetchDemoData() {
             
             // 포지션 정보
             if (data.position) {
-                console.log('[fetchDemoData] ✅ Position exists!');
-                console.log('[fetchDemoData] 📞 Calling updatePositionUI(true, posData)');
-                
-                // ★ P/L 게이지용 profit 값 저장
+                console.log('[fetchDemoData] ✅ Position exists! (polling fallback)');
                 window.currentProfit = data.position.profit || 0;
                 window.currentTarget = data.position.target || targetAmount;
-                console.log('[fetchDemoData] Position details:', {
-                    type: data.position.type,
-                    symbol: data.position.symbol,
-                    entry: data.position.entry,
-                    profit: data.position.profit,
-                    target: data.position.target
-                });
                 updatePositionUI(true, data.position);
-
-                // ★ 프론트엔드 자동 청산 제거 — 백엔드 account-info에서만 처리
-                // (Race Condition 방지: 프론트/백엔드 이중 청산 문제 해결)
             } else {
-                console.log('[fetchDemoData] ❌ No position');
-                console.log('[fetchDemoData] 📞 Calling updatePositionUI(false, null)');
-                
-                // ★ 포지션 없을 때 profit 초기화
+                console.log('[fetchDemoData] ❌ No position (polling fallback)');
                 window.currentProfit = 0;
                 window.currentTarget = 0;
-                
                 updatePositionUI(false, null);
-                isClosing = false;  // 포지션 없으면 플래그 해제
+                isClosing = false;
             }
+            } // ★ end wsActive guard (Account + Position)
             
             // Quick 패널 업데이트 (Quick 패널이 활성화된 경우)
             const quickPanel = document.getElementById('quickPanel');

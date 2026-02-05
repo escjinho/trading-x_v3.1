@@ -7,7 +7,7 @@
 let ws = null;
 let wsRetryCount = 0;
 const maxRetries = 5;
-let balance = 10000;
+let balance = 0;
 
 // ========== Connect WebSocket ==========
 function connectWebSocket() {
@@ -103,7 +103,7 @@ function connectWebSocket() {
                 }
             }
 
-            // ✅ Demo 모드 포지션 업데이트 (단일 포지션)
+            // ✅ Demo 모드 포지션 업데이트 (단일 포지션) — 있을 때만 갱신
             if (data.position) {
                 updatePositionUI(true, data.position);
 
@@ -116,8 +116,6 @@ function connectWebSocket() {
                     isClosing = true;
                     closeDemoPosition();
                 }
-            } else {
-                updatePositionUI(false, null);
             }
 
             // ✅ Demo 모드 다중 포지션 업데이트 (Quick 패널용)
@@ -202,20 +200,18 @@ function connectWebSocket() {
             ChartGaugePanel.updateGauge(data.buy_count, data.sell_count, data.neutral_count);
         }
         
-        // Position
+        // Position — 있을 때만 갱신
         if (data.position) {
             updatePositionUI(true, data.position);
-            
+
             const pos = data.position;
             console.log(`[FRONTEND] Position - Profit: ${pos.profit}, Target: ${pos.target}, Should close: ${pos.profit >= pos.target}`);
-            
+
             if (pos.target > 0 && pos.profit >= pos.target && !isClosing) {
                 console.log('[FRONTEND] Target reached! Triggering close...');
                 isClosing = true;
                 closeDemoPosition();
             }
-        } else {
-            updatePositionUI(false, null);
         }
         
         // Account tab
@@ -318,10 +314,8 @@ async function fetchAccountData() {
             
             if (data.position) {
                 updatePositionUI(true, data.position);
-            } else {
-                updatePositionUI(false, null);
             }
-            
+
             document.getElementById('statusDot').classList.remove('disconnected');
             document.getElementById('headerStatus').textContent = 'Connected';
         }

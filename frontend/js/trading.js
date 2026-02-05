@@ -216,8 +216,6 @@ function updatePLGauge(currentPL, target = null) {
 
 // ========== 포지션 UI ==========
 function updatePositionUI(hasPos, posData) {
-    console.log(`[updatePositionUI] 🔵 START - hasPos: ${hasPos}, posData:`, posData);
-
     hasPosition = hasPos;
     positionData = posData;
 
@@ -610,6 +608,7 @@ async function closeDemoPosition() {
                 showToast(result?.message || 'Closed!', 'success');
             }
             
+            updatePositionUI(false, null);
             fetchDemoData();
         } else {
             showToast(result?.message || 'Error', 'error');

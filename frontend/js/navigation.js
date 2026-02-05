@@ -59,7 +59,11 @@ document.querySelectorAll('.nav-item').forEach(item => {
             document.body.classList.remove('chart-mode');
 
             // 페이지별 초기화
-            if (page === 'account') {
+            if (page === 'trade') {
+                if (typeof GaugePanel !== 'undefined' && GaugePanel.initGaugeArcs) {
+                    GaugePanel.initGaugeArcs();
+                }
+            } else if (page === 'account') {
                 loadHistory();
             }
         });
@@ -128,7 +132,10 @@ function selectSubmenuItem(view) {
         loadCandles();
     }
 
-    // Chart 탭으로 전환 시 인디케이터 강제 업데이트
+    // Chart 탭으로 전환 시 게이지 arc 재초기화 + 인디케이터 강제 업데이트
+    if (typeof ChartGaugePanel !== 'undefined' && ChartGaugePanel.initChartGaugeArcs) {
+        ChartGaugePanel.initChartGaugeArcs();
+    }
     forceUpdateIndicators();
 }
 
@@ -227,7 +234,10 @@ function selectTradeSubmenuItem(view) {
 
     showTradePanel(view);
 
-    // Trade 탭으로 전환 시 인디케이터 강제 업데이트
+    // Trade 탭으로 전환 시 게이지 arc 재초기화 + 인디케이터 강제 업데이트
+    if (typeof GaugePanel !== 'undefined' && GaugePanel.initGaugeArcs) {
+        GaugePanel.initGaugeArcs();
+    }
     forceUpdateIndicators();
 }
 

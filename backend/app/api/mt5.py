@@ -18,6 +18,7 @@ except ImportError:
 import asyncio
 import json
 import httpx
+import random
 from datetime import datetime, timedelta
 
 from ..database import get_db
@@ -1664,11 +1665,11 @@ async def websocket_endpoint(websocket: WebSocket):
             }
             
             await websocket.send_text(json.dumps(data))
-            await asyncio.sleep(0.5)  # ★ 0.5초마다 전송 (실시간 업데이트)
+            await asyncio.sleep(random.uniform(1.0, 3.0))  # ★ 0.5초마다 전송 (실시간 업데이트)
 
         except WebSocketDisconnect:
             break
         except Exception as e:
                 if str(e):
                     print(f"WebSocket Error: {e}")
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(random.uniform(1.0, 3.0))

@@ -44,17 +44,30 @@ const ChartGaugePanel = {
     },
 
     /**
-     * 차트 게이지 애니메이션 업데이트
+     * 외부에서 인디케이터 데이터로 차트 게이지 점수 업데이트
      */
-    updateChartGauge() {
+    updateGauge(buyCount, sellCount, neutralCount) {
+        if (buyCount !== undefined && sellCount !== undefined) {
+            const total = buyCount + sellCount + (neutralCount || 0);
+            if (total > 0) {
+                const score = (buyCount / total) * 100;
+                chartTargetScore = score;
+            }
+        }
+    },
+
+    /**
+     * 차트 게이지 애니메이션 루프 (requestAnimationFrame)
+     */
+    _animate() {
         // 스프링-댐핑 애니메이션
         const diff = chartTargetScore - chartDisplayScore;
         if (Math.abs(diff) < 0.3 && Math.abs(chartVelocity) < 0.1) {
             chartDisplayScore = chartTargetScore;
             chartVelocity = 0;
         } else {
-            const springK = 0.1;
-            const dampingK = 0.25;
+            const springK = 0.06;
+            const dampingK = 0.15;
             const springForce = diff * springK;
             chartVelocity = chartVelocity * (1 - dampingK) + springForce;
             chartDisplayScore = Math.max(0, Math.min(100, chartDisplayScore + chartVelocity));
@@ -83,7 +96,7 @@ const ChartGaugePanel = {
         this.updateStatusText(chartDisplayScore);
 
         // 다음 프레임 요청
-        this.animationFrameId = requestAnimationFrame(() => this.updateChartGauge());
+        this.animationFrameId = requestAnimationFrame(() => this._animate());
     },
 
     /**
@@ -125,15 +138,7 @@ const ChartGaugePanel = {
         if (this.animationFrameId) {
             cancelAnimationFrame(this.animationFrameId);
         }
-        this.updateChartGauge();
-    },
-
-    /**
-     * 외부에서 데이터 업데이트
-     */
-    update(data) {
-        // chartTargetScore가 업데이트되면 자동으로 애니메이션이 반영됨
-        // 특별히 할 작업 없음 (전역 변수 chartTargetScore를 사용하므로)
+        this._animate();
     },
 
     /**

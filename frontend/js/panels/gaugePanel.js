@@ -44,22 +44,32 @@ const GaugePanel = {
     },
 
     /**
-     * 게이지 애니메이션 업데이트
+     * 외부에서 인디케이터 데이터로 게이지 점수 업데이트
      */
-    updateGauge() {
-        // baseScore와 targetScore가 너무 차이나면 즉시 동기화
-        if (Math.abs(baseScore - targetScore) > 30) {
-            targetScore = baseScore;
+    updateGauge(buyCount, sellCount, neutralCount) {
+        if (buyCount !== undefined && sellCount !== undefined) {
+            const total = buyCount + sellCount + (neutralCount || 0);
+            if (total > 0) {
+                const score = (buyCount / total) * 100;
+                baseScore = score;
+                targetScore = score;
+                chartTargetScore = score;
+            }
         }
+    },
 
+    /**
+     * 게이지 애니메이션 루프 (requestAnimationFrame)
+     */
+    _animate() {
         // 스프링-댐핑 애니메이션
         const diff = targetScore - displayScore;
         if (Math.abs(diff) < 0.3 && Math.abs(velocity) < 0.1) {
             displayScore = targetScore;
             velocity = 0;
         } else {
-            const springK = 0.1;
-            const dampingK = 0.25;
+            const springK = 0.06;
+            const dampingK = 0.15;
             const springForce = diff * springK;
             velocity = velocity * (1 - dampingK) + springForce;
             displayScore = Math.max(0, Math.min(100, displayScore + velocity));
@@ -88,7 +98,7 @@ const GaugePanel = {
         this.updateStatusText(displayScore);
 
         // 다음 프레임 요청
-        this.animationFrameId = requestAnimationFrame(() => this.updateGauge());
+        this.animationFrameId = requestAnimationFrame(() => this._animate());
     },
 
     /**
@@ -130,15 +140,7 @@ const GaugePanel = {
         if (this.animationFrameId) {
             cancelAnimationFrame(this.animationFrameId);
         }
-        this.updateGauge();
-    },
-
-    /**
-     * 외부에서 데이터 업데이트
-     */
-    update(data) {
-        // baseScore가 업데이트되면 자동으로 애니메이션이 반영됨
-        // 특별히 할 작업 없음 (전역 변수 baseScore를 사용하므로)
+        this._animate();
     },
 
     /**

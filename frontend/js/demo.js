@@ -245,33 +245,24 @@ async function fetchDemoData() {
                 updatePositionUI(false, null);
             }
             
-            // Update UI
-            document.getElementById('homeBalance').textContent = '$' + (data.balance || 10000).toLocaleString(undefined, {minimumFractionDigits: 2});
+            // Update UI — fallback을 0으로 (10000 깜빡임 방지)
+            document.getElementById('homeBalance').textContent = '$' + (data.balance || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
             document.getElementById('homeBroker').textContent = data.broker || 'Demo';
             document.getElementById('homeAccount').textContent = data.account || 'DEMO';
             document.getElementById('homeLeverage').textContent = '1:' + (data.leverage || 500);
             document.getElementById('homeServer').textContent = data.server || 'Demo';
-            document.getElementById('homeEquity').textContent = '$' + (data.equity || 10000).toLocaleString(undefined, {minimumFractionDigits: 2});
-            document.getElementById('homeFreeMargin').textContent = '$' + (data.balance || 10000).toLocaleString(undefined, {minimumFractionDigits: 2});
+            document.getElementById('homeEquity').textContent = '$' + (data.equity || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+            document.getElementById('homeFreeMargin').textContent = '$' + (data.balance || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
             document.getElementById('homePositions').textContent = data.positions_count || 0;
-            document.getElementById('tradeBalance').textContent = '$' + Math.round(data.balance || 10000).toLocaleString();
-            
-            document.getElementById('accBalance').textContent = '$' + Math.round(data.balance || 10000).toLocaleString();
-            document.getElementById('accEquity').textContent = '$' + Math.round(data.equity || 10000).toLocaleString();
+            document.getElementById('tradeBalance').textContent = '$' + Math.round(data.balance || 0).toLocaleString();
+
+            document.getElementById('accBalance').textContent = '$' + Math.round(data.balance || 0).toLocaleString();
+            document.getElementById('accEquity').textContent = '$' + Math.round(data.equity || 0).toLocaleString();
             document.getElementById('accMargin').textContent = '$0';
-            document.getElementById('accFree').textContent = '$' + Math.round(data.balance || 10000).toLocaleString();
+            document.getElementById('accFree').textContent = '$' + Math.round(data.balance || 0).toLocaleString();
             
-            // Position
+            // Position — 폴링에서는 UI 리셋하지 않음 (WS에서만 갱신)
             if (data.position) {
-                console.log('[fetchDemoData] ✅ Position exists!');
-                console.log('[fetchDemoData] 📞 Calling updatePositionUI(true, posData)');
-                console.log('[fetchDemoData] Position details:', {
-                    type: data.position.type,
-                    symbol: data.position.symbol,
-                    entry: data.position.entry,
-                    profit: data.position.profit,
-                    target: data.position.target
-                });
                 updatePositionUI(true, data.position);
 
                 const pos = data.position;
@@ -279,20 +270,13 @@ async function fetchDemoData() {
 
                 if (currentTarget > 0 && !isClosing) {
                     if (pos.profit >= currentTarget) {
-                        console.log('[fetchDemoData] 🎯 WIN Target reached!');
                         isClosing = true;
                         closeDemoPosition();
                     } else if (pos.profit <= -currentTarget) {
-                        console.log('[fetchDemoData] 💔 LOSE Target reached!');
                         isClosing = true;
                         closeDemoPosition();
                     }
                 }
-            } else {
-                console.log('[fetchDemoData] ❌ No position');
-                console.log('[fetchDemoData] 📞 Calling updatePositionUI(false, null)');
-                updatePositionUI(false, null);
-                isClosing = false;
             }
             
             // Multi Order Panel
