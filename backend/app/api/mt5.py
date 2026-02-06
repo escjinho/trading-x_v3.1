@@ -22,6 +22,7 @@ import random
 from datetime import datetime, timedelta
 
 from ..database import get_db
+from ..utils.crypto import encrypt, decrypt
 
 # ========== 외부 API 캔들 데이터 조회 ==========
 async def fetch_binance_candles(symbol: str, timeframe: str, count: int):
@@ -1547,10 +1548,12 @@ async def connect_mt5_account(
             remove_pending_verification(verify_id)
 
             if result and result.get("success"):
-                # 검증 성공 - DB에 저장
+                # 검증 성공 - DB에 저장 (비밀번호 암호화)
                 current_user.has_mt5_account = True
                 current_user.mt5_account_number = request.account
                 current_user.mt5_server = request.server
+                current_user.mt5_password_encrypted = encrypt(request.password)
+                current_user.mt5_connected_at = datetime.utcnow()
                 db.commit()
 
                 return JSONResponse({
@@ -1583,12 +1586,14 @@ async def disconnect_mt5_account(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """MT5 계정 연결 해제"""
+    """MT5 계정 연결 해제 - 모든 정보 완전 삭제"""
     current_user.has_mt5_account = False
     current_user.mt5_account_number = None
     current_user.mt5_server = None
+    current_user.mt5_password_encrypted = None
+    current_user.mt5_connected_at = None
     db.commit()
-    
+
     return JSONResponse({
         "success": True,
         "message": "MT5 계정 연결이 해제되었습니다"

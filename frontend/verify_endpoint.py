@@ -32,18 +32,13 @@ def verify_account(account: str, password: str, server: str):
     - mt5.login()으로 실제 로그인 시도
     - 성공 시 계정 정보 반환
     - 실패 시 에러 메시지 반환
+    - 검증 후 원래 계정으로 자동 복구
     """
+    result = {"success": False, "message": "알 수 없는 오류"}
+
     try:
         # 계좌번호를 정수로 변환
         account_int = int(account)
-
-        # MT5 로그인 시도
-        # 주의: 이 함수는 현재 로그인된 계정을 변경함
-        # 검증 후 원래 계정으로 다시 로그인해야 함
-
-        # 현재 계정 정보 저장 (원복용)
-        current_account = mt5.account_info()
-        current_login = current_account.login if current_account else None
 
         # 새 계정으로 로그인 시도
         authorized = mt5.login(account_int, password=password, server=server)
@@ -64,35 +59,41 @@ def verify_account(account: str, password: str, server: str):
                     "name": account_info.name
                 }
             }
-
-            # 원래 계정으로 복구 (중요!)
-            # 주의: 원래 계정의 비밀번호를 모르면 복구 불가
-            # 이 경우 브릿지 재시작 필요
             print(f"[Verify] 검증 성공: {account_int} @ {server}")
-            print(f"[Verify] 주의: 원래 계정({current_login})으로 복구하려면 브릿지 재시작 필요")
-
-            return result
         else:
             # 로그인 실패
             error = mt5.last_error()
             error_msg = f"로그인 실패: {error[1]}" if error else "계좌번호 또는 비밀번호가 올바르지 않습니다"
             print(f"[Verify] 검증 실패: {account_int} - {error_msg}")
-
-            return {
+            result = {
                 "success": False,
                 "message": error_msg
             }
 
     except ValueError:
-        return {
+        result = {
             "success": False,
             "message": "계좌번호는 숫자여야 합니다"
         }
     except Exception as e:
-        return {
+        result = {
             "success": False,
             "message": f"검증 오류: {str(e)}"
         }
+    finally:
+        # ★ 원래 계정으로 복구 (MT5 터미널 기본 계정)
+        try:
+            mt5.shutdown()
+            mt5.initialize()
+            restored = mt5.account_info()
+            if restored:
+                print(f"[Verify] 원래 계정 복구: {restored.login}")
+            else:
+                print("[Verify] 원래 계정 복구 실패")
+        except Exception as e:
+            print(f"[Verify] 복구 오류: {e}")
+
+    return result
 
 
 def send_verification_result(verify_id: str, result: dict):
