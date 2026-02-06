@@ -1829,10 +1829,17 @@ async def websocket_endpoint(websocket: WebSocket):
             # 마틴 상태
             martin_state = martin_service.get_state()
             
+            # ★★★ 유저의 MT5 계정 우선 사용 (브릿지 계정 노출 방지) ★★★
+            display_account = user_mt5_account if user_mt5_account else login
+
+            # ★ 유저가 MT5 계정을 등록했으면 연결된 것으로 표시
+            # (브릿지 연결 여부와 무관하게 유저에게는 Connected로 표시)
+            user_has_mt5 = user_mt5_account is not None
+
             data = {
-                "mt5_connected": mt5_connected or bridge_connected,
+                "mt5_connected": user_has_mt5 or mt5_connected or bridge_connected,
                 "broker": broker,
-                "account": login,
+                "account": display_account,  # ★ 유저 계정 우선
                 "server": server,
                 "balance": balance,
                 "equity": equity,
@@ -1847,7 +1854,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 "base_score": base_score,
                 "all_prices": all_prices,
                 "all_candles": all_candles,
-                "martin": martin_state
+                "martin": martin_state,
+                "user_id": user_id  # ★ 디버깅용 유저 ID 추가
             }
             
             await websocket.send_text(json.dumps(data))
