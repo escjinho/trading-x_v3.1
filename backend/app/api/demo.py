@@ -258,24 +258,46 @@ async def get_demo_account(
                 db.commit()
 
                 message = f"🎯 목표 도달! +${profit:,.2f}" if is_win else f"💔 손절! ${profit:,.2f}"
-                return {
-                    "balance": current_user.demo_balance,
-                    "equity": current_user.demo_equity,
-                    "today_profit": current_user.demo_today_profit,
-                    "broker": "Trading-X Demo",
-                    "account": f"DEMO-{current_user.id}",
-                    "server": "Demo Server",
-                    "leverage": 500,
-                    "position": None,
-                    "positions_count": 0,
-                    "has_mt5": current_user.has_mt5_account or False,
-                    "auto_closed": True,
-                    "closed_profit": profit,
-                    "is_win": is_win,
-                    "martin_reset": martin_reset,
-                    "martin_step_up": martin_step_up if not is_win else False,
-                    "message": message
-                }
+
+                # 라이브/데모 모드에 따른 반환값 설정
+                if current_user.has_mt5_account:
+                    return {
+                        "balance": current_user.mt5_balance or 0,
+                        "equity": current_user.mt5_equity or current_user.mt5_balance or 0,
+                        "today_profit": current_user.demo_today_profit,
+                        "broker": "Live Account",
+                        "account": current_user.mt5_account_number or "",
+                        "server": current_user.mt5_server or "",
+                        "leverage": current_user.mt5_leverage or 500,
+                        "position": None,
+                        "positions_count": 0,
+                        "has_mt5": True,
+                        "auto_closed": True,
+                        "closed_profit": profit,
+                        "is_win": is_win,
+                        "martin_reset": martin_reset,
+                        "martin_step_up": martin_step_up if not is_win else False,
+                        "message": message
+                    }
+                else:
+                    return {
+                        "balance": current_user.demo_balance,
+                        "equity": current_user.demo_equity,
+                        "today_profit": current_user.demo_today_profit,
+                        "broker": "Trading-X Demo",
+                        "account": f"DEMO-{current_user.id}",
+                        "server": "Demo Server",
+                        "leverage": 500,
+                        "position": None,
+                        "positions_count": 0,
+                        "has_mt5": False,
+                        "auto_closed": True,
+                        "closed_profit": profit,
+                        "is_win": is_win,
+                        "martin_reset": martin_reset,
+                        "martin_step_up": martin_step_up if not is_win else False,
+                        "message": message
+                    }
 
             position_data = {
                 "id": position.id,
@@ -419,25 +441,46 @@ async def get_demo_account(
                         message = f"🎯 목표 도달! +${profit:,.2f}"
                     else:
                         message = f"💔 손절! ${profit:,.2f}"
-                    
-                    return {
-                        "balance": current_user.demo_balance,
-                        "equity": current_user.demo_equity,
-                        "today_profit": current_user.demo_today_profit,
-                        "broker": "Trading-X Demo",
-                        "account": f"DEMO-{current_user.id}",
-                        "server": "Demo Server",
-                        "leverage": 500,
-                        "position": None,
-                        "positions_count": 0,
-                        "has_mt5": current_user.has_mt5_account or False,
-                        "auto_closed": True,
-                        "closed_profit": profit,
-                        "is_win": is_win,
-                        "martin_reset": martin_reset,
-                        "martin_step_up": martin_step_up if not is_win else False,
-                        "message": message
-                    }
+
+                    # 라이브/데모 모드에 따른 반환값 설정
+                    if current_user.has_mt5_account:
+                        return {
+                            "balance": current_user.mt5_balance or 0,
+                            "equity": current_user.mt5_equity or current_user.mt5_balance or 0,
+                            "today_profit": current_user.demo_today_profit,
+                            "broker": "Live Account",
+                            "account": current_user.mt5_account_number or "",
+                            "server": current_user.mt5_server or "",
+                            "leverage": current_user.mt5_leverage or 500,
+                            "position": None,
+                            "positions_count": 0,
+                            "has_mt5": True,
+                            "auto_closed": True,
+                            "closed_profit": profit,
+                            "is_win": is_win,
+                            "martin_reset": martin_reset,
+                            "martin_step_up": martin_step_up if not is_win else False,
+                            "message": message
+                        }
+                    else:
+                        return {
+                            "balance": current_user.demo_balance,
+                            "equity": current_user.demo_equity,
+                            "today_profit": current_user.demo_today_profit,
+                            "broker": "Trading-X Demo",
+                            "account": f"DEMO-{current_user.id}",
+                            "server": "Demo Server",
+                            "leverage": 500,
+                            "position": None,
+                            "positions_count": 0,
+                            "has_mt5": False,
+                            "auto_closed": True,
+                            "closed_profit": profit,
+                            "is_win": is_win,
+                            "martin_reset": martin_reset,
+                            "martin_step_up": martin_step_up if not is_win else False,
+                            "message": message
+                        }
                 
                 position_data = {
                     "id": position.id,
@@ -519,6 +562,29 @@ async def get_demo_account(
     print(f"[ACCOUNT-INFO] 📦 Returning - position_data: {position_data is not None}, positions_count: {len(positions)}")
     print("[ACCOUNT-INFO] 🔴 END\n")
 
+    # ★★★ 라이브 모드 (MT5 계정 연결됨) - 유저 MT5 계정 정보 반환 ★★★
+    if current_user.has_mt5_account:
+        return {
+            "balance": current_user.mt5_balance or 0,
+            "equity": current_user.mt5_equity or current_user.mt5_balance or 0,
+            "margin": current_user.mt5_margin or 0,
+            "free_margin": current_user.mt5_free_margin or current_user.mt5_balance or 0,
+            "profit": current_user.mt5_profit or 0,
+            "today_profit": current_user.demo_today_profit or 0.0,  # 오늘 수익은 데모 값 유지
+            "broker": "Live Account",
+            "account": current_user.mt5_account_number or "",
+            "server": current_user.mt5_server or "",
+            "leverage": current_user.mt5_leverage or 500,
+            "currency": current_user.mt5_currency or "USD",
+            "position": position_data,
+            "positions": positions_data,
+            "positions_count": len(all_positions),
+            "buysell_count": len(positions),
+            "has_mt5": True,
+            "total_margin": round(total_margin, 2)
+        }
+
+    # ★★★ 데모 모드 - 기존 데모 계정 정보 반환 ★★★
     return {
         "balance": current_user.demo_balance or 10000.0,
         "equity": current_user.demo_equity or 10000.0,
@@ -531,7 +597,7 @@ async def get_demo_account(
         "positions": positions_data,
         "positions_count": len(all_positions),
         "buysell_count": len(positions),
-        "has_mt5": current_user.has_mt5_account or False,
+        "has_mt5": False,
         "margin": round(total_margin, 2),
         "total_margin": round(total_margin, 2)
     }

@@ -247,33 +247,51 @@ async def get_account_info(current_user: User = Depends(get_current_user)):
                     }
                     break
 
-            # ★ 유저가 등록한 계좌 정보만 사용 (브릿지 계좌 노출 방지)
+            # ★★★ 유저 DB 값 사용 (브릿지 계좌 노출 방지) ★★★
             if current_user.has_mt5_account and current_user.mt5_account_number:
-                user_account = current_user.mt5_account_number
-                user_server = current_user.mt5_server or "HedgeHood-MT5"
+                return {
+                    "broker": "Live Account",
+                    "account": current_user.mt5_account_number,
+                    "server": current_user.mt5_server or "HedgeHood-MT5",
+                    "balance": current_user.mt5_balance or 0,
+                    "equity": current_user.mt5_equity or current_user.mt5_balance or 0,
+                    "margin": current_user.mt5_margin or 0,
+                    "free_margin": current_user.mt5_free_margin or current_user.mt5_balance or 0,
+                    "profit": current_user.mt5_profit or 0,
+                    "leverage": current_user.mt5_leverage or 500,
+                    "currency": current_user.mt5_currency or "USD",
+                    "positions_count": len(cached_positions),
+                    "position": position_data,
+                    "buy_count": buy_count,
+                    "sell_count": sell_count,
+                    "neutral_count": neutral_count,
+                    "base_score": base_score,
+                    "prices": get_bridge_prices(),
+                    "martin": martin_service.get_state(),
+                    "has_mt5": True
+                }
             else:
-                user_account = "N/A"
-                user_server = "N/A"
-
-            return {
-                "broker": cached_account.get("broker", "HedgeHood Pty Ltd"),
-                "account": user_account,  # ★ 유저 계좌 우선
-                "server": user_server,    # ★ 유저 서버 우선
-                "balance": cached_account.get("balance", 0),
-                "equity": cached_account.get("equity", 0),
-                "margin": cached_account.get("margin", 0),
-                "free_margin": cached_account.get("margin_free", 0),
-                "leverage": cached_account.get("leverage", 500),
-                "positions_count": len(cached_positions),
-                "position": position_data,
-                "buy_count": buy_count,
-                "sell_count": sell_count,
-                "neutral_count": neutral_count,
-                "base_score": base_score,
-                "prices": get_bridge_prices(),
-                "martin": martin_service.get_state(),
-                "has_mt5": current_user.has_mt5_account  # ★ MT5 연결 상태 추가
-            }
+                # MT5 계정 없음 - 기본값 반환
+                return {
+                    "broker": "N/A",
+                    "account": "N/A",
+                    "server": "N/A",
+                    "balance": 0,
+                    "equity": 0,
+                    "margin": 0,
+                    "free_margin": 0,
+                    "profit": 0,
+                    "leverage": 500,
+                    "positions_count": 0,
+                    "position": None,
+                    "buy_count": buy_count,
+                    "sell_count": sell_count,
+                    "neutral_count": neutral_count,
+                    "base_score": base_score,
+                    "prices": get_bridge_prices(),
+                    "martin": martin_service.get_state(),
+                    "has_mt5": False
+                }
 
         account = mt5.account_info()
         if not account:
@@ -1645,6 +1663,9 @@ async def websocket_endpoint(websocket: WebSocket):
     user_mt5_account = None
     user_mt5_balance = None
     user_mt5_equity = None
+    user_mt5_margin = None
+    user_mt5_free_margin = None
+    user_mt5_profit = None
     user_mt5_leverage = None
     user_mt5_server = None
 
@@ -1660,6 +1681,9 @@ async def websocket_endpoint(websocket: WebSocket):
                     user_mt5_account = user.mt5_account_number
                     user_mt5_balance = user.mt5_balance
                     user_mt5_equity = user.mt5_equity
+                    user_mt5_margin = user.mt5_margin
+                    user_mt5_free_margin = user.mt5_free_margin
+                    user_mt5_profit = user.mt5_profit
                     user_mt5_leverage = user.mt5_leverage
                     user_mt5_server = user.mt5_server
                     print(f"[LIVE WS] User {user_id} connected (MT5: {user_mt5_account}, Balance: ${user_mt5_balance})")
@@ -1707,31 +1731,34 @@ async def websocket_endpoint(websocket: WebSocket):
                 free_margin = account.margin_free if account else 0
                 leverage = account.leverage if account else 0
             elif bridge_connected and bridge_cache.get("account"):
-                # ★ 브릿지 캐시에서 계정 정보 사용 (가격/포지션용)
+                # ★ 브릿지 캐시에서 가격/포지션용 정보 사용
                 acc = bridge_cache["account"]
-                broker = acc.get("broker", "N/A")
+                broker = acc.get("broker", "HedgeHood Pty Ltd")
                 login = acc.get("login", 0)
                 server = acc.get("server", "N/A")
-                # ★★★ 잔고는 유저별 저장된 값 사용 (브릿지 계정 잔고 노출 방지) ★★★
+                # ★★★ 잔고는 유저별 저장된 값만 사용 (브릿지 계정 노출 금지) ★★★
                 if user_mt5_balance is not None:
                     balance = user_mt5_balance
                     equity = user_mt5_equity or user_mt5_balance
+                    margin = user_mt5_margin or 0
+                    free_margin = user_mt5_free_margin or user_mt5_balance
                     leverage = user_mt5_leverage or 500
                 else:
-                    balance = acc.get("balance", 0)
-                    equity = acc.get("equity", 0)
-                    leverage = acc.get("leverage", 0)
-                margin = acc.get("margin", 0)
-                free_margin = acc.get("free_margin", 0)
+                    # 유저 정보 없으면 0으로 표시 (브릿지 값 노출 금지)
+                    balance = 0
+                    equity = 0
+                    margin = 0
+                    free_margin = 0
+                    leverage = 500
             else:
                 broker = "HedgeHood Pty Ltd"
                 login = 0
                 server = user_mt5_server or "HedgeHood-MT5"
-                # ★★★ 유저별 저장된 잔고 사용 ★★★
+                # ★★★ 유저별 저장된 잔고만 사용 ★★★
                 balance = user_mt5_balance or 0
                 equity = user_mt5_equity or user_mt5_balance or 0
-                margin = 0
-                free_margin = balance
+                margin = user_mt5_margin or 0
+                free_margin = user_mt5_free_margin or user_mt5_balance or 0
                 leverage = user_mt5_leverage or 500
             
             # ★ 가격 정보: MT5 직접 또는 브릿지 캐시
