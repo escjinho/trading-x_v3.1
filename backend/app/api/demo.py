@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, WebSocket
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, timedelta
 try:
     import MetaTrader5 as mt5
     MT5_AVAILABLE = True
@@ -884,7 +884,7 @@ async def get_demo_history(
             "entry": t.entry_price,
             "exit": t.exit_price,
             "profit": t.profit,
-            "time": t.closed_at.strftime("%m/%d %H:%M") if t.closed_at else ""
+            "time": (t.closed_at + timedelta(hours=9)).strftime("%m/%d %H:%M") if t.closed_at else ""  # UTC → KST
         })
     
     return {"history": history}
