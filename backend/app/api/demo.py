@@ -87,178 +87,149 @@ from ..utils.security import decode_token
 from ..services.indicator_service import IndicatorService
 from .mt5 import get_bridge_prices, get_bridge_candles, bridge_cache
 
-# ========== Bridge Cache 기반 인디케이터 계산 ==========
+# ========== Bridge Cache 기반 인디케이터 계산 (개선된 버전) ==========
+# 이전 점수 저장 (가중평균용)
+_prev_indicator_score = {"score": 50.0, "buy": 33, "sell": 33, "neutral": 34}
+
 def calculate_indicators_from_bridge(symbol: str = "BTCUSD") -> dict:
     """
-    bridge_cache 캔들 데이터로 인디케이터 계산
-    5단계 전체 범위 사용: Strong Sell (0-20) ~ Strong Buy (80-100)
+    bridge_cache 캔들 + 실시간 tick으로 인디케이터 계산
+    - 가중평균 스무딩: newScore = oldScore * 0.7 + rawScore * 0.3
+    - 랜덤워크 ±5~10 추가 (자연스러운 전문 분석 느낌)
+    - 실시간 tick 가격 vs 최근 캔들 open으로 방향 판단
     """
+    global _prev_indicator_score
+
+    # 현재 tick 가격 가져오기
+    prices = get_bridge_prices()
+    price_data = prices.get(symbol, {})
+    current_tick = price_data.get("bid", 0)
+
+    # 캔들 데이터 가져오기
     candles = get_bridge_candles(symbol, "M5")
-    if not candles or len(candles) < 20:
-        # 캔들 부족 시 현재 가격 변화로 계산
-        prices = get_bridge_prices()
-        price_data = prices.get(symbol, {})
-        bid = price_data.get("bid", 0)
 
-        if bid > 0:
-            # 가격 기반 랜덤 시드로 일관성 유지
-            seed = int(bid * 100) % 1000
-            random.seed(seed + int(time.time() // 5))  # 5초마다 변경
+    # 기본 점수 계산
+    raw_score = 50.0
 
-            # 더 넓은 범위로 랜덤 생성 (5~95 전체 범위)
-            base_score = random.randint(5, 95)
-        else:
-            base_score = 50
+    if candles and len(candles) >= 5:
+        closes = [c.get("close", 0) for c in candles if c.get("close")]
+        opens = [c.get("open", 0) for c in candles if c.get("open")]
+        highs = [c.get("high", 0) for c in candles if c.get("high")]
+        lows = [c.get("low", 0) for c in candles if c.get("low")]
 
-        random.seed()  # 시드 리셋
+        if len(closes) >= 5:
+            # ★ 실시간 방향 (tick vs 마지막 캔들 open) - 가장 중요
+            last_candle_open = opens[-1] if opens else closes[-1]
+            if current_tick > 0 and last_candle_open > 0:
+                tick_change_pct = (current_tick - last_candle_open) / last_candle_open * 100
+                # 0.1% 이상 상승 → +20점, 0.1% 이상 하락 → -20점
+                if tick_change_pct > 0.2:
+                    raw_score += 25
+                elif tick_change_pct > 0.1:
+                    raw_score += 15
+                elif tick_change_pct > 0.05:
+                    raw_score += 8
+                elif tick_change_pct < -0.2:
+                    raw_score -= 25
+                elif tick_change_pct < -0.1:
+                    raw_score -= 15
+                elif tick_change_pct < -0.05:
+                    raw_score -= 8
 
-        # score 기반 buy/sell/neutral 계산
-        if base_score >= 60:
-            buy = 40 + int((base_score - 60) * 1.5)  # 60~100 → 40~100
-            sell = max(5, 50 - int((base_score - 50) * 0.9))
-        elif base_score <= 40:
-            sell = 40 + int((40 - base_score) * 1.5)  # 0~40 → 40~100
-            buy = max(5, 50 - int((50 - base_score) * 0.9))
-        else:
-            buy = 30 + random.randint(-5, 5)
-            sell = 30 + random.randint(-5, 5)
+            # 최근 5개 캔들 방향
+            bulls = sum(1 for i in range(-5, 0) if closes[i] > closes[i-1])
+            bears = sum(1 for i in range(-5, 0) if closes[i] < closes[i-1])
 
-        neutral = 100 - buy - sell
-        return {"buy": buy, "sell": sell, "neutral": max(5, neutral), "score": base_score}
+            if bulls >= 4:
+                raw_score += 20
+            elif bulls >= 3:
+                raw_score += 10
+            elif bears >= 4:
+                raw_score -= 20
+            elif bears >= 3:
+                raw_score -= 10
 
-    # 캔들 데이터로 실제 인디케이터 계산
-    closes = [c.get("close", 0) for c in candles if c.get("close")]
-    highs = [c.get("high", 0) for c in candles if c.get("high")]
-    lows = [c.get("low", 0) for c in candles if c.get("low")]
+            # 현재 가격 위치 (고저 대비)
+            if len(highs) >= 10 and len(lows) >= 10:
+                recent_high = max(highs[-10:])
+                recent_low = min(lows[-10:])
+                price_range = recent_high - recent_low
 
-    if len(closes) < 10:
-        return {"buy": 33, "sell": 33, "neutral": 34, "score": 50}
+                if price_range > 0:
+                    position = (closes[-1] - recent_low) / price_range
+                    if position > 0.8:
+                        raw_score += 10
+                    elif position > 0.6:
+                        raw_score += 5
+                    elif position < 0.2:
+                        raw_score -= 10
+                    elif position < 0.4:
+                        raw_score -= 5
 
-    buy_count = 0
-    sell_count = 0
-    neutral_count = 0
+            # 단기 이평선 크로스 (3 vs 7)
+            if len(closes) >= 7:
+                sma3 = sum(closes[-3:]) / 3
+                sma7 = sum(closes[-7:]) / 7
+                if sma3 > sma7 * 1.002:
+                    raw_score += 8
+                elif sma3 > sma7 * 1.001:
+                    raw_score += 4
+                elif sma3 < sma7 * 0.998:
+                    raw_score -= 8
+                elif sma3 < sma7 * 0.999:
+                    raw_score -= 4
 
-    # 1. 최근 5개 캔들 방향 (강력한 가중치)
-    recent_bulls = 0
-    recent_bears = 0
-    for i in range(-5, 0):
-        if closes[i] > closes[i-1]:
-            recent_bulls += 1
-        elif closes[i] < closes[i-1]:
-            recent_bears += 1
+    elif current_tick > 0:
+        # 캔들 없어도 tick 가격 변화로 방향 추정
+        # 이전 점수 기반 변동
+        raw_score = _prev_indicator_score["score"]
 
-    if recent_bulls >= 4:
-        buy_count += 3  # Strong bullish
-    elif recent_bulls >= 3:
-        buy_count += 2
-    elif recent_bears >= 4:
-        sell_count += 3  # Strong bearish
-    elif recent_bears >= 3:
-        sell_count += 2
+    # 0~100 범위 제한
+    raw_score = max(5, min(95, raw_score))
+
+    # ★ 가중평균 스무딩: oldScore * 0.7 + rawScore * 0.3
+    prev_score = _prev_indicator_score["score"]
+    smoothed_score = prev_score * 0.7 + raw_score * 0.3
+
+    # ★ 랜덤워크 추가 (±5~10 범위)
+    random_walk = random.uniform(-8, 8)
+    final_score = smoothed_score + random_walk
+
+    # 최종 범위 제한
+    final_score = max(5, min(95, final_score))
+
+    # buy/sell/neutral 계산 (score 기반)
+    if final_score >= 70:
+        disp_buy = 55 + int((final_score - 70) * 1.5)
+        disp_sell = max(5, 20 - int((final_score - 70) * 0.5))
+    elif final_score >= 50:
+        disp_buy = 35 + int((final_score - 50) * 1.0)
+        disp_sell = 35 - int((final_score - 50) * 0.5)
+    elif final_score >= 30:
+        disp_sell = 35 + int((50 - final_score) * 1.0)
+        disp_buy = 35 - int((50 - final_score) * 0.5)
     else:
-        neutral_count += 1
-
-    # 2. 현재 가격 vs 최근 고/저
-    current = closes[-1]
-    recent_high = max(highs[-10:])
-    recent_low = min(lows[-10:])
-    price_range = recent_high - recent_low
-
-    if price_range > 0:
-        position = (current - recent_low) / price_range
-        if position > 0.8:
-            buy_count += 2  # 고점 근처 - 상승 강세
-        elif position > 0.6:
-            buy_count += 1
-        elif position < 0.2:
-            sell_count += 2  # 저점 근처 - 하락 강세
-        elif position < 0.4:
-            sell_count += 1
-        else:
-            neutral_count += 1
-
-    # 3. 단기 이평선 크로스 (3 vs 7)
-    if len(closes) >= 7:
-        sma3 = sum(closes[-3:]) / 3
-        sma7 = sum(closes[-7:]) / 7
-        if sma3 > sma7 * 1.001:
-            buy_count += 2
-        elif sma3 < sma7 * 0.999:
-            sell_count += 2
-        else:
-            neutral_count += 1
-
-    # 4. 모멘텀 (5봉 전 대비)
-    if len(closes) >= 6:
-        momentum = (closes[-1] - closes[-6]) / closes[-6] * 100
-        if momentum > 0.5:
-            buy_count += 2
-        elif momentum > 0.1:
-            buy_count += 1
-        elif momentum < -0.5:
-            sell_count += 2
-        elif momentum < -0.1:
-            sell_count += 1
-        else:
-            neutral_count += 1
-
-    # 5. RSI 간이 계산
-    gains = []
-    losses = []
-    for i in range(1, min(15, len(closes))):
-        change = closes[-i] - closes[-i-1]
-        if change > 0:
-            gains.append(change)
-        else:
-            losses.append(abs(change))
-
-    avg_gain = sum(gains) / len(gains) if gains else 0
-    avg_loss = sum(losses) / len(losses) if losses else 0.0001
-    rs = avg_gain / avg_loss
-    rsi = 100 - (100 / (1 + rs))
-
-    if rsi > 70:
-        sell_count += 1  # 과매수
-    elif rsi > 60:
-        buy_count += 1  # 상승 강세
-    elif rsi < 30:
-        buy_count += 1  # 과매도 반등 기대
-    elif rsi < 40:
-        sell_count += 1  # 하락 강세
-    else:
-        neutral_count += 1
-
-    # 최종 점수 계산
-    total = buy_count + sell_count + neutral_count
-    if total > 0:
-        score = (buy_count / total) * 100
-    else:
-        score = 50
-
-    # buy/sell/neutral 비율 조정 (100 합계)
-    # score가 높을수록 buy 비율 증가
-    if score >= 70:
-        disp_buy = 55 + int((score - 70) * 1.5)
-        disp_sell = max(5, 20 - int((score - 70) * 0.5))
-    elif score >= 50:
-        disp_buy = 35 + int((score - 50) * 1.0)
-        disp_sell = 35 - int((score - 50) * 0.5)
-    elif score >= 30:
-        disp_sell = 35 + int((50 - score) * 1.0)
-        disp_buy = 35 - int((50 - score) * 0.5)
-    else:
-        disp_sell = 55 + int((30 - score) * 1.5)
-        disp_buy = max(5, 20 - int((30 - score) * 0.5))
+        disp_sell = 55 + int((30 - final_score) * 1.5)
+        disp_buy = max(5, 20 - int((30 - final_score) * 0.5))
 
     disp_buy = max(5, min(80, disp_buy))
     disp_sell = max(5, min(80, disp_sell))
     disp_neutral = 100 - disp_buy - disp_sell
+    disp_neutral = max(5, disp_neutral)
+
+    # 이전 값 저장
+    _prev_indicator_score = {
+        "score": final_score,
+        "buy": disp_buy,
+        "sell": disp_sell,
+        "neutral": disp_neutral
+    }
 
     return {
         "buy": disp_buy,
         "sell": disp_sell,
-        "neutral": max(5, disp_neutral),
-        "score": score
+        "neutral": disp_neutral,
+        "score": final_score
     }
 
 # ========== 심볼별 기본 스펙 (bridge_cache에 symbol_info 없을 때 사용) ==========
