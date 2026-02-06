@@ -18,6 +18,7 @@ class Settings(BaseSettings):
 
     # MT5 설정
     MT5_ENABLED: bool = True
+    mt5_encrypt_key: str = ""  # MT5 비밀번호 AES 암호화 키
 
     class Config:
         env_file = ".env"
