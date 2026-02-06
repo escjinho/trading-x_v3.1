@@ -1673,6 +1673,7 @@ async def demo_websocket_endpoint(websocket: WebSocket):
             demo_position = None
             positions_data = []
             positions_count = 0
+            auto_closed_info = None  # ★ 자동청산 정보 초기화
 
             if user_id:
                 try:
@@ -1694,15 +1695,20 @@ async def demo_websocket_endpoint(websocket: WebSocket):
 
                             positions_count = len(positions)
 
-                            # 포지션들의 실시간 profit 계산
+                            # 포지션들의 실시간 profit 계산 + 자동청산 체크
                             total_profit = 0.0
+                            auto_closed_info = None  # 자동청산 정보
+
                             for pos in positions:
                                 current_price = all_prices.get(pos.symbol)
                                 entry = pos.entry_price
                                 volume = pos.volume
                                 profit = 0.0
+                                current_px = entry  # 기본값
 
                                 if current_price:
+                                    current_px = current_price['bid'] if pos.trade_type == "BUY" else current_price['ask']
+
                                     # MT5 연결 시 정확한 손익 계산
                                     if mt5_connected:
                                         symbol_info = mt5.symbol_info(pos.symbol)
@@ -1740,13 +1746,70 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                                             profit = (pd / ts) * tv * volume
 
                                 profit = round(profit, 2)
+                                target = pos.target_profit or 0
+
+                                # ★★★ 자동청산 체크 (WS에서 실시간 처리) ★★★
+                                should_close = False
+                                is_win = False
+
+                                if target > 0 and auto_closed_info is None:  # 아직 청산 안 됐을 때만
+                                    if profit >= target:  # WIN
+                                        should_close = True
+                                        is_win = True
+                                        print(f"[DEMO WS] 🎯 AUTO CLOSE WIN! Profit ${profit:.2f} >= Target ${target:.2f}")
+                                    elif profit <= -target * 0.98:  # LOSE (98% 도달 시)
+                                        should_close = True
+                                        is_win = False
+                                        print(f"[DEMO WS] 💔 AUTO CLOSE LOSE! Profit ${profit:.2f} <= -Target*0.98 ${-target * 0.98:.2f}")
+
+                                if should_close:
+                                    # 자동청산 실행
+                                    try:
+                                        # 거래 내역 저장
+                                        trade = DemoTrade(
+                                            user_id=user_id,
+                                            symbol=pos.symbol,
+                                            trade_type=pos.trade_type,
+                                            volume=volume,
+                                            entry_price=entry,
+                                            exit_price=current_px,
+                                            profit=profit,
+                                            is_closed=True,
+                                            closed_at=datetime.now()
+                                        )
+                                        db.add(trade)
+
+                                        # 잔고 업데이트
+                                        user.demo_balance = (user.demo_balance or 10000.0) + profit
+                                        user.demo_equity = user.demo_balance
+                                        user.demo_today_profit = (user.demo_today_profit or 0.0) + profit
+
+                                        # 포지션 삭제
+                                        db.delete(pos)
+                                        db.commit()
+
+                                        # 자동청산 정보 저장 (응답에 포함)
+                                        auto_closed_info = {
+                                            "auto_closed": True,
+                                            "closed_profit": profit,
+                                            "is_win": is_win,
+                                            "message": f"🎯 목표 도달! +${profit:,.2f}" if is_win else f"💔 손절! ${profit:,.2f}"
+                                        }
+
+                                        # 잔고 업데이트
+                                        demo_balance = user.demo_balance
+                                        positions_count -= 1
+
+                                        print(f"[DEMO WS] ✅ Auto-closed position: {'WIN' if is_win else 'LOSE'} ${profit:.2f}")
+                                        continue  # 다음 포지션으로
+
+                                    except Exception as close_err:
+                                        print(f"[DEMO WS] ❌ Auto-close error: {close_err}")
+                                        db.rollback()
+
                                 total_profit += profit
 
                                 # 포지션 데이터 추가
-                                current_px = entry  # 기본값
-                                if current_price:
-                                    current_px = current_price['bid'] if pos.trade_type == "BUY" else current_price['ask']
-
                                 pos_data = {
                                     "id": pos.id,
                                     "ticket": pos.id,
@@ -1756,7 +1819,7 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                                     "entry": entry,
                                     "current": current_px,
                                     "profit": profit,
-                                    "target": pos.target_profit
+                                    "target": target
                                 }
                                 positions_data.append(pos_data)
 
@@ -1795,8 +1858,12 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                 "positions": positions_data
             }
 
+            # ★ 자동청산 정보가 있으면 응답에 포함
+            if auto_closed_info:
+                data.update(auto_closed_info)
+
             await websocket.send_text(json.dumps(data))
-            await asyncio.sleep(random.uniform(1.0, 3.0))
+            await asyncio.sleep(0.5)  # ★ 0.5초 간격으로 실시간 업데이트
 
         except Exception as e:
             print(f"[DEMO WS] Error: {e}")

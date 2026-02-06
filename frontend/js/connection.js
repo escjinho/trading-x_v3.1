@@ -231,6 +231,47 @@ function connectWebSocket() {
                 if (accEquity) accEquity.textContent = '$' + data.equity.toLocaleString(undefined, {minimumFractionDigits: 2});
             }
             
+            // ★★★ Demo WS 자동청산 처리 ★★★
+            if (data.auto_closed) {
+                console.log('[WS Demo] 🎯 AUTO CLOSED!', data);
+                playSound('close');
+
+                const profit = data.closed_profit || 0;
+                const isWin = data.is_win !== false && profit >= 0;
+
+                // 마틴 모드인 경우
+                if (currentMode === 'martin' && martinEnabled) {
+                    if (data.martin_reset || isWin) {
+                        martinStep = 1;
+                        martinAccumulatedLoss = 0;
+                        martinHistory = [];
+                        updateMartinUI();
+                        showMartinSuccessPopup(profit);
+                    } else if (data.martin_step_up) {
+                        showMartinPopup(profit);
+                    } else {
+                        showToast(data.message || `💔 손절! ${profit.toFixed(2)}`, 'error');
+                    }
+                } else {
+                    // Basic/NoLimit 모드
+                    if (isWin) {
+                        showToast(data.message || `🎯 목표 도달! +$${profit.toFixed(2)}`, 'success');
+                    } else {
+                        showToast(data.message || `💔 손절! $${profit.toFixed(2)}`, 'error');
+                    }
+                }
+
+                // Today P/L 업데이트
+                if (typeof updateTodayPL === 'function') {
+                    updateTodayPL(profit);
+                }
+
+                // 포지션 UI 초기화
+                if (typeof updatePositionUI === 'function') {
+                    updatePositionUI(false, null);
+                }
+            }
+
             // ★ Demo 포지션 업데이트
             console.log('[WS Demo] Position data received:', data.position);
             if (data.position) {
@@ -242,13 +283,13 @@ function connectWebSocket() {
                 } else {
                     console.error('[WS Demo] ❌ updatePositionUI is not defined!');
                 }
-            } else {
+            } else if (!data.auto_closed) {  // 자동청산이 아닐 때만 포지션 없음 처리
                 console.log('[WS Demo] ❌ No position - calling updatePositionUI(false)');
                 if (typeof updatePositionUI === 'function') {
                     updatePositionUI(false, null);
                 }
             }
-            
+
             return;
         }
         
