@@ -246,10 +246,14 @@ async def get_account_info(current_user: User = Depends(get_current_user)):
                     }
                     break
 
+            # ★ 유저가 등록한 계좌 정보 우선 사용
+            user_account = current_user.mt5_account_number or cached_account.get("login", "N/A")
+            user_server = current_user.mt5_server or cached_account.get("server", "Bridge")
+
             return {
-                "broker": cached_account.get("broker", "Bridge"),
-                "account": cached_account.get("login", "N/A"),
-                "server": cached_account.get("server", "Bridge"),
+                "broker": cached_account.get("broker", "HedgeHood Pty Ltd"),
+                "account": user_account,  # ★ 유저 계좌 우선
+                "server": user_server,    # ★ 유저 서버 우선
                 "balance": cached_account.get("balance", 0),
                 "equity": cached_account.get("equity", 0),
                 "margin": cached_account.get("margin", 0),
@@ -262,7 +266,8 @@ async def get_account_info(current_user: User = Depends(get_current_user)):
                 "neutral_count": neutral_count,
                 "base_score": base_score,
                 "prices": get_bridge_prices(),
-                "martin": martin_service.get_state()
+                "martin": martin_service.get_state(),
+                "has_mt5": current_user.has_mt5_account  # ★ MT5 연결 상태 추가
             }
 
         account = mt5.account_info()
@@ -315,10 +320,14 @@ async def get_account_info(current_user: User = Depends(get_current_user)):
             if tick:
                 prices[sym] = {"bid": tick.bid, "ask": tick.ask}
         
+        # ★ 유저가 등록한 계좌 정보 우선 사용
+        user_account = current_user.mt5_account_number or account.login
+        user_server = current_user.mt5_server or account.server
+
         return {
             "broker": account.company,
-            "account": account.login,
-            "server": account.server,
+            "account": user_account,  # ★ 유저 계좌 우선
+            "server": user_server,    # ★ 유저 서버 우선
             "balance": account.balance,
             "equity": account.equity,
             "margin": account.margin,
@@ -331,7 +340,8 @@ async def get_account_info(current_user: User = Depends(get_current_user)):
             "neutral_count": neutral_count,
             "base_score": base_score,
             "prices": prices,
-            "martin": martin_service.get_state()
+            "martin": martin_service.get_state(),
+            "has_mt5": current_user.has_mt5_account  # ★ MT5 연결 상태 추가
         }
     except HTTPException:
         raise
