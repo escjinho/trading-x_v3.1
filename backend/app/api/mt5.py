@@ -98,6 +98,64 @@ import uuid
 order_queue = []  # 대기 중인 주문 목록
 order_results = {}  # 주문 결과 저장 {order_id: result}
 
+# ========== 계정 검증 대기열 (브릿지용) - 파일 기반 ==========
+# 워커 간 공유를 위해 파일 기반으로 구현
+import fcntl
+
+VERIFY_PENDING_FILE = "/tmp/mt5_verify_pending.json"
+VERIFY_RESULTS_FILE = "/tmp/mt5_verify_results.json"
+
+def _read_json_file(filepath: str) -> dict:
+    """파일에서 JSON 읽기 (잠금 적용)"""
+    try:
+        with open(filepath, 'r') as f:
+            fcntl.flock(f.fileno(), fcntl.LOCK_SH)
+            data = json.load(f)
+            fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+            return data
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+def _write_json_file(filepath: str, data: dict):
+    """파일에 JSON 쓰기 (잠금 적용)"""
+    with open(filepath, 'w') as f:
+        fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+        json.dump(data, f)
+        fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+
+def get_pending_verifications() -> dict:
+    """대기 중인 검증 요청 조회"""
+    return _read_json_file(VERIFY_PENDING_FILE)
+
+def set_pending_verification(verify_id: str, data: dict):
+    """검증 요청 추가"""
+    pending = get_pending_verifications()
+    pending[verify_id] = data
+    _write_json_file(VERIFY_PENDING_FILE, pending)
+
+def remove_pending_verification(verify_id: str):
+    """검증 요청 제거"""
+    pending = get_pending_verifications()
+    pending.pop(verify_id, None)
+    _write_json_file(VERIFY_PENDING_FILE, pending)
+
+def get_verification_results() -> dict:
+    """검증 결과 조회"""
+    return _read_json_file(VERIFY_RESULTS_FILE)
+
+def set_verification_result(verify_id: str, result: dict):
+    """검증 결과 저장"""
+    results = get_verification_results()
+    results[verify_id] = result
+    _write_json_file(VERIFY_RESULTS_FILE, results)
+
+def pop_verification_result(verify_id: str) -> dict:
+    """검증 결과 가져오고 삭제"""
+    results = get_verification_results()
+    result = results.pop(verify_id, None)
+    _write_json_file(VERIFY_RESULTS_FILE, results)
+    return result
+
 def get_bridge_prices():
     """브릿지 캐시에서 가격 데이터 조회"""
     return bridge_cache["prices"]
@@ -632,6 +690,58 @@ async def get_order_result(order_id: str):
         result = order_results.pop(order_id)  # 결과 가져오고 삭제
         return result
     return {"status": "pending"}
+
+
+# ========== 계정 검증 (브릿지용) ==========
+@router.get("/bridge/verify/pending")
+async def api_get_pending_verifications():
+    """브릿지가 폴링: 대기 중인 검증 요청 목록 (파일 기반)"""
+    import time as time_module
+
+    pending = get_pending_verifications()
+
+    # 오래된 요청 정리 (60초 이상)
+    expired = []
+    for vid, data in pending.items():
+        if time_module.time() - data.get("created_at", 0) > 60:
+            expired.append(vid)
+    for vid in expired:
+        remove_pending_verification(vid)
+
+    # 최신 데이터 다시 읽기
+    pending = get_pending_verifications()
+
+    # 대기 중인 요청 반환
+    verifications = []
+    for vid, data in pending.items():
+        verifications.append({
+            "verify_id": vid,
+            "account": data["account"],
+            "password": data["password"],
+            "server": data["server"]
+        })
+
+    return {"verifications": verifications}
+
+
+@router.post("/bridge/verify/result")
+async def receive_verification_result(data: dict = Body(...)):
+    """브릿지가 검증 결과 전송 (파일 기반)"""
+    verify_id = data.get("verify_id")
+    if not verify_id:
+        return {"status": "error", "message": "verify_id missing"}
+
+    set_verification_result(verify_id, {
+        "success": data.get("success", False),
+        "message": data.get("message", ""),
+        "account_info": data.get("account_info", {})
+    })
+
+    # pending에서 제거
+    remove_pending_verification(verify_id)
+
+    print(f"[Verify] 결과 수신: {verify_id} - {data.get('success')}")
+    return {"status": "ok"}
 
 
 # ========== 주문 실행 ==========
@@ -1394,51 +1504,67 @@ async def connect_mt5_account(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """MT5 계정 연결 및 저장"""
+    """MT5 계정 연결 - 브릿지를 통한 실제 검증 후 저장"""
+    import time as time_module
+
     if not request.account or not request.password:
         return JSONResponse({"success": False, "message": "계좌번호와 비밀번호를 입력하세요"})
-    
-    # ★MT5 직접 연결 체크 제거 - 브릿지가 연결되어 있으면 OK
-    # Linux에서는 MT5 직접 연결이 불가능하므로, 브릿지 연결 상태만 확인
-    import time as time_module
+
+    # 1. 브릿지 연결 확인
     bridge_age = time_module.time() - bridge_cache.get("last_update", 0)
-    
-    if bridge_age > 60:  # 브릿지 데이터가 1분 이상 오래됨
+    if bridge_age > 60:
         return JSONResponse({
             "success": False,
             "message": "MT5 브릿지 연결 없음. Windows 서버에서 브릿지를 실행해주세요."
         })
-    
-    # DB에 has_mt5_account = True 저장
-    current_user.has_mt5_account = True
-    current_user.mt5_account_number = request.account
-    current_user.mt5_server = request.server
-    db.commit()
-    
-    return JSONResponse({
-        "success": True,
-        "message": "MT5 계정 연결 완료!",
+
+    # 2. 검증 요청 생성 (파일 기반)
+    verify_id = str(uuid.uuid4())
+    set_pending_verification(verify_id, {
         "account": request.account,
-        "server": request.server
+        "password": request.password,
+        "server": request.server,
+        "created_at": time_module.time()
     })
-    """MT5 계정 연결 및 저장"""
-    if not account or not password:
-        return JSONResponse({"success": False, "message": "계좌번호와 비밀번호를 입력하세요"})
-    
-    if not mt5_initialize_safe():
-        return JSONResponse({"success": False, "message": "MT5 초기화 실패"})
-    
-    # DB에 has_mt5_account = True 저장
-    current_user.has_mt5_account = True
-    current_user.mt5_account_number = account
-    current_user.mt5_server = server
-    db.commit()
-    
+
+    # 3. 브릿지가 검증하고 결과를 보낼 때까지 대기 (최대 10초)
+    max_wait = 10
+    waited = 0
+    while waited < max_wait:
+        results = get_verification_results()
+        if verify_id in results:
+            result = pop_verification_result(verify_id)
+            remove_pending_verification(verify_id)
+
+            if result and result.get("success"):
+                # 검증 성공 - DB에 저장
+                current_user.has_mt5_account = True
+                current_user.mt5_account_number = request.account
+                current_user.mt5_server = request.server
+                db.commit()
+
+                return JSONResponse({
+                    "success": True,
+                    "message": "MT5 계정 검증 완료!",
+                    "account": request.account,
+                    "server": request.server,
+                    "account_info": result.get("account_info", {})
+                })
+            else:
+                # 검증 실패
+                return JSONResponse({
+                    "success": False,
+                    "message": result.get("message", "계좌번호 또는 비밀번호가 올바르지 않습니다") if result else "검증 실패"
+                })
+
+        await asyncio.sleep(0.5)
+        waited += 0.5
+
+    # 4. 타임아웃
+    remove_pending_verification(verify_id)
     return JSONResponse({
-        "success": True,
-        "message": "MT5 계정 연결 완료!",
-        "account": account,
-        "server": server
+        "success": False,
+        "message": "검증 시간 초과. 브릿지 연결 상태를 확인해주세요."
     })
 
 
