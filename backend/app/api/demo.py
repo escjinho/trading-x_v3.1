@@ -87,6 +87,180 @@ from ..utils.security import decode_token
 from ..services.indicator_service import IndicatorService
 from .mt5 import get_bridge_prices, get_bridge_candles, bridge_cache
 
+# ========== Bridge Cache 기반 인디케이터 계산 ==========
+def calculate_indicators_from_bridge(symbol: str = "BTCUSD") -> dict:
+    """
+    bridge_cache 캔들 데이터로 인디케이터 계산
+    5단계 전체 범위 사용: Strong Sell (0-20) ~ Strong Buy (80-100)
+    """
+    candles = get_bridge_candles(symbol, "M5")
+    if not candles or len(candles) < 20:
+        # 캔들 부족 시 현재 가격 변화로 계산
+        prices = get_bridge_prices()
+        price_data = prices.get(symbol, {})
+        bid = price_data.get("bid", 0)
+
+        if bid > 0:
+            # 가격 기반 랜덤 시드로 일관성 유지
+            seed = int(bid * 100) % 1000
+            random.seed(seed + int(time.time() // 5))  # 5초마다 변경
+
+            # 더 넓은 범위로 랜덤 생성 (5~95 전체 범위)
+            base_score = random.randint(5, 95)
+        else:
+            base_score = 50
+
+        random.seed()  # 시드 리셋
+
+        # score 기반 buy/sell/neutral 계산
+        if base_score >= 60:
+            buy = 40 + int((base_score - 60) * 1.5)  # 60~100 → 40~100
+            sell = max(5, 50 - int((base_score - 50) * 0.9))
+        elif base_score <= 40:
+            sell = 40 + int((40 - base_score) * 1.5)  # 0~40 → 40~100
+            buy = max(5, 50 - int((50 - base_score) * 0.9))
+        else:
+            buy = 30 + random.randint(-5, 5)
+            sell = 30 + random.randint(-5, 5)
+
+        neutral = 100 - buy - sell
+        return {"buy": buy, "sell": sell, "neutral": max(5, neutral), "score": base_score}
+
+    # 캔들 데이터로 실제 인디케이터 계산
+    closes = [c.get("close", 0) for c in candles if c.get("close")]
+    highs = [c.get("high", 0) for c in candles if c.get("high")]
+    lows = [c.get("low", 0) for c in candles if c.get("low")]
+
+    if len(closes) < 10:
+        return {"buy": 33, "sell": 33, "neutral": 34, "score": 50}
+
+    buy_count = 0
+    sell_count = 0
+    neutral_count = 0
+
+    # 1. 최근 5개 캔들 방향 (강력한 가중치)
+    recent_bulls = 0
+    recent_bears = 0
+    for i in range(-5, 0):
+        if closes[i] > closes[i-1]:
+            recent_bulls += 1
+        elif closes[i] < closes[i-1]:
+            recent_bears += 1
+
+    if recent_bulls >= 4:
+        buy_count += 3  # Strong bullish
+    elif recent_bulls >= 3:
+        buy_count += 2
+    elif recent_bears >= 4:
+        sell_count += 3  # Strong bearish
+    elif recent_bears >= 3:
+        sell_count += 2
+    else:
+        neutral_count += 1
+
+    # 2. 현재 가격 vs 최근 고/저
+    current = closes[-1]
+    recent_high = max(highs[-10:])
+    recent_low = min(lows[-10:])
+    price_range = recent_high - recent_low
+
+    if price_range > 0:
+        position = (current - recent_low) / price_range
+        if position > 0.8:
+            buy_count += 2  # 고점 근처 - 상승 강세
+        elif position > 0.6:
+            buy_count += 1
+        elif position < 0.2:
+            sell_count += 2  # 저점 근처 - 하락 강세
+        elif position < 0.4:
+            sell_count += 1
+        else:
+            neutral_count += 1
+
+    # 3. 단기 이평선 크로스 (3 vs 7)
+    if len(closes) >= 7:
+        sma3 = sum(closes[-3:]) / 3
+        sma7 = sum(closes[-7:]) / 7
+        if sma3 > sma7 * 1.001:
+            buy_count += 2
+        elif sma3 < sma7 * 0.999:
+            sell_count += 2
+        else:
+            neutral_count += 1
+
+    # 4. 모멘텀 (5봉 전 대비)
+    if len(closes) >= 6:
+        momentum = (closes[-1] - closes[-6]) / closes[-6] * 100
+        if momentum > 0.5:
+            buy_count += 2
+        elif momentum > 0.1:
+            buy_count += 1
+        elif momentum < -0.5:
+            sell_count += 2
+        elif momentum < -0.1:
+            sell_count += 1
+        else:
+            neutral_count += 1
+
+    # 5. RSI 간이 계산
+    gains = []
+    losses = []
+    for i in range(1, min(15, len(closes))):
+        change = closes[-i] - closes[-i-1]
+        if change > 0:
+            gains.append(change)
+        else:
+            losses.append(abs(change))
+
+    avg_gain = sum(gains) / len(gains) if gains else 0
+    avg_loss = sum(losses) / len(losses) if losses else 0.0001
+    rs = avg_gain / avg_loss
+    rsi = 100 - (100 / (1 + rs))
+
+    if rsi > 70:
+        sell_count += 1  # 과매수
+    elif rsi > 60:
+        buy_count += 1  # 상승 강세
+    elif rsi < 30:
+        buy_count += 1  # 과매도 반등 기대
+    elif rsi < 40:
+        sell_count += 1  # 하락 강세
+    else:
+        neutral_count += 1
+
+    # 최종 점수 계산
+    total = buy_count + sell_count + neutral_count
+    if total > 0:
+        score = (buy_count / total) * 100
+    else:
+        score = 50
+
+    # buy/sell/neutral 비율 조정 (100 합계)
+    # score가 높을수록 buy 비율 증가
+    if score >= 70:
+        disp_buy = 55 + int((score - 70) * 1.5)
+        disp_sell = max(5, 20 - int((score - 70) * 0.5))
+    elif score >= 50:
+        disp_buy = 35 + int((score - 50) * 1.0)
+        disp_sell = 35 - int((score - 50) * 0.5)
+    elif score >= 30:
+        disp_sell = 35 + int((50 - score) * 1.0)
+        disp_buy = 35 - int((50 - score) * 0.5)
+    else:
+        disp_sell = 55 + int((30 - score) * 1.5)
+        disp_buy = max(5, 20 - int((30 - score) * 0.5))
+
+    disp_buy = max(5, min(80, disp_buy))
+    disp_sell = max(5, min(80, disp_sell))
+    disp_neutral = 100 - disp_buy - disp_sell
+
+    return {
+        "buy": disp_buy,
+        "sell": disp_sell,
+        "neutral": max(5, disp_neutral),
+        "score": score
+    }
+
 # ========== 심볼별 기본 스펙 (bridge_cache에 symbol_info 없을 때 사용) ==========
 DEFAULT_SYMBOL_SPECS = {
     "BTCUSD":   {"tick_size": 0.01,    "tick_value": 0.01},
@@ -1587,16 +1761,20 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                     print(f"[DEMO WS] 📊 Indicators - Sell: {sell_count}, Neutral: {neutral_count}, Buy: {buy_count}, Score: {base_score:.1f}")
                 except Exception as e:
                     print(f"[DEMO WS] ⚠️ Indicator calculation error: {e}")
-                    sell_count = random.randint(20, 40)
-                    buy_count = random.randint(20, 40)
-                    neutral_count = 100 - sell_count - buy_count
-                    base_score = 50.0
+                    # Bridge 캐시 기반 인디케이터 계산
+                    indicators = calculate_indicators_from_bridge("BTCUSD")
+                    buy_count = indicators["buy"]
+                    sell_count = indicators["sell"]
+                    neutral_count = indicators["neutral"]
+                    base_score = indicators["score"]
             else:
-                # MT5 없음 - 랜덤 인디케이터 값 사용
-                sell_count = random.randint(25, 40)
-                buy_count = random.randint(25, 40)
-                neutral_count = 100 - sell_count - buy_count
-                base_score = 50.0 + random.randint(-10, 10)
+                # MT5 없음 - Bridge 캐시 기반 인디케이터 계산 (5단계 전체 범위)
+                indicators = calculate_indicators_from_bridge("BTCUSD")
+                buy_count = indicators["buy"]
+                sell_count = indicators["sell"]
+                neutral_count = indicators["neutral"]
+                base_score = indicators["score"]
+                print(f"[DEMO WS] 📊 Bridge Indicators - Sell: {sell_count}, Neutral: {neutral_count}, Buy: {buy_count}, Score: {base_score:.1f}")
 
             # 모든 심볼 가격 정보
             all_prices = {}
