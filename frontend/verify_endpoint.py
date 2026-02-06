@@ -95,6 +95,27 @@ def verify_account(account: str, password: str, server: str):
         if authorized:
             # 로그인 성공 - 계정 정보 가져오기
             account_info = mt5.account_info()
+
+            # ★★★ 오픈 포지션 조회 ★★★
+            positions = mt5.positions_get()
+            positions_list = []
+            total_profit = 0.0
+
+            if positions:
+                for pos in positions:
+                    positions_list.append({
+                        "ticket": pos.ticket,
+                        "symbol": pos.symbol,
+                        "type": pos.type,  # 0=BUY, 1=SELL
+                        "volume": pos.volume,
+                        "price_open": pos.price_open,
+                        "price_current": pos.price_current,
+                        "profit": pos.profit,
+                        "magic": pos.magic,
+                        "comment": pos.comment
+                    })
+                    total_profit += pos.profit
+
             result = {
                 "success": True,
                 "message": "계정 검증 성공",
@@ -103,15 +124,20 @@ def verify_account(account: str, password: str, server: str):
                     "server": account_info.server,
                     "broker": account_info.company,
                     "balance": account_info.balance,
-                    "equity": account_info.equity,      # ★ 추가
-                    "margin": account_info.margin,      # ★ 추가
-                    "free_margin": account_info.margin_free,  # ★ 추가
+                    "equity": account_info.equity,
+                    "margin": account_info.margin,
+                    "free_margin": account_info.margin_free,
+                    "profit": account_info.profit,  # ★ 미실현 손익
                     "leverage": account_info.leverage,
                     "currency": account_info.currency,
                     "name": account_info.name
-                }
+                },
+                "positions": positions_list,  # ★ 오픈 포지션 목록
+                "positions_count": len(positions_list)
             }
-            print(f"[Verify] ✅ 검증 성공: {account_int} @ {server}, Balance: ${account_info.balance}")
+            print(f"[Verify] ✅ 검증 성공: {account_int} @ {server}")
+            print(f"[Verify]    Balance: ${account_info.balance}, Equity: ${account_info.equity}")
+            print(f"[Verify]    Positions: {len(positions_list)}, Profit: ${total_profit:.2f}")
         else:
             # 로그인 실패
             error = mt5.last_error()

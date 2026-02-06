@@ -27,6 +27,9 @@ class User(Base):
     # ========== MT5 계정 잔고 (검증 시점 스냅샷) ==========
     mt5_balance = Column(Float, nullable=True)        # MT5 잔고
     mt5_equity = Column(Float, nullable=True)         # MT5 자산
+    mt5_margin = Column(Float, nullable=True)         # MT5 사용 마진
+    mt5_free_margin = Column(Float, nullable=True)    # MT5 가용 마진
+    mt5_profit = Column(Float, nullable=True)         # MT5 미실현 손익
     mt5_leverage = Column(Integer, nullable=True)     # MT5 레버리지
     mt5_currency = Column(String(10), nullable=True)  # MT5 통화 (USD 등)
     

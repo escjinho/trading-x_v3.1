@@ -1577,11 +1577,15 @@ async def connect_mt5_account(
                 # ★★★ MT5 잔고 정보 저장 (검증 시점 스냅샷) ★★★
                 current_user.mt5_balance = account_info.get("balance", 0)
                 current_user.mt5_equity = account_info.get("equity", account_info.get("balance", 0))
+                current_user.mt5_margin = account_info.get("margin", 0)
+                current_user.mt5_free_margin = account_info.get("free_margin", account_info.get("balance", 0))
+                current_user.mt5_profit = account_info.get("profit", 0)
                 current_user.mt5_leverage = account_info.get("leverage", 500)
                 current_user.mt5_currency = account_info.get("currency", "USD")
 
                 db.commit()
-                print(f"[CONNECT] 🎉 DB 저장 완료: {request.account}, Balance: ${account_info.get('balance', 0)}")
+                print(f"[CONNECT] 🎉 DB 저장 완료: {request.account}")
+                print(f"[CONNECT]    Balance: ${account_info.get('balance', 0)}, Equity: ${account_info.get('equity', 0)}")
 
                 return JSONResponse({
                     "success": True,
