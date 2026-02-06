@@ -12,28 +12,12 @@ if (typeof lastWebSocketData === 'undefined') {
     var lastWebSocketData = null;
 }
 
-// 인디케이터 강제 업데이트 함수
+// ★★★ 인디케이터 업데이트 (1~3초 랜덤 간격 큐에 위임) ★★★
 function forceUpdateIndicators() {
     const data = lastWebSocketData || window.lastWebSocketData;
 
-    if (data) {
-        console.log('[Navigation] Force updating indicators:', data.sell_count, data.neutral_count, data.buy_count);
-
-        // Trade 탭 인디케이터
-        if (data.sell_count !== undefined) {
-            document.getElementById('indSell').textContent = data.sell_count || 0;
-            document.getElementById('indNeutral').textContent = data.neutral_count || 0;
-            document.getElementById('indBuy').textContent = data.buy_count || 0;
-        }
-
-        // Chart 탭 인디케이터
-        if (data.sell_count !== undefined) {
-            document.getElementById('chartIndSell').textContent = data.sell_count || 0;
-            document.getElementById('chartIndNeutral').textContent = data.neutral_count || 0;
-            document.getElementById('chartIndBuy').textContent = data.buy_count || 0;
-        }
-    } else {
-        console.log('[Navigation] No WebSocket data available yet for indicator update');
+    if (data && data.sell_count !== undefined && typeof queueIndicatorUpdate === 'function') {
+        queueIndicatorUpdate(data.buy_count || 33, data.sell_count || 33, data.neutral_count || 34);
     }
 }
 

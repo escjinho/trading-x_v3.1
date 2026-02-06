@@ -5,6 +5,61 @@ const maxRetries = 5;
 let pollingInterval = null;  // ★ 폴링 인터벌 저장용
 let intentionalClose = false;  // ★ 의도적 종료 플래그 (재연결 방지)
 
+// ★★★ 시그널 게이지 + 인디케이터 1~3초 랜덤 업데이트 ★★★
+let _pendingIndicator = { buy: 33, sell: 33, neutral: 34 };
+let _indicatorTimerId = null;
+
+function queueIndicatorUpdate(buy, sell, neutral) {
+    // WS에서 받은 값을 저장만 함
+    _pendingIndicator = {
+        buy: buy || 33,
+        sell: sell || 33,
+        neutral: neutral || 34
+    };
+    // 타이머가 없으면 시작
+    if (!_indicatorTimerId) {
+        scheduleIndicatorUpdate();
+    }
+}
+
+function scheduleIndicatorUpdate() {
+    // 1~3초 랜덤 간격
+    const delay = Math.random() * 2000 + 1000;
+
+    _indicatorTimerId = setTimeout(() => {
+        _indicatorTimerId = null;
+
+        const { buy, sell, neutral } = _pendingIndicator;
+
+        // 인디케이터 숫자 업데이트
+        const indSell = document.getElementById('indSell');
+        const indNeutral = document.getElementById('indNeutral');
+        const indBuy = document.getElementById('indBuy');
+        const chartIndSell = document.getElementById('chartIndSell');
+        const chartIndNeutral = document.getElementById('chartIndNeutral');
+        const chartIndBuy = document.getElementById('chartIndBuy');
+
+        if (indSell) indSell.textContent = sell;
+        if (indNeutral) indNeutral.textContent = neutral;
+        if (indBuy) indBuy.textContent = buy;
+        if (chartIndSell) chartIndSell.textContent = sell;
+        if (chartIndNeutral) chartIndNeutral.textContent = neutral;
+        if (chartIndBuy) chartIndBuy.textContent = buy;
+
+        // 시그널 게이지 업데이트
+        if (typeof GaugePanel !== 'undefined' && GaugePanel.updateGauge) {
+            GaugePanel.updateGauge(buy, sell, neutral);
+        }
+        if (typeof ChartGaugePanel !== 'undefined' && ChartGaugePanel.updateGauge) {
+            ChartGaugePanel.updateGauge(buy, sell, neutral);
+        }
+
+        // 다음 업데이트 예약
+        scheduleIndicatorUpdate();
+    }, delay);
+}
+// ★★★ 시그널 게이지 + 인디케이터 끝 ★★★
+
 // ========== MT5 자동 백오프 재연결 ==========
 const RECONNECT_DELAYS = [1000, 5000, 30000, 60000, 300000]; // 1초, 5초, 30초, 1분, 5분
 let reconnectAttempt = 0;
@@ -179,31 +234,9 @@ function connectWebSocket() {
                 baseScore = data.base_score;
             }
 
-            // 인디케이터 숫자 업데이트 (1초 쓰로틀)
-            const now = Date.now();
-            if (!window.lastIndicatorDomUpdate || now - window.lastIndicatorDomUpdate >= 1000) {
-                window.lastIndicatorDomUpdate = now;
-                document.getElementById('indSell').textContent = data.sell_count;
-                document.getElementById('indNeutral').textContent = data.neutral_count;
-                document.getElementById('indBuy').textContent = data.buy_count;
-                chartTargetScore = targetScore;
-                document.getElementById('chartIndSell').textContent = data.sell_count;
-                document.getElementById('chartIndNeutral').textContent = data.neutral_count;
-                document.getElementById('chartIndBuy').textContent = data.buy_count;
-            }
-
-            // ★ 게이지 바늘 업데이트 (쓰로틀 없이 매번 호출 - 부드러운 애니메이션)
-            if (typeof GaugePanel !== 'undefined' && GaugePanel.updateGauge) {
-                GaugePanel.updateGauge(data.buy_count, data.sell_count, data.neutral_count);
-                if (!GaugePanel.animationFrameId && GaugePanel.startAnimation) {
-                    GaugePanel.startAnimation();
-                }
-            }
-            if (typeof ChartGaugePanel !== 'undefined' && ChartGaugePanel.updateGauge) {
-                ChartGaugePanel.updateGauge(data.buy_count, data.sell_count, data.neutral_count);
-                if (!ChartGaugePanel.animationFrameId && ChartGaugePanel.startAnimation) {
-                    ChartGaugePanel.startAnimation();
-                }
+            // ★★★ 시그널 게이지 + 인디케이터 (1~3초 랜덤 간격 큐에 위임) ★★★
+            if (data.sell_count !== undefined) {
+                queueIndicatorUpdate(data.buy_count, data.sell_count, data.neutral_count);
             }
 
 
@@ -379,34 +412,9 @@ function connectWebSocket() {
             baseScore = data.base_score;
         }
 
-        // ★ Live 모드 인디케이터 디버그 로그
-        console.log(`[WS Live] 📊 Indicators: Buy=${data.buy_count}, Sell=${data.sell_count}, Neutral=${data.neutral_count}, Score=${data.base_score}`);
-
-        // 인디케이터 숫자 업데이트 (1초 쓰로틀)
-        const now = Date.now();
-        if (data.buy_count !== undefined && (!window.lastIndicatorDomUpdate || now - window.lastIndicatorDomUpdate >= 1000)) {
-            window.lastIndicatorDomUpdate = now;
-            document.getElementById('indSell').textContent = data.sell_count;
-            document.getElementById('indNeutral').textContent = data.neutral_count;
-            document.getElementById('indBuy').textContent = data.buy_count;
-            chartTargetScore = targetScore;
-            document.getElementById('chartIndSell').textContent = data.sell_count;
-            document.getElementById('chartIndNeutral').textContent = data.neutral_count;
-            document.getElementById('chartIndBuy').textContent = data.buy_count;
-        }
-
-        // ★ 게이지 바늘 업데이트 (쓰로틀 없이 매번 호출 - 부드러운 애니메이션)
-        if (data.buy_count !== undefined && typeof GaugePanel !== 'undefined' && GaugePanel.updateGauge) {
-            GaugePanel.updateGauge(data.buy_count, data.sell_count, data.neutral_count);
-            if (!GaugePanel.animationFrameId && GaugePanel.startAnimation) {
-                GaugePanel.startAnimation();
-            }
-        }
-        if (data.buy_count !== undefined && typeof ChartGaugePanel !== 'undefined' && ChartGaugePanel.updateGauge) {
-            ChartGaugePanel.updateGauge(data.buy_count, data.sell_count, data.neutral_count);
-            if (!ChartGaugePanel.animationFrameId && ChartGaugePanel.startAnimation) {
-                ChartGaugePanel.startAnimation();
-            }
+        // ★★★ 시그널 게이지 + 인디케이터 (1~3초 랜덤 간격 큐에 위임) ★★★
+        if (data.buy_count !== undefined) {
+            queueIndicatorUpdate(data.buy_count, data.sell_count, data.neutral_count);
         }
         
         // 포지션 정보
@@ -609,16 +617,9 @@ async function fetchAccountData() {
                 }
             }
             
+            // ★★★ 시그널 게이지 + 인디케이터 (1~3초 랜덤 간격 큐에 위임) ★★★
             if (data.buy_count !== undefined) {
-                console.log('[fetchAccountData] Updating indicators:', data.sell_count, data.neutral_count, data.buy_count);
-                document.getElementById('indSell').textContent = data.sell_count || 0;
-                document.getElementById('indNeutral').textContent = data.neutral_count || 0;
-                document.getElementById('indBuy').textContent = data.buy_count || 0;
-                document.getElementById('chartIndSell').textContent = data.sell_count || 0;
-                document.getElementById('chartIndNeutral').textContent = data.neutral_count || 0;
-                document.getElementById('chartIndBuy').textContent = data.buy_count || 0;
-
-                baseScore = data.base_score || 50;
+                queueIndicatorUpdate(data.buy_count, data.sell_count, data.neutral_count);
             }
             
             if (data.prices && data.prices[chartSymbol]) {
@@ -976,29 +977,16 @@ async function fetchDemoData() {
                 updateQuickPanelFromData(data);
             }
 
-            // ========== 인디케이터 업데이트 추가 ==========
-            console.log("[checkUserMode] About to try connectWebSocket - Live mode");
+            // ★★★ 인디케이터 업데이트 (1~3초 랜덤 간격 큐에 위임) ★★★
             try {
                 const indResponse = await fetch(`${API_URL}/mt5/indicators/${currentSymbol || 'BTCUSD'}`);
                 const indData = await indResponse.json();
                 if (indData) {
-                    document.getElementById('indSell').textContent = indData.sell || 0;
-                    document.getElementById('indNeutral').textContent = indData.neutral || 0;
-                    document.getElementById('indBuy').textContent = indData.buy || 0;
-                    document.getElementById('chartIndSell').textContent = indData.sell || 0;
-                    document.getElementById('chartIndNeutral').textContent = indData.neutral || 0;
-                    document.getElementById('chartIndBuy').textContent = indData.buy || 0;
-                    
-                    if (indData.score !== undefined) {
-                        baseScore = indData.score;
-                        targetScore = indData.score;
-                        chartTargetScore = indData.score;
-                    }
+                    queueIndicatorUpdate(indData.buy || 33, indData.sell || 33, indData.neutral || 34);
                 }
             } catch (e) {
                 console.log('[fetchDemoData] Indicator fetch error:', e);
             }
-            // ========== 인디케이터 업데이트 끝 ==========
             
             // Demo 마틴 상태 조회 (변경된 경우에만 업데이트)
             if (currentMode === 'martin' && martinEnabled) {
@@ -1064,28 +1052,21 @@ if (!isGuest && token) {
     document.getElementById('statusDot').style.background = '#ffa500';
     
     // 게스트 모드 인디케이터 업데이트
+    // ★★★ 게스트 모드 인디케이터 (1~3초 랜덤 간격 큐에 위임) ★★★
     async function fetchGuestIndicators() {
-        console.log("[checkUserMode] About to try connectWebSocket - Live mode");
-            try {
+        try {
             const response = await fetch(`${API_URL}/mt5/indicators/BTCUSD`);
             const data = await response.json();
             if (data) {
-                document.getElementById('indSell').textContent = data.sell || 0;
-                document.getElementById('indNeutral').textContent = data.neutral || 0;
-                document.getElementById('indBuy').textContent = data.buy || 0;
-                document.getElementById('chartIndSell').textContent = data.sell || 0;
-                document.getElementById('chartIndNeutral').textContent = data.neutral || 0;
-                document.getElementById('chartIndBuy').textContent = data.buy || 0;
-                console.log('Guest indicators updated:', data.sell, data.neutral, data.buy);
-                baseScore = data.score || 50;
+                queueIndicatorUpdate(data.buy || 33, data.sell || 33, data.neutral || 34);
             }
         } catch (e) {
             console.log('Guest indicator error:', e);
         }
     }
-    
+
     fetchGuestIndicators();
-    setInterval(fetchGuestIndicators, 3000);
+    setInterval(fetchGuestIndicators, 5000);  // 5초마다 API 조회
     
     // 게스트 안내 토스트
     setTimeout(() => {

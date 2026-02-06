@@ -79,28 +79,9 @@ function connectWebSocket() {
                 chartTargetScore = data.base_score;      // ✅ 추가: Chart 탭 게이지용
             }
 
-            // 인디케이터 업데이트 (Trade 탭) - 디버깅 로그 추가
-            if (data.sell_count !== undefined) {
-                console.log(`[WS] 📊 Indicators: Sell=${data.sell_count}, Neutral=${data.neutral_count}, Buy=${data.buy_count}`);
-
-                document.getElementById('indSell').textContent = data.sell_count;
-                document.getElementById('indNeutral').textContent = data.neutral_count;
-                document.getElementById('indBuy').textContent = data.buy_count;
-
-                // Chart 탭 인디케이터 업데이트
-                document.getElementById('chartIndSell').textContent = data.sell_count;
-                document.getElementById('chartIndNeutral').textContent = data.neutral_count;
-                document.getElementById('chartIndBuy').textContent = data.buy_count;
-
-                // GaugePanel 업데이트 (Trade 탭 시그널 게이지)
-                if (typeof GaugePanel !== 'undefined' && GaugePanel.updateGauge) {
-                    GaugePanel.updateGauge(data.buy_count, data.sell_count, data.neutral_count);
-                }
-
-                // ChartGaugePanel 업데이트 (Chart 탭 시그널 게이지)
-                if (typeof ChartGaugePanel !== 'undefined' && ChartGaugePanel.updateGauge) {
-                    ChartGaugePanel.updateGauge(data.buy_count, data.sell_count, data.neutral_count);
-                }
+            // ★★★ 시그널 게이지 + 인디케이터 (1~3초 랜덤 간격 큐에 위임) ★★★
+            if (data.sell_count !== undefined && typeof queueIndicatorUpdate === 'function') {
+                queueIndicatorUpdate(data.buy_count, data.sell_count, data.neutral_count);
             }
 
             // ✅ Demo 모드 포지션 업데이트 (단일 포지션) — 있을 때만 갱신
@@ -182,22 +163,9 @@ function connectWebSocket() {
             chartTargetScore = data.base_score;      // ✅ 추가: Chart 탭 게이지용
         }
 
-        document.getElementById('indSell').textContent = data.sell_count;
-        document.getElementById('indNeutral').textContent = data.neutral_count;
-        document.getElementById('indBuy').textContent = data.buy_count;
-
-        // GaugePanel 업데이트 (Trade 탭 시그널 게이지)
-        if (typeof GaugePanel !== 'undefined' && GaugePanel.updateGauge) {
-            GaugePanel.updateGauge(data.buy_count, data.sell_count, data.neutral_count);
-        }
-
-        document.getElementById('chartIndSell').textContent = data.sell_count;
-        document.getElementById('chartIndNeutral').textContent = data.neutral_count;
-        document.getElementById('chartIndBuy').textContent = data.buy_count;
-
-        // ChartGaugePanel 업데이트 (Chart 탭 시그널 게이지)
-        if (typeof ChartGaugePanel !== 'undefined' && ChartGaugePanel.updateGauge) {
-            ChartGaugePanel.updateGauge(data.buy_count, data.sell_count, data.neutral_count);
+        // ★★★ 시그널 게이지 + 인디케이터 (1~3초 랜덤 간격 큐에 위임) ★★★
+        if (typeof queueIndicatorUpdate === 'function') {
+            queueIndicatorUpdate(data.buy_count, data.sell_count, data.neutral_count);
         }
         
         // Position — 있을 때만 갱신
@@ -281,28 +249,9 @@ async function fetchAccountData() {
             document.getElementById('accMargin').textContent = '$' + Math.round(data.margin || 0).toLocaleString();
             document.getElementById('accFree').textContent = '$' + Math.round(data.free_margin || 0).toLocaleString();
             
-            if (data.buy_count !== undefined) {
-                document.getElementById('indSell').textContent = data.sell_count;
-                document.getElementById('indNeutral').textContent = data.neutral_count;
-                document.getElementById('indBuy').textContent = data.buy_count;
-
-                // GaugePanel 업데이트 (Trade 탭 시그널 게이지)
-                if (typeof GaugePanel !== 'undefined' && GaugePanel.updateGauge) {
-                    GaugePanel.updateGauge(data.buy_count, data.sell_count, data.neutral_count);
-                }
-
-                document.getElementById('chartIndSell').textContent = data.sell_count;
-                document.getElementById('chartIndNeutral').textContent = data.neutral_count;
-                document.getElementById('chartIndBuy').textContent = data.buy_count;
-
-                // ChartGaugePanel 업데이트 (Chart 탭 시그널 게이지)
-                if (typeof ChartGaugePanel !== 'undefined' && ChartGaugePanel.updateGauge) {
-                    ChartGaugePanel.updateGauge(data.buy_count, data.sell_count, data.neutral_count);
-                }
-
-                baseScore = data.base_score || 50;
-                targetScore = data.base_score || 50;           // ✅ 추가
-                chartTargetScore = data.base_score || 50;      // ✅ 추가
+            // ★★★ 시그널 게이지 + 인디케이터 (1~3초 랜덤 간격 큐에 위임) ★★★
+            if (data.buy_count !== undefined && typeof queueIndicatorUpdate === 'function') {
+                queueIndicatorUpdate(data.buy_count, data.sell_count, data.neutral_count);
             }
             
             if (data.prices && data.prices[chartSymbol]) {

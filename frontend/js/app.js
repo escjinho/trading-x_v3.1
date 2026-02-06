@@ -62,27 +62,21 @@ function initGuestMode() {
     document.getElementById('headerStatus').textContent = 'Guest Mode';
     document.getElementById('statusDot').style.background = '#ffa500';
     
-    // Guest indicators
+    // ★★★ Guest indicators (1~3초 랜덤 간격 큐에 위임) ★★★
     async function fetchGuestIndicators() {
         try {
             const response = await fetch(`${API_URL}/mt5/indicators/BTCUSD`);
             const data = await response.json();
-            if (data) {
-                document.getElementById('indSell').textContent = data.sell || 0;
-                document.getElementById('indNeutral').textContent = data.neutral || 0;
-                document.getElementById('indBuy').textContent = data.buy || 0;
-                document.getElementById('chartIndSell').textContent = data.sell || 0;
-                document.getElementById('chartIndNeutral').textContent = data.neutral || 0;
-                document.getElementById('chartIndBuy').textContent = data.buy || 0;
-                baseScore = data.score || 50;
+            if (data && typeof queueIndicatorUpdate === 'function') {
+                queueIndicatorUpdate(data.buy || 33, data.sell || 33, data.neutral || 34);
             }
         } catch (e) {
             console.log('Guest indicator error:', e);
         }
     }
-    
+
     fetchGuestIndicators();
-    setInterval(fetchGuestIndicators, 3000);
+    setInterval(fetchGuestIndicators, 5000);  // 5초마다 API 조회
     
     setTimeout(() => {
         showToast('👋 게스트 모드로 둘러보는 중입니다', '');
