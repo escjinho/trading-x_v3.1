@@ -130,10 +130,22 @@ function getSymbolInfo(symbol) {
     return symbolMap[symbol] || defaultInfo;
 }
 
-// ========== 사운드 재생 ==========
+// ========== 사운드 재생 (개선된 버전) ==========
 function playSound(type) {
     try {
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        // ★ 전역 AudioContext 재사용 (브라우저 정책 대응)
+        if (!window._audioContext) {
+            window._audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        const audioContext = window._audioContext;
+
+        // ★ AudioContext가 suspended 상태면 resume 시도
+        if (audioContext.state === 'suspended') {
+            audioContext.resume().then(() => {
+                console.log('[Sound] AudioContext resumed');
+            });
+        }
+
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
 
@@ -150,5 +162,9 @@ function playSound(type) {
 
         oscillator.start(audioContext.currentTime);
         oscillator.stop(audioContext.currentTime + 0.3);
-    } catch (e) {}
+
+        console.log('[Sound] Played:', type);
+    } catch (e) {
+        console.error('[Sound] Error:', e.message);
+    }
 }

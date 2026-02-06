@@ -1673,7 +1673,23 @@ async def demo_websocket_endpoint(websocket: WebSocket):
             demo_position = None
             positions_data = []
             positions_count = 0
-            auto_closed_info = None  # ★ 자동청산 정보 초기화
+
+            # ★★★ 자동청산 정보 - 유저별로 일정 시간 유지 ★★★
+            # _auto_closed_cache[user_id] = {"info": {...}, "until": timestamp}
+            if not hasattr(demo_websocket_endpoint, '_auto_closed_cache'):
+                demo_websocket_endpoint._auto_closed_cache = {}
+
+            auto_closed_info = None
+            current_time = time.time()
+
+            # 이전에 저장된 자동청산 정보가 있고 아직 유효하면 사용
+            if user_id and user_id in demo_websocket_endpoint._auto_closed_cache:
+                cached = demo_websocket_endpoint._auto_closed_cache[user_id]
+                if current_time < cached.get("until", 0):
+                    auto_closed_info = cached.get("info")
+                else:
+                    # 만료됨 - 삭제
+                    del demo_websocket_endpoint._auto_closed_cache[user_id]
 
             if user_id:
                 try:
@@ -1793,7 +1809,14 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                                             "auto_closed": True,
                                             "closed_profit": profit,
                                             "is_win": is_win,
-                                            "message": f"🎯 목표 도달! +${profit:,.2f}" if is_win else f"💔 손절! ${profit:,.2f}"
+                                            "message": f"🎯 목표 도달! +${profit:,.2f}" if is_win else f"💔 손절! ${profit:,.2f}",
+                                            "closed_at": current_time  # ★ 청산 시간 추가
+                                        }
+
+                                        # ★★★ 5초 동안 자동청산 정보 유지 (프론트엔드가 놓치지 않도록) ★★★
+                                        demo_websocket_endpoint._auto_closed_cache[user_id] = {
+                                            "info": auto_closed_info,
+                                            "until": current_time + 5  # 5초 동안 유지
                                         }
 
                                         # 잔고 업데이트
@@ -1863,7 +1886,7 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                 data.update(auto_closed_info)
 
             await websocket.send_text(json.dumps(data))
-            await asyncio.sleep(0.5)  # ★ 0.5초 간격으로 실시간 업데이트
+            await asyncio.sleep(0.2)  # ★ 0.2초 간격으로 실시간 업데이트 (손익 게이지 즉시 반영)
 
         except Exception as e:
             print(f"[DEMO WS] Error: {e}")

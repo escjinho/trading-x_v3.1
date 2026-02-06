@@ -231,44 +231,61 @@ function connectWebSocket() {
                 if (accEquity) accEquity.textContent = '$' + data.equity.toLocaleString(undefined, {minimumFractionDigits: 2});
             }
             
-            // ★★★ Demo WS 자동청산 처리 ★★★
+            // ★★★ Demo WS 자동청산 처리 (중복 방지 + 사운드 강화) ★★★
             if (data.auto_closed) {
-                console.log('[WS Demo] 🎯 AUTO CLOSED!', data);
-                playSound('close');
+                const closedAt = data.closed_at || 0;
+                const lastClosedAt = window._lastAutoClosedAt || 0;
 
-                const profit = data.closed_profit || 0;
-                const isWin = data.is_win !== false && profit >= 0;
+                // ★ 같은 청산을 중복 처리하지 않음 (closed_at 타임스탬프로 구분)
+                if (closedAt !== lastClosedAt) {
+                    window._lastAutoClosedAt = closedAt;
+                    console.log('[WS Demo] 🎯 AUTO CLOSED! (NEW)', data);
 
-                // 마틴 모드인 경우
-                if (currentMode === 'martin' && martinEnabled) {
-                    if (data.martin_reset || isWin) {
-                        martinStep = 1;
-                        martinAccumulatedLoss = 0;
-                        martinHistory = [];
-                        updateMartinUI();
-                        showMartinSuccessPopup(profit);
-                    } else if (data.martin_step_up) {
-                        showMartinPopup(profit);
+                    // ★ 사운드 재생 (재시도 포함)
+                    try {
+                        playSound('close');
+                    } catch (e) {
+                        console.log('[WS Demo] Sound play failed, retrying...', e);
+                        setTimeout(() => { try { playSound('close'); } catch(e2) {} }, 100);
+                    }
+
+                    const profit = data.closed_profit || 0;
+                    const isWin = data.is_win !== false && profit >= 0;
+
+                    // 마틴 모드인 경우
+                    if (currentMode === 'martin' && martinEnabled) {
+                        if (data.martin_reset || isWin) {
+                            martinStep = 1;
+                            martinAccumulatedLoss = 0;
+                            martinHistory = [];
+                            updateMartinUI();
+                            showMartinSuccessPopup(profit);
+                        } else if (data.martin_step_up) {
+                            showMartinPopup(profit);
+                        } else {
+                            showToast(data.message || `💔 손절! ${profit.toFixed(2)}`, 'error');
+                        }
                     } else {
-                        showToast(data.message || `💔 손절! ${profit.toFixed(2)}`, 'error');
+                        // Basic/NoLimit 모드
+                        if (isWin) {
+                            showToast(data.message || `🎯 목표 도달! +$${profit.toFixed(2)}`, 'success');
+                        } else {
+                            showToast(data.message || `💔 손절! $${profit.toFixed(2)}`, 'error');
+                        }
+                    }
+
+                    // Today P/L 업데이트
+                    if (typeof updateTodayPL === 'function') {
+                        updateTodayPL(profit);
+                    }
+
+                    // 포지션 UI 초기화
+                    if (typeof updatePositionUI === 'function') {
+                        updatePositionUI(false, null);
                     }
                 } else {
-                    // Basic/NoLimit 모드
-                    if (isWin) {
-                        showToast(data.message || `🎯 목표 도달! +$${profit.toFixed(2)}`, 'success');
-                    } else {
-                        showToast(data.message || `💔 손절! $${profit.toFixed(2)}`, 'error');
-                    }
-                }
-
-                // Today P/L 업데이트
-                if (typeof updateTodayPL === 'function') {
-                    updateTodayPL(profit);
-                }
-
-                // 포지션 UI 초기화
-                if (typeof updatePositionUI === 'function') {
-                    updatePositionUI(false, null);
+                    // 이미 처리된 청산 - 조용히 무시
+                    console.log('[WS Demo] ⏭️ Skipping duplicate auto_closed');
                 }
             }
 
