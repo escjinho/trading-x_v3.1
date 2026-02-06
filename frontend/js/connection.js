@@ -10,14 +10,17 @@ let _pendingIndicator = { buy: 33, sell: 33, neutral: 34 };
 let _indicatorTimerId = null;
 
 function queueIndicatorUpdate(buy, sell, neutral) {
-    // WS에서 받은 값을 저장만 함
+    // WS에서 받은 값을 저장
     _pendingIndicator = {
         buy: buy || 33,
         sell: sell || 33,
         neutral: neutral || 34
     };
+    console.log('[Indicator] 큐에 저장:', _pendingIndicator);
+
     // 타이머가 없으면 시작
     if (!_indicatorTimerId) {
+        console.log('[Indicator] 타이머 시작');
         scheduleIndicatorUpdate();
     }
 }
@@ -30,6 +33,7 @@ function scheduleIndicatorUpdate() {
         _indicatorTimerId = null;
 
         const { buy, sell, neutral } = _pendingIndicator;
+        console.log(`[Indicator] 업데이트 실행: Buy=${buy}, Sell=${sell}, Neutral=${neutral}`);
 
         // 인디케이터 숫자 업데이트
         const indSell = document.getElementById('indSell');
@@ -46,12 +50,23 @@ function scheduleIndicatorUpdate() {
         if (chartIndNeutral) chartIndNeutral.textContent = neutral;
         if (chartIndBuy) chartIndBuy.textContent = buy;
 
-        // 시그널 게이지 업데이트
+        // 시그널 게이지 업데이트 + 애니메이션 시작
         if (typeof GaugePanel !== 'undefined' && GaugePanel.updateGauge) {
+            console.log('[Indicator] GaugePanel.updateGauge 호출, animationFrameId:', GaugePanel.animationFrameId);
             GaugePanel.updateGauge(buy, sell, neutral);
+            // ★ 애니메이션이 멈췄으면 다시 시작
+            if (!GaugePanel.animationFrameId && GaugePanel.startAnimation) {
+                console.log('[Indicator] GaugePanel 애니메이션 재시작');
+                GaugePanel.startAnimation();
+            }
+        } else {
+            console.log('[Indicator] GaugePanel 없음:', typeof GaugePanel);
         }
         if (typeof ChartGaugePanel !== 'undefined' && ChartGaugePanel.updateGauge) {
             ChartGaugePanel.updateGauge(buy, sell, neutral);
+            if (!ChartGaugePanel.animationFrameId && ChartGaugePanel.startAnimation) {
+                ChartGaugePanel.startAnimation();
+            }
         }
 
         // 다음 업데이트 예약
