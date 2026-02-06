@@ -23,6 +23,12 @@ class User(Base):
     mt5_server = Column(String(100), nullable=True)         # MT5 서버
     mt5_password_encrypted = Column(Text, nullable=True)    # MT5 비밀번호 (AES 암호화)
     mt5_connected_at = Column(DateTime(timezone=True), nullable=True)  # MT5 연결 시각
+
+    # ========== MT5 계정 잔고 (검증 시점 스냅샷) ==========
+    mt5_balance = Column(Float, nullable=True)        # MT5 잔고
+    mt5_equity = Column(Float, nullable=True)         # MT5 자산
+    mt5_leverage = Column(Integer, nullable=True)     # MT5 레버리지
+    mt5_currency = Column(String(10), nullable=True)  # MT5 통화 (USD 등)
     
     # ========== Demo 마틴 모드 필드 ==========
     demo_martin_step = Column(Integer, default=1)           # 현재 마틴 단계

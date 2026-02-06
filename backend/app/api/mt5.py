@@ -1565,14 +1565,23 @@ async def connect_mt5_account(
             print(f"[CONNECT] ✅ 검증 결과 수신: success={result.get('success')}")
 
             if result and result.get("success"):
-                # 검증 성공 - DB에 저장 (비밀번호 암호화)
+                # 검증 성공 - DB에 저장 (비밀번호 암호화 + 잔고 정보)
+                account_info = result.get("account_info", {})
+
                 current_user.has_mt5_account = True
                 current_user.mt5_account_number = request.account
                 current_user.mt5_server = request.server
                 current_user.mt5_password_encrypted = encrypt(request.password)
                 current_user.mt5_connected_at = datetime.utcnow()
+
+                # ★★★ MT5 잔고 정보 저장 (검증 시점 스냅샷) ★★★
+                current_user.mt5_balance = account_info.get("balance", 0)
+                current_user.mt5_equity = account_info.get("equity", account_info.get("balance", 0))
+                current_user.mt5_leverage = account_info.get("leverage", 500)
+                current_user.mt5_currency = account_info.get("currency", "USD")
+
                 db.commit()
-                print(f"[CONNECT] 🎉 DB 저장 완료: {request.account}")
+                print(f"[CONNECT] 🎉 DB 저장 완료: {request.account}, Balance: ${account_info.get('balance', 0)}")
 
                 return JSONResponse({
                     "success": True,
@@ -1630,6 +1639,10 @@ async def websocket_endpoint(websocket: WebSocket):
     token = websocket.query_params.get("token")
     user_id = None
     user_mt5_account = None
+    user_mt5_balance = None
+    user_mt5_equity = None
+    user_mt5_leverage = None
+    user_mt5_server = None
 
     if token:
         try:
@@ -1641,7 +1654,11 @@ async def websocket_endpoint(websocket: WebSocket):
                 user = db.query(User).filter(User.id == user_id).first()
                 if user and user.has_mt5_account:
                     user_mt5_account = user.mt5_account_number
-                    print(f"[LIVE WS] User {user_id} connected (MT5: {user_mt5_account})")
+                    user_mt5_balance = user.mt5_balance
+                    user_mt5_equity = user.mt5_equity
+                    user_mt5_leverage = user.mt5_leverage
+                    user_mt5_server = user.mt5_server
+                    print(f"[LIVE WS] User {user_id} connected (MT5: {user_mt5_account}, Balance: ${user_mt5_balance})")
                 else:
                     print(f"[LIVE WS] User {user_id} connected (No MT5 account)")
                 db.close()
@@ -1686,25 +1703,32 @@ async def websocket_endpoint(websocket: WebSocket):
                 free_margin = account.margin_free if account else 0
                 leverage = account.leverage if account else 0
             elif bridge_connected and bridge_cache.get("account"):
-                # ★ 브릿지 캐시에서 계정 정보 사용
+                # ★ 브릿지 캐시에서 계정 정보 사용 (가격/포지션용)
                 acc = bridge_cache["account"]
                 broker = acc.get("broker", "N/A")
                 login = acc.get("login", 0)
                 server = acc.get("server", "N/A")
-                balance = acc.get("balance", 0)
-                equity = acc.get("equity", 0)
+                # ★★★ 잔고는 유저별 저장된 값 사용 (브릿지 계정 잔고 노출 방지) ★★★
+                if user_mt5_balance is not None:
+                    balance = user_mt5_balance
+                    equity = user_mt5_equity or user_mt5_balance
+                    leverage = user_mt5_leverage or 500
+                else:
+                    balance = acc.get("balance", 0)
+                    equity = acc.get("equity", 0)
+                    leverage = acc.get("leverage", 0)
                 margin = acc.get("margin", 0)
                 free_margin = acc.get("free_margin", 0)
-                leverage = acc.get("leverage", 0)
             else:
-                broker = "N/A"
+                broker = "HedgeHood Pty Ltd"
                 login = 0
-                server = "N/A"
-                balance = 0
-                equity = 0
+                server = user_mt5_server or "HedgeHood-MT5"
+                # ★★★ 유저별 저장된 잔고 사용 ★★★
+                balance = user_mt5_balance or 0
+                equity = user_mt5_equity or user_mt5_balance or 0
                 margin = 0
-                free_margin = 0
-                leverage = 0
+                free_margin = balance
+                leverage = user_mt5_leverage or 500
             
             # ★ 가격 정보: MT5 직접 또는 브릿지 캐시
             all_prices = {}

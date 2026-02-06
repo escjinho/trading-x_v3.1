@@ -103,12 +103,15 @@ def verify_account(account: str, password: str, server: str):
                     "server": account_info.server,
                     "broker": account_info.company,
                     "balance": account_info.balance,
+                    "equity": account_info.equity,      # ★ 추가
+                    "margin": account_info.margin,      # ★ 추가
+                    "free_margin": account_info.margin_free,  # ★ 추가
                     "leverage": account_info.leverage,
                     "currency": account_info.currency,
                     "name": account_info.name
                 }
             }
-            print(f"[Verify] ✅ 검증 성공: {account_int} @ {server}")
+            print(f"[Verify] ✅ 검증 성공: {account_int} @ {server}, Balance: ${account_info.balance}")
         else:
             # 로그인 실패
             error = mt5.last_error()
