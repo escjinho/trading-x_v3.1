@@ -12,6 +12,11 @@ import requests
 
 SERVER_URL = "https://trading-x.ai"  # Linux 서버 주소
 
+# ★★★ 브릿지 기본 계정 정보 (mt5_bridge.py의 init_mt5()와 동일) ★★★
+BRIDGE_LOGIN = 935001712
+BRIDGE_PASSWORD = "Qlrpfwl1!"  # 브릿지 계정 비밀번호
+BRIDGE_SERVER = "HedgeHood-MT5"
+
 
 def fetch_pending_verifications():
     """서버에서 대기 중인 계정 검증 요청 가져오기"""
@@ -32,7 +37,7 @@ def verify_account(account: str, password: str, server: str):
     - mt5.login()으로 실제 로그인 시도
     - 성공 시 계정 정보 반환
     - 실패 시 에러 메시지 반환
-    - 검증 후 원래 계정으로 자동 복구
+    - 검증 후 브릿지 계정으로 명시적 복구
     """
     result = {"success": False, "message": "알 수 없는 오류"}
 
@@ -81,17 +86,23 @@ def verify_account(account: str, password: str, server: str):
             "message": f"검증 오류: {str(e)}"
         }
     finally:
-        # ★ 원래 계정으로 복구 (MT5 터미널 기본 계정)
+        # ★★★ 브릿지 계정으로 명시적 복구 ★★★
         try:
-            mt5.shutdown()
-            mt5.initialize()
-            restored = mt5.account_info()
+            print(f"[Verify] 브릿지 계정 복구 중: {BRIDGE_LOGIN} @ {BRIDGE_SERVER}")
+            restored = mt5.login(BRIDGE_LOGIN, password=BRIDGE_PASSWORD, server=BRIDGE_SERVER)
             if restored:
-                print(f"[Verify] 원래 계정 복구: {restored.login}")
+                restored_info = mt5.account_info()
+                print(f"[Verify] ✅ 브릿지 계정 복구 성공: {restored_info.login}")
             else:
-                print("[Verify] 원래 계정 복구 실패")
+                error = mt5.last_error()
+                print(f"[Verify] ❌ 브릿지 계정 복구 실패: {error}")
+                # 복구 실패 시 MT5 재초기화 시도
+                mt5.shutdown()
+                mt5.initialize()
+                mt5.login(BRIDGE_LOGIN, password=BRIDGE_PASSWORD, server=BRIDGE_SERVER)
+                print(f"[Verify] 🔄 MT5 재초기화 후 복구 시도")
         except Exception as e:
-            print(f"[Verify] 복구 오류: {e}")
+            print(f"[Verify] ❌ 복구 오류: {e}")
 
     return result
 
@@ -166,6 +177,8 @@ def process_pending_verifications():
 if __name__ == "__main__":
     # 테스트용
     print("계정 검증 테스트...")
+    print(f"브릿지 계정: {BRIDGE_LOGIN} @ {BRIDGE_SERVER}")
+
     verifications = fetch_pending_verifications()
     print(f"대기 중인 검증 요청: {len(verifications)}개")
 

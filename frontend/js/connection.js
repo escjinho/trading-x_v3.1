@@ -3,6 +3,7 @@ let ws = null;
 let wsRetryCount = 0;
 const maxRetries = 5;
 let pollingInterval = null;  // ★ 폴링 인터벌 저장용
+let intentionalClose = false;  // ★ 의도적 종료 플래그 (재연결 방지)
 
 // ========== MT5 자동 백오프 재연결 ==========
 const RECONNECT_DELAYS = [1000, 5000, 30000, 60000, 300000]; // 1초, 5초, 30초, 1분, 5분
@@ -320,9 +321,12 @@ function connectWebSocket() {
             baseScore = data.base_score;
         }
 
+        // ★ Live 모드 인디케이터 디버그 로그
+        console.log(`[WS Live] 📊 Indicators: Buy=${data.buy_count}, Sell=${data.sell_count}, Neutral=${data.neutral_count}, Score=${data.base_score}`);
+
         // 인디케이터 숫자 업데이트 (1초 쓰로틀)
         const now = Date.now();
-        if (!window.lastIndicatorDomUpdate || now - window.lastIndicatorDomUpdate >= 1000) {
+        if (data.buy_count !== undefined && (!window.lastIndicatorDomUpdate || now - window.lastIndicatorDomUpdate >= 1000)) {
             window.lastIndicatorDomUpdate = now;
             document.getElementById('indSell').textContent = data.sell_count;
             document.getElementById('indNeutral').textContent = data.neutral_count;
@@ -334,13 +338,13 @@ function connectWebSocket() {
         }
 
         // ★ 게이지 바늘 업데이트 (쓰로틀 없이 매번 호출 - 부드러운 애니메이션)
-        if (typeof GaugePanel !== 'undefined' && GaugePanel.updateGauge) {
+        if (data.buy_count !== undefined && typeof GaugePanel !== 'undefined' && GaugePanel.updateGauge) {
             GaugePanel.updateGauge(data.buy_count, data.sell_count, data.neutral_count);
             if (!GaugePanel.animationFrameId && GaugePanel.startAnimation) {
                 GaugePanel.startAnimation();
             }
         }
-        if (typeof ChartGaugePanel !== 'undefined' && ChartGaugePanel.updateGauge) {
+        if (data.buy_count !== undefined && typeof ChartGaugePanel !== 'undefined' && ChartGaugePanel.updateGauge) {
             ChartGaugePanel.updateGauge(data.buy_count, data.sell_count, data.neutral_count);
             if (!ChartGaugePanel.animationFrameId && ChartGaugePanel.startAnimation) {
                 ChartGaugePanel.startAnimation();
@@ -456,6 +460,14 @@ function connectWebSocket() {
     ws.onclose = function() {
         console.log('WebSocket disconnected');
         window.wsConnected = false;  // ★ WS 연결 해제 플래그
+
+        // ★ 의도적 종료면 재연결하지 않음 (모드 전환 시)
+        if (intentionalClose) {
+            console.log('[WS] Intentional close - skipping reconnect');
+            intentionalClose = false;
+            return;
+        }
+
         document.getElementById('statusDot').classList.add('disconnected');
         document.getElementById('headerStatus').textContent = 'Disconnected';
 
@@ -1086,8 +1098,23 @@ function switchTradingMode(mode) {
         isDemo = true;
         showToast('🎮 Demo 모드로 전환되었습니다', 'success');
         updateHeroCTA('demo_with_live');
-        fetchDemoData();
-        
+
+        // ★ WebSocket 재연결 (Live → Demo URL로 변경)
+        if (ws) {
+            intentionalClose = true;
+            ws.close();
+        }
+        reconnectAttempt = 0;
+        if (reconnectTimer) {
+            clearTimeout(reconnectTimer);
+            reconnectTimer = null;
+        }
+        console.log("[WS] Switching to Demo WebSocket...");
+        setTimeout(() => {
+            connectWebSocket();
+            fetchDemoData();
+        }, 100);
+
         // 패널 동기화
         setTimeout(() => {
             if (typeof loadHistory === 'function') loadHistory();
@@ -1136,8 +1163,23 @@ function switchTradingMode(mode) {
                 isDemo = false;
                 showToast('💎 Live 모드로 전환되었습니다', 'success');
                 updateHeroCTA('live');
-                fetchAccountData();
-                
+
+                // ★ WebSocket 재연결 (Demo → Live URL로 변경)
+                if (ws) {
+                    intentionalClose = true;
+                    ws.close();
+                }
+                reconnectAttempt = 0;
+                if (reconnectTimer) {
+                    clearTimeout(reconnectTimer);
+                    reconnectTimer = null;
+                }
+                console.log("[WS] Switching to Live WebSocket...");
+                setTimeout(() => {
+                    connectWebSocket();
+                    fetchAccountData();
+                }, 100);
+
                 // 패널 동기화
                 setTimeout(() => {
                     if (typeof loadHistory === 'function') loadHistory();
@@ -1388,10 +1430,19 @@ async function connectMT5Account() {
             
             // WebSocket 재연결 (Demo → Live URL로 변경)
             if (ws) {
+                intentionalClose = true;  // ★ onclose에서 재연결 방지
                 ws.close();
             }
-            console.log("[checkUserMode] Calling connectWebSocket...");
-            connectWebSocket();
+            // ★ 재연결 카운터 리셋
+            reconnectAttempt = 0;
+            if (reconnectTimer) {
+                clearTimeout(reconnectTimer);
+                reconnectTimer = null;
+            }
+            console.log("[WS] Switching to Live WebSocket...");
+            setTimeout(() => {
+                connectWebSocket();
+            }, 100);  // ★ 약간의 딜레이 후 연결
             
             // Live 데이터 조회 시작
             fetchAccountData();

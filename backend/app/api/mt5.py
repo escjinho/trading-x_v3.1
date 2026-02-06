@@ -247,9 +247,13 @@ async def get_account_info(current_user: User = Depends(get_current_user)):
                     }
                     break
 
-            # ★ 유저가 등록한 계좌 정보 우선 사용
-            user_account = current_user.mt5_account_number or cached_account.get("login", "N/A")
-            user_server = current_user.mt5_server or cached_account.get("server", "Bridge")
+            # ★ 유저가 등록한 계좌 정보만 사용 (브릿지 계좌 노출 방지)
+            if current_user.has_mt5_account and current_user.mt5_account_number:
+                user_account = current_user.mt5_account_number
+                user_server = current_user.mt5_server or "HedgeHood-MT5"
+            else:
+                user_account = "N/A"
+                user_server = "N/A"
 
             return {
                 "broker": cached_account.get("broker", "HedgeHood Pty Ltd"),
@@ -321,9 +325,13 @@ async def get_account_info(current_user: User = Depends(get_current_user)):
             if tick:
                 prices[sym] = {"bid": tick.bid, "ask": tick.ask}
         
-        # ★ 유저가 등록한 계좌 정보 우선 사용
-        user_account = current_user.mt5_account_number or account.login
-        user_server = current_user.mt5_server or account.server
+        # ★ 유저가 등록한 계좌 정보만 사용 (브릿지 계좌 노출 방지)
+        if current_user.has_mt5_account and current_user.mt5_account_number:
+            user_account = current_user.mt5_account_number
+            user_server = current_user.mt5_server or "HedgeHood-MT5"
+        else:
+            user_account = "N/A"
+            user_server = "N/A"
 
         return {
             "broker": account.company,
