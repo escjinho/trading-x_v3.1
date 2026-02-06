@@ -1813,10 +1813,10 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                                             "closed_at": current_time  # ★ 청산 시간 추가
                                         }
 
-                                        # ★★★ 5초 동안 자동청산 정보 유지 (프론트엔드가 놓치지 않도록) ★★★
+                                        # ★★★ 10초 동안 자동청산 정보 유지 (프론트엔드가 놓치지 않도록) ★★★
                                         demo_websocket_endpoint._auto_closed_cache[user_id] = {
                                             "info": auto_closed_info,
-                                            "until": current_time + 5  # 5초 동안 유지
+                                            "until": current_time + 10  # 10초 동안 유지 (0.2초 간격 = 약 50회)
                                         }
 
                                         # 잔고 업데이트

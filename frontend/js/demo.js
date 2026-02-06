@@ -212,37 +212,48 @@ async function fetchDemoData() {
         console.log('[fetchDemoData] 📊 Positions count:', data.positions_count);
 
         if (data) {
-            // Auto-closed position
+            // ★★★ Auto-closed position (중복 방지 적용) ★★★
             if (data.auto_closed) {
-                console.log('[fetchDemoData] 🔒 Position auto-closed');
-                playSound('close');
-
+                const closedAt = data.closed_at || Date.now() / 1000;
+                const lastClosedAt = window._lastAutoClosedAt || 0;
                 const profit = data.closed_profit || 0;
-                const isWin = data.is_win !== false && profit >= 0;
 
-                if (currentMode === 'martin' && martinEnabled) {
-                    if (data.martin_reset || isWin) {
-                        martinStep = 1;
-                        martinAccumulatedLoss = 0;
-                        martinHistory = [];
-                        updateMartinUI();
-                        showMartinSuccessPopup(profit);
-                    } else if (data.martin_step_up) {
-                        showMartinPopup(profit);
+                // ★ 중복 방지: 1초 이내 같은 청산이면 무시
+                const timeDiff = Math.abs(closedAt - lastClosedAt);
+                const isDuplicate = timeDiff < 1;
+
+                if (!isDuplicate) {
+                    window._lastAutoClosedAt = closedAt;
+                    console.log('[demo.js] 🎯 AUTO CLOSED!', { profit, closedAt });
+
+                    playSound('close');
+
+                    const isWin = data.is_win !== false && profit >= 0;
+
+                    if (currentMode === 'martin' && martinEnabled) {
+                        if (data.martin_reset || isWin) {
+                            martinStep = 1;
+                            martinAccumulatedLoss = 0;
+                            martinHistory = [];
+                            updateMartinUI();
+                            showMartinSuccessPopup(profit);
+                        } else if (data.martin_step_up) {
+                            showMartinPopup(profit);
+                        } else {
+                            showToast(`💔 손절! $${profit.toFixed(2)}`, 'error');
+                        }
                     } else {
-                        showToast(data.message || `💔 손절! ${profit.toFixed(2)}`, 'error');
+                        // ★★★ Basic/NoLimit 모드 - 팝업 표시 (손익 금액 포함) ★★★
+                        if (isWin) {
+                            showToast(`🎯 목표 도달! +$${Math.abs(profit).toFixed(2)}`, 'success');
+                        } else {
+                            showToast(`💔 손절! -$${Math.abs(profit).toFixed(2)}`, 'error');
+                        }
                     }
-                } else {
-                    if (isWin) {
-                        showToast(data.message || `🎯 목표 도달! +$${profit.toFixed(2)}`, 'success');
-                    } else {
-                        showToast(data.message || `💔 손절! $${profit.toFixed(2)}`, 'error');
-                    }
+
+                    updateTodayPL(profit);
+                    updatePositionUI(false, null);
                 }
-
-                updateTodayPL(profit);
-                console.log('[fetchDemoData] 📞 Calling updatePositionUI(false, null) - auto closed');
-                updatePositionUI(false, null);
             }
             
             // Update UI — fallback을 0으로 (10000 깜빡임 방지)

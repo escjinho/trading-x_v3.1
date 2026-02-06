@@ -279,28 +279,31 @@ function connectWebSocket() {
                 if (accEquity) accEquity.textContent = '$' + data.equity.toLocaleString(undefined, {minimumFractionDigits: 2});
             }
             
-            // ★★★ Demo WS 자동청산 처리 (중복 방지 + 사운드 강화) ★★★
+            // ★★★ Demo WS 자동청산 처리 (중복 방지 강화) ★★★
             if (data.auto_closed) {
-                const closedAt = data.closed_at || 0;
+                // closed_at이 없으면 현재 시간으로 대체
+                const closedAt = data.closed_at || Date.now() / 1000;
                 const lastClosedAt = window._lastAutoClosedAt || 0;
+                const profit = data.closed_profit || 0;
 
-                // ★ 같은 청산을 중복 처리하지 않음 (closed_at 타임스탬프로 구분)
-                if (closedAt !== lastClosedAt) {
+                // ★ 중복 방지: closed_at 기준 (5초 이내 같은 값이면 무시)
+                const timeDiff = Math.abs(closedAt - lastClosedAt);
+                const isDuplicate = timeDiff < 1;  // 1초 이내면 중복으로 간주
+
+                if (!isDuplicate) {
                     window._lastAutoClosedAt = closedAt;
-                    console.log('[WS Demo] 🎯 AUTO CLOSED! (NEW)', data);
+                    console.log('[WS Demo] 🎯 AUTO CLOSED!', { profit, closedAt, isWin: data.is_win });
 
-                    // ★ 사운드 재생 (재시도 포함)
+                    // ★ 사운드 재생
                     try {
                         playSound('close');
                     } catch (e) {
-                        console.log('[WS Demo] Sound play failed, retrying...', e);
                         setTimeout(() => { try { playSound('close'); } catch(e2) {} }, 100);
                     }
 
-                    const profit = data.closed_profit || 0;
                     const isWin = data.is_win !== false && profit >= 0;
 
-                    // 마틴 모드인 경우
+                    // 마틴 모드
                     if (currentMode === 'martin' && martinEnabled) {
                         if (data.martin_reset || isWin) {
                             martinStep = 1;
@@ -311,14 +314,14 @@ function connectWebSocket() {
                         } else if (data.martin_step_up) {
                             showMartinPopup(profit);
                         } else {
-                            showToast(data.message || `💔 손절! ${profit.toFixed(2)}`, 'error');
+                            showToast(`💔 손절! $${profit.toFixed(2)}`, 'error');
                         }
                     } else {
-                        // Basic/NoLimit 모드
+                        // ★★★ Basic/NoLimit 모드 - 팝업 표시 (손익 금액 포함) ★★★
                         if (isWin) {
-                            showToast(data.message || `🎯 목표 도달! +$${profit.toFixed(2)}`, 'success');
+                            showToast(`🎯 목표 도달! +$${Math.abs(profit).toFixed(2)}`, 'success');
                         } else {
-                            showToast(data.message || `💔 손절! $${profit.toFixed(2)}`, 'error');
+                            showToast(`💔 손절! -$${Math.abs(profit).toFixed(2)}`, 'error');
                         }
                     }
 
@@ -331,9 +334,6 @@ function connectWebSocket() {
                     if (typeof updatePositionUI === 'function') {
                         updatePositionUI(false, null);
                     }
-                } else {
-                    // 이미 처리된 청산 - 조용히 무시
-                    console.log('[WS Demo] ⏭️ Skipping duplicate auto_closed');
                 }
             }
 
@@ -867,42 +867,52 @@ async function fetchDemoData() {
             // auto_closed와 인디케이터만 항상 처리
             const wsActive = window.wsConnected === true;
             
-            // 백엔드에서 자동 청산된 경우 (WS 상태와 무관하게 항상 처리)
+            // ★★★ 백엔드에서 자동 청산된 경우 (중복 방지 적용) ★★★
             if (data.auto_closed) {
-                playSound('close');
-                
+                const closedAt = data.closed_at || Date.now() / 1000;
+                const lastClosedAt = window._lastAutoClosedAt || 0;
                 const profit = data.closed_profit || 0;
-                const isWin = data.is_win !== false && profit >= 0;
-                
-                // 마틴 모드인 경우
-                if (currentMode === 'martin' && martinEnabled) {
-                    if (data.martin_reset || isWin) {
-                        // 마틴 성공! 리셋 또는 성공 확인 팝업
-                        martinStep = 1;
-                        martinAccumulatedLoss = 0;
-                        martinHistory = [];
-                        updateMartinUI();
-                        showMartinSuccessPopup(profit);
-                    } else if (data.martin_step_up) {
-                        // 마틴 손실 → 다음 단계로
-                        showMartinPopup(profit);
+
+                // ★ 중복 방지: 1초 이내 같은 청산이면 무시
+                const timeDiff = Math.abs(closedAt - lastClosedAt);
+                const isDuplicate = timeDiff < 1;
+
+                if (!isDuplicate) {
+                    window._lastAutoClosedAt = closedAt;
+                    console.log('[fetchDemoData] 🎯 AUTO CLOSED!', { profit, closedAt });
+
+                    playSound('close');
+
+                    const isWin = data.is_win !== false && profit >= 0;
+
+                    // 마틴 모드
+                    if (currentMode === 'martin' && martinEnabled) {
+                        if (data.martin_reset || isWin) {
+                            martinStep = 1;
+                            martinAccumulatedLoss = 0;
+                            martinHistory = [];
+                            updateMartinUI();
+                            showMartinSuccessPopup(profit);
+                        } else if (data.martin_step_up) {
+                            showMartinPopup(profit);
+                        } else {
+                            showToast(`💔 손절! $${profit.toFixed(2)}`, 'error');
+                        }
                     } else {
-                        showToast(data.message || `💔 손절! ${profit.toFixed(2)}`, 'error');
+                        // ★★★ Basic/NoLimit 모드 - 팝업 표시 (손익 금액 포함) ★★★
+                        if (isWin) {
+                            showToast(`🎯 목표 도달! +$${Math.abs(profit).toFixed(2)}`, 'success');
+                        } else {
+                            showToast(`💔 손절! -$${Math.abs(profit).toFixed(2)}`, 'error');
+                        }
                     }
-                } else {
-                    // Basic/NoLimit 모드
-                    if (isWin) {
-                        showToast(data.message || `🎯 목표 도달! +$${profit.toFixed(2)}`, 'success');
-                    } else {
-                        showToast(data.message || `💔 손절! $${profit.toFixed(2)}`, 'error');
-                    }
+
+                    // Today P/L 업데이트
+                    updateTodayPL(profit);
+
+                    // 포지션 UI 업데이트
+                    updatePositionUI(false, null);
                 }
-                
-                // Today P/L 업데이트
-                updateTodayPL(profit);
-                
-                // 포지션 UI 업데이트
-                updatePositionUI(false, null);
             }
             
             // Home 탭 업데이트 - ★ WS 연결 중이면 건너뛰기 (깜빡임 방지)
