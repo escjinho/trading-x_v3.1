@@ -740,6 +740,10 @@ async def api_get_pending_verifications():
             "server": data["server"]
         })
 
+    # 대기 중인 요청이 있으면 로그
+    if verifications:
+        print(f"[BRIDGE POLL] 📋 대기 중인 검증: {len(verifications)}건 - {[v['account'] for v in verifications]}")
+
     return {"verifications": verifications}
 
 
@@ -1526,11 +1530,14 @@ async def connect_mt5_account(
     """MT5 계정 연결 - 브릿지를 통한 실제 검증 후 저장"""
     import time as time_module
 
+    print(f"[CONNECT] 🔵 User {current_user.id} 연결 시도: {request.account}@{request.server}")
+
     if not request.account or not request.password:
         return JSONResponse({"success": False, "message": "계좌번호와 비밀번호를 입력하세요"})
 
     # 1. 브릿지 연결 확인
     bridge_age = time_module.time() - bridge_cache.get("last_update", 0)
+    print(f"[CONNECT] 브릿지 상태: age={bridge_age:.1f}초")
     if bridge_age > 60:
         return JSONResponse({
             "success": False,
@@ -1545,15 +1552,17 @@ async def connect_mt5_account(
         "server": request.server,
         "created_at": time_module.time()
     })
+    print(f"[CONNECT] 📝 검증 요청 생성: {verify_id[:8]}...")
 
-    # 3. 브릿지가 검증하고 결과를 보낼 때까지 대기 (최대 10초)
-    max_wait = 10
+    # 3. 브릿지가 검증하고 결과를 보낼 때까지 대기 (최대 15초)
+    max_wait = 15
     waited = 0
     while waited < max_wait:
         results = get_verification_results()
         if verify_id in results:
             result = pop_verification_result(verify_id)
             remove_pending_verification(verify_id)
+            print(f"[CONNECT] ✅ 검증 결과 수신: success={result.get('success')}")
 
             if result and result.get("success"):
                 # 검증 성공 - DB에 저장 (비밀번호 암호화)
@@ -1563,6 +1572,7 @@ async def connect_mt5_account(
                 current_user.mt5_password_encrypted = encrypt(request.password)
                 current_user.mt5_connected_at = datetime.utcnow()
                 db.commit()
+                print(f"[CONNECT] 🎉 DB 저장 완료: {request.account}")
 
                 return JSONResponse({
                     "success": True,
@@ -1573,9 +1583,11 @@ async def connect_mt5_account(
                 })
             else:
                 # 검증 실패
+                msg = result.get("message", "계좌번호 또는 비밀번호가 올바르지 않습니다") if result else "검증 실패"
+                print(f"[CONNECT] ❌ 검증 실패: {msg}")
                 return JSONResponse({
                     "success": False,
-                    "message": result.get("message", "계좌번호 또는 비밀번호가 올바르지 않습니다") if result else "검증 실패"
+                    "message": msg
                 })
 
         await asyncio.sleep(0.5)
@@ -1583,9 +1595,10 @@ async def connect_mt5_account(
 
     # 4. 타임아웃
     remove_pending_verification(verify_id)
+    print(f"[CONNECT] ⏰ 타임아웃 ({max_wait}초): 브릿지 응답 없음")
     return JSONResponse({
         "success": False,
-        "message": "검증 시간 초과. 브릿지 연결 상태를 확인해주세요."
+        "message": f"검증 시간 초과 ({max_wait}초). 브릿지가 응답하지 않습니다."
     })
 
 
