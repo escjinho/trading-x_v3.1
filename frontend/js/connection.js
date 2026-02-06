@@ -83,8 +83,8 @@ function connectWebSocket() {
     let wsUrl = typeof getWsUrl === 'function' ? getWsUrl(wsPath) : `ws://localhost:8000${wsPath}`;
     console.log(`[WS] Connecting to: ${wsUrl} (isDemo: ${isDemo})`);
     console.log(`[WS] getWsUrl defined: ${typeof getWsUrl === 'function'}`);
-    // ★ Demo 모드 토큰 추가 (인증용)
-    if (isDemo && token) {
+    // ★ Demo, Live 모두 토큰 추가 (Live WS에서도 유저 식별 필요)
+    if (token) {
         wsUrl += (wsUrl.includes("?") ? "&" : "?") + "token=" + token;
     }
     ws = new WebSocket(wsUrl);

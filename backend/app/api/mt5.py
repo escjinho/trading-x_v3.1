@@ -1610,15 +1610,39 @@ async def disconnect_mt5_account(
 # ========== WebSocket 실시간 데이터 ==========
 @router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    """실시간 데이터 WebSocket"""
+    """실시간 데이터 WebSocket (Live 모드)"""
     await websocket.accept()
-    
+
+    # ★ Query parameter에서 토큰으로 유저 식별
+    token = websocket.query_params.get("token")
+    user_id = None
+    user_mt5_account = None
+
+    if token:
+        try:
+            payload = decode_token(token)
+            if payload:
+                user_id = int(payload.get("sub"))
+                # DB에서 유저의 MT5 계정 정보 조회
+                db = next(get_db())
+                user = db.query(User).filter(User.id == user_id).first()
+                if user and user.has_mt5_account:
+                    user_mt5_account = user.mt5_account_number
+                    print(f"[LIVE WS] User {user_id} connected (MT5: {user_mt5_account})")
+                else:
+                    print(f"[LIVE WS] User {user_id} connected (No MT5 account)")
+                db.close()
+        except Exception as e:
+            print(f"[LIVE WS] Token decode error: {e}")
+    else:
+        print(f"[LIVE WS] Anonymous connection (no token)")
+
     symbols_list = ["BTCUSD", "EURUSD.r", "USDJPY.r", "XAUUSD.r", "US100.", "GBPUSD.r", "AUDUSD.r", "USDCAD.r", "ETHUSD"]
-    
+
     # 인디케이터 캐시
     indicator_cache = {"buy": 33, "sell": 33, "neutral": 34, "score": 50}
     indicator_last_update = 0
-    
+
     while True:
         try:
             import time as time_module
