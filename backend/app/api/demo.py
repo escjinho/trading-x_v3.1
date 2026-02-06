@@ -201,14 +201,14 @@ async def get_demo_account(
             is_win = False
 
             if target > 0:
-                if profit >= target:
+                if profit >= target:  # WIN: 정확히 target 도달
                     should_close = True
                     is_win = True
                     print(f"[DEBUG-BRIDGE] WIN! Profit {profit} >= Target {target}")
-                elif profit <= -target:
+                elif profit <= -target * 0.98:  # LOSE: target의 98% 도달 시 청산
                     should_close = True
                     is_win = False
-                    print(f"[DEBUG-BRIDGE] LOSE! Profit {profit} <= -Target {-target}")
+                    print(f"[DEBUG-BRIDGE] LOSE! Profit {profit} <= -Target*0.98 {-target * 0.98}")
 
             if should_close:
                 print(f"[DEBUG-BRIDGE] AUTO CLOSING! {'WIN' if is_win else 'LOSE'} - Profit: {profit}")
@@ -347,14 +347,14 @@ async def get_demo_account(
                 is_win = False
                 
                 if target > 0:
-                    if profit >= target:  # 이익 목표 도달 (WIN)
+                    if profit >= target:  # WIN: 정확히 target 도달
                         should_close = True
                         is_win = True
                         print(f"[DEBUG] WIN! Profit {profit} >= Target {target}")
-                    elif profit <= -target:  # 손실 한도 도달 (LOSE)
+                    elif profit <= -target * 0.98:  # LOSE: target의 98% 도달 시 청산
                         should_close = True
                         is_win = False
-                        print(f"[DEBUG] LOSE! Profit {profit} <= -Target {-target}")
+                        print(f"[DEBUG] LOSE! Profit {profit} <= -Target*0.98 {-target * 0.98}")
                 
                 if should_close:
                     print(f"[DEBUG] AUTO CLOSING! {'WIN' if is_win else 'LOSE'} - Profit: {profit}")

@@ -1306,16 +1306,22 @@ async function connectMT5Account() {
     const server = document.getElementById('mt5Server').value;
     const account = document.getElementById('mt5AccountNumber').value;
     const password = document.getElementById('mt5Password').value;
-    
+    const connectBtn = document.getElementById('mt5ConnectBtn');
+
     if (!account || !password) {
         showToast('계좌번호와 비밀번호를 입력하세요', 'error');
         return;
     }
-    
-    showToast('연결 중...', '');
-    
-    console.log("[checkUserMode] About to try connectWebSocket - Live mode");
-            try {
+
+    // 버튼 비활성화 + 로딩 메시지
+    if (connectBtn) {
+        connectBtn.disabled = true;
+        connectBtn.textContent = '연결 확인중입니다...';
+        connectBtn.style.opacity = '0.7';
+        connectBtn.style.cursor = 'not-allowed';
+    }
+
+    try {
         // 실제 API 호출
         const response = await fetch(`${API_URL}/mt5/connect`, {
             method: 'POST',
@@ -1326,7 +1332,7 @@ async function connectMT5Account() {
             body: JSON.stringify({ server, account, password })
         });
         const result = await response.json();
-        
+
         if (result.success) {
             closeMT5ConnectModal();
             
@@ -1394,13 +1400,21 @@ async function connectMT5Account() {
             showToast('🎉 MT5 계정 연결 완료!', 'success');
             
         } else {
-            showToast(result.message || '연결 실패', 'error');
+            // 연결 실패 시 팝업 표시
+            showToast('계좌번호 또는 비밀번호가 올바르지 않습니다.', 'error');
         }
-        
+
     } catch (error) {
-        console.error("[checkUserMode] Error:", error);
         console.error('MT5 Connect error:', error);
-        showToast('연결 실패: ' + error.message, 'error');
+        showToast('계좌번호 또는 비밀번호가 올바르지 않습니다.', 'error');
+    } finally {
+        // 버튼 상태 복원
+        if (connectBtn) {
+            connectBtn.disabled = false;
+            connectBtn.innerHTML = '연결하기';
+            connectBtn.style.opacity = '1';
+            connectBtn.style.cursor = 'pointer';
+        }
     }
 }
 

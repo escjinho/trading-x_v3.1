@@ -1435,15 +1435,10 @@
                 <div id="mt5Step2Existing" style="display: none; padding: 18px 20px;">
                     <div style="margin-bottom: 16px;">
                         <label style="display: block; font-size: 14px; color: white; margin-bottom: 6px;">Server (서버)</label>
-                        <select id="mt5Server" style="width: 100%; padding: 11px 12px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px; color: white; font-size: 15px;">
-                            <option value="HedgeHood-MT5" selected>HedgeHood-MT5</option>
-                            <option value="HedgeHood-Live">HedgeHood-Live</option>
-                            <option value="HedgeHood-Demo">HedgeHood-Demo</option>
-                        </select>
-                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px; display: flex; align-items: center; gap: 4px;">
-                            <span class="material-icons-round" style="font-size: 16px;">info</span>
-                            MT5 상단 타이틀바에서 확인 가능
+                        <div id="mt5ServerDisplay" style="width: 100%; padding: 11px 12px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px; color: white; font-size: 15px;">
+                            HedgeHood-MT5
                         </div>
+                        <input type="hidden" id="mt5Server" value="HedgeHood-MT5">
                     </div>
                     
                     <div style="margin-bottom: 16px;">
@@ -1464,7 +1459,7 @@
                         <button onclick="showMT5Step1()" style="flex: 1; padding: 16px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 10px; color: white; font-size: 15px; font-weight: 600; cursor: pointer;">
                             이전
                         </button>
-                        <button onclick="connectMT5Account()" style="flex: 2; padding: 16px; background: linear-gradient(135deg, var(--accent-cyan) 0%, #0099cc 100%); border: none; border-radius: 10px; color: #000; font-size: 15px; font-weight: 700; cursor: pointer;">
+                        <button id="mt5ConnectBtn" onclick="connectMT5Account()" style="flex: 2; padding: 16px; background: linear-gradient(135deg, var(--accent-cyan) 0%, #0099cc 100%); border: none; border-radius: 10px; color: #000; font-size: 15px; font-weight: 700; cursor: pointer;">
                             연결하기
                         </button>
                     </div>
