@@ -1,0 +1,22 @@
+[Unit]
+Description=Trading-X Backend
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/var/www/trading-x/backend
+Environment="PATH=/var/www/trading-x/backend/venv/bin"
+ExecStart=/var/www/trading-x/backend/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2 --timeout-keep-alive 30 --limit-max-requests 10000
+
+# 자동 재시작 설정
+Restart=always
+RestartSec=3
+WatchdogSec=30
+
+# 추가 안정성 설정
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=trading-x
+
+[Install]
+WantedBy=multi-user.target
