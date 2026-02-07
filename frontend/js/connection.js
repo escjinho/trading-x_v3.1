@@ -75,29 +75,40 @@ function scheduleIndicatorUpdate() {
 }
 // ★★★ 시그널 게이지 + 인디케이터 끝 ★★★
 
-// ========== MT5 자동 백오프 재연결 ==========
-const RECONNECT_DELAYS = [1000, 5000, 30000, 60000, 300000]; // 1초, 5초, 30초, 1분, 5분
+// ========== WebSocket 자동 재연결 (지수 백오프, 무제한 재시도) ==========
+// 재연결 간격: 3초 → 6초 → 12초 → 24초 → 30초 (최대)
+const WS_RECONNECT_BASE = 3000;  // 3초 시작
+const WS_RECONNECT_MAX = 30000;  // 최대 30초
 let reconnectAttempt = 0;
 let reconnectTimer = null;
 
+function getReconnectDelay() {
+    // 지수 백오프: 3초 * 2^attempt, 최대 30초
+    const delay = Math.min(WS_RECONNECT_BASE * Math.pow(2, reconnectAttempt), WS_RECONNECT_MAX);
+    return delay;
+}
+
 function reconnectWithBackoff() {
-    if (reconnectAttempt >= 5) {
-        console.log('[MT5] 5회 연속 실패 - 자동 재연결 중지');
-        updateConnectionStatus('disconnected');
+    // ★ 의도적 종료면 재연결 안 함
+    if (intentionalClose) {
+        console.log('[WS] Intentional close - skipping reconnect');
         return;
     }
 
-    const delay = RECONNECT_DELAYS[reconnectAttempt] || 300000;
-    console.log(`[MT5] 연결 실패 (${reconnectAttempt + 1}/5) - ${delay/1000}초 후 재시도`);
+    const delay = getReconnectDelay();
+    console.log(`[WS] 재연결 시도 ${reconnectAttempt + 1} - ${delay/1000}초 후`);
+
+    // UI 상태: Reconnecting...
+    updateConnectionStatus('reconnecting', delay);
 
     reconnectTimer = setTimeout(() => {
         reconnectAttempt++;
-        connectMT5();
+        connectWebSocket();
     }, delay);
 }
 
 // 연결 상태 업데이트 헬퍼 함수
-function updateConnectionStatus(status) {
+function updateConnectionStatus(status, delay = 0) {
     const statusDot = document.getElementById('statusDot');
     const headerStatus = document.getElementById('headerStatus');
 
@@ -107,20 +118,20 @@ function updateConnectionStatus(status) {
     } else if (status === 'connected') {
         if (statusDot) statusDot.classList.remove('disconnected');
         if (headerStatus) headerStatus.textContent = 'Connected';
+    } else if (status === 'reconnecting') {
+        if (statusDot) statusDot.classList.add('disconnected');
+        if (headerStatus) headerStatus.textContent = `Reconnecting... (${Math.round(delay/1000)}s)`;
     }
 }
 
-// MT5 연결 함수 (기존 connectWebSocket을 감싸는 래퍼)
-function connectMT5() {
-    console.log(`[MT5] 연결 시도 (${reconnectAttempt + 1}/5)`);
+// 재연결 시도 함수
+function attemptReconnect() {
+    console.log(`[WS] 연결 시도 (attempt ${reconnectAttempt + 1})`);
 
-    console.log("[checkUserMode] About to try connectWebSocket - Live mode");
-            try {
-        console.log("[checkUserMode] Calling connectWebSocket...");
-            connectWebSocket();
-        // 연결 성공 시 카운터 리셋은 ws.onopen에서 처리
+    try {
+        connectWebSocket();
     } catch (e) {
-        console.error('[MT5] 연결 오류:', e);
+        console.error('[WS] 연결 오류:', e);
         reconnectWithBackoff();
     }
 }
@@ -129,21 +140,20 @@ function connectMT5() {
 window.testDisconnect = function() {
     console.log('[TEST] 강제 연결 끊김 시뮬레이션');
     if (ws) ws.close();
-    reconnectWithBackoff();
 };
 
 window.manualReconnect = function() {
     console.log('[TEST] 수동 재연결');
     reconnectAttempt = 0;
     if (reconnectTimer) clearTimeout(reconnectTimer);
-    connectMT5();
+    attemptReconnect();
 };
 
 window.getReconnectStatus = function() {
     return {
         attempt: reconnectAttempt,
-        maxAttempts: 5,
-        nextDelay: RECONNECT_DELAYS[reconnectAttempt] || 300000
+        nextDelay: getReconnectDelay(),
+        maxDelay: WS_RECONNECT_MAX
     };
 };
 
@@ -538,19 +548,17 @@ function connectWebSocket() {
         }
     };
     
-    ws.onclose = function() {
-        console.log('WebSocket disconnected');
-        window.wsConnected = false;  // ★ WS 연결 해제 플래그
+    ws.onclose = function(event) {
+        console.log('[WS] WebSocket disconnected, code:', event.code, 'reason:', event.reason);
+        window.wsConnected = false;
 
         // ★ 의도적 종료면 재연결하지 않음 (모드 전환 시)
         if (intentionalClose) {
             console.log('[WS] Intentional close - skipping reconnect');
             intentionalClose = false;
+            updateConnectionStatus('disconnected');
             return;
         }
-
-        document.getElementById('statusDot').classList.add('disconnected');
-        document.getElementById('headerStatus').textContent = 'Disconnected';
 
         // ★ WebSocket 끊어지면 폴링 시작 (Live 모드일 때만)
         if (!isDemo && !pollingInterval) {
@@ -558,13 +566,14 @@ function connectWebSocket() {
             console.log('[WS] Polling started - WebSocket disconnected');
         }
 
-        // 백오프 로직으로 재연결
+        // ★ 자동 재연결 (지수 백오프, 무제한)
         reconnectWithBackoff();
     };
 
     ws.onerror = function(error) {
         console.error('[WS] WebSocket error:', error);
         console.log('[WS] readyState:', ws.readyState);
+        // onerror 후 onclose가 호출되므로 여기서는 재연결 안 함
     };
 }
 
