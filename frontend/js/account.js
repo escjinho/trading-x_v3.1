@@ -145,7 +145,8 @@ function updateAccountInfoFromHistory(historyData) {
     }
     
     if (currentPLEl) {
-        currentPLEl.textContent = '$0.00';
+        currentPLEl.textContent = '+$0.00';
+        currentPLEl.style.color = 'var(--buy-color)';
     }
     
     console.log('[updateAccountInfoFromHistory] Today trades:', todayTrades.length, 'Total trades:', historyData.length);
