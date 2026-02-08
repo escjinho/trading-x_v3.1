@@ -236,13 +236,13 @@ def calculate_indicators_from_bridge(symbol: str = "BTCUSD") -> dict:
 DEFAULT_SYMBOL_SPECS = {
     "BTCUSD":   {"tick_size": 0.01,    "tick_value": 0.01,  "contract_size": 1,      "margin_rate": 0.01},    # 1:100 (MT5 기준)
     "ETHUSD":   {"tick_size": 0.01,    "tick_value": 0.01,  "contract_size": 1,      "margin_rate": 0.02},    # 1:50 (MT5 기준)
-    "XAUUSD.r": {"tick_size": 0.01,    "tick_value": 1.0,   "contract_size": 100,    "margin_rate": 0.002},   # 1:500
+    "XAUUSD.r": {"tick_size": 0.01,    "tick_value": 1.0,   "contract_size": 100,    "margin_rate": 0.0035},  # 1랏 $993
     "EURUSD.r": {"tick_size": 0.00001, "tick_value": 1.0,   "contract_size": 100000, "margin_rate": 0.002},   # 1:500
     "USDJPY.r": {"tick_size": 0.001,   "tick_value": 0.67,  "contract_size": 100000, "margin_rate": 0.002},   # 1:500
     "GBPUSD.r": {"tick_size": 0.00001, "tick_value": 1.0,   "contract_size": 100000, "margin_rate": 0.002},   # 1:500
     "AUDUSD.r": {"tick_size": 0.00001, "tick_value": 1.0,   "contract_size": 100000, "margin_rate": 0.002},   # 1:500
     "USDCAD.r": {"tick_size": 0.00001, "tick_value": 0.74,  "contract_size": 100000, "margin_rate": 0.002},   # 1:500
-    "US100.":   {"tick_size": 0.01,    "tick_value": 0.01,  "contract_size": 1,      "margin_rate": 0.002},   # 1:500
+    "US100.":   {"tick_size": 0.01,    "tick_value": 0.01,  "contract_size": 1,      "margin_rate": 0.005},   # 1:200
 }
 
 def calculate_demo_margin(symbol: str, volume: float, price: float) -> float:
