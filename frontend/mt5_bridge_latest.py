@@ -584,6 +584,124 @@ def candle_thread_func(stop_event):
         stop_event.wait(CANDLE_INTERVAL)
 
 
+# ★★★ 포지션 동기화 스레드 (SL/TP 청산 감지) ★★★
+def sync_thread_func(stop_event):
+    """5초마다 active_users 조회 → MT5 포지션 확인 → 동기화"""
+    from datetime import datetime, timedelta
+
+    print("[Sync Thread] 포지션 동기화 스레드 시작")
+
+    while not stop_event.is_set():
+        try:
+            # 1. active_users 조회
+            response = requests.get(f"{SERVER_URL}/api/mt5/bridge/active_users", timeout=5)
+            if response.status_code != 200:
+                stop_event.wait(5)
+                continue
+
+            data = response.json()
+            active_users = data.get("active_users", [])
+
+            if not active_users:
+                stop_event.wait(5)
+                continue
+
+            print(f"[Sync] 포지션 있는 유저 {len(active_users)}명 확인")
+
+            # 2. 각 유저 MT5 로그인 → 포지션 확인
+            for user_info in active_users:
+                user_id = user_info.get("user_id")
+                mt5_account = user_info.get("mt5_account")
+                mt5_password = user_info.get("mt5_password")
+                mt5_server = user_info.get("mt5_server")
+
+                if not mt5_account or not mt5_password:
+                    continue
+
+                try:
+                    # MT5 로그인
+                    if not mt5.login(int(mt5_account), password=mt5_password, server=mt5_server):
+                        print(f"[Sync] User {user_id} MT5 로그인 실패")
+                        continue
+
+                    # 포지션 조회
+                    positions = mt5.positions_get()
+                    positions_data = []
+                    if positions:
+                        positions_data = [
+                            {
+                                "ticket": pos.ticket,
+                                "symbol": pos.symbol,
+                                "type": pos.type,
+                                "volume": pos.volume,
+                                "price_open": pos.price_open,
+                                "profit": pos.profit,
+                                "magic": pos.magic
+                            }
+                            for pos in positions
+                        ]
+
+                    # 계정 정보
+                    account_info = None
+                    account = mt5.account_info()
+                    if account:
+                        account_info = {
+                            "balance": account.balance,
+                            "equity": account.equity,
+                            "margin": account.margin,
+                            "free_margin": account.margin_free
+                        }
+
+                    # 포지션 없으면 deal history 조회 (최근 1분)
+                    deal_history = []
+                    if len(positions_data) == 0:
+                        now = datetime.now()
+                        deals = mt5.history_deals_get(now - timedelta(minutes=1), now)
+                        if deals:
+                            for deal in deals:
+                                if deal.entry == 1:  # OUT (청산)
+                                    deal_history.append({
+                                        "ticket": deal.ticket,
+                                        "symbol": deal.symbol,
+                                        "type": deal.type,
+                                        "profit": deal.profit,
+                                        "commission": deal.commission,
+                                        "swap": deal.swap,
+                                        "volume": deal.volume,
+                                        "price": deal.price,
+                                        "time": deal.time
+                                    })
+
+                    # 3. sync_positions POST
+                    sync_data = {
+                        "user_id": user_id,
+                        "positions": positions_data,
+                        "account_info": account_info,
+                        "deal_history": deal_history
+                    }
+                    sync_response = requests.post(
+                        f"{SERVER_URL}/api/mt5/bridge/sync_positions",
+                        json=sync_data,
+                        timeout=5
+                    )
+
+                    if sync_response.status_code == 200:
+                        result = sync_response.json()
+                        if result.get("status") == "synced":
+                            print(f"[Sync] ✅ User {user_id} SL/TP 청산 동기화 완료! P/L: ${result.get('profit', 0):.2f}")
+
+                except Exception as e:
+                    print(f"[Sync] User {user_id} 동기화 오류: {e}")
+
+            # 4. 기본 계정 복구 (옵션 - 필요시)
+            # mt5.login(BASE_ACCOUNT, password=BASE_PASSWORD, server=BASE_SERVER)
+
+        except Exception as e:
+            print(f"[Sync Thread] 오류: {e}")
+
+        stop_event.wait(5)  # 5초 대기
+
+
 def main():
     print("=" * 50)
     print("MT5 Bridge - Windows to Linux")
@@ -616,6 +734,10 @@ def main():
     stop_event = threading.Event()
     candle_thread = threading.Thread(target=candle_thread_func, args=(stop_event,), daemon=True)
     candle_thread.start()
+
+    # ★ 포지션 동기화 스레드 시작
+    sync_thread = threading.Thread(target=sync_thread_func, args=(stop_event,), daemon=True)
+    sync_thread.start()
 
     print(f"\n실시간 시세 전송 시작 (주기: {INTERVAL}초)")
     print("-" * 50)
