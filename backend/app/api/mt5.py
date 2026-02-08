@@ -788,6 +788,7 @@ async def get_pending_orders():
 @router.post("/bridge/orders/result")
 async def submit_order_result(result: dict):
     """브릿지가 주문 실행 결과를 전송 (파일 기반)"""
+    import time as time_module
     order_id = result.get("order_id")
     if order_id:
         set_order_result(order_id, result)
@@ -795,7 +796,7 @@ async def submit_order_result(result: dict):
 
         # 주문 성공시 bridge에 포지션 갱신 요청을 위해 last_update 기록
         if result.get("success"):
-            bridge_cache["last_update"] = time.time()
+            bridge_cache["last_update"] = time_module.time()
             # 결과에 포지션 정보가 포함되어 있으면 캐시 업데이트
             if "positions" in result:
                 bridge_cache["positions"] = result["positions"]
@@ -806,7 +807,7 @@ async def submit_order_result(result: dict):
                 user_live_cache[user_id] = {
                     "positions": result.get("positions", []),
                     "account_info": result.get("account_info"),
-                    "updated_at": time.time()
+                    "updated_at": time_module.time()
                 }
                 print(f"[Bridge] 유저 {user_id} 라이브 캐시 업데이트 (포지션: {len(result.get('positions', []))}개)")
 
