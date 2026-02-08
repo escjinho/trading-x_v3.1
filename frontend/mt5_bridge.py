@@ -292,11 +292,38 @@ def execute_order(order_data: dict):
         result = mt5.order_send(request)
 
         if result and result.retcode == mt5.TRADE_RETCODE_DONE:
+            # ★★★ 주문 성공 후 포지션/계정 정보 수집 ★★★
+            positions_data = []
+            positions = mt5.positions_get()
+            if positions:
+                for pos in positions:
+                    positions_data.append({
+                        "ticket": pos.ticket,
+                        "symbol": pos.symbol,
+                        "type": pos.type,
+                        "volume": pos.volume,
+                        "price_open": pos.price_open,
+                        "profit": pos.profit,
+                        "magic": pos.magic
+                    })
+
+            account_data = None
+            account = mt5.account_info()
+            if account:
+                account_data = {
+                    "balance": account.balance,
+                    "equity": account.equity,
+                    "margin": account.margin,
+                    "free_margin": account.margin_free
+                }
+
             return {
                 "success": True,
                 "message": f"{order_type} 성공! {volume} lot @ {result.price:,.2f}",
                 "ticket": result.order,
-                "price": result.price
+                "price": result.price,
+                "positions": positions_data,
+                "account_info": account_data
             }
         else:
             error_code = result.retcode if result else "Unknown"
@@ -403,10 +430,37 @@ def execute_close(order_data: dict):
             result = mt5.order_send(request)
 
             if result and result.retcode == mt5.TRADE_RETCODE_DONE:
+                # ★★★ 청산 성공 후 포지션/계정 정보 수집 ★★★
+                positions_data = []
+                remaining_positions = mt5.positions_get()
+                if remaining_positions:
+                    for p in remaining_positions:
+                        positions_data.append({
+                            "ticket": p.ticket,
+                            "symbol": p.symbol,
+                            "type": p.type,
+                            "volume": p.volume,
+                            "price_open": p.price_open,
+                            "profit": p.profit,
+                            "magic": p.magic
+                        })
+
+                account_data = None
+                account = mt5.account_info()
+                if account:
+                    account_data = {
+                        "balance": account.balance,
+                        "equity": account.equity,
+                        "margin": account.margin,
+                        "free_margin": account.margin_free
+                    }
+
                 return {
                     "success": True,
                     "message": f"청산 성공! P/L: ${pos.profit:,.2f}",
-                    "profit": pos.profit
+                    "profit": pos.profit,
+                    "positions": positions_data,
+                    "account_info": account_data
                 }
 
         return {"success": False, "message": "청산 실패"}
