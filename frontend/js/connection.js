@@ -604,7 +604,55 @@ function connectWebSocket() {
                 accCurrentPL.style.color = newColor;
             }
         }
-        
+
+        // ★★★ 라이브 모드 Today P/L 업데이트 ★★★
+        if (data.today_pl !== undefined) {
+            const accTodayPL = document.getElementById('accTodayPL');
+            if (accTodayPL) {
+                const pl = data.today_pl;
+                if (pl >= 0) {
+                    accTodayPL.textContent = '+$' + pl.toFixed(2);
+                    accTodayPL.style.color = 'var(--buy-color)';
+                } else {
+                    accTodayPL.textContent = '-$' + Math.abs(pl).toFixed(2);
+                    accTodayPL.style.color = 'var(--sell-color)';
+                }
+            }
+        }
+
+        // ★★★ 라이브 모드 History 업데이트 ★★★
+        if (data.history && data.history.length > 0) {
+            const container = document.getElementById('historyList');
+            if (container) {
+                let html = '';
+                data.history.slice().reverse().forEach(h => {
+                    const profit = h.profit || 0;
+                    const profitClass = profit >= 0 ? 'positive' : 'negative';
+                    const profitSign = profit >= 0 ? '+' : '';
+                    const typeStr = h.type === 0 ? 'BUY' : (h.type === 1 ? 'SELL' : (h.type || ''));
+                    const typeColor = (h.type === 0 || h.type === 'BUY') ? 'var(--buy-color)' : 'var(--sell-color)';
+                    const symbol = h.symbol || '';
+                    const volume = h.volume || 0;
+                    // 시간 포맷팅 (Unix timestamp -> 시:분)
+                    let timeStr = '';
+                    if (h.time) {
+                        const date = new Date(h.time * 1000);
+                        timeStr = date.toLocaleTimeString('ko-KR', {hour: '2-digit', minute: '2-digit'});
+                    }
+                    html += `<div class="history-item">
+                        <div style="flex:1;display:flex;align-items:center;gap:8px;margin-left:5px;">
+                            <span style="font-size:15px;font-weight:600;min-width:130px;">${symbol} <span style="color:${typeColor};font-weight:600;font-size:15px;">${typeStr}</span></span>
+                            <span class="history-time">${timeStr}</span>
+                            <span style="color:rgba(255,255,255,0.2);">|</span>
+                            <span class="history-time">${volume} lot</span>
+                        </div>
+                        <span class="history-profit ${profitClass}" style="min-width:80px;text-align:right;font-size:15px;margin-right:5px;">${profitSign}$${profit.toFixed(2)}</span>
+                    </div>`;
+                });
+                container.innerHTML = html;
+            }
+        }
+
         // Martin state
         if (data.martin) {
             martinEnabled = data.martin.enabled;
