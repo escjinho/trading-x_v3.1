@@ -300,6 +300,13 @@ async function fetchDemoData() {
                 const pos = data.position;
                 const currentTarget = pos.target || targetAmount;
 
+                // ★ 포지션의 실제 volume으로 Lot Size 표시 (새로고침 시 복원)
+                if (pos.volume) {
+                    lotSize = pos.volume;
+                    const tradeLotSize = document.getElementById('tradeLotSize');
+                    if (tradeLotSize) tradeLotSize.textContent = pos.volume.toFixed(2);
+                }
+
                 if (currentTarget > 0 && !isClosing) {
                     if (pos.profit >= currentTarget) {
                         isClosing = true;

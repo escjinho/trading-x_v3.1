@@ -426,6 +426,14 @@ function connectWebSocket() {
                 console.log('[WS Demo] ✅ Has position - calling updatePositionUI(true)');
                 window.currentProfit = data.position.profit || 0;
                 window.currentTarget = data.position.target || targetAmount;
+
+                // ★ 포지션의 실제 volume으로 Lot Size 표시 (새로고침 시 복원)
+                if (data.position.volume) {
+                    lotSize = data.position.volume;
+                    const tradeLotSize = document.getElementById('tradeLotSize');
+                    if (tradeLotSize) tradeLotSize.textContent = data.position.volume.toFixed(2);
+                }
+
                 if (typeof updatePositionUI === 'function') {
                     updatePositionUI(true, data.position);
                 } else {

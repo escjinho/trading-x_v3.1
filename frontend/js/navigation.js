@@ -49,6 +49,12 @@ document.querySelectorAll('.nav-item').forEach(item => {
                 }
             } else if (page === 'account') {
                 loadHistory();
+                // ★ Account 탭 진입 시 최신 데이터 갱신
+                if (typeof fetchDemoData === 'function' && isDemo) {
+                    fetchDemoData();
+                } else if (typeof fetchAccountData === 'function' && !isDemo) {
+                    fetchAccountData();
+                }
             }
         });
     }

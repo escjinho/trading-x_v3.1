@@ -691,7 +691,10 @@ async def get_demo_account(
             "margin": pos_price_data["margin"]
         })
 
-    print(f"[ACCOUNT-INFO] 📦 Returning - position_data: {position_data is not None}, positions_count: {len(positions)}")
+    # ★ current_pl 계산 (모든 포지션 profit 합산)
+    current_pl = sum(p.get("profit", 0) for p in positions_data)
+
+    print(f"[ACCOUNT-INFO] 📦 Returning - position_data: {position_data is not None}, positions_count: {len(positions)}, current_pl: {current_pl}")
     print("[ACCOUNT-INFO] 🔴 END\n")
 
     # ★★★ 라이브 모드 (MT5 계정 연결됨) - 유저 MT5 계정 정보 반환 ★★★
@@ -703,6 +706,7 @@ async def get_demo_account(
             "free_margin": current_user.mt5_free_margin or current_user.mt5_balance or 0,
             "profit": current_user.mt5_profit or 0,
             "today_profit": current_user.demo_today_profit or 0.0,  # 오늘 수익은 데모 값 유지
+            "current_pl": round(current_pl, 2),
             "broker": "Live Account",
             "account": current_user.mt5_account_number or "",
             "server": current_user.mt5_server or "",
@@ -721,6 +725,7 @@ async def get_demo_account(
         "balance": current_user.demo_balance or 10000.0,
         "equity": current_user.demo_equity or 10000.0,
         "today_profit": current_user.demo_today_profit or 0.0,
+        "current_pl": round(current_pl, 2),
         "broker": "Trading-X Demo",
         "account": f"DEMO-{current_user.id}",
         "server": "Demo Server",
