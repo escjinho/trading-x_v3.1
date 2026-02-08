@@ -207,10 +207,10 @@ def calculate_indicators_from_bridge(symbol: str = "BTCUSD") -> dict:
     }
 
 # ========== 심볼별 기본 스펙 (bridge_cache에 symbol_info 없을 때 사용) ==========
-# contract_size: 1랏 기준 계약 크기, margin_rate: 증거금률 (1/레버리지)
+# contract_size: 1랏 기준 계약 크기, margin_rate: 증거금률 (MT5 기준)
 DEFAULT_SYMBOL_SPECS = {
-    "BTCUSD":   {"tick_size": 0.01,    "tick_value": 0.01,  "contract_size": 1,      "margin_rate": 0.002},   # 1:500
-    "ETHUSD":   {"tick_size": 0.01,    "tick_value": 0.01,  "contract_size": 1,      "margin_rate": 0.002},   # 1:500
+    "BTCUSD":   {"tick_size": 0.01,    "tick_value": 0.01,  "contract_size": 1,      "margin_rate": 0.01},    # 1:100 (MT5 기준)
+    "ETHUSD":   {"tick_size": 0.01,    "tick_value": 0.01,  "contract_size": 1,      "margin_rate": 0.01},    # 1:100 (MT5 기준)
     "XAUUSD.r": {"tick_size": 0.01,    "tick_value": 1.0,   "contract_size": 100,    "margin_rate": 0.002},   # 1:500
     "EURUSD.r": {"tick_size": 0.00001, "tick_value": 1.0,   "contract_size": 100000, "margin_rate": 0.002},   # 1:500
     "USDJPY.r": {"tick_size": 0.001,   "tick_value": 0.67,  "contract_size": 100000, "margin_rate": 0.002},   # 1:500

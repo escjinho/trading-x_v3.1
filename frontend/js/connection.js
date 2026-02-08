@@ -330,17 +330,21 @@ function connectWebSocket() {
                 const homeFreeMargin = document.getElementById('homeFreeMargin');
                 if (homeFreeMargin) homeFreeMargin.textContent = '$' + freeMargin.toLocaleString(undefined, {minimumFractionDigits: 2});
             }
-            if ('current_pl' in data) {
-                const accCurrentPL = document.getElementById('accCurrentPL');
-                if (accCurrentPL) {
-                    const pl = data.current_pl || 0;
-                    if (pl >= 0) {
-                        accCurrentPL.textContent = '+$' + pl.toFixed(2);
-                        accCurrentPL.style.color = 'var(--buy-color)';
-                    } else {
-                        accCurrentPL.textContent = '-$' + Math.abs(pl).toFixed(2);
-                        accCurrentPL.style.color = 'var(--sell-color)';
-                    }
+            // ★ Current P/L 업데이트 (current_pl 또는 position.profit 사용)
+            const accCurrentPL = document.getElementById('accCurrentPL');
+            if (accCurrentPL) {
+                let pl = 0;
+                if ('current_pl' in data) {
+                    pl = data.current_pl || 0;
+                } else if (data.position && data.position.profit !== undefined) {
+                    pl = data.position.profit || 0;
+                }
+                if (pl >= 0) {
+                    accCurrentPL.textContent = '+$' + pl.toFixed(2);
+                    accCurrentPL.style.color = 'var(--buy-color)';
+                } else {
+                    accCurrentPL.textContent = '-$' + Math.abs(pl).toFixed(2);
+                    accCurrentPL.style.color = 'var(--sell-color)';
                 }
             }
             if ('leverage' in data) {
