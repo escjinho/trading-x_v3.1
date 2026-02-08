@@ -239,8 +239,6 @@ def execute_order(order_data: dict):
     if user_account and user_password and user_server:
         try:
             account_int = int(user_account)
-            # 로그인 전 터미널 상태 확인
-            print(f"[Order] Terminal trade_allowed: {mt5.terminal_info().trade_allowed}")
             print(f"[Order] 🔄 사용자 계정 전환: {account_int} @ {user_server}")
             authorized = mt5.login(account_int, password=user_password, server=user_server)
             if not authorized:
@@ -248,18 +246,6 @@ def execute_order(order_data: dict):
                 print(f"[Order] ❌ 사용자 계정 로그인 실패: {error}")
                 return {"success": False, "message": f"MT5 로그인 실패: {error}"}
             print(f"[Order] ✅ 사용자 계정 전환 성공: {account_int}")
-
-            # ★★★ AutoTrading 활성화 대기 ★★★
-            time.sleep(1)
-            if not mt5.terminal_info().trade_allowed:
-                print(f"[Order] ⏳ AutoTrading 활성화 대기 중...")
-                for i in range(10):  # 최대 5초 (0.5초 × 10)
-                    time.sleep(0.5)
-                    if mt5.terminal_info().trade_allowed:
-                        print(f"[Order] ✅ AutoTrading 활성화됨")
-                        break
-                else:
-                    print(f"[Order] ⚠️ AutoTrading이 비활성화 상태이지만 주문 시도...")
         except Exception as e:
             print(f"[Order] ❌ 계정 전환 오류: {e}")
             return {"success": False, "message": f"계정 전환 오류: {e}"}
@@ -292,39 +278,11 @@ def execute_order(order_data: dict):
         result = mt5.order_send(request)
 
         if result and result.retcode == mt5.TRADE_RETCODE_DONE:
-            # ★★★ 주문 성공 후 포지션/계정 정보 수집 ★★★
-            positions_data = []
-            positions = mt5.positions_get()
-            if positions:
-                for pos in positions:
-                    positions_data.append({
-                        "ticket": pos.ticket,
-                        "symbol": pos.symbol,
-                        "type": pos.type,
-                        "volume": pos.volume,
-                        "price_open": pos.price_open,
-                        "profit": pos.profit,
-                        "magic": pos.magic
-                    })
-
-            account_data = None
-            account = mt5.account_info()
-            if account:
-                account_data = {
-                    "balance": account.balance,
-                    "equity": account.equity,
-                    "margin": account.margin,
-                    "free_margin": account.margin_free
-                }
-
             return {
                 "success": True,
                 "message": f"{order_type} 성공! {volume} lot @ {result.price:,.2f}",
                 "ticket": result.order,
-                "price": result.price,
-                "positions": positions_data,
-                "account_info": account_data,
-                "user_id": order_data.get("user_id")
+                "price": result.price
             }
         else:
             error_code = result.retcode if result else "Unknown"
@@ -373,8 +331,6 @@ def execute_close(order_data: dict):
     if user_account and user_password and user_server:
         try:
             account_int = int(user_account)
-            # 로그인 전 터미널 상태 확인
-            print(f"[Close] Terminal trade_allowed: {mt5.terminal_info().trade_allowed}")
             print(f"[Close] 🔄 사용자 계정 전환: {account_int} @ {user_server}")
             authorized = mt5.login(account_int, password=user_password, server=user_server)
             if not authorized:
@@ -382,18 +338,6 @@ def execute_close(order_data: dict):
                 print(f"[Close] ❌ 사용자 계정 로그인 실패: {error}")
                 return {"success": False, "message": f"MT5 로그인 실패: {error}"}
             print(f"[Close] ✅ 사용자 계정 전환 성공: {account_int}")
-
-            # ★★★ AutoTrading 활성화 대기 ★★★
-            time.sleep(1)
-            if not mt5.terminal_info().trade_allowed:
-                print(f"[Close] ⏳ AutoTrading 활성화 대기 중...")
-                for i in range(10):  # 최대 5초 (0.5초 × 10)
-                    time.sleep(0.5)
-                    if mt5.terminal_info().trade_allowed:
-                        print(f"[Close] ✅ AutoTrading 활성화됨")
-                        break
-                else:
-                    print(f"[Close] ⚠️ AutoTrading이 비활성화 상태이지만 주문 시도...")
         except Exception as e:
             print(f"[Close] ❌ 계정 전환 오류: {e}")
             return {"success": False, "message": f"계정 전환 오류: {e}"}
@@ -431,38 +375,10 @@ def execute_close(order_data: dict):
             result = mt5.order_send(request)
 
             if result and result.retcode == mt5.TRADE_RETCODE_DONE:
-                # ★★★ 청산 성공 후 포지션/계정 정보 수집 ★★★
-                positions_data = []
-                remaining_positions = mt5.positions_get()
-                if remaining_positions:
-                    for p in remaining_positions:
-                        positions_data.append({
-                            "ticket": p.ticket,
-                            "symbol": p.symbol,
-                            "type": p.type,
-                            "volume": p.volume,
-                            "price_open": p.price_open,
-                            "profit": p.profit,
-                            "magic": p.magic
-                        })
-
-                account_data = None
-                account = mt5.account_info()
-                if account:
-                    account_data = {
-                        "balance": account.balance,
-                        "equity": account.equity,
-                        "margin": account.margin,
-                        "free_margin": account.margin_free
-                    }
-
                 return {
                     "success": True,
                     "message": f"청산 성공! P/L: ${pos.profit:,.2f}",
-                    "profit": pos.profit,
-                    "positions": positions_data,
-                    "account_info": account_data,
-                    "user_id": order_data.get("user_id")
+                    "profit": pos.profit
                 }
 
         return {"success": False, "message": "청산 실패"}

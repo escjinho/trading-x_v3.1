@@ -1,6 +1,10 @@
+# ★ .env 파일을 os.environ에 로드 (crypto.py보다 먼저 실행되어야 함)
+from pathlib import Path
+from dotenv import load_dotenv
+load_dotenv(Path(__file__).parent.parent / ".env")
+
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from pathlib import Path
 from fastapi.middleware.cors import CORSMiddleware
 from .config import settings
 from .api import auth, account, mt5, demo

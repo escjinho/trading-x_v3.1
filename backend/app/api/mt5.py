@@ -92,16 +92,100 @@ bridge_cache = {
     "last_update": 0   # 마지막 업데이트 시간
 }
 
-# ========== 주문 대기열 (브릿지용) ==========
+# ========== 주문 대기열 (브릿지용) - 파일 기반 ==========
 # Linux에서 주문을 받아 Windows 브릿지가 실행
+# 워커 간 공유를 위해 파일 기반으로 구현
 import uuid
+import fcntl
 
-order_queue = []  # 대기 중인 주문 목록
-order_results = {}  # 주문 결과 저장 {order_id: result}
+ORDER_QUEUE_FILE = "/tmp/mt5_orders.json"
+ORDER_RESULTS_FILE = "/tmp/mt5_order_results.json"
+BRIDGE_HEARTBEAT_FILE = "/tmp/mt5_bridge_heartbeat"
+
+# ★★★ 유저별 라이브 데이터 캐시 (주문/청산 후 업데이트) ★★★
+user_live_cache = {}
+
+def update_bridge_heartbeat():
+    """브릿지 하트비트 파일에 현재 시간 기록"""
+    import time as time_module
+    try:
+        with open(BRIDGE_HEARTBEAT_FILE, 'w') as f:
+            f.write(str(time_module.time()))
+    except Exception:
+        pass
+
+def get_bridge_heartbeat() -> float:
+    """브릿지 하트비트 파일에서 마지막 업데이트 시간 읽기"""
+    try:
+        with open(BRIDGE_HEARTBEAT_FILE, 'r') as f:
+            return float(f.read().strip())
+    except (FileNotFoundError, ValueError):
+        return 0
+
+def _read_order_queue() -> list:
+    """주문 대기열 읽기 (잠금 적용)"""
+    try:
+        with open(ORDER_QUEUE_FILE, 'r') as f:
+            fcntl.flock(f.fileno(), fcntl.LOCK_SH)
+            data = json.load(f)
+            fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+            return data if isinstance(data, list) else []
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+
+def _write_order_queue(data: list):
+    """주문 대기열 쓰기 (잠금 적용)"""
+    with open(ORDER_QUEUE_FILE, 'w') as f:
+        fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+        json.dump(data, f)
+        fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+
+def append_order(order_data: dict):
+    """주문 대기열에 추가"""
+    queue = _read_order_queue()
+    queue.append(order_data)
+    _write_order_queue(queue)
+
+def pop_all_orders() -> list:
+    """모든 대기 주문 가져오고 비우기"""
+    queue = _read_order_queue()
+    _write_order_queue([])
+    return queue
+
+def _read_order_results() -> dict:
+    """주문 결과 읽기 (잠금 적용)"""
+    try:
+        with open(ORDER_RESULTS_FILE, 'r') as f:
+            fcntl.flock(f.fileno(), fcntl.LOCK_SH)
+            data = json.load(f)
+            fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+            return data if isinstance(data, dict) else {}
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+def _write_order_results(data: dict):
+    """주문 결과 쓰기 (잠금 적용)"""
+    with open(ORDER_RESULTS_FILE, 'w') as f:
+        fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+        json.dump(data, f)
+        fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+
+def set_order_result(order_id: str, result: dict):
+    """주문 결과 저장"""
+    results = _read_order_results()
+    results[order_id] = result
+    _write_order_results(results)
+
+def pop_order_result(order_id: str) -> dict:
+    """주문 결과 가져오고 삭제"""
+    results = _read_order_results()
+    result = results.pop(order_id, None)
+    if result:
+        _write_order_results(results)
+    return result
 
 # ========== 계정 검증 대기열 (브릿지용) - 파일 기반 ==========
 # 워커 간 공유를 위해 파일 기반으로 구현
-import fcntl
 
 VERIFY_PENDING_FILE = "/tmp/mt5_verify_pending.json"
 VERIFY_RESULTS_FILE = "/tmp/mt5_verify_results.json"
@@ -487,6 +571,7 @@ async def receive_bridge_positions(data: dict):
     """Windows 브릿지에서 포지션 데이터 수신"""
     bridge_cache["positions"] = data.get("positions", [])
     bridge_cache["last_update"] = time.time()
+    update_bridge_heartbeat()
     return {"status": "ok", "positions_count": len(bridge_cache["positions"])}
 
 @router.post("/bridge/account")
@@ -507,6 +592,7 @@ async def receive_bridge_account(data: dict):
             "leverage": data.get("leverage", 0)
         }
         bridge_cache["last_update"] = time_module.time()
+        update_bridge_heartbeat()
 
         print(f"[Bridge] Account 수신: {data.get('login')} @ {data.get('broker')}")
 
@@ -560,6 +646,7 @@ async def receive_bridge_batch(data: dict):
             bridge_cache["positions"] = positions
 
         bridge_cache["last_update"] = time_module.time()
+        update_bridge_heartbeat()
 
         return {"status": "ok", "symbols": len(prices)}
     except Exception as e:
@@ -590,6 +677,7 @@ async def receive_bridge_data(symbol: str, data: dict):
             "time": data.get("time", int(time_module.time()))
         }
         bridge_cache["last_update"] = time_module.time()
+        update_bridge_heartbeat()
 
         return {
             "status": "success",
@@ -634,6 +722,7 @@ async def receive_bridge_candles_tf(symbol: str, timeframe: str, candles: List[d
         # 타임프레임별 캔들 데이터 저장
         bridge_cache["candles"][symbol][timeframe] = candles
         bridge_cache["last_update"] = time_module.time()
+        update_bridge_heartbeat()
 
         print(f"[Bridge] {symbol}/{timeframe} 캔들 {len(candles)}개 수신")
 
@@ -691,23 +780,17 @@ async def get_bridge_status():
 # ========== 브릿지 주문 API ==========
 @router.get("/bridge/orders/pending")
 async def get_pending_orders():
-    """브릿지가 대기 중인 주문을 가져감"""
-    if not order_queue:
-        return {"orders": []}
-
-    # 대기열에서 주문 꺼내기
-    pending = order_queue.copy()
-    order_queue.clear()
-
+    """브릿지가 대기 중인 주문을 가져감 (파일 기반)"""
+    pending = pop_all_orders()
     return {"orders": pending}
 
 
 @router.post("/bridge/orders/result")
 async def submit_order_result(result: dict):
-    """브릿지가 주문 실행 결과를 전송"""
+    """브릿지가 주문 실행 결과를 전송 (파일 기반)"""
     order_id = result.get("order_id")
     if order_id:
-        order_results[order_id] = result
+        set_order_result(order_id, result)
         print(f"[Bridge] 주문 결과 수신: {order_id} - {result.get('success')}")
 
         # 주문 성공시 bridge에 포지션 갱신 요청을 위해 last_update 기록
@@ -717,14 +800,24 @@ async def submit_order_result(result: dict):
             if "positions" in result:
                 bridge_cache["positions"] = result["positions"]
 
+            # ★★★ user_live_cache에 유저별 데이터 저장 ★★★
+            user_id = result.get("user_id")
+            if user_id and ("positions" in result or "account_info" in result):
+                user_live_cache[user_id] = {
+                    "positions": result.get("positions", []),
+                    "account_info": result.get("account_info"),
+                    "updated_at": time.time()
+                }
+                print(f"[Bridge] 유저 {user_id} 라이브 캐시 업데이트 (포지션: {len(result.get('positions', []))}개)")
+
     return {"status": "ok"}
 
 
 @router.get("/bridge/orders/result/{order_id}")
 async def get_order_result(order_id: str):
-    """주문 결과 조회 (클라이언트 폴링용)"""
-    if order_id in order_results:
-        result = order_results.pop(order_id)  # 결과 가져오고 삭제
+    """주문 결과 조회 (클라이언트 폴링용, 파일 기반)"""
+    result = pop_order_result(order_id)
+    if result:
         return result
     return {"status": "pending"}
 
@@ -800,13 +893,28 @@ async def place_order(
 
     # ★ Linux 환경 (MT5 없음) → 브릿지 모드
     if not MT5_AVAILABLE:
-        # 브릿지 연결 확인
-        bridge_age = time_module.time() - bridge_cache.get("last_update", 0)
+        # 브릿지 연결 확인 (파일 기반 하트비트)
+        bridge_age = time_module.time() - get_bridge_heartbeat()
         if bridge_age > 30:
             return JSONResponse({"success": False, "message": "MT5 브릿지 연결 없음"})
 
         # 주문 ID 생성
         order_id = str(uuid.uuid4())[:8]
+
+        # ★ 사용자 MT5 계정 정보 추가 (라이브 모드)
+        user_mt5_account = None
+        user_mt5_password = None
+        user_mt5_server = None
+
+        if current_user.has_mt5_account and current_user.mt5_account_number:
+            user_mt5_account = current_user.mt5_account_number
+            user_mt5_server = current_user.mt5_server
+            # 암호화된 비밀번호 복호화
+            if current_user.mt5_password_encrypted:
+                try:
+                    user_mt5_password = decrypt(current_user.mt5_password_encrypted)
+                except Exception as e:
+                    print(f"[Bridge Order] ⚠️ 비밀번호 복호화 실패: {e}")
 
         # 주문을 대기열에 추가
         order_data = {
@@ -818,11 +926,15 @@ async def place_order(
             "target": target,
             "magic": magic,
             "user_id": current_user.id,
-            "timestamp": time_module.time()
+            "timestamp": time_module.time(),
+            # ★ 사용자 MT5 계정 정보
+            "mt5_account": user_mt5_account,
+            "mt5_password": user_mt5_password,
+            "mt5_server": user_mt5_server
         }
-        order_queue.append(order_data)
+        append_order(order_data)
 
-        print(f"[Bridge Order] 주문 대기열에 추가: {order_id} - {order_type} {symbol} {volume}")
+        print(f"[Bridge Order] 주문 대기열에 추가 (파일): {order_id} - {order_type} {symbol} {volume} (MT5: {user_mt5_account})")
 
         return JSONResponse({
             "success": True,
@@ -907,22 +1019,43 @@ async def close_position(
 
     # ★ Linux 환경 (MT5 없음) → 브릿지 모드
     if not MT5_AVAILABLE:
-        bridge_age = time_module.time() - bridge_cache.get("last_update", 0)
+        # 브릿지 연결 확인 (파일 기반 하트비트)
+        bridge_age = time_module.time() - get_bridge_heartbeat()
         if bridge_age > 30:
             return JSONResponse({"success": False, "message": "MT5 브릿지 연결 없음"})
 
         order_id = str(uuid.uuid4())[:8]
+
+        # ★ 사용자 MT5 계정 정보 추가 (라이브 모드)
+        user_mt5_account = None
+        user_mt5_password = None
+        user_mt5_server = None
+
+        if current_user.has_mt5_account and current_user.mt5_account_number:
+            user_mt5_account = current_user.mt5_account_number
+            user_mt5_server = current_user.mt5_server
+            # 암호화된 비밀번호 복호화
+            if current_user.mt5_password_encrypted:
+                try:
+                    user_mt5_password = decrypt(current_user.mt5_password_encrypted)
+                except Exception as e:
+                    print(f"[Bridge Order] ⚠️ 비밀번호 복호화 실패: {e}")
+
         order_data = {
             "order_id": order_id,
             "action": "close",
             "symbol": symbol,
             "magic": magic,
             "user_id": current_user.id,
-            "timestamp": time_module.time()
+            "timestamp": time_module.time(),
+            # ★ 사용자 MT5 계정 정보
+            "mt5_account": user_mt5_account,
+            "mt5_password": user_mt5_password,
+            "mt5_server": user_mt5_server
         }
-        order_queue.append(order_data)
+        append_order(order_data)
 
-        print(f"[Bridge Order] 청산 주문 추가: {order_id} - {symbol}")
+        print(f"[Bridge Order] 청산 주문 추가 (파일): {order_id} - {symbol} (MT5: {user_mt5_account})")
 
         return JSONResponse({
             "success": True,
@@ -1553,8 +1686,8 @@ async def connect_mt5_account(
     if not request.account or not request.password:
         return JSONResponse({"success": False, "message": "계좌번호와 비밀번호를 입력하세요"})
 
-    # 1. 브릿지 연결 확인
-    bridge_age = time_module.time() - bridge_cache.get("last_update", 0)
+    # 1. 브릿지 연결 확인 (파일 기반 하트비트)
+    bridge_age = time_module.time() - get_bridge_heartbeat()
     print(f"[CONNECT] 브릿지 상태: age={bridge_age:.1f}초")
     if bridge_age > 60:
         return JSONResponse({
@@ -1719,8 +1852,22 @@ async def websocket_endpoint(websocket: WebSocket):
                 bridge_age = current_time - last_update
                 bridge_connected = bridge_age < 30  # 30초 이내 데이터 있으면 연결됨
             
+            # ★★★ 유저 라이브 캐시 확인 (주문/청산 직후 데이터) ★★★
+            user_cache = user_live_cache.get(user_id) if user_id else None
+
             # ★ 계정 정보: MT5 직접 또는 브릿지 캐시
-            if mt5_connected:
+            if user_cache and user_cache.get("account_info"):
+                # ★★★ 유저 라이브 캐시에서 계정 정보 사용 ★★★
+                acc_info = user_cache["account_info"]
+                broker = "HedgeHood Pty Ltd"
+                login = user_mt5_account or 0
+                server = user_mt5_server or "HedgeHood-MT5"
+                balance = acc_info.get("balance", 0)
+                equity = acc_info.get("equity", 0)
+                margin = acc_info.get("margin", 0)
+                free_margin = acc_info.get("free_margin", 0)
+                leverage = user_mt5_leverage or 500
+            elif mt5_connected:
                 account = mt5.account_info()
                 broker = account.company if account else "N/A"
                 login = account.login if account else 0
@@ -1833,7 +1980,23 @@ async def websocket_endpoint(websocket: WebSocket):
             # 포지션 정보 (MT5 직접 연결 또는 Bridge)
             positions_count = 0
             position_data = None
-            if mt5_connected:
+            if user_cache and user_cache.get("positions"):
+                # ★★★ 유저 라이브 캐시에서 포지션 정보 사용 ★★★
+                cache_positions = user_cache["positions"]
+                positions_count = len(cache_positions)
+                for pos in cache_positions:
+                    if pos.get("magic") == 100001:
+                        position_data = {
+                            "type": "BUY" if pos.get("type", 0) == 0 else "SELL",
+                            "symbol": pos.get("symbol", ""),
+                            "volume": pos.get("volume", 0),
+                            "entry": pos.get("price_open", 0),
+                            "profit": pos.get("profit", 0),
+                            "ticket": pos.get("ticket", 0),
+                            "magic": pos.get("magic", 0)
+                        }
+                        break
+            elif mt5_connected:
                 positions = mt5.positions_get()
                 positions_count = len(positions) if positions else 0
                 
