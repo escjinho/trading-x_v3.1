@@ -74,7 +74,7 @@ from ..models.user import User
 from ..utils.security import decode_token
 from ..services.indicator_service import IndicatorService
 from ..services.martin_service import martin_service
-from .demo import calculate_indicators_from_bridge  # ★ 라이브에서도 브릿지 기반 인디케이터 사용
+# calculate_indicators_from_bridge는 함수 내부에서 지연 import (순환 참조 방지)
 
 # ============================================================
 # MT5 비활성화 플래그 import
@@ -2293,6 +2293,7 @@ async def websocket_endpoint(websocket: WebSocket):
             
             # ★ 인디케이터 계산 - 브릿지 캔들 기반 실시간 계산 (매 틱마다)
             try:
+                from .demo import calculate_indicators_from_bridge  # 지연 import (순환 참조 방지)
                 indicators = calculate_indicators_from_bridge("BTCUSD")
                 buy_count = indicators.get("buy", 33)
                 sell_count = indicators.get("sell", 33)
