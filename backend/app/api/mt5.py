@@ -105,6 +105,39 @@ BRIDGE_HEARTBEAT_FILE = "/tmp/mt5_bridge_heartbeat"
 # ★★★ 유저별 라이브 데이터 캐시 (주문/청산 후 업데이트) ★★★
 user_live_cache = {}
 
+# ★★★ 심볼별 스펙 (실시간 P/L 계산용) ★★★
+SYMBOL_SPECS = {
+    "BTCUSD":   {"contract_size": 1,      "tick_size": 0.01,    "tick_value": 0.01},
+    "ETHUSD":   {"contract_size": 1,      "tick_size": 0.01,    "tick_value": 0.01},
+    "XAUUSD.r": {"contract_size": 100,    "tick_size": 0.01,    "tick_value": 1.0},
+    "EURUSD.r": {"contract_size": 100000, "tick_size": 0.00001, "tick_value": 1.0},
+    "USDJPY.r": {"contract_size": 100000, "tick_size": 0.001,   "tick_value": 0.67},
+    "GBPUSD.r": {"contract_size": 100000, "tick_size": 0.00001, "tick_value": 1.0},
+    "AUDUSD.r": {"contract_size": 100000, "tick_size": 0.00001, "tick_value": 1.0},
+    "USDCAD.r": {"contract_size": 100000, "tick_size": 0.00001, "tick_value": 0.74},
+    "US100.":   {"contract_size": 20,     "tick_size": 0.01,    "tick_value": 0.2},
+}
+
+def calculate_realtime_profit(pos_type: int, symbol: str, volume: float, open_price: float, current_bid: float, current_ask: float) -> float:
+    """실시간 P/L 계산"""
+    specs = SYMBOL_SPECS.get(symbol, {"contract_size": 1, "tick_size": 0.01, "tick_value": 0.01})
+    contract_size = specs["contract_size"]
+    tick_size = specs["tick_size"]
+    tick_value = specs["tick_value"]
+
+    if pos_type == 0:  # BUY
+        price_diff = current_bid - open_price
+    else:  # SELL
+        price_diff = open_price - current_ask
+
+    # P/L = (price_diff / tick_size) * tick_value * volume
+    if tick_size > 0:
+        profit = (price_diff / tick_size) * tick_value * volume
+    else:
+        profit = price_diff * volume * contract_size
+
+    return round(profit, 2)
+
 def update_bridge_heartbeat():
     """브릿지 하트비트 파일에 현재 시간 기록"""
     import time as time_module
@@ -1981,22 +2014,42 @@ async def websocket_endpoint(websocket: WebSocket):
             # 포지션 정보 (MT5 직접 연결 또는 Bridge)
             positions_count = 0
             position_data = None
+            total_realtime_profit = 0  # ★★★ 실시간 총 P/L
+
             if user_cache and user_cache.get("positions"):
-                # ★★★ 유저 라이브 캐시에서 포지션 정보 사용 ★★★
+                # ★★★ 유저 라이브 캐시에서 포지션 정보 + 실시간 P/L 재계산 ★★★
                 cache_positions = user_cache["positions"]
                 positions_count = len(cache_positions)
                 for pos in cache_positions:
+                    pos_symbol = pos.get("symbol", "")
+                    pos_type = pos.get("type", 0)
+                    pos_volume = pos.get("volume", 0)
+                    pos_open = pos.get("price_open", 0)
+
+                    # ★ 현재 가격으로 P/L 재계산
+                    current_price_data = all_prices.get(pos_symbol, {})
+                    current_bid = current_price_data.get("bid", pos_open)
+                    current_ask = current_price_data.get("ask", pos_open)
+
+                    realtime_profit = calculate_realtime_profit(
+                        pos_type, pos_symbol, pos_volume, pos_open, current_bid, current_ask
+                    )
+                    total_realtime_profit += realtime_profit
+
                     if pos.get("magic") == 100001:
                         position_data = {
-                            "type": "BUY" if pos.get("type", 0) == 0 else "SELL",
-                            "symbol": pos.get("symbol", ""),
-                            "volume": pos.get("volume", 0),
-                            "entry": pos.get("price_open", 0),
-                            "profit": pos.get("profit", 0),
+                            "type": "BUY" if pos_type == 0 else "SELL",
+                            "symbol": pos_symbol,
+                            "volume": pos_volume,
+                            "entry": pos_open,
+                            "profit": realtime_profit,  # ★ 실시간 P/L
                             "ticket": pos.get("ticket", 0),
                             "magic": pos.get("magic", 0)
                         }
-                        break
+
+                # ★★★ equity = balance + 실시간 총 P/L ★★★
+                if user_cache.get("account_info"):
+                    equity = balance + total_realtime_profit
             elif mt5_connected:
                 positions = mt5.positions_get()
                 positions_count = len(positions) if positions else 0
