@@ -721,8 +721,9 @@ async def get_demo_account(
         }
 
     # ★★★ 데모 모드 - 기존 데모 계정 정보 반환 ★★★
+    demo_balance = current_user.demo_balance or 10000.0
     return {
-        "balance": current_user.demo_balance or 10000.0,
+        "balance": demo_balance,
         "equity": current_user.demo_equity or 10000.0,
         "today_profit": current_user.demo_today_profit or 0.0,
         "current_pl": round(current_pl, 2),
@@ -736,6 +737,7 @@ async def get_demo_account(
         "buysell_count": len(positions),
         "has_mt5": False,
         "margin": round(total_margin, 2),
+        "free_margin": round(demo_balance - total_margin, 2),
         "total_margin": round(total_margin, 2)
     }
 
