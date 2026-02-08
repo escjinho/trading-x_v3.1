@@ -242,7 +242,7 @@ DEFAULT_SYMBOL_SPECS = {
     "GBPUSD.r": {"tick_size": 0.00001, "tick_value": 1.0,   "contract_size": 100000, "margin_rate": 0.002},   # 1:500
     "AUDUSD.r": {"tick_size": 0.00001, "tick_value": 1.0,   "contract_size": 100000, "margin_rate": 0.002},   # 1:500
     "USDCAD.r": {"tick_size": 0.00001, "tick_value": 0.74,  "contract_size": 100000, "margin_rate": 0.002},   # 1:500
-    "US100.":   {"tick_size": 0.01,    "tick_value": 0.01,  "contract_size": 1,      "margin_rate": 0.005},   # 1:200
+    "US100.":   {"tick_size": 0.01,    "tick_value": 0.2,   "contract_size": 20,     "margin_rate": 0.00574}, # 1랏 $2502
 }
 
 def calculate_demo_margin(symbol: str, volume: float, price: float) -> float:
