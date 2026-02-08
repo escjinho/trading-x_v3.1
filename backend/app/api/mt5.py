@@ -2297,8 +2297,9 @@ async def websocket_endpoint(websocket: WebSocket):
                     indicators = IndicatorService.calculate_all_indicators("BTCUSD")
                     indicator_cache = indicators
                     indicator_last_update = current_time
-                except:
-                    pass
+                    # print(f"[WS] 인디케이터 업데이트: {indicators}")  # 디버그
+                except Exception as ind_err:
+                    print(f"[WS] 인디케이터 계산 오류: {ind_err}")
             buy_count = indicator_cache.get("buy", 33)
             sell_count = indicator_cache.get("sell", 33)
             neutral_count = indicator_cache.get("neutral", 34)
