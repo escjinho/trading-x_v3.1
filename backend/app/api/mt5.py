@@ -1567,7 +1567,35 @@ async def close_by_profit(
 # ========== 거래 내역 ==========
 @router.get("/history")
 async def get_history(current_user: User = Depends(get_current_user)):
-    """거래 내역 조회"""
+    """거래 내역 조회 - user_live_cache 또는 MT5 직접 연결"""
+    user_id = current_user.id
+
+    # ★ 먼저 user_live_cache에서 히스토리 확인
+    user_cache = user_live_cache.get(user_id)
+    if user_cache and user_cache.get("history"):
+        cached_history = user_cache.get("history", [])
+        # 캐시된 히스토리가 있으면 반환 (포맷 맞추기)
+        formatted_history = []
+        for h in cached_history:
+            trade_time = h.get("time", "")
+            if isinstance(trade_time, (int, float)):
+                from datetime import datetime
+                trade_time = datetime.fromtimestamp(trade_time).strftime("%m/%d %H:%M")
+            formatted_history.append({
+                "ticket": h.get("ticket", 0),
+                "time": trade_time,
+                "symbol": h.get("symbol", ""),
+                "type": "BUY" if h.get("type") == 0 else "SELL",
+                "volume": h.get("volume", 0),
+                "price": h.get("price", 0),
+                "profit": h.get("profit", 0),
+                "entry": h.get("price", 0),
+                "exit": h.get("price", 0)
+            })
+        print(f"[MT5 History] User {user_id}: {len(formatted_history)}개 (from cache)")
+        return {"history": formatted_history}
+
+    # ★ MT5 직접 연결 시도
     if not MT5_AVAILABLE:
         return {"history": []}
     if not mt5_initialize_safe():
