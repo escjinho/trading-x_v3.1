@@ -653,6 +653,42 @@ function connectWebSocket() {
             }
         }
 
+        // ★★★ SL/TP 청산 동기화 이벤트 처리 ★★★
+        if (data.sync_event && data.sync_event.type === 'sl_tp_closed') {
+            const profit = data.sync_event.profit || 0;
+            console.log('[WS Live] 🎯 SL/TP 청산 감지!', data.sync_event);
+
+            // 1. 사운드 재생
+            try {
+                playSound('close');
+            } catch (e) {
+                setTimeout(() => { try { playSound('close'); } catch(e2) {} }, 100);
+            }
+
+            // 2. 포지션 UI 숨기기 (메인 패널로 복귀)
+            if (typeof updatePositionUI === 'function') {
+                updatePositionUI(false, null);
+            }
+            window.lastLivePosition = null;
+
+            // 3. 토스트 알림
+            if (profit >= 0) {
+                showToast(`🎯 MT5 SL/TP 청산! +$${profit.toFixed(2)}`, 'success');
+            } else {
+                showToast(`💔 MT5 SL/TP 청산! $${profit.toFixed(2)}`, 'error');
+            }
+
+            // 4. Today P/L 업데이트
+            if (typeof updateTodayPL === 'function') {
+                updateTodayPL(profit);
+            }
+
+            // 5. 히스토리 새로고침
+            if (typeof loadHistory === 'function') {
+                loadHistory();
+            }
+        }
+
         // Martin state
         if (data.martin) {
             martinEnabled = data.martin.enabled;
