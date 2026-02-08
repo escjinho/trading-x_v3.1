@@ -593,9 +593,22 @@ def sync_thread_func(stop_event):
 
     while not stop_event.is_set():
         try:
+            # 0. 원래 계정 저장
+            original_account = None
+            original_server = None
+            try:
+                current_info = mt5.account_info()
+                if current_info:
+                    original_account = current_info.login
+                    original_server = current_info.server
+            except:
+                pass
+
             # 1. active_users 조회
+            print("[Sync] active_users 조회 중...")
             response = requests.get(f"{SERVER_URL}/api/mt5/bridge/active_users", timeout=5)
             if response.status_code != 200:
+                print(f"[Sync] active_users 조회 실패: {response.status_code}")
                 stop_event.wait(5)
                 continue
 
@@ -603,10 +616,11 @@ def sync_thread_func(stop_event):
             active_users = data.get("active_users", [])
 
             if not active_users:
+                print("[Sync] 캐시된 포지션 있는 유저 없음")
                 stop_event.wait(5)
                 continue
 
-            print(f"[Sync] 포지션 있는 유저 {len(active_users)}명 확인")
+            print(f"[Sync] 📋 포지션 있는 유저 {len(active_users)}명 확인")
 
             # 2. 각 유저 MT5 로그인 → 포지션 확인
             for user_info in active_users:
@@ -614,17 +628,21 @@ def sync_thread_func(stop_event):
                 mt5_account = user_info.get("mt5_account")
                 mt5_password = user_info.get("mt5_password")
                 mt5_server = user_info.get("mt5_server")
+                cached_positions = user_info.get("cached_positions", 0)
 
                 if not mt5_account or not mt5_password:
+                    print(f"[Sync] User {user_id}: 계정 정보 없음, 스킵")
                     continue
 
                 try:
-                    # MT5 로그인
+                    # a) MT5 로그인
+                    print(f"[Sync] User {user_id}: MT5 로그인 시도 ({mt5_account}@{mt5_server})")
                     if not mt5.login(int(mt5_account), password=mt5_password, server=mt5_server):
-                        print(f"[Sync] User {user_id} MT5 로그인 실패")
+                        print(f"[Sync] ❌ User {user_id}: MT5 로그인 실패")
                         continue
+                    print(f"[Sync] ✅ User {user_id}: MT5 로그인 성공")
 
-                    # 포지션 조회
+                    # b) 포지션 조회
                     positions = mt5.positions_get()
                     positions_data = []
                     if positions:
@@ -640,8 +658,9 @@ def sync_thread_func(stop_event):
                             }
                             for pos in positions
                         ]
+                    print(f"[Sync] User {user_id}: MT5 포지션 {len(positions_data)}개 (캐시: {cached_positions}개)")
 
-                    # 계정 정보
+                    # c) 계정 정보 조회
                     account_info = None
                     account = mt5.account_info()
                     if account:
@@ -651,10 +670,12 @@ def sync_thread_func(stop_event):
                             "margin": account.margin,
                             "free_margin": account.margin_free
                         }
+                        print(f"[Sync] User {user_id}: 잔고=${account.balance:.2f}, 순자산=${account.equity:.2f}")
 
-                    # 포지션 없으면 deal history 조회 (최근 1분)
+                    # d) 포지션 없으면 deal history 조회 (최근 1분)
                     deal_history = []
-                    if len(positions_data) == 0:
+                    if len(positions_data) == 0 and cached_positions > 0:
+                        print(f"[Sync] User {user_id}: MT5=0, 캐시={cached_positions} → SL/TP 청산 의심! Deal 조회...")
                         now = datetime.now()
                         deals = mt5.history_deals_get(now - timedelta(minutes=1), now)
                         if deals:
@@ -671,14 +692,16 @@ def sync_thread_func(stop_event):
                                         "price": deal.price,
                                         "time": deal.time
                                     })
+                            print(f"[Sync] User {user_id}: 최근 청산 {len(deal_history)}건 발견")
 
-                    # 3. sync_positions POST
+                    # e) sync_positions POST
                     sync_data = {
                         "user_id": user_id,
                         "positions": positions_data,
                         "account_info": account_info,
                         "deal_history": deal_history
                     }
+                    print(f"[Sync] User {user_id}: sync_positions POST 전송...")
                     sync_response = requests.post(
                         f"{SERVER_URL}/api/mt5/bridge/sync_positions",
                         json=sync_data,
@@ -687,14 +710,22 @@ def sync_thread_func(stop_event):
 
                     if sync_response.status_code == 200:
                         result = sync_response.json()
+                        print(f"[Sync] User {user_id}: 서버 응답 = {result.get('status')}")
                         if result.get("status") == "synced":
-                            print(f"[Sync] ✅ User {user_id} SL/TP 청산 동기화 완료! P/L: ${result.get('profit', 0):.2f}")
+                            print(f"[Sync] 🎯 User {user_id}: SL/TP 청산 동기화 완료! P/L: ${result.get('profit', 0):.2f}")
+                    else:
+                        print(f"[Sync] ❌ User {user_id}: sync_positions 실패 ({sync_response.status_code})")
 
                 except Exception as e:
-                    print(f"[Sync] User {user_id} 동기화 오류: {e}")
+                    print(f"[Sync] ❌ User {user_id}: 동기화 오류 - {e}")
 
-            # 4. 기본 계정 복구 (옵션 - 필요시)
-            # mt5.login(BASE_ACCOUNT, password=BASE_PASSWORD, server=BASE_SERVER)
+            # f) 기본 계정 복구
+            if original_account and original_server:
+                try:
+                    mt5.login(original_account, server=original_server)
+                    print(f"[Sync] 🔄 기본 계정 복구: {original_account}@{original_server}")
+                except:
+                    pass
 
         except Exception as e:
             print(f"[Sync Thread] 오류: {e}")

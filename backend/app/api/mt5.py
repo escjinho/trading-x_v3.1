@@ -921,6 +921,9 @@ async def sync_positions(data: dict = Body(...)):
 
     cached_positions = user_cache.get("positions", [])
 
+    # ★ 디버그 로그
+    print(f"[Sync] 수신: user_id={user_id}, mt5_positions={len(mt5_positions)}개, cached={len(cached_positions)}개")
+
     # MT5에 포지션 없고 캐시에 있으면 = SL/TP로 청산됨
     if len(mt5_positions) == 0 and len(cached_positions) > 0:
         # deal_history에서 P/L 계산
@@ -955,8 +958,13 @@ async def sync_positions(data: dict = Body(...)):
             "profit": round(total_profit, 2),
             "timestamp": time_module.time()
         }
+        print(f"[Sync] ✅ sync_event 저장: user_id={user_id}, profit=${total_profit:.2f}")
 
         return {"status": "synced", "event": "sl_tp_closed", "profit": total_profit}
+
+    # MT5에 포지션 있으면 정상
+    if len(mt5_positions) > 0:
+        print(f"[Sync] MT5 포지션 정상: user_id={user_id}, {len(mt5_positions)}개")
 
     # 포지션 수 동일하면 account_info만 업데이트
     if account_info:
