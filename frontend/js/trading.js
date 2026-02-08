@@ -390,14 +390,26 @@ async function closePosition() {
         closeDemoPosition();
         return;
     }
-    
+
     showToast('Closing...', '');
     try {
-        const result = await apiCall(`/mt5/close?symbol=${currentSymbol}&magic=${BUYSELL_MAGIC_NUMBER}`, 'POST');
-        
+        let result = await apiCall(`/mt5/close?symbol=${currentSymbol}&magic=${BUYSELL_MAGIC_NUMBER}`, 'POST');
+
+        // ★★★ Bridge 모드: 결과 폴링 ★★★
+        if (result?.bridge_mode && result?.order_id) {
+            showToast('Closing position...', '');
+            const pollResult = await pollOrderResult(result.order_id, 'CLOSE');
+            if (pollResult) {
+                result = pollResult;  // MT5 실제 결과로 교체
+            } else {
+                showToast('Close timeout - check positions', 'warning');
+                return;
+            }
+        }
+
         if (result?.success) {
             playSound('close');
-            const profit = result.profit || 0;
+            const profit = result.profit || 0;  // ★ MT5 실제 P/L 사용
             
             // 마틴 모드 처리
             if (currentMode === 'martin' && martinEnabled) {
