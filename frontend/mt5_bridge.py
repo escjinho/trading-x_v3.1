@@ -431,6 +431,34 @@ def execute_close(order_data: dict):
             result = mt5.order_send(request)
 
             if result and result.retcode == mt5.TRADE_RETCODE_DONE:
+                # ★★★ 청산 성공 후 실제 deal 히스토리에서 P/L 조회 ★★★
+                actual_profit = pos.profit  # 기본값
+                deal_history = None
+
+                try:
+                    from datetime import datetime, timedelta
+                    # 최근 1분간의 deal 히스토리 조회
+                    now = datetime.now()
+                    deals = mt5.history_deals_get(now - timedelta(minutes=1), now)
+                    if deals:
+                        # 해당 포지션 ticket과 관련된 deal 찾기
+                        for deal in reversed(deals):  # 최신 deal부터
+                            if deal.position_id == pos.ticket or deal.order == result.order:
+                                actual_profit = deal.profit
+                                deal_history = {
+                                    "ticket": deal.ticket,
+                                    "symbol": deal.symbol,
+                                    "type": deal.type,
+                                    "profit": deal.profit,
+                                    "volume": deal.volume,
+                                    "price": deal.price,
+                                    "time": deal.time
+                                }
+                                print(f"[Close] 실제 체결 P/L: ${actual_profit:.2f} (deal #{deal.ticket})")
+                                break
+                except Exception as e:
+                    print(f"[Close] Deal 히스토리 조회 실패: {e}")
+
                 # ★★★ 청산 성공 후 포지션/계정 정보 수집 ★★★
                 positions_data = []
                 remaining_positions = mt5.positions_get()
@@ -458,8 +486,9 @@ def execute_close(order_data: dict):
 
                 return {
                     "success": True,
-                    "message": f"청산 성공! P/L: ${pos.profit:,.2f}",
-                    "profit": pos.profit,
+                    "message": f"청산 성공! P/L: ${actual_profit:,.2f}",
+                    "profit": actual_profit,
+                    "deal_history": deal_history,
                     "positions": positions_data,
                     "account_info": account_data,
                     "user_id": order_data.get("user_id")

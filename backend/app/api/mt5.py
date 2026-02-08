@@ -843,12 +843,26 @@ async def submit_order_result(result: dict):
             # ★★★ user_live_cache에 유저별 데이터 저장 ★★★
             user_id = result.get("user_id")
             if user_id and ("positions" in result or "account_info" in result):
+                # 기존 캐시 가져오기 (히스토리 유지)
+                existing_cache = user_live_cache.get(user_id, {})
+                existing_history = existing_cache.get("history", [])
+                existing_today_pl = existing_cache.get("today_pl", 0)
+
+                # 청산 결과면 히스토리에 추가
+                deal_history = result.get("deal_history")
+                if deal_history:
+                    existing_history.append(deal_history)
+                    existing_today_pl += deal_history.get("profit", 0)
+                    print(f"[Bridge] 유저 {user_id} 거래 히스토리 추가: ${deal_history.get('profit', 0):.2f}")
+
                 user_live_cache[user_id] = {
                     "positions": result.get("positions", []),
                     "account_info": result.get("account_info"),
+                    "history": existing_history[-50:],  # 최근 50개만 유지
+                    "today_pl": round(existing_today_pl, 2),
                     "updated_at": time_module.time()
                 }
-                print(f"[Bridge] 유저 {user_id} 라이브 캐시 업데이트 (포지션: {len(result.get('positions', []))}개)")
+                print(f"[Bridge] 유저 {user_id} 라이브 캐시 업데이트 (포지션: {len(result.get('positions', []))}개, Today P/L: ${existing_today_pl:.2f})")
 
     return {"status": "ok"}
 
@@ -2178,6 +2192,13 @@ async def websocket_endpoint(websocket: WebSocket):
             # (브릿지 연결 여부와 무관하게 유저에게는 Connected로 표시)
             user_has_mt5 = user_mt5_account is not None
 
+            # ★★★ user_live_cache에서 히스토리/Today P/L 가져오기 ★★★
+            live_history = []
+            live_today_pl = 0
+            if user_cache:
+                live_history = user_cache.get("history", [])
+                live_today_pl = user_cache.get("today_pl", 0)
+
             data = {
                 "mt5_connected": user_has_mt5 or mt5_connected or bridge_connected,
                 "broker": broker,
@@ -2197,7 +2218,9 @@ async def websocket_endpoint(websocket: WebSocket):
                 "all_prices": all_prices,
                 "all_candles": all_candles,
                 "martin": martin_state,
-                "user_id": user_id  # ★ 디버깅용 유저 ID 추가
+                "user_id": user_id,
+                "history": live_history,  # ★ 거래 히스토리
+                "today_pl": live_today_pl  # ★ 오늘 P/L
             }
             
             await websocket.send_text(json.dumps(data))
