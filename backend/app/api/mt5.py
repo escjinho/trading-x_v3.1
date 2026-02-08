@@ -691,7 +691,116 @@ async def receive_bridge_batch(data: dict):
     except Exception as e:
         print(f"[Bridge Batch] 오류: {e}")
         return {"status": "error", "message": str(e)}
-    
+
+
+# ★★★ 유저별 동기화 이벤트 저장 (SL/TP 청산 감지용) ★★★
+# 반드시 {symbol} 와일드카드 라우트 앞에 정의!
+user_sync_events = {}
+
+
+@router.get("/bridge/active_users")
+async def get_active_users():
+    """포지션 있는 유저 목록 반환 (브릿지 동기화용)"""
+    active_users = []
+    for user_id, cache in user_live_cache.items():
+        positions = cache.get("positions", [])
+        if positions and len(positions) > 0:
+            # DB에서 유저의 MT5 계정 정보 조회
+            from app.database import SessionLocal
+            db = SessionLocal()
+            try:
+                user = db.query(User).filter(User.id == user_id).first()
+                if user and user.mt5_account_number:
+                    mt5_password = None
+                    if user.mt5_password_encrypted:
+                        try:
+                            mt5_password = decrypt(user.mt5_password_encrypted)
+                        except:
+                            pass
+                    active_users.append({
+                        "user_id": user_id,
+                        "mt5_account": user.mt5_account_number,
+                        "mt5_password": mt5_password,
+                        "mt5_server": user.mt5_server,
+                        "cached_positions": len(positions)
+                    })
+            finally:
+                db.close()
+    return {"active_users": active_users}
+
+
+@router.post("/bridge/sync_positions")
+async def sync_positions(data: dict = Body(...)):
+    """MT5 포지션과 캐시 동기화 (브릿지에서 호출)"""
+    import time as time_module
+
+    user_id = data.get("user_id")
+    mt5_positions = data.get("positions", [])
+    account_info = data.get("account_info")
+    deal_history = data.get("deal_history")
+
+    if not user_id:
+        return {"status": "error", "message": "user_id required"}
+
+    user_cache = user_live_cache.get(user_id)
+    if not user_cache:
+        return {"status": "skip", "message": "no cache for user"}
+
+    cached_positions = user_cache.get("positions", [])
+
+    # ★ 디버그 로그
+    print(f"[Sync] 수신: user_id={user_id}, mt5_positions={len(mt5_positions)}개, cached={len(cached_positions)}개")
+
+    # MT5에 포지션 없고 캐시에 있으면 = SL/TP로 청산됨
+    if len(mt5_positions) == 0 and len(cached_positions) > 0:
+        # deal_history에서 P/L 계산
+        total_profit = 0
+        if deal_history and len(deal_history) > 0:
+            for deal in deal_history:
+                total_profit += deal.get("profit", 0) + deal.get("commission", 0) + deal.get("swap", 0)
+
+        print(f"[Sync] 🎯 User {user_id}: SL/TP 청산 감지! 캐시 {len(cached_positions)}개 → MT5 0개, P/L: ${total_profit:.2f}")
+
+        # 캐시 업데이트 (포지션 제거)
+        existing_history = user_cache.get("history", [])
+        existing_today_pl = user_cache.get("today_pl", 0)
+
+        # deal_history 추가
+        if deal_history:
+            for deal in deal_history:
+                existing_history.append(deal)
+                existing_today_pl += deal.get("profit", 0) + deal.get("commission", 0) + deal.get("swap", 0)
+
+        user_live_cache[user_id] = {
+            "positions": [],
+            "account_info": account_info,
+            "history": existing_history[-50:],
+            "today_pl": round(existing_today_pl, 2),
+            "updated_at": time_module.time()
+        }
+
+        # 동기화 이벤트 저장 (WS에서 전송)
+        user_sync_events[user_id] = {
+            "type": "sl_tp_closed",
+            "profit": round(total_profit, 2),
+            "timestamp": time_module.time()
+        }
+        print(f"[Sync] ✅ sync_event 저장: user_id={user_id}, profit=${total_profit:.2f}")
+
+        return {"status": "synced", "event": "sl_tp_closed", "profit": total_profit}
+
+    # MT5에 포지션 있으면 정상
+    if len(mt5_positions) > 0:
+        print(f"[Sync] MT5 포지션 정상: user_id={user_id}, {len(mt5_positions)}개")
+
+    # 포지션 수 동일하면 account_info만 업데이트
+    if account_info:
+        user_live_cache[user_id]["account_info"] = account_info
+        user_live_cache[user_id]["updated_at"] = time_module.time()
+
+    return {"status": "ok"}
+
+
 @router.post("/bridge/{symbol}")
 async def receive_bridge_data(symbol: str, data: dict):
     """
@@ -863,113 +972,6 @@ async def submit_order_result(result: dict):
                     "updated_at": time_module.time()
                 }
                 print(f"[Bridge] 유저 {user_id} 라이브 캐시 업데이트 (포지션: {len(result.get('positions', []))}개, Today P/L: ${existing_today_pl:.2f})")
-
-    return {"status": "ok"}
-
-
-# ★★★ 유저별 동기화 이벤트 저장 (SL/TP 청산 감지용) ★★★
-user_sync_events = {}
-
-
-@router.get("/bridge/active_users")
-async def get_active_users():
-    """포지션 있는 유저 목록 반환 (브릿지 동기화용)"""
-    active_users = []
-    for user_id, cache in user_live_cache.items():
-        positions = cache.get("positions", [])
-        if positions and len(positions) > 0:
-            # DB에서 유저의 MT5 계정 정보 조회
-            from app.database import SessionLocal
-            db = SessionLocal()
-            try:
-                user = db.query(User).filter(User.id == user_id).first()
-                if user and user.mt5_account_number:
-                    mt5_password = None
-                    if user.mt5_password_encrypted:
-                        try:
-                            mt5_password = decrypt(user.mt5_password_encrypted)
-                        except:
-                            pass
-                    active_users.append({
-                        "user_id": user_id,
-                        "mt5_account": user.mt5_account_number,
-                        "mt5_password": mt5_password,
-                        "mt5_server": user.mt5_server,
-                        "cached_positions": len(positions)
-                    })
-            finally:
-                db.close()
-    return {"active_users": active_users}
-
-
-@router.post("/bridge/sync_positions")
-async def sync_positions(data: dict = Body(...)):
-    """MT5 포지션과 캐시 동기화 (브릿지에서 호출)"""
-    import time as time_module
-
-    user_id = data.get("user_id")
-    mt5_positions = data.get("positions", [])
-    account_info = data.get("account_info")
-    deal_history = data.get("deal_history")
-
-    if not user_id:
-        return {"status": "error", "message": "user_id required"}
-
-    user_cache = user_live_cache.get(user_id)
-    if not user_cache:
-        return {"status": "skip", "message": "no cache for user"}
-
-    cached_positions = user_cache.get("positions", [])
-
-    # ★ 디버그 로그
-    print(f"[Sync] 수신: user_id={user_id}, mt5_positions={len(mt5_positions)}개, cached={len(cached_positions)}개")
-
-    # MT5에 포지션 없고 캐시에 있으면 = SL/TP로 청산됨
-    if len(mt5_positions) == 0 and len(cached_positions) > 0:
-        # deal_history에서 P/L 계산
-        total_profit = 0
-        if deal_history and len(deal_history) > 0:
-            for deal in deal_history:
-                total_profit += deal.get("profit", 0) + deal.get("commission", 0) + deal.get("swap", 0)
-
-        print(f"[Sync] 🎯 User {user_id}: SL/TP 청산 감지! 캐시 {len(cached_positions)}개 → MT5 0개, P/L: ${total_profit:.2f}")
-
-        # 캐시 업데이트 (포지션 제거)
-        existing_history = user_cache.get("history", [])
-        existing_today_pl = user_cache.get("today_pl", 0)
-
-        # deal_history 추가
-        if deal_history:
-            for deal in deal_history:
-                existing_history.append(deal)
-                existing_today_pl += deal.get("profit", 0) + deal.get("commission", 0) + deal.get("swap", 0)
-
-        user_live_cache[user_id] = {
-            "positions": [],
-            "account_info": account_info,
-            "history": existing_history[-50:],
-            "today_pl": round(existing_today_pl, 2),
-            "updated_at": time_module.time()
-        }
-
-        # 동기화 이벤트 저장 (WS에서 전송)
-        user_sync_events[user_id] = {
-            "type": "sl_tp_closed",
-            "profit": round(total_profit, 2),
-            "timestamp": time_module.time()
-        }
-        print(f"[Sync] ✅ sync_event 저장: user_id={user_id}, profit=${total_profit:.2f}")
-
-        return {"status": "synced", "event": "sl_tp_closed", "profit": total_profit}
-
-    # MT5에 포지션 있으면 정상
-    if len(mt5_positions) > 0:
-        print(f"[Sync] MT5 포지션 정상: user_id={user_id}, {len(mt5_positions)}개")
-
-    # 포지션 수 동일하면 account_info만 업데이트
-    if account_info:
-        user_live_cache[user_id]["account_info"] = account_info
-        user_live_cache[user_id]["updated_at"] = time_module.time()
 
     return {"status": "ok"}
 
