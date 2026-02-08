@@ -556,16 +556,25 @@ function connectWebSocket() {
         // Account tab (null 체크 + HTML ID에 맞게 수정)
         const accBalance = document.getElementById('accBalance');
         const accEquity = document.getElementById('accEquity');
+        const accMargin = document.getElementById('accMargin');
         const accFree = document.getElementById('accFree');
         const accCurrentPL = document.getElementById('accCurrentPL');
-        
+
         if (accBalance) accBalance.textContent = '$' + data.balance.toLocaleString(undefined, {minimumFractionDigits: 2});
         if (accEquity) accEquity.textContent = '$' + data.equity.toLocaleString(undefined, {minimumFractionDigits: 2});
-        // 마진: MT5에서 직접 가져온 값 사용 (소수점 둘째자리, 깜빡임 방지)
-        if (accFree) {
+        // Used Margin (사용중인 마진)
+        if (accMargin) {
             const newMarginText = '$' + (data.margin || 0).toFixed(2);
-            if (accFree.textContent !== newMarginText) {
-                accFree.textContent = newMarginText;
+            if (accMargin.textContent !== newMarginText) {
+                accMargin.textContent = newMarginText;
+            }
+        }
+        // Free Margin (여유 마진 = Balance - Used Margin)
+        if (accFree) {
+            const freeMargin = (data.free_margin !== undefined) ? data.free_margin : ((data.balance || 0) - (data.margin || 0));
+            const newFreeText = '$' + Math.round(freeMargin).toLocaleString();
+            if (accFree.textContent !== newFreeText) {
+                accFree.textContent = newFreeText;
             }
         }
         // Current P&L 업데이트 (전체 포지션 손익 합계)
@@ -682,19 +691,28 @@ async function fetchAccountData() {
             
             const accBalance = document.getElementById('accBalance');
             const accEquity = document.getElementById('accEquity');
+            const accMargin = document.getElementById('accMargin');
             const accFree = document.getElementById('accFree');
             const accCurrentPL = document.getElementById('accCurrentPL');
-            
+
             if (accBalance) accBalance.textContent = '$' + (data.balance || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
             if (accEquity) accEquity.textContent = '$' + (data.equity || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
-            // 마진: 소수점 둘째자리 (WebSocket과 동일 형식)
-            if (accFree) {
+            // Used Margin (사용중인 마진)
+            if (accMargin) {
                 const newMarginText = '$' + (data.margin || 0).toFixed(2);
-                if (accFree.textContent !== newMarginText) {
-                    accFree.textContent = newMarginText;
+                if (accMargin.textContent !== newMarginText) {
+                    accMargin.textContent = newMarginText;
                 }
             }
-            
+            // Free Margin (여유 마진)
+            if (accFree) {
+                const freeMargin = (data.free_margin !== undefined) ? data.free_margin : ((data.balance || 0) - (data.margin || 0));
+                const newFreeText = '$' + Math.round(freeMargin).toLocaleString();
+                if (accFree.textContent !== newFreeText) {
+                    accFree.textContent = newFreeText;
+                }
+            }
+
             // Current P&L 업데이트 (전체 포지션 손익 합계)
             if (accCurrentPL) {
                 let currentProfit = 0;
@@ -1032,25 +1050,31 @@ async function fetchDemoData() {
             if (!wsActive) {
             const accBalance = document.getElementById('accBalance');
             const accEquity = document.getElementById('accEquity');
+            const accMargin = document.getElementById('accMargin');
             const accFree = document.getElementById('accFree');
             const accCurrentPL = document.getElementById('accCurrentPL');
 
             if (accBalance) accBalance.textContent = '$' + (data.balance || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
             if (accEquity) accEquity.textContent = '$' + (data.equity || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
-            
+
             // Demo 마진: 포지션에서 직접 합산
+            let totalMargin = 0;
+            if (data.position && data.position.margin) {
+                totalMargin = data.position.margin;
+            } else if (data.positions && data.positions.length > 0) {
+                data.positions.forEach(pos => {
+                    totalMargin += pos.margin || 0;
+                });
+            }
+
+            // Used Margin (사용중인 마진)
+            if (accMargin) {
+                accMargin.textContent = '$' + totalMargin.toFixed(2);
+            }
+            // Free Margin (여유 마진 = Balance - Used Margin)
             if (accFree) {
-                let totalMargin = 0;
-                
-                if (data.position && data.position.margin) {
-                    totalMargin = data.position.margin;
-                } else if (data.positions && data.positions.length > 0) {
-                    data.positions.forEach(pos => {
-                        totalMargin += pos.margin || 0;
-                    });
-                }
-                
-                accFree.textContent = '$' + totalMargin.toFixed(2);
+                const freeMargin = (data.balance || 0) - totalMargin;
+                accFree.textContent = '$' + Math.round(freeMargin).toLocaleString();
             }
             
             // Current P&L 업데이트 (현재 포지션 손익)
