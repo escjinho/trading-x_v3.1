@@ -207,17 +207,28 @@ def calculate_indicators_from_bridge(symbol: str = "BTCUSD") -> dict:
     }
 
 # ========== 심볼별 기본 스펙 (bridge_cache에 symbol_info 없을 때 사용) ==========
+# contract_size: 1랏 기준 계약 크기, margin_rate: 증거금률 (1/레버리지)
 DEFAULT_SYMBOL_SPECS = {
-    "BTCUSD":   {"tick_size": 0.01,    "tick_value": 0.01},
-    "ETHUSD":   {"tick_size": 0.01,    "tick_value": 0.01},
-    "XAUUSD.r": {"tick_size": 0.01,    "tick_value": 1.0},
-    "EURUSD.r": {"tick_size": 0.00001, "tick_value": 1.0},
-    "USDJPY.r": {"tick_size": 0.001,   "tick_value": 0.67},
-    "GBPUSD.r": {"tick_size": 0.00001, "tick_value": 1.0},
-    "AUDUSD.r": {"tick_size": 0.00001, "tick_value": 1.0},
-    "USDCAD.r": {"tick_size": 0.00001, "tick_value": 0.74},
-    "US100.":   {"tick_size": 0.01,    "tick_value": 0.01},
+    "BTCUSD":   {"tick_size": 0.01,    "tick_value": 0.01,  "contract_size": 1,      "margin_rate": 0.002},   # 1:500
+    "ETHUSD":   {"tick_size": 0.01,    "tick_value": 0.01,  "contract_size": 1,      "margin_rate": 0.002},   # 1:500
+    "XAUUSD.r": {"tick_size": 0.01,    "tick_value": 1.0,   "contract_size": 100,    "margin_rate": 0.002},   # 1:500
+    "EURUSD.r": {"tick_size": 0.00001, "tick_value": 1.0,   "contract_size": 100000, "margin_rate": 0.002},   # 1:500
+    "USDJPY.r": {"tick_size": 0.001,   "tick_value": 0.67,  "contract_size": 100000, "margin_rate": 0.002},   # 1:500
+    "GBPUSD.r": {"tick_size": 0.00001, "tick_value": 1.0,   "contract_size": 100000, "margin_rate": 0.002},   # 1:500
+    "AUDUSD.r": {"tick_size": 0.00001, "tick_value": 1.0,   "contract_size": 100000, "margin_rate": 0.002},   # 1:500
+    "USDCAD.r": {"tick_size": 0.00001, "tick_value": 0.74,  "contract_size": 100000, "margin_rate": 0.002},   # 1:500
+    "US100.":   {"tick_size": 0.01,    "tick_value": 0.01,  "contract_size": 1,      "margin_rate": 0.002},   # 1:500
 }
+
+def calculate_demo_margin(symbol: str, volume: float, price: float) -> float:
+    """데모 마진 계산 (MT5 없을 때 사용)"""
+    specs = DEFAULT_SYMBOL_SPECS.get(symbol, {"contract_size": 1, "margin_rate": 0.002})
+    contract_size = specs.get("contract_size", 1)
+    margin_rate = specs.get("margin_rate", 0.002)  # 1:500 = 0.002
+
+    # margin = volume * contract_size * price * margin_rate
+    margin = volume * contract_size * price * margin_rate
+    return round(margin, 2)
 
 def calculate_demo_profit(symbol: str, entry_price: float, trade_type: str, volume: float):
     """Bridge 가격 기반 데모 손익 계산. Returns: (current_price, profit)"""
@@ -656,10 +667,12 @@ async def get_demo_account(
             cur_px, cur_profit = calculate_demo_profit(
                 pos.symbol, pos.entry_price, pos.trade_type, pos.volume
             )
+            # 마진 계산 (MT5 없을 때)
+            cur_margin = calculate_demo_margin(pos.symbol, pos.volume, cur_px)
             pos_price_data = {
                 "profit": cur_profit,
                 "current": cur_px,
-                "margin": 0
+                "margin": cur_margin
             }
         
         total_margin += pos_price_data["margin"]
@@ -862,6 +875,8 @@ async def get_demo_positions(
             current_price, profit = calculate_demo_profit(
                 pos.symbol, pos.entry_price, pos.trade_type, pos.volume
             )
+            # 마진 계산 (MT5 없을 때)
+            margin = calculate_demo_margin(pos.symbol, pos.volume, current_price)
 
         margin = round(margin, 2)
         total_margin += margin
@@ -1796,6 +1811,8 @@ async def demo_websocket_endpoint(websocket: WebSocket):
             demo_position = None
             positions_data = []
             positions_count = 0
+            total_margin = 0.0
+            total_profit = 0.0
 
             # ★★★ 자동청산 정보 - 유저별로 일정 시간 유지 ★★★
             # _auto_closed_cache[user_id] = {"info": {...}, "until": timestamp}
@@ -1836,6 +1853,7 @@ async def demo_websocket_endpoint(websocket: WebSocket):
 
                             # 포지션들의 실시간 profit 계산 + 자동청산 체크
                             total_profit = 0.0
+                            total_margin = 0.0  # 총 사용 마진
                             auto_closed_info = None  # 자동청산 정보
 
                             for pos in positions:
@@ -1955,6 +1973,10 @@ async def demo_websocket_endpoint(websocket: WebSocket):
 
                                 total_profit += profit
 
+                                # 마진 계산
+                                pos_margin = calculate_demo_margin(pos.symbol, volume, current_px)
+                                total_margin += pos_margin
+
                                 # 포지션 데이터 추가
                                 pos_data = {
                                     "id": pos.id,
@@ -1965,7 +1987,8 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                                     "entry": entry,
                                     "current": current_px,
                                     "profit": profit,
-                                    "target": target
+                                    "target": target,
+                                    "margin": pos_margin
                                 }
                                 positions_data.append(pos_data)
 
@@ -1990,8 +2013,9 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                 "account": "DEMO",
                 "balance": demo_balance,
                 "equity": demo_equity,
-                "free_margin": demo_balance,
-                "margin": 0.0,
+                "free_margin": round(demo_balance - total_margin, 2),
+                "margin": round(total_margin, 2),
+                "current_pl": round(total_profit, 2),
                 "leverage": 500,
                 "positions_count": positions_count,
                 "buy_count": buy_count,

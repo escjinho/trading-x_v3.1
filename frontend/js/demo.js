@@ -269,8 +269,14 @@ async function fetchDemoData() {
 
             document.getElementById('accBalance').textContent = '$' + Math.round(data.balance || 0).toLocaleString();
             document.getElementById('accEquity').textContent = '$' + Math.round(data.equity || 0).toLocaleString();
-            document.getElementById('accMargin').textContent = '$0';
-            document.getElementById('accFree').textContent = '$' + Math.round(data.balance || 0).toLocaleString();
+            // Margin: 서버에서 받은 값 사용 (total_margin 또는 margin)
+            const margin = data.total_margin || data.margin || 0;
+            document.getElementById('accMargin').textContent = '$' + margin.toFixed(2);
+            // Free Margin = Balance - Margin
+            const freeMargin = (data.balance || 0) - margin;
+            document.getElementById('accFree').textContent = '$' + Math.round(freeMargin).toLocaleString();
+            // Leverage
+            document.getElementById('accLeverage').textContent = '1:' + (data.leverage || 500);
             
             // Position — 폴링에서는 UI 리셋하지 않음 (WS에서만 갱신)
             if (data.position) {

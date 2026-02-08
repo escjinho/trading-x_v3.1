@@ -288,7 +288,35 @@ function connectWebSocket() {
                 const accEquity = document.getElementById('accEquity');
                 if (accEquity) accEquity.textContent = '$' + data.equity.toLocaleString(undefined, {minimumFractionDigits: 2});
             }
-            
+
+            // ★ Demo Margin / Free Margin / Current P/L 업데이트
+            if (data.margin !== undefined) {
+                const accMargin = document.getElementById('accMargin');
+                if (accMargin) accMargin.textContent = '$' + (data.margin || 0).toFixed(2);
+                const accFree = document.getElementById('accFree');
+                const freeMargin = (data.balance || 0) - (data.margin || 0);
+                if (accFree) accFree.textContent = '$' + Math.round(freeMargin).toLocaleString();
+                const homeFreeMargin = document.getElementById('homeFreeMargin');
+                if (homeFreeMargin) homeFreeMargin.textContent = '$' + freeMargin.toLocaleString(undefined, {minimumFractionDigits: 2});
+            }
+            if (data.current_pl !== undefined) {
+                const accCurrentPL = document.getElementById('accCurrentPL');
+                if (accCurrentPL) {
+                    const pl = data.current_pl || 0;
+                    if (pl >= 0) {
+                        accCurrentPL.textContent = '+$' + pl.toFixed(2);
+                        accCurrentPL.style.color = 'var(--buy-color)';
+                    } else {
+                        accCurrentPL.textContent = '-$' + Math.abs(pl).toFixed(2);
+                        accCurrentPL.style.color = 'var(--sell-color)';
+                    }
+                }
+            }
+            if (data.leverage !== undefined) {
+                const accLeverage = document.getElementById('accLeverage');
+                if (accLeverage) accLeverage.textContent = '1:' + (data.leverage || 500);
+            }
+
             // ★★★ Demo WS 자동청산 처리 (중복 방지 강화) ★★★
             if (data.auto_closed) {
                 // closed_at이 없으면 현재 시간으로 대체
