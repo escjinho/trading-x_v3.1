@@ -1593,6 +1593,7 @@ async def get_history(current_user: User = Depends(get_current_user)):
                 "exit": h.get("price", 0)
             })
         print(f"[MT5 History] User {user_id}: {len(formatted_history)}개 (from cache)")
+        print(f"[MT5 History] Data: {formatted_history}")
         return {"history": formatted_history}
 
     # ★ MT5 직접 연결 시도
