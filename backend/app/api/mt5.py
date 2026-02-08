@@ -105,6 +105,12 @@ BRIDGE_HEARTBEAT_FILE = "/tmp/mt5_bridge_heartbeat"
 # ★★★ 유저별 라이브 데이터 캐시 (주문/청산 후 업데이트) ★★★
 user_live_cache = {}
 
+# ★★★ 유저별 타겟 금액 캐시 (자동청산용) ★★★
+user_target_cache = {}
+
+# ★★★ 자동청산 쿨다운 (중복 방지) ★★★
+auto_close_cooldown = {}
+
 # ★★★ 심볼별 스펙 (실시간 P/L 계산용) ★★★
 SYMBOL_SPECS = {
     "BTCUSD":   {"contract_size": 1,      "tick_size": 0.01,    "tick_value": 0.01},
@@ -967,6 +973,11 @@ async def place_order(
             "mt5_server": user_mt5_server
         }
         append_order(order_data)
+
+        # ★★★ 자동청산용 타겟 저장 ★★★
+        if target > 0:
+            user_target_cache[current_user.id] = target
+            print(f"[Bridge Order] 타겟 저장: User {current_user.id} = ${target}")
 
         print(f"[Bridge Order] 주문 대기열에 추가 (파일): {order_id} - {order_type} {symbol} {volume} (MT5: {user_mt5_account})")
 
@@ -2050,6 +2061,65 @@ async def websocket_endpoint(websocket: WebSocket):
                 # ★★★ equity = balance + 실시간 총 P/L ★★★
                 if user_cache.get("account_info"):
                     equity = balance + total_realtime_profit
+
+                # ★★★ 자동청산 체크 (타겟 도달 시) ★★★
+                target = user_target_cache.get(user_id, 0)
+                if target > 0 and positions_count > 0 and position_data:
+                    cooldown_key = f"{user_id}"
+                    current_ts = time_module.time()
+
+                    # 쿨다운 체크 (10초 내 중복 청산 방지)
+                    if cooldown_key not in auto_close_cooldown or current_ts - auto_close_cooldown.get(cooldown_key, 0) > 10:
+                        should_close = False
+                        is_win = False
+
+                        if total_realtime_profit >= target:  # WIN
+                            should_close = True
+                            is_win = True
+                            print(f"[LIVE WS] 🎯 AUTO CLOSE WIN! User {user_id}: ${total_realtime_profit:.2f} >= Target ${target}")
+                        elif total_realtime_profit <= -target * 0.98:  # LOSE (98%)
+                            should_close = True
+                            is_win = False
+                            print(f"[LIVE WS] 💔 AUTO CLOSE LOSE! User {user_id}: ${total_realtime_profit:.2f} <= -${target * 0.98:.2f}")
+
+                        if should_close:
+                            # 쿨다운 설정
+                            auto_close_cooldown[cooldown_key] = current_ts
+
+                            # 청산 주문 추가
+                            import uuid
+                            close_order_id = str(uuid.uuid4())[:8]
+                            close_order_data = {
+                                "order_id": close_order_id,
+                                "action": "close",
+                                "symbol": position_data["symbol"],
+                                "magic": 100001,
+                                "user_id": user_id,
+                                "timestamp": current_ts
+                            }
+
+                            # 유저의 MT5 계정 정보 추가
+                            if user_mt5_account:
+                                close_order_data["mt5_account"] = user_mt5_account
+                                close_order_data["mt5_server"] = user_mt5_server
+                                # 비밀번호는 DB에서 다시 가져와야 함
+                                try:
+                                    db = next(get_db())
+                                    user_obj = db.query(User).filter(User.id == user_id).first()
+                                    if user_obj and user_obj.mt5_password_encrypted:
+                                        from ..utils.crypto import decrypt
+                                        close_order_data["mt5_password"] = decrypt(user_obj.mt5_password_encrypted)
+                                    db.close()
+                                except Exception as e:
+                                    print(f"[LIVE WS] 자동청산 비밀번호 조회 실패: {e}")
+
+                            append_order(close_order_data)
+                            print(f"[LIVE WS] 자동청산 주문 추가: {close_order_id}")
+
+                            # 타겟 캐시 삭제 (청산 후)
+                            if user_id in user_target_cache:
+                                del user_target_cache[user_id]
+
             elif mt5_connected:
                 positions = mt5.positions_get()
                 positions_count = len(positions) if positions else 0
