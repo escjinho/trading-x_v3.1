@@ -212,84 +212,79 @@ def fetch_pending_orders():
 
 
 def execute_order(order_data: dict):
-    """MT5에서 주문 실행"""
+    """MT5에서 주문 실행 (사용자 계정 전환 지원)"""
     symbol = order_data.get("symbol", "BTCUSD")
     order_type = order_data.get("order_type", "BUY")
     volume = order_data.get("volume", 0.01)
     magic = order_data.get("magic", 100001)
 
-    tick = mt5.symbol_info_tick(symbol)
-    if not tick:
-        return {"success": False, "message": "가격 정보 없음"}
+    # ★★★ 사용자 MT5 계정 정보 ★★★
+    user_account = order_data.get("mt5_account")
+    user_password = order_data.get("mt5_password")
+    user_server = order_data.get("mt5_server")
 
-    if order_type == "BUY":
-        mt5_type = mt5.ORDER_TYPE_BUY
-        price = tick.ask
-    else:
-        mt5_type = mt5.ORDER_TYPE_SELL
-        price = tick.bid
+    # ★★★ 현재 계정 정보 저장 (복구용) ★★★
+    original_account = None
+    original_server = None
 
-    request = {
-        "action": mt5.TRADE_ACTION_DEAL,
-        "symbol": symbol,
-        "volume": volume,
-        "type": mt5_type,
-        "price": price,
-        "deviation": 20,
-        "magic": magic,
-        "comment": f"Trading-X {order_type}",
-        "type_time": mt5.ORDER_TIME_GTC,
-        "type_filling": mt5.ORDER_FILLING_IOC,
-    }
+    try:
+        current_info = mt5.account_info()
+        if current_info:
+            original_account = current_info.login
+            original_server = current_info.server
+    except Exception as e:
+        print(f"[Order] ⚠️ 현재 계정 정보 조회 실패: {e}")
 
-    result = mt5.order_send(request)
+    # ★★★ 사용자 계정으로 전환 ★★★
+    if user_account and user_password and user_server:
+        try:
+            account_int = int(user_account)
+            # 로그인 전 터미널 상태 확인
+            print(f"[Order] Terminal trade_allowed: {mt5.terminal_info().trade_allowed}")
+            print(f"[Order] 🔄 사용자 계정 전환: {account_int} @ {user_server}")
+            authorized = mt5.login(account_int, password=user_password, server=user_server)
+            if not authorized:
+                error = mt5.last_error()
+                print(f"[Order] ❌ 사용자 계정 로그인 실패: {error}")
+                return {"success": False, "message": f"MT5 로그인 실패: {error}"}
+            print(f"[Order] ✅ 사용자 계정 전환 성공: {account_int}")
 
-    if result and result.retcode == mt5.TRADE_RETCODE_DONE:
-        return {
-            "success": True,
-            "message": f"{order_type} 성공! {volume} lot @ {result.price:,.2f}",
-            "ticket": result.order,
-            "price": result.price
-        }
-    else:
-        error_code = result.retcode if result else "Unknown"
-        error_comment = result.comment if result else "No result"
-        return {
-            "success": False,
-            "message": f"주문 실패: {error_code} - {error_comment}"
-        }
+            # ★★★ AutoTrading 활성화 대기 ★★★
+            time.sleep(1)
+            if not mt5.terminal_info().trade_allowed:
+                print(f"[Order] ⏳ AutoTrading 활성화 대기 중...")
+                for i in range(10):  # 최대 5초 (0.5초 × 10)
+                    time.sleep(0.5)
+                    if mt5.terminal_info().trade_allowed:
+                        print(f"[Order] ✅ AutoTrading 활성화됨")
+                        break
+                else:
+                    print(f"[Order] ⚠️ AutoTrading이 비활성화 상태이지만 주문 시도...")
+        except Exception as e:
+            print(f"[Order] ❌ 계정 전환 오류: {e}")
+            return {"success": False, "message": f"계정 전환 오류: {e}"}
 
-
-def execute_close(order_data: dict):
-    """MT5에서 포지션 청산"""
-    symbol = order_data.get("symbol", "BTCUSD")
-    magic = order_data.get("magic")
-
-    positions = mt5.positions_get(symbol=symbol)
-    if not positions:
-        return {"success": False, "message": "열린 포지션 없음"}
-
-    for pos in positions:
-        if magic is not None and pos.magic != magic:
-            continue
-
+    try:
         tick = mt5.symbol_info_tick(symbol)
         if not tick:
-            continue
+            return {"success": False, "message": "가격 정보 없음"}
 
-        close_type = mt5.ORDER_TYPE_SELL if pos.type == 0 else mt5.ORDER_TYPE_BUY
-        close_price = tick.bid if pos.type == 0 else tick.ask
+        if order_type == "BUY":
+            mt5_type = mt5.ORDER_TYPE_BUY
+            price = tick.ask
+        else:
+            mt5_type = mt5.ORDER_TYPE_SELL
+            price = tick.bid
 
         request = {
             "action": mt5.TRADE_ACTION_DEAL,
             "symbol": symbol,
-            "volume": pos.volume,
-            "type": close_type,
-            "position": pos.ticket,
-            "price": close_price,
+            "volume": volume,
+            "type": mt5_type,
+            "price": price,
             "deviation": 20,
-            "magic": 123456,
-            "comment": "Trading-X CLOSE",
+            "magic": magic,
+            "comment": f"Trading-X {order_type}",
             "type_time": mt5.ORDER_TIME_GTC,
             "type_filling": mt5.ORDER_FILLING_IOC,
         }
@@ -299,11 +294,134 @@ def execute_close(order_data: dict):
         if result and result.retcode == mt5.TRADE_RETCODE_DONE:
             return {
                 "success": True,
-                "message": f"청산 성공! P/L: ${pos.profit:,.2f}",
-                "profit": pos.profit
+                "message": f"{order_type} 성공! {volume} lot @ {result.price:,.2f}",
+                "ticket": result.order,
+                "price": result.price
+            }
+        else:
+            error_code = result.retcode if result else "Unknown"
+            error_comment = result.comment if result else "No result"
+            return {
+                "success": False,
+                "message": f"주문 실패: {error_code} - {error_comment}"
+            }
+    finally:
+        # ★★★ 원래 계정으로 복구 ★★★
+        if user_account and original_account and original_server:
+            try:
+                print(f"[Order] 🔄 원래 계정 복구: {original_account} @ {original_server}")
+                restored = mt5.login(original_account, server=original_server)
+                if restored:
+                    print(f"[Order] ✅ 계정 복구 성공")
+                else:
+                    print(f"[Order] ⚠️ 계정 복구 실패 - 수동 재로그인 필요")
+            except Exception as e:
+                print(f"[Order] ⚠️ 계정 복구 오류: {e}")
+
+
+def execute_close(order_data: dict):
+    """MT5에서 포지션 청산 (사용자 계정 전환 지원)"""
+    symbol = order_data.get("symbol", "BTCUSD")
+    magic = order_data.get("magic")
+
+    # ★★★ 사용자 MT5 계정 정보 ★★★
+    user_account = order_data.get("mt5_account")
+    user_password = order_data.get("mt5_password")
+    user_server = order_data.get("mt5_server")
+
+    # ★★★ 현재 계정 정보 저장 (복구용) ★★★
+    original_account = None
+    original_server = None
+
+    try:
+        current_info = mt5.account_info()
+        if current_info:
+            original_account = current_info.login
+            original_server = current_info.server
+    except Exception as e:
+        print(f"[Close] ⚠️ 현재 계정 정보 조회 실패: {e}")
+
+    # ★★★ 사용자 계정으로 전환 ★★★
+    if user_account and user_password and user_server:
+        try:
+            account_int = int(user_account)
+            # 로그인 전 터미널 상태 확인
+            print(f"[Close] Terminal trade_allowed: {mt5.terminal_info().trade_allowed}")
+            print(f"[Close] 🔄 사용자 계정 전환: {account_int} @ {user_server}")
+            authorized = mt5.login(account_int, password=user_password, server=user_server)
+            if not authorized:
+                error = mt5.last_error()
+                print(f"[Close] ❌ 사용자 계정 로그인 실패: {error}")
+                return {"success": False, "message": f"MT5 로그인 실패: {error}"}
+            print(f"[Close] ✅ 사용자 계정 전환 성공: {account_int}")
+
+            # ★★★ AutoTrading 활성화 대기 ★★★
+            time.sleep(1)
+            if not mt5.terminal_info().trade_allowed:
+                print(f"[Close] ⏳ AutoTrading 활성화 대기 중...")
+                for i in range(10):  # 최대 5초 (0.5초 × 10)
+                    time.sleep(0.5)
+                    if mt5.terminal_info().trade_allowed:
+                        print(f"[Close] ✅ AutoTrading 활성화됨")
+                        break
+                else:
+                    print(f"[Close] ⚠️ AutoTrading이 비활성화 상태이지만 주문 시도...")
+        except Exception as e:
+            print(f"[Close] ❌ 계정 전환 오류: {e}")
+            return {"success": False, "message": f"계정 전환 오류: {e}"}
+
+    try:
+        positions = mt5.positions_get(symbol=symbol)
+        if not positions:
+            return {"success": False, "message": "열린 포지션 없음"}
+
+        for pos in positions:
+            if magic is not None and pos.magic != magic:
+                continue
+
+            tick = mt5.symbol_info_tick(symbol)
+            if not tick:
+                continue
+
+            close_type = mt5.ORDER_TYPE_SELL if pos.type == 0 else mt5.ORDER_TYPE_BUY
+            close_price = tick.bid if pos.type == 0 else tick.ask
+
+            request = {
+                "action": mt5.TRADE_ACTION_DEAL,
+                "symbol": symbol,
+                "volume": pos.volume,
+                "type": close_type,
+                "position": pos.ticket,
+                "price": close_price,
+                "deviation": 20,
+                "magic": 123456,
+                "comment": "Trading-X CLOSE",
+                "type_time": mt5.ORDER_TIME_GTC,
+                "type_filling": mt5.ORDER_FILLING_IOC,
             }
 
-    return {"success": False, "message": "청산 실패"}
+            result = mt5.order_send(request)
+
+            if result and result.retcode == mt5.TRADE_RETCODE_DONE:
+                return {
+                    "success": True,
+                    "message": f"청산 성공! P/L: ${pos.profit:,.2f}",
+                    "profit": pos.profit
+                }
+
+        return {"success": False, "message": "청산 실패"}
+    finally:
+        # ★★★ 원래 계정으로 복구 ★★★
+        if user_account and original_account and original_server:
+            try:
+                print(f"[Close] 🔄 원래 계정 복구: {original_account} @ {original_server}")
+                restored = mt5.login(original_account, server=original_server)
+                if restored:
+                    print(f"[Close] ✅ 계정 복구 성공")
+                else:
+                    print(f"[Close] ⚠️ 계정 복구 실패 - 수동 재로그인 필요")
+            except Exception as e:
+                print(f"[Close] ⚠️ 계정 복구 오류: {e}")
 
 
 def send_order_result(order_id: str, result: dict):
