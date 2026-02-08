@@ -17,8 +17,8 @@ document.addEventListener('visibilitychange', function() {
         isPageVisible = true;
         console.log('[Visibility] 포그라운드로 복귀');
 
-        // WS가 끊어져 있으면 재연결
-        if (!ws || ws.readyState !== WebSocket.OPEN) {
+        // WS가 끊어져 있으면 재연결 (CONNECTING 상태면 진행 중이므로 스킵)
+        if (!ws || (ws.readyState !== WebSocket.OPEN && ws.readyState !== WebSocket.CONNECTING)) {
             console.log('[Visibility] WS 재연결 필요');
             reconnectAttempt = 0;  // 재연결 카운터 리셋
             if (reconnectTimer) {
@@ -26,6 +26,8 @@ document.addEventListener('visibilitychange', function() {
                 reconnectTimer = null;
             }
             connectWebSocket();
+        } else {
+            console.log('[Visibility] WS 이미 연결됨 또는 연결 중');
         }
     }
 });
@@ -189,6 +191,14 @@ window.getReconnectStatus = function() {
 };
 
 function connectWebSocket() {
+    // ★ 기존 WS 정리 (중복 연결 방지)
+    if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+        console.log('[WS] 기존 연결 정리 중...');
+        ws.onclose = null;  // onclose 핸들러 제거 (재연결 트리거 방지)
+        ws.onerror = null;
+        ws.close();
+    }
+
     // Demo 모드와 Live 모드에 따라 다른 WebSocket URL 사용
     const wsPath = isDemo ? '/api/demo/ws' : '/api/mt5/ws';
     let wsUrl = typeof getWsUrl === 'function' ? getWsUrl(wsPath) : `ws://localhost:8000${wsPath}`;

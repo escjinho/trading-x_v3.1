@@ -2036,7 +2036,9 @@ async def demo_websocket_endpoint(websocket: WebSocket):
             await asyncio.sleep(0.2)  # ★ 0.2초 간격으로 실시간 업데이트 (손익 게이지 즉시 반영)
 
         except Exception as e:
-            print(f"[DEMO WS] Error: {e}")
+            error_type = type(e).__name__
+            error_msg = str(e) if str(e) else "No message"
+            print(f"[DEMO WS] Error ({error_type}): {error_msg}")
             import traceback
             traceback.print_exc()
             break
