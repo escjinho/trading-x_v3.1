@@ -4,6 +4,31 @@ let wsRetryCount = 0;
 const maxRetries = 5;
 let pollingInterval = null;  // ★ 폴링 인터벌 저장용
 let intentionalClose = false;  // ★ 의도적 종료 플래그 (재연결 방지)
+let isPageVisible = true;  // ★ 페이지 가시성 상태
+
+// ★★★ 페이지 가시성 변경 핸들러 (모바일 앱 전환 대응) ★★★
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+        // 백그라운드로 갔을 때 - WS 유지, 재연결 안 함
+        isPageVisible = false;
+        console.log('[Visibility] 백그라운드로 전환');
+    } else {
+        // 포그라운드로 돌아왔을 때
+        isPageVisible = true;
+        console.log('[Visibility] 포그라운드로 복귀');
+
+        // WS가 끊어져 있으면 재연결
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+            console.log('[Visibility] WS 재연결 필요');
+            reconnectAttempt = 0;  // 재연결 카운터 리셋
+            if (reconnectTimer) {
+                clearTimeout(reconnectTimer);
+                reconnectTimer = null;
+            }
+            connectWebSocket();
+        }
+    }
+});
 
 // ★★★ 시그널 게이지 + 인디케이터 1~3초 랜덤 업데이트 ★★★
 let _pendingIndicator = { buy: 33, sell: 33, neutral: 34 };
@@ -92,6 +117,12 @@ function reconnectWithBackoff() {
     // ★ 의도적 종료면 재연결 안 함
     if (intentionalClose) {
         console.log('[WS] Intentional close - skipping reconnect');
+        return;
+    }
+
+    // ★ 페이지가 백그라운드면 재연결 안 함 (포그라운드 복귀 시 재연결)
+    if (!isPageVisible) {
+        console.log('[WS] Page hidden - skipping reconnect');
         return;
     }
 
@@ -290,7 +321,7 @@ function connectWebSocket() {
             }
 
             // ★ Demo Margin / Free Margin / Current P/L 업데이트
-            if (data.margin !== undefined) {
+            if ('margin' in data) {
                 const accMargin = document.getElementById('accMargin');
                 if (accMargin) accMargin.textContent = '$' + (data.margin || 0).toFixed(2);
                 const accFree = document.getElementById('accFree');
@@ -299,7 +330,7 @@ function connectWebSocket() {
                 const homeFreeMargin = document.getElementById('homeFreeMargin');
                 if (homeFreeMargin) homeFreeMargin.textContent = '$' + freeMargin.toLocaleString(undefined, {minimumFractionDigits: 2});
             }
-            if (data.current_pl !== undefined) {
+            if ('current_pl' in data) {
                 const accCurrentPL = document.getElementById('accCurrentPL');
                 if (accCurrentPL) {
                     const pl = data.current_pl || 0;
@@ -312,7 +343,7 @@ function connectWebSocket() {
                     }
                 }
             }
-            if (data.leverage !== undefined) {
+            if ('leverage' in data) {
                 const accLeverage = document.getElementById('accLeverage');
                 if (accLeverage) accLeverage.textContent = '1:' + (data.leverage || 500);
             }

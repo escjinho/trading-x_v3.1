@@ -277,6 +277,21 @@ async function fetchDemoData() {
             document.getElementById('accFree').textContent = '$' + Math.round(freeMargin).toLocaleString();
             // Leverage
             document.getElementById('accLeverage').textContent = '1:' + (data.leverage || 500);
+            // Current P/L (폴링에서도 업데이트)
+            if ('current_pl' in data || data.position) {
+                const accCurrentPL = document.getElementById('accCurrentPL');
+                if (accCurrentPL) {
+                    // position이 있으면 position.profit 사용, 없으면 current_pl 사용
+                    const pl = data.position ? (data.position.profit || 0) : (data.current_pl || 0);
+                    if (pl >= 0) {
+                        accCurrentPL.textContent = '+$' + pl.toFixed(2);
+                        accCurrentPL.style.color = 'var(--buy-color)';
+                    } else {
+                        accCurrentPL.textContent = '-$' + Math.abs(pl).toFixed(2);
+                        accCurrentPL.style.color = 'var(--sell-color)';
+                    }
+                }
+            }
             
             // Position — 폴링에서는 UI 리셋하지 않음 (WS에서만 갱신)
             if (data.position) {
