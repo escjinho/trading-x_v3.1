@@ -49,10 +49,10 @@ document.querySelectorAll('.nav-item').forEach(item => {
                 }
             } else if (page === 'account') {
                 loadHistory();
-                // ★ Account 탭 진입 시 최신 데이터 갱신
-                if (typeof fetchDemoData === 'function' && isDemo) {
+                // ★ Account 탭 진입 시 최신 데이터 갱신 (WS 미연결 시에만)
+                if (typeof fetchDemoData === 'function' && isDemo && !window.wsConnected) {
                     fetchDemoData();
-                } else if (typeof fetchAccountData === 'function' && !isDemo) {
+                } else if (typeof fetchAccountData === 'function' && !isDemo && !window.wsConnected) {
                     fetchAccountData();
                 }
             }
