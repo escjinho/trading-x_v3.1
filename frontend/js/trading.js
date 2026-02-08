@@ -301,15 +301,36 @@ function calculateLot() {
     return Math.round(lot * 100) / 100;  // 0.01 단위로 반올림
 }
 
+// ★★★ Bridge 주문 결과 폴링 함수 ★★★
+async function pollOrderResult(orderId, orderType) {
+    const maxAttempts = 8;  // 2초 간격 × 8 = 최대 16초
+    for (let i = 0; i < maxAttempts; i++) {
+        await new Promise(r => setTimeout(r, 2000));
+        try {
+            const res = await apiCall(`/mt5/bridge/orders/result/${orderId}`, 'GET');
+            if (res && res.status !== 'pending') {
+                showToast(res.message || (res.success ? 'Order Success!' : 'Order Failed'), res.success ? 'success' : 'error');
+                if (res.success) {
+                    playSound(orderType.toLowerCase());
+                    if (typeof fetchDemoData === 'function') fetchDemoData();
+                }
+                return res;
+            }
+        } catch (e) { /* continue polling */ }
+    }
+    showToast('Order timeout - check positions', 'warning');
+    return null;
+}
+
 async function placeBuy() {
     if (!checkGuestAction('trade')) return;
-    
+
     // Demo 모드면 Demo API 사용
     if (isDemo) {
         placeDemoOrder('BUY');
         return;
     }
-    
+
     showToast('Processing...', '');
     try {
         let result;
@@ -319,6 +340,14 @@ async function placeBuy() {
             const lot = calculateLot();
             result = await apiCall(`/mt5/order?symbol=${currentSymbol}&order_type=BUY&volume=${lot}&target=${targetAmount}&magic=100001`, 'POST');
         }
+
+        // ★★★ Bridge 모드: 결과 폴링 ★★★
+        if (result?.bridge_mode && result?.order_id) {
+            showToast('Order sent to MT5...', '');
+            pollOrderResult(result.order_id, 'BUY');
+            return;
+        }
+
         showToast(result?.message || 'Error', result?.success ? 'success' : 'error');
         if (result?.success) playSound('buy');
     } catch (e) { showToast('Network error', 'error'); }
@@ -326,13 +355,13 @@ async function placeBuy() {
 
 async function placeSell() {
     if (!checkGuestAction('trade')) return;
-    
+
     // Demo 모드면 Demo API 사용
     if (isDemo) {
         placeDemoOrder('SELL');
         return;
     }
-    
+
     showToast('Processing...', '');
     try {
         let result;
@@ -342,6 +371,14 @@ async function placeSell() {
             const lot = calculateLot();
             result = await apiCall(`/mt5/order?symbol=${currentSymbol}&order_type=SELL&volume=${lot}&target=${targetAmount}&magic=100001`, 'POST');
         }
+
+        // ★★★ Bridge 모드: 결과 폴링 ★★★
+        if (result?.bridge_mode && result?.order_id) {
+            showToast('Order sent to MT5...', '');
+            pollOrderResult(result.order_id, 'SELL');
+            return;
+        }
+
         showToast(result?.message || 'Error', result?.success ? 'success' : 'error');
         if (result?.success) playSound('sell');
     } catch (e) { showToast('Network error', 'error'); }
