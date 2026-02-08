@@ -91,6 +91,12 @@ from .mt5 import get_bridge_prices, get_bridge_candles, bridge_cache
 # 이전 점수 저장 (스무딩용)
 _prev_signal_score = 50.0
 
+# ★ Synthetic 캔들 시가 캐시 (1분마다 갱신)
+_synthetic_candle_cache = {
+    "minute": 0,      # 현재 분 (unix timestamp // 60)
+    "open_prices": {} # {symbol: open_price}
+}
+
 def calculate_indicators_from_bridge(symbol: str = "BTCUSD") -> dict:
     """
     원칙 기반 시그널 게이지 (1분봉 캔들 기준):
@@ -115,12 +121,18 @@ def calculate_indicators_from_bridge(symbol: str = "BTCUSD") -> dict:
     - 20~40: Sell
     - 5~20: Strong Sell
     """
-    global _prev_signal_score
+    global _prev_signal_score, _synthetic_candle_cache
 
     # 현재 tick 가격 가져오기
     prices = get_bridge_prices()
     price_data = prices.get(symbol, {})
     current_tick = price_data.get("bid", 0)
+
+    # ★ Bridge에 가격이 없으면 외부 API 캐시 사용
+    if current_tick == 0:
+        ext_prices = price_cache.get("prices", {})
+        if symbol in ext_prices:
+            current_tick = ext_prices[symbol].get("bid", 0)
 
     # 1분봉 캔들 데이터 (M1 우선, 없으면 M5)
     candles = get_bridge_candles(symbol, "M1")
@@ -132,6 +144,19 @@ def calculate_indicators_from_bridge(symbol: str = "BTCUSD") -> dict:
     if candles and len(candles) >= 1:
         # 가장 최근 캔들의 open
         candle_open = candles[-1].get("open", 0)
+
+    # ★ 캔들이 없으면 synthetic 캔들 사용 (1분마다 시가 갱신)
+    if candle_open == 0 and current_tick > 0:
+        current_minute = int(time.time()) // 60
+        if _synthetic_candle_cache["minute"] != current_minute:
+            # 새로운 분 → 시가 갱신
+            _synthetic_candle_cache["minute"] = current_minute
+            _synthetic_candle_cache["open_prices"][symbol] = current_tick
+        elif symbol not in _synthetic_candle_cache["open_prices"]:
+            # 해당 심볼 시가가 없으면 현재가로 설정
+            _synthetic_candle_cache["open_prices"][symbol] = current_tick
+
+        candle_open = _synthetic_candle_cache["open_prices"].get(symbol, current_tick)
 
     # 변동폭 계산
     if current_tick > 0 and candle_open > 0:
