@@ -289,6 +289,25 @@ def execute_order(order_data: dict):
             "type_filling": mt5.ORDER_FILLING_IOC,
         }
 
+        # ★★★ SL/TP 설정 (tp_points, sl_points가 있을 때) ★★★
+        tp_points = order_data.get("tp_points", 0)
+        sl_points = order_data.get("sl_points", 0)
+        if tp_points > 0 or sl_points > 0:
+            symbol_info = mt5.symbol_info(symbol)
+            if symbol_info:
+                point = symbol_info.point
+                if order_type == "BUY":
+                    if sl_points > 0:
+                        request["sl"] = price - (sl_points * point)
+                    if tp_points > 0:
+                        request["tp"] = price + (tp_points * point)
+                else:  # SELL
+                    if sl_points > 0:
+                        request["sl"] = price + (sl_points * point)
+                    if tp_points > 0:
+                        request["tp"] = price - (tp_points * point)
+                print(f"[Order] SL/TP 설정: sl_points={sl_points}, tp_points={tp_points}, point={point}")
+
         result = mt5.order_send(request)
 
         if result and result.retcode == mt5.TRADE_RETCODE_DONE:
@@ -444,17 +463,21 @@ def execute_close(order_data: dict):
                         # 해당 포지션 ticket과 관련된 deal 찾기
                         for deal in reversed(deals):  # 최신 deal부터
                             if deal.position_id == pos.ticket or deal.order == result.order:
-                                actual_profit = deal.profit
+                                # ★ profit + commission + swap 합산
+                                actual_profit = deal.profit + deal.commission + deal.swap
                                 deal_history = {
                                     "ticket": deal.ticket,
                                     "symbol": deal.symbol,
                                     "type": deal.type,
-                                    "profit": deal.profit,
+                                    "profit": actual_profit,
+                                    "raw_profit": deal.profit,
+                                    "commission": deal.commission,
+                                    "swap": deal.swap,
                                     "volume": deal.volume,
                                     "price": deal.price,
                                     "time": deal.time
                                 }
-                                print(f"[Close] 실제 체결 P/L: ${actual_profit:.2f} (deal #{deal.ticket})")
+                                print(f"[Close] 실제 체결 P/L: ${actual_profit:.2f} (profit={deal.profit:.2f}, comm={deal.commission:.2f}, swap={deal.swap:.2f})")
                                 break
                 except Exception as e:
                     print(f"[Close] Deal 히스토리 조회 실패: {e}")

@@ -970,6 +970,16 @@ async def place_order(
                 except Exception as e:
                     print(f"[Bridge Order] ⚠️ 비밀번호 복호화 실패: {e}")
 
+        # ★★★ TP/SL points 계산 (target > 0일 때만) ★★★
+        tp_points = 0
+        sl_points = 0
+        if target > 0:
+            specs = SYMBOL_SPECS.get(symbol, {"tick_value": 0.01})
+            point_value = specs["tick_value"] if specs["tick_value"] > 0 else 1
+            tp_points = int(target / (volume * point_value)) if volume * point_value > 0 else 500
+            sl_points = tp_points
+            print(f"[Bridge Order] SL/TP 계산: target=${target}, volume={volume}, point_value={point_value} -> tp_points={tp_points}, sl_points={sl_points}")
+
         # 주문을 대기열에 추가
         order_data = {
             "order_id": order_id,
@@ -984,7 +994,10 @@ async def place_order(
             # ★ 사용자 MT5 계정 정보
             "mt5_account": user_mt5_account,
             "mt5_password": user_mt5_password,
-            "mt5_server": user_mt5_server
+            "mt5_server": user_mt5_server,
+            # ★ SL/TP points
+            "tp_points": tp_points,
+            "sl_points": sl_points
         }
         append_order(order_data)
 
