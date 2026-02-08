@@ -74,6 +74,7 @@ from ..models.user import User
 from ..utils.security import decode_token
 from ..services.indicator_service import IndicatorService
 from ..services.martin_service import martin_service
+from .demo import calculate_indicators_from_bridge  # ★ 라이브에서도 브릿지 기반 인디케이터 사용
 
 # ============================================================
 # MT5 비활성화 플래그 import
@@ -2290,20 +2291,16 @@ async def websocket_endpoint(websocket: WebSocket):
                         }
                         break
             
-            # 인디케이터 계산 (5초마다 캐시)
-            current_time = time_module.time()
-            if current_time - indicator_last_update > 5:
-                try:
-                    indicators = IndicatorService.calculate_all_indicators("BTCUSD")
-                    indicator_cache = indicators
-                    indicator_last_update = current_time
-                    # print(f"[WS] 인디케이터 업데이트: {indicators}")  # 디버그
-                except Exception as ind_err:
-                    print(f"[WS] 인디케이터 계산 오류: {ind_err}")
-            buy_count = indicator_cache.get("buy", 33)
-            sell_count = indicator_cache.get("sell", 33)
-            neutral_count = indicator_cache.get("neutral", 34)
-            base_score = indicator_cache.get("score", 50)
+            # ★ 인디케이터 계산 - 브릿지 캔들 기반 실시간 계산 (매 틱마다)
+            try:
+                indicators = calculate_indicators_from_bridge("BTCUSD")
+                buy_count = indicators.get("buy", 33)
+                sell_count = indicators.get("sell", 33)
+                neutral_count = indicators.get("neutral", 34)
+                base_score = indicators.get("score", 50)
+            except Exception as ind_err:
+                print(f"[WS] 인디케이터 계산 오류: {ind_err}")
+                buy_count, sell_count, neutral_count, base_score = 33, 33, 34, 50
             
             # 마틴 상태
             martin_state = martin_service.get_state()

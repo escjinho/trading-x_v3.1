@@ -1840,6 +1840,7 @@ async def demo_websocket_endpoint(websocket: WebSocket):
             # Demo 계정 정보 (DB에서 실제 데이터 가져오기)
             demo_balance = 10000.0
             demo_equity = 10000.0
+            demo_today_profit = 0.0  # ★ Today P/L 초기화
             demo_position = None
             positions_data = []
             positions_count = 0
@@ -1875,6 +1876,7 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                         if user:
                             demo_balance = user.demo_balance or 10000.0
                             demo_equity = user.demo_equity or 10000.0
+                            demo_today_profit = user.demo_today_profit or 0.0  # ★ Today P/L
 
                             # 열린 포지션들 조회 (다중 포지션)
                             positions = db.query(DemoPosition).filter(
@@ -2048,6 +2050,7 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                 "free_margin": round(demo_balance - total_margin, 2),
                 "margin": round(total_margin, 2),
                 "current_pl": round(total_profit, 2),
+                "today_pl": round(demo_today_profit, 2),  # ★ Today P/L 추가
                 "leverage": 500,
                 "positions_count": positions_count,
                 "buy_count": buy_count,
