@@ -38,9 +38,28 @@ def root():
 def health_check():
     return {"status": "healthy"}
 
+@app.on_event("startup")
+async def startup_event():
+    """서버 시작 시 MetaAPI 초기화"""
+    try:
+        from .api.metaapi_service import startup_metaapi
+        await startup_metaapi()
+        print("[Main] MetaAPI 초기화 완료")
+    except Exception as e:
+        print(f"[Main] MetaAPI 초기화 실패 (서버는 계속 실행): {e}")
+
 @app.on_event("shutdown")
-def shutdown_event():
-    """서버 종료 시 MT5 연결 해제"""
+async def shutdown_event():
+    """서버 종료 시 연결 해제"""
+    # MetaAPI 연결 종료
+    try:
+        from .api.metaapi_service import metaapi_service
+        await metaapi_service.disconnect()
+        print("[Main] MetaAPI 연결 종료")
+    except Exception as e:
+        print(f"[Main] MetaAPI 종료 오류: {e}")
+
+    # 기존 MT5 종료
     from .services.mt5_service import MT5Service
     MT5Service.shutdown()
 

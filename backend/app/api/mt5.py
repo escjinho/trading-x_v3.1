@@ -1998,8 +1998,15 @@ async def disconnect_mt5_account(
 # ========== WebSocket 실시간 데이터 ==========
 @router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    """실시간 데이터 WebSocket (Live 모드)"""
+    """실시간 데이터 WebSocket (Live 모드) - MetaAPI 버전"""
     await websocket.accept()
+
+    # ★★★ MetaAPI 실시간 데이터 import ★★★
+    from .metaapi_service import (
+        get_metaapi_prices, get_metaapi_candles, is_metaapi_connected,
+        get_metaapi_last_update, get_metaapi_indicators, get_realtime_data,
+        quote_price_cache, quote_last_update
+    )
 
     # ★ Query parameter에서 토큰으로 유저 식별
     token = websocket.query_params.get("token")
@@ -2041,34 +2048,51 @@ async def websocket_endpoint(websocket: WebSocket):
 
     symbols_list = ["BTCUSD", "EURUSD.r", "USDJPY.r", "XAUUSD.r", "US100.", "GBPUSD.r", "AUDUSD.r", "USDCAD.r", "ETHUSD"]
 
-    # 인디케이터 캐시
-    indicator_cache = {"buy": 33, "sell": 33, "neutral": 34, "score": 50}
-    indicator_last_update = 0
+    # ★★★ 마지막 전송 시간 추적 (실시간 전환용) ★★★
+    last_send_time = 0
+    last_data_timestamp = 0
 
     while True:
         try:
             import time as time_module
-            mt5_connected = mt5_initialize_safe()
-
-            # ★ 브릿지 연결 상태 확인 (개선)
-            last_update = bridge_cache.get("last_update", 0)
             current_time = time_module.time()
 
-            # last_update가 0이면 아직 브릿지 데이터 없음
-            # last_update가 있으면 30초 이내인지 확인
-            if last_update == 0:
-                bridge_connected = False
-                bridge_age = -1
-            else:
-                bridge_age = current_time - last_update
-                bridge_connected = bridge_age < 30  # 30초 이내 데이터 있으면 연결됨
-            
+            # ★★★ MetaAPI 실시간 데이터 (시세 + 캔들 + 인디케이터 동기화) ★★★
+            realtime_data = get_realtime_data()
+            all_prices = realtime_data["prices"]
+            all_candles = realtime_data["candles"]
+            indicators = realtime_data["indicators"]
+            data_timestamp = realtime_data["timestamp"]
+
+            # ★★★ 데이터 변경 시에만 전송 (또는 1초 경과) ★★★
+            should_send = (
+                data_timestamp != last_data_timestamp or
+                (current_time - last_send_time) >= 1.0
+            )
+
+            if not should_send:
+                await asyncio.sleep(0.1)  # 100ms 대기 후 재확인
+                continue
+
+            last_send_time = current_time
+            last_data_timestamp = data_timestamp
+
+            # MetaAPI 연결 상태
+            metaapi_connected = is_metaapi_connected()
+            mt5_connected = mt5_initialize_safe()
+            bridge_connected = metaapi_connected
+
+            # ★★★ 인디케이터 값 (동일 데이터에서 계산됨) ★★★
+            buy_count = indicators["buy"]
+            sell_count = indicators["sell"]
+            neutral_count = indicators["neutral"]
+            base_score = indicators["score"]
+
             # ★★★ 유저 라이브 캐시 확인 (주문/청산 직후 데이터) ★★★
             user_cache = user_live_cache.get(user_id) if user_id else None
 
-            # ★ 계정 정보: MT5 직접 또는 브릿지 캐시
+            # ★ 계정 정보
             if user_cache and user_cache.get("account_info"):
-                # ★★★ 유저 라이브 캐시에서 계정 정보 사용 ★★★
                 acc_info = user_cache["account_info"]
                 broker = "HedgeHood Pty Ltd"
                 login = user_mt5_account or 0
@@ -2088,105 +2112,18 @@ async def websocket_endpoint(websocket: WebSocket):
                 margin = account.margin if account else 0
                 free_margin = account.margin_free if account else 0
                 leverage = account.leverage if account else 0
-            elif bridge_connected and bridge_cache.get("account"):
-                # ★ 브릿지 캐시에서 가격/포지션용 정보 사용
-                acc = bridge_cache["account"]
-                broker = acc.get("broker", "HedgeHood Pty Ltd")
-                login = acc.get("login", 0)
-                server = acc.get("server", "N/A")
-                # ★★★ 잔고는 유저별 저장된 값만 사용 (브릿지 계정 노출 금지) ★★★
-                if user_mt5_balance is not None:
-                    balance = user_mt5_balance
-                    equity = user_mt5_equity or user_mt5_balance
-                    margin = user_mt5_margin or 0
-                    free_margin = user_mt5_free_margin or user_mt5_balance
-                    leverage = user_mt5_leverage or 500
-                else:
-                    # 유저 정보 없으면 0으로 표시 (브릿지 값 노출 금지)
-                    balance = 0
-                    equity = 0
-                    margin = 0
-                    free_margin = 0
-                    leverage = 500
             else:
                 broker = "HedgeHood Pty Ltd"
-                login = 0
+                login = user_mt5_account or 0
                 server = user_mt5_server or "HedgeHood-MT5"
-                # ★★★ 유저별 저장된 잔고만 사용 ★★★
+                # 유저별 저장된 잔고 사용
                 balance = user_mt5_balance or 0
                 equity = user_mt5_equity or user_mt5_balance or 0
                 margin = user_mt5_margin or 0
                 free_margin = user_mt5_free_margin or user_mt5_balance or 0
                 leverage = user_mt5_leverage or 500
-            
-            # ★ 가격 정보: MT5 직접 또는 브릿지 캐시
-            all_prices = {}
-            if mt5_connected:
-                for sym in symbols_list:
-                    tick = mt5.symbol_info_tick(sym)
-                    if tick:
-                        all_prices[sym] = {"bid": tick.bid, "ask": tick.ask}
-            else:
-                all_prices = get_bridge_prices()
-                
-                # 브릿지 캐시도 비어있으면 → Binance API fallback
-                if not all_prices:
-                    try:
-                        from .demo import fetch_external_prices
-                        all_prices = await fetch_external_prices()
-                        print("[LIVE WS] 📡 Using Binance API fallback for prices")
-                    except Exception as e:
-                        print(f"[LIVE WS] ⚠️ Binance fallback error: {e}")
-            
-            # ★ 캔들 정보: MT5 직접 또는 브릿지 캐시
-            all_candles = {}
-            if mt5_connected:
-                for sym in symbols_list:
-                    rates = mt5.copy_rates_from_pos(sym, mt5.TIMEFRAME_M1, 0, 1)
-                    if rates is not None and len(rates) > 0:
-                        r = rates[0]
-                        all_candles[sym] = {
-                            "time": int(r['time']),
-                            "open": float(r['open']),
-                            "high": float(r['high']),
-                            "low": float(r['low']),
-                            "close": float(r['close'])
-                        }
-            else:
-                # ★ 브릿지 캐시에서 각 심볼의 마지막 캔들 가져오기
-                # 실시간 가격으로 close 업데이트
-                for sym in symbols_list:
-                    cached = get_bridge_candles(sym, "M1")
-                    if cached and len(cached) > 0:
-                        last_candle = cached[-1]
-                        # 실시간 가격으로 close/high/low 업데이트
-                        current_price = all_prices.get(sym, {}).get("bid", last_candle.get("close", 0))
-                        candle_high = max(last_candle.get("high", 0), current_price)
-                        candle_low = min(last_candle.get("low", float('inf')), current_price) if last_candle.get("low", 0) > 0 else current_price
-                        all_candles[sym] = {
-                            "time": last_candle.get("time", 0),
-                            "open": last_candle.get("open", 0),
-                            "high": candle_high,
-                            "low": candle_low,
-                            "close": current_price  # ★ 실시간 가격으로 close 업데이트
-                        }
 
-                # 캔들도 비어있으면 → 가격으로 합성
-                if not all_candles and all_prices:
-                    current_ts = int(time_module.time())
-                    candle_time = current_ts - (current_ts % 60)
-                    for sym in symbols_list:
-                        if sym in all_prices:
-                            price = all_prices[sym].get("bid", 0)
-                            if price > 0:
-                                all_candles[sym] = {
-                                    "time": candle_time,
-                                    "open": price,
-                                    "high": price,
-                                    "low": price,
-                                    "close": price
-                                }
-                    print("[LIVE WS] 📡 Generated synthetic candles from prices")
+            # ★★★ 시세/캔들은 이미 realtime_data에서 가져옴 (위에서) ★★★
             
             # 포지션 정보 (MT5 직접 연결 또는 Bridge)
             positions_count = 0
@@ -2320,18 +2257,8 @@ async def websocket_endpoint(websocket: WebSocket):
                         }
                         break
             
-            # ★ 인디케이터 계산 - 브릿지 캔들 기반 실시간 계산 (매 틱마다)
-            try:
-                from .demo import calculate_indicators_from_bridge  # 지연 import (순환 참조 방지)
-                indicators = calculate_indicators_from_bridge("BTCUSD")
-                buy_count = indicators.get("buy", 33)
-                sell_count = indicators.get("sell", 33)
-                neutral_count = indicators.get("neutral", 34)
-                base_score = indicators.get("score", 50)
-            except Exception as ind_err:
-                print(f"[WS] 인디케이터 계산 오류: {ind_err}")
-                buy_count, sell_count, neutral_count, base_score = 33, 33, 34, 50
-            
+            # ★★★ 인디케이터는 이미 realtime_data에서 동기화 계산됨 (위에서) ★★★
+
             # 마틴 상태
             martin_state = martin_service.get_state()
             
@@ -2356,7 +2283,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 print(f"[WS] 📢 User {user_id} sync_event 전송: {sync_event}")
 
             data = {
-                "mt5_connected": user_has_mt5 or mt5_connected or bridge_connected,
+                "mt5_connected": user_has_mt5 or mt5_connected or metaapi_connected,  # ★ MetaAPI 상태
                 "broker": broker,
                 "account": display_account,  # ★ 유저 계정 우선
                 "server": server,
@@ -2381,7 +2308,8 @@ async def websocket_endpoint(websocket: WebSocket):
             }
             
             await websocket.send_text(json.dumps(data))
-            await asyncio.sleep(random.uniform(1.0, 3.0))  # ★ 0.5초마다 전송 (실시간 업데이트)
+            # ★★★ 실시간 전송: 0.5초 간격 (폴링 제거, 이벤트 기반으로 전환됨) ★★★
+            await asyncio.sleep(0.5)
 
         except WebSocketDisconnect:
             break

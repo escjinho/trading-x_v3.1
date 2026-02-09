@@ -295,9 +295,11 @@ function connectWebSocket() {
                 }
             }
             
-            // Signal score
+            // Signal score - ★★★ 모든 score 변수 동기화 ★★★
             if (data.base_score !== undefined) {
                 baseScore = data.base_score;
+                targetScore = data.base_score;
+                chartTargetScore = data.base_score;
             }
 
             // ★★★ 시그널 게이지 + 인디케이터 (1~3초 랜덤 간격 큐에 위임) ★★★
@@ -513,9 +515,11 @@ function connectWebSocket() {
         // Trade tab
         document.getElementById('tradeBalance').textContent = '$' + Math.round(data.balance).toLocaleString();
         
-        // Signal score
+        // Signal score - ★★★ 모든 score 변수 동기화 ★★★
         if (data.base_score !== undefined) {
             baseScore = data.base_score;
+            targetScore = data.base_score;
+            chartTargetScore = data.base_score;
         }
 
         // ★★★ 시그널 게이지 + 인디케이터 (1~3초 랜덤 간격 큐에 위임) ★★★

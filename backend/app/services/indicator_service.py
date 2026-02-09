@@ -1,16 +1,26 @@
 # app/services/indicator_service.py
 """
 기술적 지표 계산 서비스
-RSI, MACD, Bollinger Band, Stochastic 등 10개 인디케이터
+demo.py의 캔들 기반 로직으로 계산
 """
 
+import time
+import random
 from typing import Dict, List, Optional
-try:
-    import MetaTrader5 as mt5
-    MT5_AVAILABLE = True
-except ImportError:
-    mt5 = None
-    MT5_AVAILABLE = False
+
+# MetaAPI 캐시 참조 (lazy import)
+def _get_quote_caches():
+    from app.api.metaapi_service import quote_price_cache, quote_candle_cache
+    return quote_price_cache, quote_candle_cache
+
+# 이전 점수 저장 (스무딩용)
+_prev_signal_score = 50.0
+
+# Synthetic 캔들 시가 캐시 (1분마다 갱신)
+_synthetic_candle_cache = {
+    "minute": 0,
+    "open_prices": {}
+}
 
 
 class IndicatorService:
@@ -284,152 +294,105 @@ class IndicatorService:
     
     @staticmethod
     def calculate_all_indicators(symbol: str) -> Dict:
-        """10개 인디케이터 종합 계산"""
-        
-        rates = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_M5, 0, 200)
-        if rates is None or len(rates) < 50:
+        """
+        캔들 기반 시그널 게이지 (demo.py 로직)
+        - change_pct = (current_tick - candle_open) / candle_open * 100
+        - 스무딩: prev * 0.7 + new * 0.3
+        - Buy + Sell + Neutral = 100 보장
+        """
+        global _prev_signal_score, _synthetic_candle_cache
+
+        # MetaAPI 캐시에서 데이터 가져오기
+        try:
+            quote_price_cache, quote_candle_cache = _get_quote_caches()
+        except Exception:
             return {"buy": 33, "sell": 33, "neutral": 34, "score": 50}
-        
-        closes = [r['close'] for r in rates]
-        highs = [r['high'] for r in rates]
-        lows = [r['low'] for r in rates]
-        
-        buy_count = 0
-        sell_count = 0
-        neutral_count = 0
-        
-        # 1. RSI (7)
-        rsi = IndicatorService.calculate_rsi(closes, 7)
-        if rsi > 70:
-            sell_count += 1
-        elif rsi < 30:
-            buy_count += 1
+
+        # 현재 tick 가격
+        price_data = quote_price_cache.get(symbol, {})
+        current_tick = price_data.get("bid", 0)
+
+        if current_tick <= 0:
+            return {"buy": 33, "sell": 33, "neutral": 34, "score": 50}
+
+        # 1분봉 캔들 데이터
+        candles = quote_candle_cache.get(symbol, {}).get("M1", [])
+
+        candle_open = 0
+        if candles and len(candles) >= 1:
+            candle_open = candles[-1].get("open", 0)
+
+        # 캔들이 없으면 synthetic 캔들 사용
+        if candle_open == 0 and current_tick > 0:
+            current_minute = int(time.time()) // 60
+            if _synthetic_candle_cache["minute"] != current_minute:
+                _synthetic_candle_cache["minute"] = current_minute
+                _synthetic_candle_cache["open_prices"][symbol] = current_tick
+            elif symbol not in _synthetic_candle_cache["open_prices"]:
+                _synthetic_candle_cache["open_prices"][symbol] = current_tick
+
+            candle_open = _synthetic_candle_cache["open_prices"].get(symbol, current_tick)
+
+        # 변동폭 계산
+        if current_tick > 0 and candle_open > 0:
+            change_pct = (current_tick - candle_open) / candle_open * 100
         else:
-            neutral_count += 1
-        
-        # 2. MACD (6, 13, 5)
-        macd, signal = IndicatorService.calculate_macd(closes, 6, 13, 5)
-        if macd > signal:
-            buy_count += 1
-        elif macd < signal:
-            sell_count += 1
+            change_pct = 0
+
+        # ========== 점수 범위 결정 ==========
+        if change_pct >= 0.1:
+            score_min, score_max = 80, 95  # 강한 양봉
+        elif change_pct >= 0.03:
+            score_min, score_max = 65, 85  # 일반 양봉
+        elif change_pct > 0.01:
+            score_min, score_max = 50, 70  # 약한 양봉
+        elif change_pct <= -0.1:
+            score_min, score_max = 5, 20   # 강한 음봉
+        elif change_pct <= -0.03:
+            score_min, score_max = 15, 35  # 일반 음봉
+        elif change_pct < -0.01:
+            score_min, score_max = 30, 50  # 약한 음봉
         else:
-            neutral_count += 1
-        
-        # 3. Stochastic (7, 3)
-        k, d = IndicatorService.calculate_stochastic(closes, highs, lows, 7, 3)
-        if k > 80:
-            sell_count += 1
-        elif k < 20:
-            buy_count += 1
-        else:
-            neutral_count += 1
-        
-        # 4. CCI (9)
-        cci = IndicatorService.calculate_cci(closes, highs, lows, 9)
-        if cci > 100:
-            sell_count += 1
-        elif cci < -100:
-            buy_count += 1
-        else:
-            neutral_count += 1
-        
-        # 5. Williams %R (7)
-        willr = IndicatorService.calculate_williams_r(closes, highs, lows, 7)
-        if willr > -20:
-            sell_count += 1
-        elif willr < -80:
-            buy_count += 1
-        else:
-            neutral_count += 1
-        
-        # 6. ADX (7)
-        adx, plus_di, minus_di = IndicatorService.calculate_adx(closes, highs, lows, 7)
-        if adx > 20:
-            if plus_di > minus_di:
-                buy_count += 1
+            # 시가 부근 (Neutral)
+            if change_pct > 0:
+                score_min, score_max = 45, 60
+            elif change_pct < 0:
+                score_min, score_max = 40, 55
             else:
-                sell_count += 1
+                score_min, score_max = 45, 55
+
+        # 랜덤워크로 범위 내 왔다갔다
+        raw_score = random.uniform(score_min, score_max)
+
+        # 스무딩 (70% 이전값 + 30% 새값)
+        smoothed_score = _prev_signal_score * 0.7 + raw_score * 0.3
+        final_score = max(5, min(95, smoothed_score))
+        _prev_signal_score = final_score
+
+        # ========== buy/sell/neutral 계산 ==========
+        if final_score >= 70:
+            disp_buy = 55 + int((final_score - 70) * 1.5)
+            disp_sell = max(5, 20 - int((final_score - 70) * 0.5))
+        elif final_score >= 50:
+            disp_buy = 35 + int((final_score - 50) * 1.0)
+            disp_sell = 35 - int((final_score - 50) * 0.5)
+        elif final_score >= 30:
+            disp_sell = 35 + int((50 - final_score) * 1.0)
+            disp_buy = 35 - int((50 - final_score) * 0.5)
         else:
-            neutral_count += 1
-        
-        # 7. MA Cross (SMA 5 vs 10)
-        sma5 = sum(closes[-5:]) / 5 if len(closes) >= 5 else closes[-1]
-        sma10 = sum(closes[-10:]) / 10 if len(closes) >= 10 else closes[-1]
-        if sma5 > sma10:
-            buy_count += 1
-        elif sma5 < sma10:
-            sell_count += 1
-        else:
-            neutral_count += 1
-        
-        # 8. Bollinger Band Position (10)
-        upper, middle, lower = IndicatorService.calculate_bollinger(closes, 10, 2)
-        current_price = closes[-1]
-        if current_price > upper:
-            sell_count += 1
-        elif current_price < lower:
-            buy_count += 1
-        else:
-            neutral_count += 1
-        
-        # 9. EMA Cross (3 vs 8)
-        ema3 = IndicatorService.calculate_ema(closes, 3)
-        ema8 = IndicatorService.calculate_ema(closes, 8)
-        if ema3 > ema8:
-            buy_count += 1
-        elif ema3 < ema8:
-            sell_count += 1
-        else:
-            neutral_count += 1
-        
-        # 10. Momentum (5)
-        if len(closes) >= 6:
-            mom_now = closes[-1] - closes[-6]
-            mom_prev = closes[-2] - closes[-7] if len(closes) >= 7 else mom_now
-            if mom_now > mom_prev:
-                buy_count += 1
-            elif mom_now < mom_prev:
-                sell_count += 1
-            else:
-                neutral_count += 1
-        else:
-            neutral_count += 1
-        
-        # 가중치 적용
-        total = buy_count + sell_count + neutral_count
-        if total > 0:
-            indicator_score = (buy_count / total) * 100
-        else:
-            indicator_score = 50.0
-        
-        # 캔들 점수
-        current_candle = IndicatorService.calculate_current_candle_score(symbol)
-        past_candle = IndicatorService.calculate_past_candle_score(symbol)
-        
-        # 최종 점수
-        base_score = current_candle * 0.5 + past_candle * 0.2 + indicator_score * 0.3
-        base_score = max(5, min(95, base_score))
-        
-        # 100개 환산
-        if base_score >= 50:
-            ratio = (base_score - 50) / 50.0
-            disp_buy = 25 + int(ratio * 55)
-            disp_sell = 25 - int(ratio * 20)
-        else:
-            ratio = (50 - base_score) / 50.0
-            disp_sell = 25 + int(ratio * 55)
-            disp_buy = 25 - int(ratio * 20)
-        
+            disp_sell = 55 + int((30 - final_score) * 1.5)
+            disp_buy = max(5, 20 - int((30 - final_score) * 0.5))
+
         disp_buy = max(5, min(80, disp_buy))
         disp_sell = max(5, min(80, disp_sell))
+        # ★★★ Buy + Sell + Neutral = 100 보장 ★★★
         disp_neutral = 100 - disp_buy - disp_sell
-        
+
         return {
             "buy": disp_buy,
             "sell": disp_sell,
             "neutral": disp_neutral,
-            "score": base_score
+            "score": final_score
         }
     
     @staticmethod

@@ -45,17 +45,14 @@ const GaugePanel = {
 
     /**
      * 외부에서 인디케이터 데이터로 게이지 점수 업데이트
+     * ★★★ 백엔드 base_score를 그대로 사용 (connection.js에서 설정) ★★★
+     * - 프론트엔드에서 재계산하지 않음
+     * - connection.js에서 baseScore, targetScore, chartTargetScore 설정됨
      */
     updateGauge(buyCount, sellCount, neutralCount) {
-        if (buyCount !== undefined && sellCount !== undefined) {
-            const total = buyCount + sellCount + (neutralCount || 0);
-            if (total > 0) {
-                const score = (buyCount / total) * 100;
-                baseScore = score;
-                targetScore = score;
-                chartTargetScore = score;
-            }
-        }
+        // 백엔드에서 계산된 base_score를 connection.js에서 직접 설정하므로
+        // 여기서는 별도의 계산 없이 패스 (호환성 유지를 위해 함수는 유지)
+        // baseScore, targetScore, chartTargetScore는 connection.js에서 관리됨
     },
 
     /**
