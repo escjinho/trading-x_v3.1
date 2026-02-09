@@ -42,6 +42,36 @@ last_tick_time: Dict[str, float] = {}  # 마지막 틱 시간 (랜덤워크 리�
 ws_broadcast_queue: List[Dict] = []
 ws_clients: List = []  # WebSocket 클라이언트 목록
 
+# ★★★ MetaAPI 실시간 동기화 캐시 ★★★
+metaapi_positions_cache: List[Dict] = []  # 실시간 포지션 목록
+metaapi_account_cache: Dict[str, Any] = {}  # 계정 정보 (balance, equity, margin 등)
+metaapi_closed_events: List[Dict] = []  # 청산 이벤트 큐 (프론트에 알림용)
+
+
+def add_closed_event(position_id: str, symbol: str, profit: float, reason: str = 'closed'):
+    """청산 이벤트 추가 (중복 방지)"""
+    global metaapi_closed_events
+
+    # 중복 체크: 같은 position_id가 이미 있으면 스킵
+    for event in metaapi_closed_events:
+        if event.get('position_id') == position_id:
+            return False
+
+    closed_event = {
+        'position_id': position_id,
+        'symbol': symbol,
+        'profit': profit,
+        'reason': reason,
+        'timestamp': time.time()
+    }
+    metaapi_closed_events.append(closed_event)
+
+    # 최근 100개만 유지
+    if len(metaapi_closed_events) > 100:
+        metaapi_closed_events.pop(0)
+
+    return True
+
 
 # ============================================================
 # 설정
@@ -338,19 +368,102 @@ class QuotePriceListener:
         status = "연결됨" if connected else "연결 끊김"
         print(f"[MetaAPI Quote] 브로커 상태: {status}")
 
-    # 필수 리스너 메서드들 (빈 구현)
+    # 필수 리스너 메서드들
     async def on_synchronization_started(self, instance_index, specifications_hash, positions_hash, orders_hash, synchronization_id):
         pass
+
     async def on_account_information_updated(self, instance_index, account_information):
-        pass
+        """계정 정보 업데이트 (balance, equity, margin 등)"""
+        global metaapi_account_cache
+        metaapi_account_cache = {
+            'balance': account_information.get('balance', 0),
+            'equity': account_information.get('equity', 0),
+            'margin': account_information.get('margin', 0),
+            'freeMargin': account_information.get('freeMargin', 0),
+            'profit': account_information.get('profit', 0),
+            'leverage': account_information.get('leverage', 0),
+            'currency': account_information.get('currency', 'USD'),
+            'updated_at': time.time()
+        }
+        print(f"[MetaAPI Listener] 📊 계정 업데이트: balance=${metaapi_account_cache['balance']:.2f}, equity=${metaapi_account_cache['equity']:.2f}, profit=${metaapi_account_cache['profit']:.2f}")
+
     async def on_positions_replaced(self, instance_index, positions):
-        pass
+        """전체 포지션 교체 (초기 동기화 시)"""
+        global metaapi_positions_cache
+        metaapi_positions_cache = []
+        for pos in positions:
+            metaapi_positions_cache.append({
+                'id': pos.get('id'),
+                'symbol': pos.get('symbol'),
+                'type': pos.get('type'),  # 'POSITION_TYPE_BUY' or 'POSITION_TYPE_SELL'
+                'volume': pos.get('volume', 0),
+                'openPrice': pos.get('openPrice', 0),
+                'currentPrice': pos.get('currentPrice', 0),
+                'profit': pos.get('profit', 0),
+                'stopLoss': pos.get('stopLoss', 0),
+                'takeProfit': pos.get('takeProfit', 0),
+                'magic': pos.get('magic', 0),
+                'comment': pos.get('comment', ''),
+                'time': pos.get('time')
+            })
+        print(f"[MetaAPI Listener] 🔄 포지션 전체 교체: {len(metaapi_positions_cache)}개")
+        for pos in metaapi_positions_cache:
+            print(f"    - {pos['symbol']} {pos['type']} {pos['volume']} lot, P/L: ${pos['profit']:.2f}")
+
     async def on_positions_synchronized(self, instance_index, synchronization_id):
         pass
+
     async def on_position_updated(self, instance_index, position):
-        pass
+        """포지션 업데이트 (신규 또는 기존 포지션 변경)"""
+        global metaapi_positions_cache
+        pos_id = position.get('id')
+        pos_data = {
+            'id': pos_id,
+            'symbol': position.get('symbol'),
+            'type': position.get('type'),
+            'volume': position.get('volume', 0),
+            'openPrice': position.get('openPrice', 0),
+            'currentPrice': position.get('currentPrice', 0),
+            'profit': position.get('profit', 0),
+            'stopLoss': position.get('stopLoss', 0),
+            'takeProfit': position.get('takeProfit', 0),
+            'magic': position.get('magic', 0),
+            'comment': position.get('comment', ''),
+            'time': position.get('time')
+        }
+
+        # 기존 포지션 찾아서 업데이트
+        found = False
+        for i, existing in enumerate(metaapi_positions_cache):
+            if existing.get('id') == pos_id:
+                metaapi_positions_cache[i] = pos_data
+                found = True
+                break
+
+        if not found:
+            # 새 포지션 추가
+            metaapi_positions_cache.append(pos_data)
+            print(f"[MetaAPI Listener] ➕ 포지션 추가: {pos_data['symbol']} {pos_data['type']} {pos_data['volume']} lot @ {pos_data['openPrice']}")
+        else:
+            print(f"[MetaAPI Listener] 📝 포지션 업데이트: {pos_data['symbol']} P/L: ${pos_data['profit']:.2f} SL={pos_data['stopLoss']} TP={pos_data['takeProfit']}")
+
     async def on_position_removed(self, instance_index, position_id):
-        pass
+        """포지션 제거 (청산됨)"""
+        global metaapi_positions_cache, metaapi_closed_events
+
+        # 캐시에서 해당 포지션 찾기
+        removed_pos = None
+        for i, pos in enumerate(metaapi_positions_cache):
+            if pos.get('id') == position_id:
+                removed_pos = metaapi_positions_cache.pop(i)
+                break
+
+        if removed_pos:
+            # 청산 이벤트 추가 (중복 방지)
+            if add_closed_event(position_id, removed_pos.get('symbol'), removed_pos.get('profit', 0)):
+                print(f"[MetaAPI Listener] ❌ 포지션 종료: {removed_pos['symbol']} {removed_pos['type']} {removed_pos['volume']} lot, P/L: ${removed_pos['profit']:.2f}")
+        else:
+            print(f"[MetaAPI Listener] ❌ 포지션 종료: id={position_id} (캐시에 없음, 중복?)")
     async def on_pending_orders_replaced(self, instance_index, orders):
         pass
     async def on_pending_orders_synchronized(self, instance_index, synchronization_id):
@@ -366,7 +479,11 @@ class QuotePriceListener:
     async def on_history_order_added(self, instance_index, history_order):
         pass
     async def on_deal_added(self, instance_index, deal):
-        pass
+        """거래 추가 (청산 거래 감지)"""
+        # DEAL_ENTRY_OUT = 청산 거래
+        if deal.get('entryType') == 'DEAL_ENTRY_OUT':
+            if add_closed_event(deal.get('positionId'), deal.get('symbol'), deal.get('profit', 0)):
+                print(f"[MetaAPI Listener] 💰 포지션 종료 (Deal): {deal.get('symbol')} P/L: ${deal.get('profit', 0):.2f}")
     async def on_deal_synchronization_finished(self, instance_index, synchronization_id):
         pass
     async def on_order_synchronization_finished(self, instance_index, synchronization_id):
@@ -382,6 +499,189 @@ class QuotePriceListener:
 
 
 # ============================================================
+# Trade 계정 동기화 리스너 (포지션/계정 업데이트 수신)
+# ============================================================
+class TradeSyncListener:
+    """Trade 계정 실시간 동기화 리스너"""
+
+    async def on_connected(self, instance_index, replicas):
+        print(f"[MetaAPI Trade] 🟢 연결됨 (instance: {instance_index})")
+
+    async def on_disconnected(self, instance_index):
+        print(f"[MetaAPI Trade] 🔴 연결 해제됨")
+
+    async def on_account_information_updated(self, instance_index, account_information):
+        """계정 정보 업데이트"""
+        global metaapi_account_cache
+        metaapi_account_cache = {
+            'balance': account_information.get('balance', 0),
+            'equity': account_information.get('equity', 0),
+            'margin': account_information.get('margin', 0),
+            'freeMargin': account_information.get('freeMargin', 0),
+            'profit': account_information.get('profit', 0),
+            'leverage': account_information.get('leverage', 0),
+            'currency': account_information.get('currency', 'USD'),
+            'updated_at': time.time()
+        }
+        print(f"[MetaAPI Trade] 📊 계정: balance=${metaapi_account_cache['balance']:.2f}, equity=${metaapi_account_cache['equity']:.2f}, P/L=${metaapi_account_cache['profit']:.2f}")
+
+    async def on_positions_replaced(self, instance_index, positions):
+        """전체 포지션 교체"""
+        global metaapi_positions_cache
+        metaapi_positions_cache = []
+        for pos in positions:
+            metaapi_positions_cache.append({
+                'id': pos.get('id'),
+                'symbol': pos.get('symbol'),
+                'type': pos.get('type'),
+                'volume': pos.get('volume', 0),
+                'openPrice': pos.get('openPrice', 0),
+                'currentPrice': pos.get('currentPrice', 0),
+                'profit': pos.get('profit', 0),
+                'stopLoss': pos.get('stopLoss', 0),
+                'takeProfit': pos.get('takeProfit', 0),
+                'magic': pos.get('magic', 0),
+                'comment': pos.get('comment', ''),
+                'time': pos.get('time')
+            })
+        print(f"[MetaAPI Trade] 🔄 포지션 동기화: {len(metaapi_positions_cache)}개")
+
+    async def on_position_updated(self, instance_index, position):
+        """포지션 업데이트/추가"""
+        global metaapi_positions_cache
+        pos_id = position.get('id')
+        pos_data = {
+            'id': pos_id,
+            'symbol': position.get('symbol'),
+            'type': position.get('type'),
+            'volume': position.get('volume', 0),
+            'openPrice': position.get('openPrice', 0),
+            'currentPrice': position.get('currentPrice', 0),
+            'profit': position.get('profit', 0),
+            'stopLoss': position.get('stopLoss', 0),
+            'takeProfit': position.get('takeProfit', 0),
+            'magic': position.get('magic', 0),
+            'comment': position.get('comment', ''),
+            'time': position.get('time')
+        }
+
+        found = False
+        for i, existing in enumerate(metaapi_positions_cache):
+            if existing.get('id') == pos_id:
+                metaapi_positions_cache[i] = pos_data
+                found = True
+                break
+
+        if not found:
+            metaapi_positions_cache.append(pos_data)
+            print(f"[MetaAPI Trade] ➕ 새 포지션: {pos_data['symbol']} {pos_data['type']} {pos_data['volume']} lot")
+        else:
+            print(f"[MetaAPI Trade] 📝 포지션 업데이트: {pos_data['symbol']} P/L=${pos_data['profit']:.2f} SL={pos_data['stopLoss']} TP={pos_data['takeProfit']}")
+
+    async def on_position_removed(self, instance_index, position_id):
+        """포지션 청산"""
+        global metaapi_positions_cache
+
+        removed_pos = None
+        for i, pos in enumerate(metaapi_positions_cache):
+            if pos.get('id') == position_id:
+                removed_pos = metaapi_positions_cache.pop(i)
+                break
+
+        if removed_pos:
+            if add_closed_event(position_id, removed_pos.get('symbol'), removed_pos.get('profit', 0)):
+                print(f"[MetaAPI Trade] ❌ 포지션 종료: {removed_pos['symbol']} P/L=${removed_pos['profit']:.2f}")
+        else:
+            print(f"[MetaAPI Trade] ❌ 포지션 종료: id={position_id} (중복?)")
+
+    # 필수 빈 메서드들
+    async def on_synchronization_started(self, instance_index, specifications_hash, positions_hash, orders_hash, synchronization_id):
+        print(f"[MetaAPI Trade] 🔄 동기화 시작...")
+    async def on_positions_synchronized(self, instance_index, synchronization_id):
+        print(f"[MetaAPI Trade] ✅ 포지션 동기화 완료")
+    async def on_broker_connection_status_changed(self, instance_index, connected):
+        print(f"[MetaAPI Trade] 브로커: {'연결됨' if connected else '연결 끊김'}")
+    async def on_pending_orders_replaced(self, instance_index, orders):
+        pass
+    async def on_pending_orders_synchronized(self, instance_index, synchronization_id):
+        pass
+    async def on_order_updated(self, instance_index, order):
+        pass
+    async def on_order_completed(self, instance_index, order_id):
+        pass
+    async def on_orders_replaced(self, instance_index, orders):
+        pass
+    async def on_orders_synchronized(self, instance_index, synchronization_id):
+        pass
+    async def on_history_order_added(self, instance_index, history_order):
+        pass
+    async def on_deal_added(self, instance_index, deal):
+        """거래 추가 (청산 거래 감지)"""
+        # DEAL_ENTRY_OUT = 청산 거래
+        if deal.get('entryType') == 'DEAL_ENTRY_OUT':
+            if add_closed_event(deal.get('positionId'), deal.get('symbol'), deal.get('profit', 0)):
+                print(f"[MetaAPI Trade] 💰 포지션 종료 (Deal): {deal.get('symbol')} P/L: ${deal.get('profit', 0):.2f}")
+    async def on_deal_synchronization_finished(self, instance_index, synchronization_id):
+        pass
+    async def on_order_synchronization_finished(self, instance_index, synchronization_id):
+        pass
+    async def on_symbol_specifications_updated(self, instance_index, specifications, removed_symbols):
+        pass
+    async def on_symbol_specification_updated(self, instance_index, specification):
+        pass
+    async def on_symbol_prices_updated(self, instance_index, prices, equity, margin, free_margin, margin_level, account_currency_exchange_rate):
+        pass
+    async def on_health_status(self, instance_index, status):
+        pass
+    async def on_symbol_price_updated(self, instance_index, price):
+        pass  # Trade 계정에서는 시세 무시
+    async def on_history_orders_synchronized(self, instance_index, synchronization_id):
+        pass
+    async def on_deals_synchronized(self, instance_index, synchronization_id):
+        pass
+    async def on_positions_updated(self, instance_index, updated_positions, removed_position_ids):
+        """포지션 일괄 업데이트 (여러 포지션 동시 변경)"""
+        global metaapi_positions_cache, metaapi_closed_events
+
+        # 업데이트된 포지션 처리
+        for pos in updated_positions:
+            pos_id = pos.get('id')
+            pos_data = {
+                'id': pos_id,
+                'symbol': pos.get('symbol'),
+                'type': pos.get('type'),
+                'volume': pos.get('volume', 0),
+                'openPrice': pos.get('openPrice', 0),
+                'currentPrice': pos.get('currentPrice', 0),
+                'profit': pos.get('profit', 0),
+                'stopLoss': pos.get('stopLoss', 0),
+                'takeProfit': pos.get('takeProfit', 0),
+                'magic': pos.get('magic', 0),
+                'comment': pos.get('comment', ''),
+                'time': pos.get('time')
+            }
+
+            found = False
+            for i, existing in enumerate(metaapi_positions_cache):
+                if existing.get('id') == pos_id:
+                    metaapi_positions_cache[i] = pos_data
+                    found = True
+                    break
+
+            if not found:
+                metaapi_positions_cache.append(pos_data)
+
+        # 제거된 포지션 처리
+        for pos_id in removed_position_ids:
+            for i, pos in enumerate(metaapi_positions_cache):
+                if pos.get('id') == pos_id:
+                    removed_pos = metaapi_positions_cache.pop(i)
+                    if add_closed_event(pos_id, removed_pos.get('symbol'), removed_pos.get('profit', 0)):
+                        print(f"[MetaAPI Trade] ❌ 포지션 종료: {removed_pos.get('symbol')} P/L=${removed_pos.get('profit', 0):.2f}")
+                    break
+
+
+# ============================================================
 # MetaAPI 서비스 클래스
 # ============================================================
 class MetaAPIService:
@@ -392,11 +692,14 @@ class MetaAPIService:
         self.quote_account = None
         self.trade_account = None
         self.quote_connection = None
-        self.trade_connection = None
+        self.trade_connection = None  # RPC 연결 (주문용)
+        self.trade_streaming = None   # Streaming 연결 (실시간 동기화용)
         self._initialized = False
         self._connecting = False
         self._price_loop_task = None
+        self._sync_task = None  # 포지션 동기화 태스크
         self._quote_listener = None
+        self._trade_listener = None
 
         # 시세 캐시
         self.price_cache: Dict[str, Dict] = {}
@@ -466,7 +769,7 @@ class MetaAPIService:
             return False
 
     async def connect_trade_account(self) -> bool:
-        """Trade 계정 연결 (거래용)"""
+        """Trade 계정 연결 (거래 + 실시간 동기화)"""
         if not await self.initialize():
             return False
 
@@ -478,10 +781,19 @@ class MetaAPIService:
 
             await self.trade_account.wait_connected()
 
-            # RPC 연결 (거래용)
+            # 1. RPC 연결 (주문 실행용)
             self.trade_connection = self.trade_account.get_rpc_connection()
             await self.trade_connection.connect()
             await self.trade_connection.wait_synchronized()
+            print(f"[MetaAPI] Trade RPC 연결 완료")
+
+            # 2. Streaming 연결 (실시간 동기화용)
+            self.trade_streaming = self.trade_account.get_streaming_connection()
+            self._trade_listener = TradeSyncListener()
+            self.trade_streaming.add_synchronization_listener(self._trade_listener)
+            await self.trade_streaming.connect()
+            await self.trade_streaming.wait_synchronized()
+            print(f"[MetaAPI] Trade Streaming 연결 완료 (실시간 동기화 활성화)")
 
             print(f"[MetaAPI] Trade 계정 연결 완료: {TRADE_ACCOUNT_ID}")
             return True
@@ -500,6 +812,10 @@ class MetaAPIService:
             if self.trade_connection:
                 await self.trade_connection.close()
                 self.trade_connection = None
+
+            if self.trade_streaming:
+                await self.trade_streaming.close()
+                self.trade_streaming = None
 
             print("[MetaAPI] 연결 종료 완료")
         except Exception as e:
@@ -645,6 +961,79 @@ class MetaAPIService:
         self._price_loop_task = asyncio.create_task(_loop())
         print("[MetaAPI] 시세 업데이트 루프 시작")
 
+    async def start_position_sync_loop(self, interval: float = 30.0):
+        """포지션 동기화 백그라운드 루프 (30초 주기)"""
+        global metaapi_positions_cache, metaapi_account_cache
+
+        if self._sync_task:
+            return  # 이미 실행 중
+
+        async def _sync_loop():
+            while True:
+                try:
+                    await asyncio.sleep(interval)  # 첫 실행 전 대기
+
+                    if not self.trade_connection:
+                        continue
+
+                    # 1. 실제 MT5 포지션 조회
+                    mt5_positions = await self.trade_connection.get_positions()
+                    mt5_pos_ids = {pos.get('id') for pos in mt5_positions}
+
+                    # 2. 캐시 포지션 ID
+                    cache_pos_ids = {pos.get('id') for pos in metaapi_positions_cache}
+
+                    # 3. 캐시에 있는데 MT5에 없는 포지션 → 청산됨
+                    closed_ids = cache_pos_ids - mt5_pos_ids
+                    for pos_id in closed_ids:
+                        for i, pos in enumerate(metaapi_positions_cache):
+                            if pos.get('id') == pos_id:
+                                removed_pos = metaapi_positions_cache.pop(i)
+                                if add_closed_event(pos_id, removed_pos.get('symbol'), removed_pos.get('profit', 0)):
+                                    print(f"[MetaAPI Sync] 청산 감지: {removed_pos.get('symbol')} P/L=${removed_pos.get('profit', 0):.2f}")
+                                break
+
+                    # 4. MT5에 있는데 캐시에 없는 포지션 → 추가
+                    new_ids = mt5_pos_ids - cache_pos_ids
+                    for pos in mt5_positions:
+                        if pos.get('id') in new_ids:
+                            metaapi_positions_cache.append({
+                                'id': pos.get('id'),
+                                'symbol': pos.get('symbol'),
+                                'type': pos.get('type'),
+                                'volume': pos.get('volume', 0),
+                                'openPrice': pos.get('openPrice', 0),
+                                'currentPrice': pos.get('currentPrice', 0),
+                                'profit': pos.get('profit', 0),
+                                'stopLoss': pos.get('stopLoss', 0),
+                                'takeProfit': pos.get('takeProfit', 0),
+                                'magic': pos.get('magic', 0),
+                                'comment': pos.get('comment', ''),
+                                'time': pos.get('time')
+                            })
+                            print(f"[MetaAPI Sync] 포지션 추가: {pos.get('symbol')} {pos.get('type')}")
+
+                    # 5. 계정 정보 동기화
+                    account_info = await self.trade_connection.get_account_information()
+                    if account_info:
+                        metaapi_account_cache.update({
+                            'balance': account_info.get('balance', 0),
+                            'equity': account_info.get('equity', 0),
+                            'margin': account_info.get('margin', 0),
+                            'freeMargin': account_info.get('freeMargin', 0),
+                            'profit': account_info.get('profit', 0),
+                            'updated_at': time.time()
+                        })
+
+                    if closed_ids or new_ids:
+                        print(f"[MetaAPI Sync] 포지션 동기화: MT5={len(mt5_positions)}개, 캐시={len(metaapi_positions_cache)}개")
+
+                except Exception as e:
+                    print(f"[MetaAPI Sync] 동기화 오류: {e}")
+
+        self._sync_task = asyncio.create_task(_sync_loop())
+        print("[MetaAPI] 포지션 동기화 루프 시작 (30초 주기)")
+
     async def subscribe_to_prices(self, symbols: List[str] = None):
         """시세 구독 (Streaming)"""
         if not self.quote_connection:
@@ -738,34 +1127,89 @@ class MetaAPIService:
                 return {'success': False, 'error': 'Trade 계정 연결 실패'}
 
         try:
+            # ★★★ 심볼별 스펙 (tick_size = point) ★★★
+            SYMBOL_SPECS = {
+                "BTCUSD":   {"tick_size": 0.01},
+                "ETHUSD":   {"tick_size": 0.01},
+                "XAUUSD.r": {"tick_size": 0.01},
+                "EURUSD.r": {"tick_size": 0.00001},
+                "USDJPY.r": {"tick_size": 0.001},
+                "GBPUSD.r": {"tick_size": 0.00001},
+                "AUDUSD.r": {"tick_size": 0.00001},
+                "USDCAD.r": {"tick_size": 0.00001},
+                "US100.":   {"tick_size": 0.01},
+            }
+            specs = SYMBOL_SPECS.get(symbol, {"tick_size": 0.01})
+            tick_size = specs["tick_size"]
+
+            # MetaAPI SDK 옵션
+            options = {
+                'comment': comment,
+                'magic': magic
+            }
+
+            # ★★★ SL/TP 가격 계산 ★★★
+            if sl_points > 0 or tp_points > 0:
+                # 현재가 조회 (캐시 또는 API)
+                price_data = quote_price_cache.get(symbol, {})
+                bid = price_data.get('bid', 0)
+                ask = price_data.get('ask', 0)
+
+                if bid > 0 and ask > 0:
+                    if order_type.upper() == 'BUY':
+                        # BUY: 진입가 = ask, TP = ask + points, SL = ask - points
+                        if tp_points > 0:
+                            options['takeProfit'] = round(ask + (tp_points * tick_size), 5)
+                        if sl_points > 0:
+                            options['stopLoss'] = round(ask - (sl_points * tick_size), 5)
+                    else:
+                        # SELL: 진입가 = bid, TP = bid - points, SL = bid + points
+                        if tp_points > 0:
+                            options['takeProfit'] = round(bid - (tp_points * tick_size), 5)
+                        if sl_points > 0:
+                            options['stopLoss'] = round(bid + (sl_points * tick_size), 5)
+
+                    print(f"[MetaAPI] SL/TP 설정: {order_type} {symbol} @ bid={bid}, ask={ask}")
+                    print(f"[MetaAPI]   tp_points={tp_points}, sl_points={sl_points}, tick_size={tick_size}")
+                    print(f"[MetaAPI]   stopLoss={options.get('stopLoss')}, takeProfit={options.get('takeProfit')}")
+                else:
+                    print(f"[MetaAPI] 경고: 현재가 없음 ({symbol}), SL/TP 생략")
+
             if order_type.upper() == 'BUY':
                 result = await self.trade_connection.create_market_buy_order(
                     symbol=symbol,
                     volume=volume,
-                    stop_loss_pips=sl_points if sl_points > 0 else None,
-                    take_profit_pips=tp_points if tp_points > 0 else None,
-                    options={
-                        'magic': magic,
-                        'comment': comment
-                    }
+                    options=options
                 )
             else:
                 result = await self.trade_connection.create_market_sell_order(
                     symbol=symbol,
                     volume=volume,
-                    stop_loss_pips=sl_points if sl_points > 0 else None,
-                    take_profit_pips=tp_points if tp_points > 0 else None,
-                    options={
-                        'magic': magic,
-                        'comment': comment
-                    }
+                    options=options
                 )
 
+            print(f"[MetaAPI] 주문 응답: {result}")
+
             if result.get('stringCode') == 'TRADE_RETCODE_DONE':
+                position_id = result.get('positionId')
+
+                # ★★★ 주문 성공 후 SL/TP 설정 (별도 요청) ★★★
+                if position_id and (options.get('stopLoss') or options.get('takeProfit')):
+                    try:
+                        await asyncio.sleep(0.5)  # 포지션 생성 대기
+                        modify_result = await self.trade_connection.modify_position(
+                            position_id=position_id,
+                            stop_loss=options.get('stopLoss'),
+                            take_profit=options.get('takeProfit')
+                        )
+                        print(f"[MetaAPI] SL/TP 수정 결과: {modify_result}")
+                    except Exception as e:
+                        print(f"[MetaAPI] SL/TP 수정 실패 (주문은 성공): {e}")
+
                 return {
                     'success': True,
                     'orderId': result.get('orderId'),
-                    'positionId': result.get('positionId'),
+                    'positionId': position_id,
                     'message': f"{order_type.upper()} 주문 성공"
                 }
             else:
@@ -1029,10 +1473,13 @@ def get_metaapi_candles(symbol: str, timeframe: str = "M1") -> List[Dict]:
 
 
 def is_metaapi_connected() -> bool:
-    """MetaAPI 연결 상태"""
+    """MetaAPI 연결 상태 (Quote 또는 Trade 연결 확인)"""
     global quote_connected, quote_last_update
     # 30초 이내 업데이트 있으면 연결 상태
     if quote_last_update > 0 and (time.time() - quote_last_update) < 30:
+        return True
+    # Trade 계정 연결 확인
+    if metaapi_service.trade_connection is not None:
         return True
     return quote_connected
 
@@ -1049,6 +1496,40 @@ def get_metaapi_indicators(symbol: str = "BTCUSD") -> Dict:
     if symbol not in indicator_cache:
         return calculate_indicators_realtime(symbol)
     return indicator_cache.get(symbol, {"buy": 33, "sell": 33, "neutral": 34, "score": 50})
+
+
+# ============================================================
+# MetaAPI 캐시 조회 헬퍼 함수 (WS에서 사용)
+# ============================================================
+def get_metaapi_positions() -> List[Dict]:
+    """MetaAPI 포지션 캐시 조회"""
+    global metaapi_positions_cache
+    return metaapi_positions_cache.copy()
+
+
+def get_metaapi_account() -> Dict:
+    """MetaAPI 계정 정보 캐시 조회"""
+    global metaapi_account_cache
+    return metaapi_account_cache.copy()
+
+
+def pop_metaapi_closed_events() -> List[Dict]:
+    """청산 이벤트 가져오기 (가져온 후 삭제)"""
+    global metaapi_closed_events
+    events = metaapi_closed_events.copy()
+    metaapi_closed_events.clear()
+    return events
+
+
+def remove_position_from_cache(position_id: str) -> bool:
+    """캐시에서 포지션 제거 (청산 실패 시 정리용)"""
+    global metaapi_positions_cache
+    for i, pos in enumerate(metaapi_positions_cache):
+        if pos.get('id') == position_id:
+            metaapi_positions_cache.pop(i)
+            print(f"[MetaAPI Cache] 포지션 {position_id} 캐시에서 제거")
+            return True
+    return False
 
 
 def get_realtime_data() -> Dict:
@@ -1119,6 +1600,9 @@ async def startup_metaapi():
 
         # 5. 시세 업데이트 루프 시작
         await metaapi_service.start_price_update_loop(interval=2.0)
+
+        # 6. 포지션 동기화 루프 시작 (30초 주기)
+        await metaapi_service.start_position_sync_loop(interval=30.0)
 
         print("[MetaAPI Startup] 초기화 완료!")
         return True

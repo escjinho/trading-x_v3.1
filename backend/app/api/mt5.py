@@ -338,13 +338,21 @@ async def get_current_user(
 
     # ========== 계정 정보 ==========
 @router.get("/account-info")
-async def get_account_info(current_user: User = Depends(get_current_user)):
+async def get_account_info(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """MT5 계정 정보 + 인디케이터 + 포지션 조회"""
     try:
+        # ★★★ MetaAPI에서 계정/포지션 정보 가져오기 ★★★
+        from .metaapi_service import get_metaapi_account, get_metaapi_positions, is_metaapi_connected
+
+        metaapi_account = get_metaapi_account()
+        metaapi_positions = get_metaapi_positions()
+        metaapi_connected = is_metaapi_connected()
+
         if not mt5_initialize_safe():
-            # MT5 없음 - bridge_cache에서 계정 정보 조회
-            cached_account = bridge_cache.get("account", {})
-            cached_positions = bridge_cache.get("positions", [])
+            # MT5 없음 - MetaAPI 또는 bridge_cache에서 정보 조회
 
             # 인디케이터 계산
             try:
@@ -355,6 +363,68 @@ async def get_account_info(current_user: User = Depends(get_current_user)):
                 base_score = indicators["score"]
             except Exception:
                 buy_count, sell_count, neutral_count, base_score = 33, 33, 34, 50
+
+            # ★★★ MetaAPI 계정 정보 우선 사용 ★★★
+            if metaapi_connected and metaapi_account:
+                balance = metaapi_account.get("balance", 0)
+                equity = metaapi_account.get("equity", balance)
+                margin = metaapi_account.get("margin", 0)
+                free_margin = metaapi_account.get("freeMargin", balance)
+                profit = metaapi_account.get("profit", 0)
+                leverage = metaapi_account.get("leverage", 500)
+
+                # Buy/Sell 패널용 포지션 (magic=100001)
+                position_data = None
+                for pos in metaapi_positions:
+                    if pos.get("magic") == 100001:
+                        pos_type = pos.get("type", "")
+                        if isinstance(pos_type, int):
+                            pos_type = "BUY" if pos_type == 0 else "SELL"
+                        position_data = {
+                            "type": pos_type,
+                            "symbol": pos.get("symbol", ""),
+                            "volume": pos.get("volume", 0),
+                            "entry": pos.get("openPrice", 0),
+                            "profit": pos.get("profit", 0),
+                            "ticket": pos.get("id", 0),
+                            "magic": pos.get("magic", 0)
+                        }
+                        break
+
+                # ★★★ 유저 DB 업데이트 ★★★
+                if current_user.has_mt5_account:
+                    current_user.mt5_balance = balance
+                    current_user.mt5_equity = equity
+                    current_user.mt5_margin = margin
+                    current_user.mt5_free_margin = free_margin
+                    current_user.mt5_profit = profit
+                    current_user.mt5_leverage = leverage
+                    db.commit()
+
+                return {
+                    "broker": "MetaAPI Live",
+                    "account": current_user.mt5_account_number or "MetaAPI",
+                    "server": current_user.mt5_server or "HedgeHood-MT5",
+                    "balance": balance,
+                    "equity": equity,
+                    "margin": margin,
+                    "free_margin": free_margin,
+                    "profit": profit,
+                    "leverage": leverage,
+                    "currency": "USD",
+                    "positions_count": len(metaapi_positions),
+                    "position": position_data,
+                    "buy_count": buy_count,
+                    "sell_count": sell_count,
+                    "neutral_count": neutral_count,
+                    "base_score": base_score,
+                    "prices": get_bridge_prices(),
+                    "martin": martin_service.get_state(),
+                    "has_mt5": True
+                }
+
+            # ★★★ Bridge 캐시 fallback ★★★
+            cached_positions = bridge_cache.get("positions", [])
 
             # Buy/Sell 패널용 포지션 (magic=100001)
             position_data = None
@@ -1052,35 +1122,15 @@ async def place_order(
     magic: int = 100000,
     current_user: User = Depends(get_current_user)
 ):
-    """일반 주문 실행 (BUY/SELL)"""
+    """일반 주문 실행 (BUY/SELL) - MetaAPI 버전"""
     import time as time_module
+    from .metaapi_service import metaapi_service, quote_price_cache
 
-    # ★ Linux 환경 (MT5 없음) → 브릿지 모드
-    if not MT5_AVAILABLE:
-        # 브릿지 연결 확인 (파일 기반 하트비트)
-        bridge_age = time_module.time() - get_bridge_heartbeat()
-        if bridge_age > 30:
-            return JSONResponse({"success": False, "message": "MT5 브릿지 연결 없음"})
+    print(f"[MetaAPI Order] 주문 요청: {order_type} {symbol} {volume} lot, target=${target}")
 
-        # 주문 ID 생성
-        order_id = str(uuid.uuid4())[:8]
-
-        # ★ 사용자 MT5 계정 정보 추가 (라이브 모드)
-        user_mt5_account = None
-        user_mt5_password = None
-        user_mt5_server = None
-
-        if current_user.has_mt5_account and current_user.mt5_account_number:
-            user_mt5_account = current_user.mt5_account_number
-            user_mt5_server = current_user.mt5_server
-            # 암호화된 비밀번호 복호화
-            if current_user.mt5_password_encrypted:
-                try:
-                    user_mt5_password = decrypt(current_user.mt5_password_encrypted)
-                except Exception as e:
-                    print(f"[Bridge Order] ⚠️ 비밀번호 복호화 실패: {e}")
-
-        # ★★★ TP/SL points 계산 (target > 0일 때만) ★★★
+    # ★★★ MetaAPI를 통한 주문 실행 ★★★
+    try:
+        # TP/SL points 계산 (target > 0일 때만)
         tp_points = 0
         sl_points = 0
         if target > 0:
@@ -1088,105 +1138,84 @@ async def place_order(
             point_value = specs["tick_value"] if specs["tick_value"] > 0 else 1
             tp_points = int(target / (volume * point_value)) if volume * point_value > 0 else 500
             sl_points = tp_points
-            print(f"[Bridge Order] SL/TP 계산: target=${target}, volume={volume}, point_value={point_value} -> tp_points={tp_points}, sl_points={sl_points}")
+            print(f"[MetaAPI Order] SL/TP 계산: target=${target} -> tp_points={tp_points}")
 
-        # 주문을 대기열에 추가
-        order_data = {
-            "order_id": order_id,
-            "action": "order",
-            "symbol": symbol,
-            "order_type": order_type.upper(),
-            "volume": volume,
-            "target": target,
-            "magic": magic,
-            "user_id": current_user.id,
-            "timestamp": time_module.time(),
-            # ★ 사용자 MT5 계정 정보
-            "mt5_account": user_mt5_account,
-            "mt5_password": user_mt5_password,
-            "mt5_server": user_mt5_server,
-            # ★ SL/TP points
-            "tp_points": tp_points,
-            "sl_points": sl_points
-        }
-        append_order(order_data)
+        # MetaAPI 주문 실행
+        result = await metaapi_service.place_order(
+            symbol=symbol,
+            order_type=order_type.upper(),
+            volume=volume,
+            sl_points=sl_points,
+            tp_points=tp_points,
+            magic=magic,
+            comment=f"Trading-X {order_type.upper()}"
+        )
 
-        # ★★★ 자동청산용 타겟 저장 ★★★
-        if target > 0:
-            user_target_cache[current_user.id] = target
-            print(f"[Bridge Order] 타겟 저장: User {current_user.id} = ${target}")
+        if result.get('success'):
+            position_id = result.get('positionId', '')
+            order_id = result.get('orderId', '')
 
-        print(f"[Bridge Order] 주문 대기열에 추가 (파일): {order_id} - {order_type} {symbol} {volume} (MT5: {user_mt5_account})")
+            # 현재 가격 가져오기
+            price_data = quote_price_cache.get(symbol, {})
+            entry_price = price_data.get('ask' if order_type.upper() == 'BUY' else 'bid', 0)
 
-        return JSONResponse({
-            "success": True,
-            "message": f"{order_type.upper()} 주문 전송 중...",
-            "order_id": order_id,
-            "bridge_mode": True
-        })
-    if not mt5_initialize_safe():
-        return JSONResponse({"success": False, "message": "MT5 초기화 실패"})
-    tick = mt5.symbol_info_tick(symbol)
-    symbol_info = mt5.symbol_info(symbol)
-    
-    if not tick or not symbol_info:
-        return JSONResponse({"success": False, "message": "가격 정보 없음"})
-    
-    # TP/SL 계산 (target > 0일 때만)
-    if target > 0:
-        point_value = symbol_info.trade_tick_value if symbol_info.trade_tick_value > 0 else 1
-        tp_points = int(target / (volume * point_value)) if volume * point_value > 0 else 500
-        sl_points = tp_points
-        
-        if order_type.upper() == "BUY":
-            tp_price = tick.ask + (tp_points * symbol_info.point)
-            sl_price = tick.ask - (sl_points * symbol_info.point)
+            # ★★★ user_live_cache 업데이트 ★★★
+            if current_user.id not in user_live_cache:
+                user_live_cache[current_user.id] = {"positions": [], "account_info": {}}
+
+            new_position = {
+                "id": position_id,
+                "ticket": order_id,
+                "symbol": symbol,
+                "type": 0 if order_type.upper() == 'BUY' else 1,
+                "volume": volume,
+                "price_open": entry_price,
+                "profit": 0,
+                "magic": magic,
+                "comment": f"Trading-X {order_type.upper()}"
+            }
+            user_live_cache[current_user.id]["positions"].append(new_position)
+            user_live_cache[current_user.id]["updated_at"] = time_module.time()
+
+            # ★★★ 자동청산용 타겟 저장 ★★★
+            if target > 0:
+                user_target_cache[current_user.id] = target
+                print(f"[MetaAPI Order] 타겟 저장: User {current_user.id} = ${target}")
+
+            print(f"[MetaAPI Order] ✅ 주문 성공: {order_type} {symbol} {volume} lot, positionId={position_id}")
+
+            return JSONResponse({
+                "success": True,
+                "message": f"{order_type.upper()} 성공! {volume} lot",
+                "ticket": order_id,
+                "positionId": position_id,
+                "metaapi_mode": True
+            })
         else:
-            tp_price = tick.bid - (tp_points * symbol_info.point)
-            sl_price = tick.bid + (sl_points * symbol_info.point)
-    else:
-        tp_price = 0
-        sl_price = 0
-    
-    if order_type.upper() == "BUY":
-        mt5_type = mt5.ORDER_TYPE_BUY
-        price = tick.ask
-    else:
-        mt5_type = mt5.ORDER_TYPE_SELL
-        price = tick.bid
-    
-    request = {
-        "action": mt5.TRADE_ACTION_DEAL,
-        "symbol": symbol,
-        "volume": volume,
-        "type": mt5_type,
-        "price": price,
-        "deviation": 20,
-        "magic": magic,
-        "comment": f"Trading-X {order_type.upper()}",
-        "type_time": mt5.ORDER_TIME_GTC,
-        "type_filling": mt5.ORDER_FILLING_IOC,
-    }
-    
-    # SL/TP가 있을 때만 추가
-    if sl_price > 0:
-        request["sl"] = sl_price
-    if tp_price > 0:
-        request["tp"] = tp_price
-    
-    result = mt5.order_send(request)
-    
-    if result.retcode == mt5.TRADE_RETCODE_DONE:
-        return JSONResponse({
-            "success": True,
-            "message": f"{order_type.upper()} 성공! {volume} lot @ {result.price:,.2f}",
-            "ticket": result.order
-        })
-    else:
+            error_msg = result.get('error', 'Unknown error')
+            print(f"[MetaAPI Order] ❌ 주문 실패: {error_msg}")
+            return JSONResponse({
+                "success": False,
+                "message": f"주문 실패: {error_msg}"
+            })
+
+    except Exception as e:
+        print(f"[MetaAPI Order] ❌ 예외 발생: {e}")
         return JSONResponse({
             "success": False,
-            "message": f"실패: {result.retcode} - {result.comment}"
+            "message": f"주문 오류: {str(e)}"
         })
+
+    # ========== 기존 Bridge/MT5 코드 (주석 처리) ==========
+    # if not MT5_AVAILABLE:
+    #     bridge_age = time_module.time() - get_bridge_heartbeat()
+    #     if bridge_age > 30:
+    #         return JSONResponse({"success": False, "message": "MT5 브릿지 연결 없음"})
+    #     order_id = str(uuid.uuid4())[:8]
+    #     ... (기존 브릿지 코드)
+    # if not mt5_initialize_safe():
+    #     return JSONResponse({"success": False, "message": "MT5 초기화 실패"})
+    # ... (기존 MT5 직접 연결 코드)
 
 
 # ========== 포지션 청산 ==========
@@ -1194,96 +1223,135 @@ async def place_order(
 async def close_position(
     symbol: str = "BTCUSD",
     magic: int = None,
+    position_id: str = None,
     current_user: User = Depends(get_current_user)
 ):
-    """포지션 청산 (magic 필터 옵션)"""
+    """포지션 청산 (magic 필터 옵션) - MetaAPI 버전"""
     import time as time_module
+    from .metaapi_service import metaapi_service, remove_position_from_cache
 
-    # ★ Linux 환경 (MT5 없음) → 브릿지 모드
-    if not MT5_AVAILABLE:
-        # 브릿지 연결 확인 (파일 기반 하트비트)
-        bridge_age = time_module.time() - get_bridge_heartbeat()
-        if bridge_age > 30:
-            return JSONResponse({"success": False, "message": "MT5 브릿지 연결 없음"})
+    print(f"[MetaAPI Close] 청산 요청: symbol={symbol}, magic={magic}, position_id={position_id}")
 
-        order_id = str(uuid.uuid4())[:8]
+    # ★★★ MetaAPI를 통한 청산 실행 ★★★
+    try:
+        # 1) position_id가 직접 전달된 경우
+        if position_id:
+            result = await metaapi_service.close_position(position_id)
+            if result.get('success'):
+                # user_live_cache에서 포지션 제거
+                if current_user.id in user_live_cache:
+                    positions = user_live_cache[current_user.id].get("positions", [])
+                    user_live_cache[current_user.id]["positions"] = [
+                        p for p in positions if p.get("id") != position_id
+                    ]
+                print(f"[MetaAPI Close] ✅ 청산 성공: positionId={position_id}")
+                return JSONResponse({
+                    "success": True,
+                    "message": "청산 성공!",
+                    "positionId": position_id,
+                    "metaapi_mode": True
+                })
+            else:
+                # ★★★ 에러 시 캐시 정리 (이미 청산된 포지션일 수 있음) ★★★
+                error_msg = result.get('error', '')
+                if 'POSITION_NOT_FOUND' in str(error_msg) or 'not found' in str(error_msg).lower():
+                    # 캐시에서 제거
+                    remove_position_from_cache(position_id)
+                    if current_user.id in user_live_cache:
+                        positions = user_live_cache[current_user.id].get("positions", [])
+                        user_live_cache[current_user.id]["positions"] = [
+                            p for p in positions if p.get("id") != position_id
+                        ]
+                    print(f"[MetaAPI Close] ⚠️ 이미 청산됨: positionId={position_id}")
+                    return JSONResponse({
+                        "success": True,
+                        "message": "이미 청산됨",
+                        "positionId": position_id,
+                        "force_sync": True,
+                        "metaapi_mode": True
+                    })
+                return JSONResponse({
+                    "success": False,
+                    "message": f"청산 실패: {result.get('error')}"
+                })
 
-        # ★ 사용자 MT5 계정 정보 추가 (라이브 모드)
-        user_mt5_account = None
-        user_mt5_password = None
-        user_mt5_server = None
+        # 2) symbol/magic으로 포지션 찾아서 청산
+        positions = await metaapi_service.get_positions()
+        if not positions:
+            return JSONResponse({"success": False, "message": "열린 포지션 없음"})
 
-        if current_user.has_mt5_account and current_user.mt5_account_number:
-            user_mt5_account = current_user.mt5_account_number
-            user_mt5_server = current_user.mt5_server
-            # 암호화된 비밀번호 복호화
-            if current_user.mt5_password_encrypted:
-                try:
-                    user_mt5_password = decrypt(current_user.mt5_password_encrypted)
-                except Exception as e:
-                    print(f"[Bridge Order] ⚠️ 비밀번호 복호화 실패: {e}")
+        # 필터링 (symbol, magic)
+        target_positions = []
+        for pos in positions:
+            if pos.get('symbol') != symbol:
+                continue
+            if magic is not None and pos.get('magic') != magic:
+                continue
+            target_positions.append(pos)
 
-        order_data = {
-            "order_id": order_id,
-            "action": "close",
-            "symbol": symbol,
-            "magic": magic,
-            "user_id": current_user.id,
-            "timestamp": time_module.time(),
-            # ★ 사용자 MT5 계정 정보
-            "mt5_account": user_mt5_account,
-            "mt5_password": user_mt5_password,
-            "mt5_server": user_mt5_server
-        }
-        append_order(order_data)
+        if not target_positions:
+            return JSONResponse({"success": False, "message": f"{symbol} 포지션 없음"})
 
-        print(f"[Bridge Order] 청산 주문 추가 (파일): {order_id} - {symbol} (MT5: {user_mt5_account})")
+        # 첫 번째 매칭 포지션 청산
+        pos = target_positions[0]
+        pos_id = pos.get('id')
+        result = await metaapi_service.close_position(pos_id)
 
-        return JSONResponse({
-            "success": True,
-            "message": "청산 주문 전송 중...",
-            "order_id": order_id,
-            "bridge_mode": True
-        })
-    if not mt5_initialize_safe():
-        return JSONResponse({"success": False, "message": "MT5 초기화 실패"})
-    positions = mt5.positions_get(symbol=symbol)
-    if not positions:
-        return JSONResponse({"success": False, "message": "열린 포지션 없음"})
-    
-    for pos in positions:
-        # magic 필터링 (지정된 경우)
-        if magic is not None and pos.magic != magic:
-            continue
-            
-        tick = mt5.symbol_info_tick(symbol)
-        close_type = mt5.ORDER_TYPE_SELL if pos.type == 0 else mt5.ORDER_TYPE_BUY
-        close_price = tick.bid if pos.type == 0 else tick.ask
-        
-        request = {
-            "action": mt5.TRADE_ACTION_DEAL,
-            "symbol": symbol,
-            "volume": pos.volume,
-            "type": close_type,
-            "position": pos.ticket,
-            "price": close_price,
-            "deviation": 20,
-            "magic": 123456,
-            "comment": "Trading-X CLOSE",
-            "type_time": mt5.ORDER_TIME_GTC,
-            "type_filling": mt5.ORDER_FILLING_IOC,
-        }
-        
-        result = mt5.order_send(request)
-        
-        if result.retcode == mt5.TRADE_RETCODE_DONE:
+        if result.get('success'):
+            profit = pos.get('profit', 0)
+            # user_live_cache에서 포지션 제거
+            if current_user.id in user_live_cache:
+                cache_positions = user_live_cache[current_user.id].get("positions", [])
+                user_live_cache[current_user.id]["positions"] = [
+                    p for p in cache_positions if p.get("id") != pos_id
+                ]
+            print(f"[MetaAPI Close] ✅ 청산 성공: {symbol} P/L=${profit:.2f}")
             return JSONResponse({
                 "success": True,
-                "message": f"청산 성공! P/L: ${pos.profit:,.2f}",
-                "profit": pos.profit
+                "message": f"청산 성공! P/L: ${profit:,.2f}",
+                "profit": profit,
+                "positionId": pos_id,
+                "metaapi_mode": True
             })
-    
-    return JSONResponse({"success": False, "message": "청산 실패"})
+        else:
+            # ★★★ 에러 시 캐시 정리 ★★★
+            error_msg = result.get('error', '')
+            if 'POSITION_NOT_FOUND' in str(error_msg) or 'not found' in str(error_msg).lower():
+                remove_position_from_cache(pos_id)
+                if current_user.id in user_live_cache:
+                    cache_positions = user_live_cache[current_user.id].get("positions", [])
+                    user_live_cache[current_user.id]["positions"] = [
+                        p for p in cache_positions if p.get("id") != pos_id
+                    ]
+                print(f"[MetaAPI Close] ⚠️ 이미 청산됨: {symbol}")
+                return JSONResponse({
+                    "success": True,
+                    "message": "이미 청산됨",
+                    "positionId": pos_id,
+                    "force_sync": True,
+                    "metaapi_mode": True
+                })
+            return JSONResponse({
+                "success": False,
+                "message": f"청산 실패: {result.get('error')}"
+            })
+
+    except Exception as e:
+        print(f"[MetaAPI Close] ❌ 예외 발생: {e}")
+        return JSONResponse({
+            "success": False,
+            "message": f"청산 오류: {str(e)}"
+        })
+
+    # ========== 기존 Bridge/MT5 코드 (주석 처리) ==========
+    # if not MT5_AVAILABLE:
+    #     bridge_age = time_module.time() - get_bridge_heartbeat()
+    #     if bridge_age > 30:
+    #         return JSONResponse({"success": False, "message": "MT5 브릿지 연결 없음"})
+    #     ... (기존 브릿지 코드)
+    # if not mt5_initialize_safe():
+    #     return JSONResponse({"success": False, "message": "MT5 초기화 실패"})
+    # ... (기존 MT5 직접 연결 코드)
 
 # ========== 포지션 목록 조회 ==========
 @router.get("/positions")
@@ -1292,8 +1360,62 @@ async def get_positions(
     current_user: User = Depends(get_current_user)
 ):
     """모든 열린 포지션 조회 (magic 필터 옵션)"""
+    # ★★★ MetaAPI에서 포지션 정보 가져오기 ★★★
+    from .metaapi_service import get_metaapi_positions, get_metaapi_account, is_metaapi_connected
+
+    metaapi_positions = get_metaapi_positions()
+    metaapi_account = get_metaapi_account()
+    metaapi_connected = is_metaapi_connected()
+
     if not mt5_initialize_safe():
-        # MT5 없음 - bridge_cache에서 포지션 조회
+        # ★★★ MetaAPI 포지션 우선 사용 ★★★
+        if metaapi_connected and metaapi_positions is not None:
+            position_list = []
+            total_margin = 0
+            leverage = metaapi_account.get("leverage", 500) if metaapi_account else 500
+
+            for pos in metaapi_positions:
+                if magic is not None and pos.get("magic") != magic:
+                    continue
+
+                # type 필드 변환 (POSITION_TYPE_BUY/SELL → BUY/SELL)
+                pos_type = pos.get("type", "")
+                if isinstance(pos_type, int):
+                    pos_type = "BUY" if pos_type == 0 else "SELL"
+                elif isinstance(pos_type, str):
+                    if "BUY" in pos_type.upper():
+                        pos_type = "BUY"
+                    elif "SELL" in pos_type.upper():
+                        pos_type = "SELL"
+
+                pos_margin = pos.get("margin", 0) or 0
+                total_margin += pos_margin
+
+                position_list.append({
+                    "ticket": pos.get("id", 0),
+                    "symbol": pos.get("symbol", ""),
+                    "type": pos_type,
+                    "volume": pos.get("volume", 0),
+                    "entry": pos.get("openPrice", 0),
+                    "current": pos.get("currentPrice", 0),
+                    "profit": pos.get("profit", 0),
+                    "sl": pos.get("stopLoss", 0),
+                    "tp": pos.get("takeProfit", 0),
+                    "magic": pos.get("magic", 0),
+                    "comment": pos.get("comment", ""),
+                    "margin": round(pos_margin, 2)
+                })
+
+            return {
+                "success": True,
+                "positions": position_list,
+                "count": len(position_list),
+                "total_margin": round(total_margin, 2),
+                "leverage": leverage,
+                "source": "metaapi"
+            }
+
+        # ★★★ Bridge 캐시 fallback ★★★
         cached_positions = bridge_cache.get("positions", [])
         if not cached_positions:
             return {"success": True, "positions": [], "count": 0, "total_margin": 0, "message": "bridge mode"}
@@ -1377,60 +1499,89 @@ async def get_positions(
 @router.post("/close-all")
 async def close_all_positions(
     magic: int = None,
+    symbol: str = None,
     current_user: User = Depends(get_current_user)
 ):
-    """모든 포지션 청산 (magic 필터 옵션)"""
-    if not mt5_initialize_safe():
-        return JSONResponse({"success": False, "message": "MT5 초기화 실패"})
-    
-    positions = mt5.positions_get()
-    if not positions:
-        return JSONResponse({"success": False, "message": "열린 포지션 없음"})
-    
-    closed_count = 0
-    total_profit = 0
-    
-    for pos in positions:
-        # magic 필터링
-        if magic is not None and pos.magic != magic:
-            continue
-            
-        tick = mt5.symbol_info_tick(pos.symbol)
-        if not tick:
-            continue
-            
-        close_type = mt5.ORDER_TYPE_SELL if pos.type == 0 else mt5.ORDER_TYPE_BUY
-        close_price = tick.bid if pos.type == 0 else tick.ask
-        
-        request = {
-            "action": mt5.TRADE_ACTION_DEAL,
-            "symbol": pos.symbol,
-            "volume": pos.volume,
-            "type": close_type,
-            "position": pos.ticket,
-            "price": close_price,
-            "deviation": 20,
-            "magic": 123456,
-            "comment": "Trading-X CLOSE ALL",
-            "type_time": mt5.ORDER_TIME_GTC,
-            "type_filling": mt5.ORDER_FILLING_IOC,
-        }
-        
-        result = mt5.order_send(request)
-        
-        if result.retcode == mt5.TRADE_RETCODE_DONE:
-            closed_count += 1
-            total_profit += pos.profit
-    
-    if closed_count > 0:
+    """모든 포지션 청산 (magic/symbol 필터 옵션) - MetaAPI 버전"""
+    from .metaapi_service import metaapi_service
+
+    print(f"[MetaAPI CloseAll] 전체 청산 요청: magic={magic}, symbol={symbol}")
+
+    # ★★★ MetaAPI를 통한 전체 청산 ★★★
+    try:
+        # 모든 포지션 조회
+        positions = await metaapi_service.get_positions()
+        if not positions:
+            return JSONResponse({"success": False, "message": "열린 포지션 없음"})
+
+        # 필터링 (magic, symbol)
+        target_positions = []
+        for pos in positions:
+            if symbol and pos.get('symbol') != symbol:
+                continue
+            if magic is not None and pos.get('magic') != magic:
+                continue
+            target_positions.append(pos)
+
+        if not target_positions:
+            return JSONResponse({"success": False, "message": "청산할 포지션 없음"})
+
+        closed_count = 0
+        total_profit = 0
+        errors = []
+
+        for pos in target_positions:
+            pos_id = pos.get('id')
+            result = await metaapi_service.close_position(pos_id)
+
+            if result.get('success'):
+                closed_count += 1
+                total_profit += pos.get('profit', 0)
+            else:
+                errors.append(f"{pos_id}: {result.get('error')}")
+
+        # user_live_cache 초기화
+        if current_user.id in user_live_cache:
+            if symbol or magic is not None:
+                # 필터링된 포지션만 제거
+                closed_ids = [p.get('id') for p in target_positions]
+                cache_positions = user_live_cache[current_user.id].get("positions", [])
+                user_live_cache[current_user.id]["positions"] = [
+                    p for p in cache_positions if p.get("id") not in closed_ids
+                ]
+            else:
+                # 전체 청산
+                user_live_cache[current_user.id]["positions"] = []
+
+        if closed_count > 0:
+            print(f"[MetaAPI CloseAll] ✅ {closed_count}개 청산 완료, 총 P/L=${total_profit:.2f}")
+            return JSONResponse({
+                "success": True,
+                "message": f"{closed_count}개 청산 완료! 총 P/L: ${total_profit:,.2f}",
+                "closed_count": closed_count,
+                "total_profit": total_profit,
+                "errors": errors if errors else None,
+                "metaapi_mode": True
+            })
+        else:
+            return JSONResponse({
+                "success": False,
+                "message": "청산 실패",
+                "errors": errors
+            })
+
+    except Exception as e:
+        print(f"[MetaAPI CloseAll] ❌ 예외 발생: {e}")
         return JSONResponse({
-            "success": True,
-            "message": f"{closed_count}개 청산 완료! 총 P/L: ${total_profit:,.2f}",
-            "closed_count": closed_count,
-            "total_profit": total_profit
+            "success": False,
+            "message": f"청산 오류: {str(e)}"
         })
-    else:
-        return JSONResponse({"success": False, "message": "청산 실패"})
+
+    # ========== 기존 MT5 코드 (주석 처리) ==========
+    # if not mt5_initialize_safe():
+    #     return JSONResponse({"success": False, "message": "MT5 초기화 실패"})
+    # positions = mt5.positions_get()
+    # ... (기존 MT5 직접 연결 코드)
 
 
 # ========== 타입별 청산 (BUY/SELL) ==========
@@ -1567,10 +1718,39 @@ async def close_by_profit(
 # ========== 거래 내역 ==========
 @router.get("/history")
 async def get_history(current_user: User = Depends(get_current_user)):
-    """거래 내역 조회 - user_live_cache 또는 MT5 직접 연결"""
+    """거래 내역 조회 - MetaAPI, user_live_cache 또는 MT5 직접 연결"""
     user_id = current_user.id
 
-    # ★ 먼저 user_live_cache에서 히스토리 확인
+    # ★★★ 1순위: MetaAPI에서 히스토리 조회 ★★★
+    from .metaapi_service import metaapi_service, is_metaapi_connected
+
+    if is_metaapi_connected():
+        try:
+            metaapi_history = await metaapi_service.get_history(days=30)
+            if metaapi_history:
+                # 포맷 맞추기
+                formatted_history = []
+                for h in metaapi_history:
+                    trade_time = h.get("time", "")
+                    if isinstance(trade_time, (int, float)):
+                        trade_time = datetime.fromtimestamp(trade_time).strftime("%m/%d %H:%M")
+                    formatted_history.append({
+                        "ticket": h.get("ticket", 0),
+                        "time": trade_time,
+                        "symbol": h.get("symbol", ""),
+                        "type": h.get("type", ""),
+                        "volume": h.get("volume", 0),
+                        "price": h.get("price", 0),
+                        "profit": h.get("profit", 0),
+                        "entry": h.get("entry", h.get("price", 0)),
+                        "exit": h.get("exit", h.get("price", 0))
+                    })
+                print(f"[MT5 History] User {user_id}: {len(formatted_history)}개 (from MetaAPI)")
+                return {"history": formatted_history, "source": "metaapi"}
+        except Exception as e:
+            print(f"[MT5 History] MetaAPI 조회 실패: {e}")
+
+    # ★★★ 2순위: user_live_cache에서 히스토리 확인 ★★★
     user_cache = user_live_cache.get(user_id)
     if user_cache and user_cache.get("history"):
         cached_history = user_cache.get("history", [])
@@ -1579,7 +1759,6 @@ async def get_history(current_user: User = Depends(get_current_user)):
         for h in cached_history:
             trade_time = h.get("time", "")
             if isinstance(trade_time, (int, float)):
-                from datetime import datetime
                 trade_time = datetime.fromtimestamp(trade_time).strftime("%m/%d %H:%M")
             formatted_history.append({
                 "ticket": h.get("ticket", 0),
@@ -1596,7 +1775,7 @@ async def get_history(current_user: User = Depends(get_current_user)):
         print(f"[MT5 History] Data: {formatted_history}")
         return {"history": formatted_history}
 
-    # ★ MT5 직접 연결 시도
+    # ★★★ 3순위: MT5 직접 연결 시도 ★★★
     if not MT5_AVAILABLE:
         return {"history": []}
     if not mt5_initialize_safe():
@@ -2005,7 +2184,8 @@ async def websocket_endpoint(websocket: WebSocket):
     from .metaapi_service import (
         get_metaapi_prices, get_metaapi_candles, is_metaapi_connected,
         get_metaapi_last_update, get_metaapi_indicators, get_realtime_data,
-        quote_price_cache, quote_last_update
+        quote_price_cache, quote_last_update,
+        get_metaapi_positions, get_metaapi_account, pop_metaapi_closed_events
     )
 
     # ★ Query parameter에서 토큰으로 유저 식별
@@ -2091,8 +2271,22 @@ async def websocket_endpoint(websocket: WebSocket):
             # ★★★ 유저 라이브 캐시 확인 (주문/청산 직후 데이터) ★★★
             user_cache = user_live_cache.get(user_id) if user_id else None
 
-            # ★ 계정 정보
-            if user_cache and user_cache.get("account_info"):
+            # ★★★ MetaAPI 캐시 조회 ★★★
+            metaapi_account = get_metaapi_account()
+            metaapi_positions = get_metaapi_positions()
+            closed_events = pop_metaapi_closed_events()
+
+            # ★ 계정 정보 (MetaAPI 캐시 우선)
+            if metaapi_account and metaapi_account.get("balance"):
+                broker = "HedgeHood Pty Ltd"
+                login = user_mt5_account or 0
+                server = user_mt5_server or "HedgeHood-MT5"
+                balance = metaapi_account.get("balance", 0)
+                equity = metaapi_account.get("equity", 0)
+                margin = metaapi_account.get("margin", 0)
+                free_margin = metaapi_account.get("freeMargin", 0)
+                leverage = metaapi_account.get("leverage", 0) or user_mt5_leverage or 500
+            elif user_cache and user_cache.get("account_info"):
                 acc_info = user_cache["account_info"]
                 broker = "HedgeHood Pty Ltd"
                 login = user_mt5_account or 0
@@ -2124,13 +2318,49 @@ async def websocket_endpoint(websocket: WebSocket):
                 leverage = user_mt5_leverage or 500
 
             # ★★★ 시세/캔들은 이미 realtime_data에서 가져옴 (위에서) ★★★
-            
-            # 포지션 정보 (MT5 직접 연결 또는 Bridge)
+
+            # 포지션 정보 (MetaAPI 캐시 → user_cache → MT5 → Bridge)
             positions_count = 0
             position_data = None
             total_realtime_profit = 0  # ★★★ 실시간 총 P/L
 
-            if user_cache and user_cache.get("positions"):
+            # ★★★ MetaAPI 캐시 우선 사용 ★★★
+            if metaapi_positions:
+                positions_count = len(metaapi_positions)
+                for pos in metaapi_positions:
+                    pos_symbol = pos.get("symbol", "")
+                    # type: POSITION_TYPE_BUY → 0, POSITION_TYPE_SELL → 1
+                    pos_type_str = pos.get("type", "")
+                    pos_type = 0 if "BUY" in str(pos_type_str) else 1
+                    pos_volume = pos.get("volume", 0)
+                    pos_open = pos.get("openPrice", 0)
+
+                    # ★ 현재 가격으로 P/L 재계산
+                    current_price_data = all_prices.get(pos_symbol, {})
+                    current_bid = current_price_data.get("bid", pos_open)
+                    current_ask = current_price_data.get("ask", pos_open)
+
+                    realtime_profit = calculate_realtime_profit(
+                        pos_type, pos_symbol, pos_volume, pos_open, current_bid, current_ask
+                    )
+                    total_realtime_profit += realtime_profit
+
+                    # magic=100001인 포지션 (BuySell 패널용)
+                    if pos.get("magic") == 100001:
+                        position_data = {
+                            "type": "BUY" if pos_type == 0 else "SELL",
+                            "symbol": pos_symbol,
+                            "volume": pos_volume,
+                            "entry": pos_open,
+                            "profit": realtime_profit,
+                            "ticket": pos.get("id", 0),
+                            "magic": pos.get("magic", 0)
+                        }
+
+                # equity 재계산
+                equity = balance + total_realtime_profit
+
+            elif user_cache and user_cache.get("positions"):
                 # ★★★ 유저 라이브 캐시에서 포지션 정보 + 실시간 P/L 재계산 ★★★
                 cache_positions = user_cache["positions"]
                 positions_count = len(cache_positions)
@@ -2276,11 +2506,30 @@ async def websocket_endpoint(websocket: WebSocket):
                 live_history = user_cache.get("history", [])
                 live_today_pl = user_cache.get("today_pl", 0)
 
-            # ★★★ 동기화 이벤트 확인 (SL/TP 청산 감지) ★★★
+            # ★★★ 동기화 이벤트 확인 (SL/TP 청산 감지 + MetaAPI 청산 이벤트) ★★★
             sync_event = None
             if user_id and user_id in user_sync_events:
                 sync_event = user_sync_events.pop(user_id)
                 print(f"[WS] 📢 User {user_id} sync_event 전송: {sync_event}")
+
+            # ★★★ MetaAPI 청산 이벤트 처리 ★★★
+            auto_closed = False
+            closed_profit = 0
+            is_win = False
+            closed_message = None
+
+            if closed_events:
+                # 첫 번째 이벤트 기준으로 설정
+                first_event = closed_events[0]
+                auto_closed = True
+                closed_profit = first_event.get('profit', 0)
+                is_win = closed_profit >= 0
+                closed_message = f"{'이익' if is_win else '손실'} 청산: ${closed_profit:.2f}"
+
+                if sync_event is None:
+                    sync_event = {}
+                sync_event["metaapi_closed"] = closed_events
+                print(f"[WS] 📢 MetaAPI 청산 이벤트: {len(closed_events)}건, P/L=${closed_profit:.2f}")
 
             data = {
                 "mt5_connected": user_has_mt5 or mt5_connected or metaapi_connected,  # ★ MetaAPI 상태
@@ -2304,7 +2553,12 @@ async def websocket_endpoint(websocket: WebSocket):
                 "user_id": user_id,
                 "history": live_history,  # ★ 거래 히스토리
                 "today_pl": live_today_pl,  # ★ 오늘 P/L
-                "sync_event": sync_event  # ★ SL/TP 청산 이벤트
+                "sync_event": sync_event,  # ★ SL/TP 청산 이벤트
+                # ★★★ 자동 청산 정보 ★★★
+                "auto_closed": auto_closed,
+                "closed_profit": closed_profit,
+                "is_win": is_win,
+                "closed_message": closed_message
             }
             
             await websocket.send_text(json.dumps(data))
