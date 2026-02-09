@@ -874,6 +874,12 @@ class MetaAPIService:
         quote_price_cache = prices
         quote_last_update = self.last_price_update
 
+        # ★★★ 모든 심볼 캔들 실시간 업데이트 ★★★
+        for symbol, price_data in prices.items():
+            bid = price_data.get('bid', 0)
+            if bid and bid > 0:
+                update_candle_realtime(symbol, bid)
+
         return prices
 
     async def get_candles(self, symbol: str, timeframe: str = "M1", count: int = 100) -> List[Dict]:
@@ -1596,7 +1602,12 @@ async def startup_metaapi():
 
         # 4. 초기 캔들 조회 (인디케이터용)
         await metaapi_service.update_all_candles("M1")
-        print("[MetaAPI Startup] 초기 캔들 조회 완료")
+        # 각 심볼별 캔들 개수 로그
+        candle_counts = []
+        for symbol in SYMBOLS:
+            count = len(quote_candle_cache.get(symbol, {}).get("M1", []))
+            candle_counts.append(f"{symbol}:{count}")
+        print(f"[MetaAPI Startup] 초기 캔들 조회 완료: {', '.join(candle_counts)}")
 
         # 5. 시세 업데이트 루프 시작
         await metaapi_service.start_price_update_loop(interval=2.0)
