@@ -403,6 +403,7 @@ async def get_current_user(
     # ========== 계정 정보 ==========
 @router.get("/account-info")
 async def get_account_info(
+    magic: int = 100001,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -437,10 +438,10 @@ async def get_account_info(
                 profit = metaapi_account.get("profit", 0)
                 leverage = metaapi_account.get("leverage", 500)
 
-                # Buy/Sell 패널용 포지션 (magic=100001)
+                # 패널용 포지션 (magic 파라미터로 필터링)
                 position_data = None
                 for pos in metaapi_positions:
-                    if pos.get("magic") == 100001:
+                    if pos.get("magic") == magic:
                         pos_type = pos.get("type", "")
                         if isinstance(pos_type, int):
                             pos_type = "BUY" if pos_type == 0 else "SELL"
@@ -490,10 +491,10 @@ async def get_account_info(
             # ★★★ Bridge 캐시 fallback ★★★
             cached_positions = bridge_cache.get("positions", [])
 
-            # Buy/Sell 패널용 포지션 (magic=100001)
+            # 패널용 포지션 (magic 파라미터로 필터링)
             position_data = None
             for pos in cached_positions:
-                if pos.get("magic") == 100001:
+                if pos.get("magic") == magic:
                     position_data = {
                         "type": "BUY" if pos.get("type", 0) == 0 else "SELL",
                         "symbol": pos.get("symbol", ""),
@@ -561,10 +562,10 @@ async def get_account_info(
         
         position_data = None
         if positions and len(positions) > 0:
-            # Buy/Sell 패널용 포지션 (magic=100001)
+            # 패널용 포지션 (magic 파라미터로 필터링)
             buysell_pos = None
             for pos in positions:
-                if pos.magic == 100001:
+                if pos.magic == magic:
                     buysell_pos = pos
                     break
             
@@ -1192,7 +1193,7 @@ async def place_order(
     order_type: str = "BUY",
     volume: float = 0.01,
     target: int = 100,
-    magic: int = 100000,
+    magic: int = 100001,
     current_user: User = Depends(get_current_user)
 ):
     """일반 주문 실행 (BUY/SELL) - MetaAPI 버전"""
@@ -2343,8 +2344,9 @@ async def websocket_endpoint(websocket: WebSocket):
         get_metaapi_positions, get_metaapi_account, pop_metaapi_closed_events
     )
 
-    # ★ Query parameter에서 토큰으로 유저 식별
+    # ★ Query parameter에서 토큰/magic으로 유저 식별
     token = websocket.query_params.get("token")
+    magic = int(websocket.query_params.get("magic", 100001))
     user_id = None
     user_mt5_account = None
     user_mt5_balance = None
@@ -2500,8 +2502,8 @@ async def websocket_endpoint(websocket: WebSocket):
                     )
                     total_realtime_profit += realtime_profit
 
-                    # magic=100001인 포지션 (BuySell 패널용)
-                    if pos.get("magic") == 100001:
+                    # 패널용 포지션 (magic 파라미터로 필터링)
+                    if pos.get("magic") == magic:
                         position_data = {
                             "type": "BUY" if pos_type == 0 else "SELL",
                             "symbol": pos_symbol,
@@ -2535,7 +2537,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     )
                     total_realtime_profit += realtime_profit
 
-                    if pos.get("magic") == 100001:
+                    if pos.get("magic") == magic:
                         position_data = {
                             "type": "BUY" if pos_type == 0 else "SELL",
                             "symbol": pos_symbol,
@@ -2614,7 +2616,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 
                 if positions and len(positions) > 0:
                     for pos in positions:
-                        if pos.magic == 100001:
+                        if pos.magic == magic:
                             position_data = {
                                 "type": "BUY" if pos.type == 0 else "SELL",
                                 "symbol": pos.symbol,
@@ -2630,7 +2632,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 bridge_positions = bridge_cache.get("positions", [])
                 positions_count = len(bridge_positions)
                 for pos in bridge_positions:
-                    if pos.get("magic") == 100001:
+                    if pos.get("magic") == magic:
                         position_data = {
                             "type": "BUY" if pos.get("type", 0) == 0 else "SELL",
                             "symbol": pos.get("symbol", ""),

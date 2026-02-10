@@ -380,7 +380,7 @@ async function placeBuy() {
             result = await apiCall(`/mt5/martin/buy?symbol=${currentSymbol}`, 'POST');
         } else {
             const lot = calculateLot();
-            result = await apiCall(`/mt5/order?symbol=${currentSymbol}&order_type=BUY&volume=${lot}&target=${targetAmount}&magic=100001`, 'POST');
+            result = await apiCall(`/mt5/order?symbol=${currentSymbol}&order_type=BUY&volume=${lot}&target=${targetAmount}&magic=${BUYSELL_MAGIC_NUMBER}`, 'POST');
         }
 
         // ★★★ Bridge 모드: 결과 폴링 ★★★
@@ -437,7 +437,7 @@ async function placeSell() {
             result = await apiCall(`/mt5/martin/sell?symbol=${currentSymbol}`, 'POST');
         } else {
             const lot = calculateLot();
-            result = await apiCall(`/mt5/order?symbol=${currentSymbol}&order_type=SELL&volume=${lot}&target=${targetAmount}&magic=100001`, 'POST');
+            result = await apiCall(`/mt5/order?symbol=${currentSymbol}&order_type=SELL&volume=${lot}&target=${targetAmount}&magic=${BUYSELL_MAGIC_NUMBER}`, 'POST');
         }
 
         // ★★★ Bridge 모드: 결과 폴링 ★★★
