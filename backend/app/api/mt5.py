@@ -1197,9 +1197,15 @@ async def place_order(
 ):
     """일반 주문 실행 (BUY/SELL) - MetaAPI 버전"""
     import time as time_module
-    from .metaapi_service import metaapi_service, quote_price_cache
+    from .metaapi_service import metaapi_service, quote_price_cache, metaapi_positions_cache
 
     print(f"[MetaAPI Order] 주문 요청: {order_type} {symbol} {volume} lot, target=${target}")
+
+    # ★★★ 중복 주문 방지: 같은 매직넘버 포지션 확인 ★★★
+    existing = [p for p in metaapi_positions_cache if p.get('magic') == magic]
+    if existing:
+        print(f"[MetaAPI Order] 중복 주문 차단: magic={magic}, 기존 포지션={len(existing)}개")
+        return JSONResponse({"success": False, "message": "이미 같은 매직넘버 포지션이 있습니다"})
 
     # ★★★ MetaAPI를 통한 주문 실행 ★★★
     try:

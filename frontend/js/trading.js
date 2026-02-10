@@ -367,6 +367,12 @@ async function placeBuy() {
         return;
     }
 
+    // ★★★ 중복 주문 방지 ★★★
+    if (!isDemo && window.lastLivePosition) {
+        showToast('이미 포지션이 있습니다', 'error');
+        return;
+    }
+
     showToast('Processing...', '');
     try {
         let result;
@@ -384,6 +390,26 @@ async function placeBuy() {
             return;
         }
 
+        // ★★★ 연결 에러 시 포지션 재확인 ★★★
+        const msg = (result?.message || '').toLowerCase();
+        if (!result?.success && (msg.includes('not connected') || msg.includes('region') || msg.includes('timeout'))) {
+            showToast('주문 확인 중...', '');
+            setTimeout(async () => {
+                try {
+                    const posResult = await apiCall('/mt5/positions');
+                    if (posResult?.position || (posResult?.positions && posResult.positions.length > 0)) {
+                        showToast('주문 성공!', 'success');
+                        playSound('buy');
+                    } else {
+                        showToast('주문 실패', 'error');
+                    }
+                } catch (e) {
+                    showToast('주문 확인 실패', 'error');
+                }
+            }, 3000);
+            return;
+        }
+
         showToast(result?.message || 'Error', result?.success ? 'success' : 'error');
         if (result?.success) playSound('buy');
     } catch (e) { showToast('Network error', 'error'); }
@@ -395,6 +421,12 @@ async function placeSell() {
     // Demo 모드면 Demo API 사용
     if (isDemo) {
         placeDemoOrder('SELL');
+        return;
+    }
+
+    // ★★★ 중복 주문 방지 ★★★
+    if (!isDemo && window.lastLivePosition) {
+        showToast('이미 포지션이 있습니다', 'error');
         return;
     }
 
@@ -412,6 +444,26 @@ async function placeSell() {
         if (result?.bridge_mode && result?.order_id) {
             showToast('Order sent to MT5...', '');
             pollOrderResult(result.order_id, 'SELL');
+            return;
+        }
+
+        // ★★★ 연결 에러 시 포지션 재확인 ★★★
+        const msg = (result?.message || '').toLowerCase();
+        if (!result?.success && (msg.includes('not connected') || msg.includes('region') || msg.includes('timeout'))) {
+            showToast('주문 확인 중...', '');
+            setTimeout(async () => {
+                try {
+                    const posResult = await apiCall('/mt5/positions');
+                    if (posResult?.position || (posResult?.positions && posResult.positions.length > 0)) {
+                        showToast('주문 성공!', 'success');
+                        playSound('sell');
+                    } else {
+                        showToast('주문 실패', 'error');
+                    }
+                } catch (e) {
+                    showToast('주문 확인 실패', 'error');
+                }
+            }, 3000);
             return;
         }
 
