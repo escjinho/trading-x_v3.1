@@ -8,6 +8,14 @@ const ChartPanel = {
     lastCandleTime: 0,
     lastCandleData: null,
 
+    // ★ 부드러운 가격 보간을 위한 속성
+    _animTarget: null,
+    _animCurrent: null,
+    _animFrameId: null,
+    _bidTarget: null,
+    _bidCurrent: null,
+    _bidAnimFrameId: null,
+
     /**
      * 차트 패널 초기화
      */
@@ -16,12 +24,14 @@ const ChartPanel = {
         this.setupTimeframeButtons();
         this.lastCandleTime = 0;
         this.lastCandleData = null;
+        setTimeout(() => this.loadCandles(), 500);  // ★ 초기 차트 캔들 로딩 (WS보다 늦게)
         console.log('[ChartPanel] Initialized');
     },
 
     /**
      * 안전한 캔들 업데이트 (모든 타임프레임 지원)
      * 현재 캔들의 close 가격을 실시간으로 업데이트하고, high/low도 조정
+     * ★ 부드러운 보간 적용
      */
     safeUpdateCandle(candleData) {
         if (!candleData || !chart || !candleSeries) {
@@ -42,34 +52,80 @@ const ChartPanel = {
                         low: candleData.low || candleData.open,
                         close: newClose || candleData.open
                     };
+                    this._animCurrent = newClose;
+                    this._animTarget = newClose;
                     console.log('[ChartPanel] lastCandleData initialized from WebSocket');
                 }
                 return false;
             }
 
-            // 마지막 캔들 데이터가 있으면 현재 캔들 업데이트
-            const updatedCandle = {
-                time: this.lastCandleTime,
-                open: this.lastCandleData.open,
-                high: Math.max(this.lastCandleData.high, newClose),
-                low: Math.min(this.lastCandleData.low, newClose),
-                close: newClose
-            };
+            // ★ high/low는 즉시 반영
+            this.lastCandleData.high = Math.max(this.lastCandleData.high, newClose);
+            this.lastCandleData.low = Math.min(this.lastCandleData.low, newClose);
 
-            // ChartTypeManager를 통해 업데이트
-            if (typeof ChartTypeManager !== 'undefined') {
-                ChartTypeManager.updateLastCandle(updatedCandle);
-            } else if (candleSeries) {
-                candleSeries.update(updatedCandle);
+            // ★ close는 부드럽게 보간
+            this._animTarget = newClose;
+            if (this._animCurrent === null) {
+                this._animCurrent = newClose;
             }
 
-            // 마지막 캔들 데이터 갱신
-            this.lastCandleData = updatedCandle;
+            // 애니메이션 시작
+            if (!this._animFrameId) {
+                this._animatePrice();
+            }
+
             return true;
         } catch (e) {
             console.warn('[ChartPanel] Candle update skipped:', e.message);
         }
         return false;
+    },
+
+    /**
+     * ★ 부드러운 가격 보간 애니메이션
+     */
+    _animatePrice() {
+        if (this._animCurrent === null || this._animTarget === null) {
+            this._animFrameId = null;
+            return;
+        }
+
+        const diff = this._animTarget - this._animCurrent;
+        const decimals = typeof getDecimalsForSymbol === 'function' ? getDecimalsForSymbol(chartSymbol) : 2;
+        const threshold = Math.pow(10, -decimals);
+
+        // 차이가 작으면 타겟으로 확정
+        if (Math.abs(diff) < threshold) {
+            this._animCurrent = this._animTarget;
+        } else {
+            // 부드럽게 이동 (30% 씩 접근)
+            this._animCurrent += diff * 0.3;
+        }
+
+        // 캔들 업데이트
+        if (this.lastCandleData && candleSeries) {
+            this.lastCandleData.close = this._animCurrent;
+            const updatedCandle = {
+                time: this.lastCandleTime,
+                open: this.lastCandleData.open,
+                high: this.lastCandleData.high,
+                low: this.lastCandleData.low,
+                close: this._animCurrent
+            };
+
+            if (typeof ChartTypeManager !== 'undefined') {
+                ChartTypeManager.updateLastCandle(updatedCandle);
+            } else {
+                candleSeries.update(updatedCandle);
+            }
+        }
+
+        // 타겟에 도달하지 않았으면 계속 애니메이션
+        if (Math.abs(this._animTarget - this._animCurrent) >= threshold) {
+            this._animFrameId = requestAnimationFrame(() => this._animatePrice());
+        } else {
+            this._animFrameId = null;
+        }
     },
 
     /**
@@ -245,6 +301,16 @@ const ChartPanel = {
      * 캔들 데이터 로드
      */
     async loadCandles() {
+        // ★ 보간 상태 초기화 (종목/타임프레임 변경 시 늘어남 방지)
+        this._animTarget = null;
+        this._animCurrent = null;
+        this._bidTarget = null;
+        this._bidCurrent = null;
+        if (this._animFrameId) cancelAnimationFrame(this._animFrameId);
+        if (this._bidAnimFrameId) cancelAnimationFrame(this._bidAnimFrameId);
+        this._animFrameId = null;
+        this._bidAnimFrameId = null;
+
         try {
             const data = await apiCall(`/mt5/candles/${chartSymbol}?timeframe=${currentTimeframe}&count=1000`);
 
@@ -296,8 +362,58 @@ const ChartPanel = {
         }
     },
 
+    // ★ 인디케이터만 갱신 (차트 리셋 없이 - 번쩍임 방지)
+    async loadIndicatorsOnly() {
+        try {
+            const data = await apiCall(`/mt5/candles/${chartSymbol}?timeframe=${currentTimeframe}&count=100`);
+            if (data && data.indicators) {
+                // 인디케이터 데이터만 업데이트
+                if (data.indicators.bb_upper && bbUpperSeries) bbUpperSeries.setData(data.indicators.bb_upper);
+                if (data.indicators.bb_middle && bbMiddleSeries) bbMiddleSeries.setData(data.indicators.bb_middle);
+                if (data.indicators.bb_lower && bbLowerSeries) bbLowerSeries.setData(data.indicators.bb_lower);
+                if (data.indicators.lwma && lwmaSeries) lwmaSeries.setData(data.indicators.lwma);
+            }
+        } catch (e) {
+            console.error('[ChartPanel] 인디케이터 갱신 실패:', e);
+        }
+    },
+
     // 기준가격 (첫 번째 캔들의 시가 또는 이전 종가)
     referencePrice: null,
+
+    /**
+     * ★ 부드러운 bid/ask 보간 애니메이션
+     */
+    _animateBid(decimals, spread) {
+        if (this._bidCurrent === null || this._bidTarget === null) {
+            this._bidAnimFrameId = null;
+            return;
+        }
+
+        const diff = this._bidTarget - this._bidCurrent;
+        const threshold = Math.pow(10, -decimals);
+
+        // 차이가 작으면 타겟으로 확정
+        if (Math.abs(diff) < threshold) {
+            this._bidCurrent = this._bidTarget;
+        } else {
+            // 부드럽게 이동 (30% 씩 접근)
+            this._bidCurrent += diff * 0.3;
+        }
+
+        // bid/ask 표시 업데이트
+        const bidEl = document.getElementById('chartBid');
+        const askEl = document.getElementById('chartAsk');
+        if (bidEl) bidEl.textContent = this.formatWithComma(this._bidCurrent, decimals);
+        if (askEl) askEl.textContent = this.formatWithComma(this._bidCurrent + spread, decimals);
+
+        // 타겟에 도달하지 않았으면 계속 애니메이션
+        if (Math.abs(this._bidTarget - this._bidCurrent) >= threshold) {
+            this._bidAnimFrameId = requestAnimationFrame(() => this._animateBid(decimals, spread));
+        } else {
+            this._bidAnimFrameId = null;
+        }
+    },
 
     /**
      * 숫자에 천 단위 콤마 추가
@@ -310,14 +426,23 @@ const ChartPanel = {
 
     /**
      * 차트 가격 업데이트 (제로마켓 스타일)
+     * ★ 부드러운 bid/ask 보간 적용
      */
     updateChartPrice(price) {
         const decimals = getDecimalsForSymbol(chartSymbol);
         const spread = chartSymbol === 'BTCUSD' ? 15 :
                       chartSymbol === 'XAUUSD.r' ? 0.50 : 0.00020;
 
-        document.getElementById('chartBid').textContent = this.formatWithComma(price, decimals);
-        document.getElementById('chartAsk').textContent = this.formatWithComma(price + spread, decimals);
+        // ★ bid 보간 타겟 설정
+        this._bidTarget = price;
+        if (this._bidCurrent === null) {
+            this._bidCurrent = price;
+        }
+
+        // 애니메이션 시작
+        if (!this._bidAnimFrameId) {
+            this._animateBid(decimals, spread);
+        }
 
         // 오버레이 요소들
         const overlaySymbol = document.getElementById('overlaySymbol');

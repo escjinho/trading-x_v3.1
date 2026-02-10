@@ -17,6 +17,13 @@ async function loadCandles() {
     }
 }
 
+// ★ 인디케이터만 갱신 (차트 리셋 없이)
+async function loadIndicatorsOnly() {
+    if (typeof ChartPanel !== 'undefined' && ChartPanel.loadIndicatorsOnly) {
+        await ChartPanel.loadIndicatorsOnly();
+    }
+}
+
 function updateChartPrice(price) {
     if (typeof ChartPanel !== 'undefined') {
         ChartPanel.updateChartPrice(price);

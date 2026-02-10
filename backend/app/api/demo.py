@@ -258,10 +258,17 @@ def calculate_demo_margin(symbol: str, volume: float, price: float) -> float:
 def calculate_demo_profit(symbol: str, entry_price: float, trade_type: str, volume: float):
     """Bridge 가격 기반 데모 손익 계산. Returns: (current_price, profit)"""
     current_price = 0
-    bridge_prices = get_bridge_prices()
-    if bridge_prices and symbol in bridge_prices:
-        price_data = bridge_prices[symbol]
+    # ★ MetaAPI 실시간 가격 우선 사용
+    from .metaapi_service import quote_price_cache
+    if quote_price_cache and symbol in quote_price_cache:
+        price_data = quote_price_cache[symbol]
         current_price = price_data.get('bid', 0) if trade_type == "BUY" else price_data.get('ask', 0)
+    # fallback: bridge cache
+    if current_price <= 0:
+        bridge_prices = get_bridge_prices()
+        if bridge_prices and symbol in bridge_prices:
+            price_data = bridge_prices[symbol]
+            current_price = price_data.get('bid', 0) if trade_type == "BUY" else price_data.get('ask', 0)
 
     if not current_price or current_price <= 0:
         return entry_price, 0.0
@@ -793,13 +800,20 @@ async def place_demo_order(
             print(f"[DEMO ORDER] ⚠️ Tick FAILED for {symbol}, using dummy price")
             entry_price = 50000.0 if "BTC" in symbol else 1.0
     else:
-        print("[DEMO ORDER] ⚠️ MT5 not available, using bridge cache")
-        # MT5 없음 - bridge cache에서 가격 가져오기
-        bridge_prices = get_bridge_prices()
-        if bridge_prices and symbol in bridge_prices:
-            price_data = bridge_prices[symbol]
+        print("[DEMO ORDER] ⚠️ MT5 not available, using MetaAPI cache")
+        # ★ MetaAPI 실시간 가격 우선 사용
+        from .metaapi_service import quote_price_cache
+        if quote_price_cache and symbol in quote_price_cache:
+            price_data = quote_price_cache[symbol]
             entry_price = price_data.get('ask', 0) if order_type.upper() == "BUY" else price_data.get('bid', 0)
-            print(f"[DEMO ORDER] 📊 Using bridge cache price: {entry_price}")
+            print(f"[DEMO ORDER] 📊 Using MetaAPI price: {entry_price}")
+        # fallback: bridge cache
+        if entry_price <= 0:
+            bridge_prices = get_bridge_prices()
+            if bridge_prices and symbol in bridge_prices:
+                price_data = bridge_prices[symbol]
+                entry_price = price_data.get('ask', 0) if order_type.upper() == "BUY" else price_data.get('bid', 0)
+                print(f"[DEMO ORDER] 📊 Using bridge cache price: {entry_price}")
         
         # bridge cache도 없으면 → Binance API fallback
         if entry_price <= 0:
@@ -1727,6 +1741,7 @@ async def demo_websocket_endpoint(websocket: WebSocket):
 
     while True:
         try:
+            realtime = None  # ★ 추가
             # MT5 사용 가능 여부 체크
             mt5_connected = False
             if MT5_AVAILABLE and mt5 is not None:
@@ -1760,13 +1775,13 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                     neutral_count = indicators["neutral"]
                     base_score = indicators["score"]
             else:
-                # MT5 없음 - Bridge 캐시 기반 인디케이터 계산 (5단계 전체 범위)
-                indicators = calculate_indicators_from_bridge("BTCUSD")
-                buy_count = indicators["buy"]
-                sell_count = indicators["sell"]
-                neutral_count = indicators["neutral"]
-                base_score = indicators["score"]
-                print(f"[DEMO WS] 📊 Bridge Indicators - Sell: {sell_count}, Neutral: {neutral_count}, Buy: {buy_count}, Score: {base_score:.1f}")
+                from .metaapi_service import get_realtime_data
+                realtime = get_realtime_data()
+                realtime_indicators = realtime.get("indicators", {})
+                buy_count = realtime_indicators.get("buy", 50)
+                sell_count = realtime_indicators.get("sell", 30)
+                neutral_count = realtime_indicators.get("neutral", 20)
+                base_score = realtime_indicators.get("score", 50.0)
 
             # 모든 심볼 가격 정보
             all_prices = {}
@@ -1794,30 +1809,20 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                                 "close": float(latest["close"])
                             }
             else:
-                # MT5 없음 - 브릿지 캐시에서 가격 가져오기
-                all_prices = get_bridge_prices()
+                if realtime is None:
+                    from .metaapi_service import get_realtime_data
+                    realtime = get_realtime_data()
+                all_prices = realtime.get("prices", {})
+                all_candles = realtime.get("candles", {})
+
+                # MetaAPI도 비어있으면 브릿지 캐시 fallback
+                if not all_prices:
+                    all_prices = get_bridge_prices()
 
                 # 브릿지 캐시도 비어있으면 → Binance API fallback
                 if not all_prices:
                     all_prices = await fetch_external_prices()
                     print("[DEMO WS] 📡 Using Binance API fallback for prices")
-
-                # 브릿지 캐시에서 캔들 데이터 가져오기 (M5 타임프레임)
-                for symbol in symbols_list:
-                    cached_candles = get_bridge_candles(symbol, "M5")
-                    if cached_candles and len(cached_candles) > 0:
-                        latest = cached_candles[-1]
-                        # ★ 실시간 가격으로 close/high/low 업데이트 (mt5.py와 동일)
-                        current_price = all_prices.get(symbol, {}).get("bid", latest.get("close", 0))
-                        candle_high = max(latest.get("high", 0), current_price)
-                        candle_low = min(latest.get("low", float('inf')), current_price) if latest.get("low", 0) > 0 else current_price
-                        all_candles[symbol] = {
-                            "time": latest.get("time", int(time.time())),
-                            "open": latest.get("open", 0),
-                            "high": candle_high,
-                            "low": candle_low,
-                            "close": current_price
-                        }
 
                 # 캔들도 비어있으면 → 현재 가격으로 합성 캔들 생성
                 if not all_candles and all_prices:

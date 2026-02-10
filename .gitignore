@@ -210,3 +210,6 @@ __marimo__/
 bridge_config.py
 mt5_bridge.log
 *.log
+.metaapi/
+test_*.py
+backend/candle_cache.json

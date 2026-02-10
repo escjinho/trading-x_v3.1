@@ -82,8 +82,9 @@
         .pl-labels { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 11px; font-weight: bold; }
         .pl-bar-container { position: relative; height: 12px; background: var(--bg-tertiary); border-radius: 6px; overflow: visible; }
         .pl-bar-center { position: absolute; top: 0; left: 50%; width: 2px; height: 100%; background: var(--text-muted); transform: translateX(-50%); z-index: 5; }
-        .pl-bar-fill { position: absolute; top: 0; height: 100%; transition: all 0.03s linear; }
-        .pl-diamond { position: absolute; top: 50%; width: 14px; height: 14px; transform: translate(-50%, -50%) rotate(45deg); border-radius: 2px; z-index: 10; transition: all 0.03s linear; }
+        .pl-bar-fill { position: absolute; top: 0; height: 100%; transition: background 0.2s ease; }
+        .pl-diamond { position: absolute; top: 50%; width: 14px; height: 14px; transform: translate(-50%, -50%) rotate(45deg); border-radius: 2px; z-index: 10; transition: background 0.2s ease, box-shadow 0.2s ease; }
+        @keyframes plPulse { 0% { transform: translate(-50%, -50%) rotate(45deg) scale(1); } 50% { transform: translate(-50%, -50%) rotate(45deg) scale(1.3); } 100% { transform: translate(-50%, -50%) rotate(45deg) scale(1); } }
         .pl-bottom { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
         .pl-percent { font-size: 16px; font-weight: bold; }
         

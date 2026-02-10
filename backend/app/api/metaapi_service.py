@@ -12,6 +12,12 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 from dotenv import load_dotenv
 
+import json
+from pathlib import Path
+
+# ★ 캔들 캐시 파일 경로
+CANDLE_CACHE_FILE = Path("/var/www/trading-x/backend/candle_cache.json")
+
 # .env 로드
 load_dotenv('/var/www/trading-x/.env')
 
@@ -268,6 +274,155 @@ def calculate_indicators_realtime(symbol: str = "BTCUSD") -> Dict:
     return calculate_indicators_from_bridge(symbol)
 
 
+async def initialize_candles_from_api(account, symbol: str, timeframe: str = "M1", count: int = 100) -> bool:
+    """
+    MetaAPI에서 실제 과거 캔들 로딩
+    account.get_historical_candles() 사용
+    """
+    global quote_candle_cache
+
+    # 타임프레임 매핑
+    tf_map = {
+        "M1": "1m", "M5": "5m", "M15": "15m", "M30": "30m",
+        "H1": "1h", "H4": "4h", "D1": "1d", "W1": "1w"
+    }
+    api_timeframe = tf_map.get(timeframe, "1m")
+
+    try:
+        # 현재 시간으로부터 과거 캔들 요청
+        end_time = datetime.now()
+
+        print(f"[MetaAPI] {symbol}/{timeframe} 히스토리 캔들 요청 중... (limit={count})")
+
+        # MetaAPI 히스토리 캔들 API 호출
+        candles_data = await account.get_historical_candles(
+            symbol=symbol,
+            timeframe=api_timeframe,
+            start_time=end_time,  # 이 시간 이전의 캔들을 가져옴
+            limit=count
+        )
+
+        if not candles_data or len(candles_data) == 0:
+            print(f"[MetaAPI] {symbol} 히스토리 캔들 없음")
+            return False
+
+        # 캔들 변환 및 저장
+        candles = []
+        for c in candles_data:
+            # datetime을 timestamp로 변환
+            candle_time = c.get('time')
+            if isinstance(candle_time, datetime):
+                candle_time = int(candle_time.timestamp())
+            elif isinstance(candle_time, str):
+                candle_time = int(datetime.fromisoformat(candle_time.replace('Z', '+00:00')).timestamp())
+
+            candles.append({
+                'time': candle_time,
+                'open': c.get('open', 0),
+                'high': c.get('high', 0),
+                'low': c.get('low', 0),
+                'close': c.get('close', 0),
+                'volume': c.get('tickVolume', 0) or c.get('volume', 0)
+            })
+
+        # 시간순 정렬 (오래된 것부터)
+        candles.sort(key=lambda x: x['time'])
+
+        if symbol not in quote_candle_cache:
+            quote_candle_cache[symbol] = {}
+
+        quote_candle_cache[symbol][timeframe] = candles
+        print(f"[MetaAPI] ✅ {symbol}/{timeframe} 히스토리 캔들 {len(candles)}개 로딩 완료")
+
+        # 첫 5개 캔들 출력 (검증용)
+        if symbol == "BTCUSD" and len(candles) >= 5:
+            print(f"[MetaAPI] {symbol} 캔들 첫 5개:")
+            for i, c in enumerate(candles[:5]):
+                print(f"  [{i}] time={c['time']} O={c['open']} H={c['high']} L={c['low']} C={c['close']}")
+
+        return True
+
+    except Exception as e:
+        print(f"[MetaAPI] ❌ {symbol} 히스토리 캔들 로딩 실패: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+def initialize_candles_synthetic(symbol: str, current_price: float, count: int = 100):
+    """
+    [FALLBACK] 합성 캔들 생성 (현재가 기준으로 과거 캔들 100개 생성)
+    MetaAPI 히스토리 API 실패 시에만 사용
+    """
+    global quote_candle_cache
+
+    if current_price <= 0:
+        return
+
+    current_ts = int(time.time())
+    candle_time = current_ts - (current_ts % 60)  # 1분 단위 정렬
+
+    if symbol not in quote_candle_cache:
+        quote_candle_cache[symbol] = {"M1": []}
+
+    # 이미 캔들이 있으면 스킵
+    if quote_candle_cache[symbol].get("M1") and len(quote_candle_cache[symbol]["M1"]) >= count:
+        return
+
+    # 심볼별 변동폭 설정 (대략적인 1분 변동폭)
+    volatility = {
+        "BTCUSD": 50.0,      # $50
+        "ETHUSD": 5.0,       # $5
+        "XAUUSD.r": 0.5,     # $0.5
+        "EURUSD.r": 0.0003,  # 3 pips
+        "USDJPY.r": 0.03,    # 3 pips
+        "GBPUSD.r": 0.0003,  # 3 pips
+        "AUDUSD.r": 0.0002,  # 2 pips
+        "USDCAD.r": 0.0002,  # 2 pips
+        "US100.": 5.0,       # 5 points
+    }
+    vol = volatility.get(symbol, current_price * 0.0005)  # 기본 0.05%
+
+    candles = []
+    price = current_price
+
+    # 과거 캔들 생성 (오래된 것부터)
+    for i in range(count, 0, -1):
+        candle_ts = candle_time - (i * 60)  # 1분 간격
+
+        # 랜덤 변동 (랜덤워크)
+        change = random.uniform(-vol, vol)
+        open_price = price
+        close_price = price + change
+
+        # high/low 계산
+        if change >= 0:
+            high_price = close_price + random.uniform(0, vol * 0.3)
+            low_price = open_price - random.uniform(0, vol * 0.3)
+        else:
+            high_price = open_price + random.uniform(0, vol * 0.3)
+            low_price = close_price - random.uniform(0, vol * 0.3)
+
+        candles.append({
+            'time': candle_ts,
+            'open': round(open_price, 5),
+            'high': round(high_price, 5),
+            'low': round(low_price, 5),
+            'close': round(close_price, 5),
+            'volume': random.randint(100, 1000)
+        })
+
+        price = close_price  # 다음 캔들의 시작가
+
+    quote_candle_cache[symbol]["M1"] = candles
+    print(f"[MetaAPI] ⚠️ {symbol} 합성 캔들 {len(candles)}개 생성 (Fallback, 가격: {current_price:.2f})")
+
+
+def initialize_candles(symbol: str, current_price: float, count: int = 100):
+    """호환성 래퍼 - 동기 호출 시 합성 캔들 사용"""
+    initialize_candles_synthetic(symbol, current_price, count)
+
+
 def update_candle_realtime(symbol: str, current_price: float):
     """실시간 캔들 업데이트"""
     global quote_candle_cache
@@ -337,9 +492,12 @@ class QuotePriceListener:
         }
         quote_last_update = time.time()
 
-        # 2. 캔들 실시간 업데이트
+        # 2. 캔들 실시간 업데이트 (모든 심볼)
         if bid and bid > 0:
             update_candle_realtime(symbol, bid)
+            # 디버그: XAUUSD 틱 수신 확인
+            if symbol == "XAUUSD.r":
+                print(f"[MetaAPI Tick] {symbol} bid={bid:.2f} ask={ask:.2f}")
 
         # 3. 인디케이터 기준값 재계산 (BTCUSD 기준) - 새 틱 도착 시 리셋
         if symbol == "BTCUSD":
@@ -495,6 +653,10 @@ class QuotePriceListener:
     async def on_symbol_prices_updated(self, instance_index, prices, equity, margin, free_margin, margin_level, account_currency_exchange_rate):
         pass
     async def on_health_status(self, instance_index, status):
+        pass
+    async def on_history_orders_synchronized(self, instance_index, synchronization_id):
+        pass
+    async def on_deals_synchronized(self, instance_index, synchronization_id):
         pass
 
 
@@ -914,8 +1076,8 @@ class MetaAPIService:
                             'close': current_price,
                             'volume': 0
                         })
-                        # 최대 100개 유지
-                        if len(candles) > 100:
+                        # 최대 1500개 유지
+                        if len(candles) > 1500:
                             candles.pop(0)
                 else:
                     # 캐시 초기화
@@ -954,6 +1116,12 @@ class MetaAPIService:
                     if self.trade_connection:
                         await self.get_all_prices()
                         quote_connected = True
+
+                        # ★ 폴링 백업: 모든 심볼 캔들도 업데이트
+                        for symbol, price_data in quote_price_cache.items():
+                            bid = price_data.get('bid', 0)
+                            if bid and bid > 0:
+                                update_candle_realtime(symbol, bid)
                     else:
                         # 연결 시도
                         if await self.connect_trade_account():
@@ -1230,7 +1398,7 @@ class MetaAPIService:
             return {'success': False, 'error': str(e)}
 
     async def close_position(self, position_id: str) -> Dict:
-        """포지션 청산"""
+        """포지션 청산 + MT5 실제 체결 손익 조회"""
         if not self.trade_connection:
             if not await self.connect_trade_account():
                 return {'success': False, 'error': 'Trade 계정 연결 실패'}
@@ -1239,10 +1407,39 @@ class MetaAPIService:
             result = await self.trade_connection.close_position(position_id)
 
             if result.get('stringCode') == 'TRADE_RETCODE_DONE':
+                # ★★★ MT5 실제 체결 손익 조회 ★★★
+                actual_profit = None
+                actual_commission = 0
+                actual_swap = 0
+                try:
+                    import asyncio
+                    await asyncio.sleep(0.5)  # MT5 처리 대기
+                    deals = await self.get_deals_by_position(position_id)
+                    if deals:
+                        # 청산 딜(entryType=DEAL_ENTRY_OUT)에서 실제 손익 추출
+                        for deal in deals:
+                            entry_type = deal.get('entryType', '')
+                            if 'OUT' in str(entry_type).upper() or deal.get('profit', 0) != 0:
+                                actual_profit = deal.get('profit', 0)
+                                actual_commission = deal.get('commission', 0)
+                                actual_swap = deal.get('swap', 0)
+                                break
+                        # OUT 딜이 없으면 전체 합산
+                        if actual_profit is None:
+                            actual_profit = sum(d.get('profit', 0) for d in deals)
+                            actual_commission = sum(d.get('commission', 0) for d in deals)
+                            actual_swap = sum(d.get('swap', 0) for d in deals)
+                    print(f"[MetaAPI] ★ 실제 체결 손익: profit={actual_profit}, commission={actual_commission}, swap={actual_swap}")
+                except Exception as deal_err:
+                    print(f"[MetaAPI] ⚠️ 체결 손익 조회 실패: {deal_err}")
+
                 return {
                     'success': True,
                     'positionId': position_id,
-                    'message': '청산 성공'
+                    'message': '청산 성공',
+                    'actual_profit': actual_profit,
+                    'actual_commission': actual_commission,
+                    'actual_swap': actual_swap
                 }
             else:
                 return {
@@ -1316,14 +1513,15 @@ class MetaAPIService:
         start_time: datetime = None,
         end_time: datetime = None
     ) -> List[Dict]:
-        """거래 히스토리 조회"""
+        """거래 히스토리 조회 (최신순 정렬)"""
         if not self.trade_connection:
             if not await self.connect_trade_account():
                 return []
 
         try:
+            # 기본값: 7일 (MetaAPI 500개 제한 고려)
             if not start_time:
-                start_time = datetime.now() - timedelta(days=30)
+                start_time = datetime.now() - timedelta(days=7)
             if not end_time:
                 end_time = datetime.now() + timedelta(minutes=1)
 
@@ -1347,6 +1545,9 @@ class MetaAPIService:
                     'entryType': deal.get('entryType'),
                     'magic': deal.get('magic', 0)
                 })
+
+            # ★ 시간 역순 정렬 (최신 먼저)
+            history.sort(key=lambda x: x.get('time') or datetime.min, reverse=True)
 
             return history
 
@@ -1545,8 +1746,22 @@ def get_realtime_data() -> Dict:
     """
     global quote_price_cache, quote_candle_cache, indicator_cache
 
-    # 모든 심볼의 시세
-    all_prices = quote_price_cache.copy()
+    # 모든 심볼의 시세 (캔들 close로 보완)
+    all_prices = {}
+    for symbol in SYMBOLS:
+        price_data = quote_price_cache.get(symbol, {})
+        bid = price_data.get("bid")
+        ask = price_data.get("ask")
+
+        # 시세가 없으면 캔들 close를 사용
+        if not bid or bid <= 0:
+            candles = quote_candle_cache.get(symbol, {}).get("M1", [])
+            if candles:
+                bid = candles[-1].get("close", 0)
+                ask = bid  # 스프레드 없음
+
+        if bid and bid > 0:
+            all_prices[symbol] = {"bid": bid, "ask": ask or bid}
 
     # 모든 심볼의 최신 캔들
     all_candles = {}
@@ -1576,6 +1791,106 @@ def get_realtime_data() -> Dict:
 
 
 # ============================================================
+# 캔들 캐시 파일 저장/로드
+# ============================================================
+def save_candle_cache():
+    """캔들 캐시를 JSON 파일로 저장 (atomic write)"""
+    global quote_candle_cache
+    try:
+        tmp_file = CANDLE_CACHE_FILE.with_suffix('.tmp')
+        with open(tmp_file, 'w') as f:
+            json.dump(quote_candle_cache, f)
+        tmp_file.rename(CANDLE_CACHE_FILE)
+        total = sum(len(tfs) for tfs in quote_candle_cache.values())
+        print(f"[CandleCache] ✅ 저장 완료: {total}개 TF ({CANDLE_CACHE_FILE.stat().st_size / 1024:.0f}KB)")
+    except Exception as e:
+        print(f"[CandleCache] ❌ 저장 실패: {e}")
+
+def load_candle_cache() -> bool:
+    """캔들 캐시 파일에서 로드"""
+    global quote_candle_cache
+    try:
+        if not CANDLE_CACHE_FILE.exists():
+            print("[CandleCache] 캐시 파일 없음 - API에서 로딩 필요")
+            return False
+        
+        file_age = time.time() - CANDLE_CACHE_FILE.stat().st_mtime
+        with open(CANDLE_CACHE_FILE, 'r') as f:
+            data = json.load(f)
+        
+        if not data or not isinstance(data, dict):
+            print("[CandleCache] 캐시 파일 비정상 - 무시")
+            return False
+        
+        quote_candle_cache = data
+        total = sum(len(tfs) for tfs in quote_candle_cache.values())
+        candle_total = sum(len(candles) for tfs in quote_candle_cache.values() for candles in tfs.values())
+        print(f"[CandleCache] ✅ 파일에서 로드 완료: {len(data)}심볼, {total}TF, {candle_total}캔들 (파일 나이: {file_age:.0f}초)")
+        return True
+    except Exception as e:
+        print(f"[CandleCache] ❌ 로드 실패: {e}")
+        return False
+
+async def _auto_save_candle_cache():
+    """5분마다 캔들 캐시 자동 저장"""
+    while True:
+        await asyncio.sleep(300)  # 5분
+        if quote_candle_cache:
+            save_candle_cache()
+
+# ============================================================
+# 백그라운드 캔들 로딩 함수 (병렬화 + 캐시 저장)
+# ============================================================
+async def _load_all_candles_background():
+    """
+    모든 타임프레임 캔들을 백그라운드에서 로딩
+    3개 심볼 동시 병렬 처리 (Rate Limit 안전)
+    """
+    timeframes = {
+        "1m": "M1", "5m": "M5", "15m": "M15", "30m": "M30",
+        "1h": "H1", "4h": "H4", "1d": "D1", "1w": "W1"
+    }
+
+    print(f"[MetaAPI Background] 히스토리 캔들 로딩 시작... ({len(SYMBOLS)}심볼 x {len(timeframes)}TF)")
+
+    semaphore = asyncio.Semaphore(3)  # ★ 동시 3개 심볼 제한
+    total_loaded = 0
+
+    async def load_symbol(symbol):
+        nonlocal total_loaded
+        for meta_tf, cache_tf in timeframes.items():
+            async with semaphore:
+                try:
+                    success = await initialize_candles_from_api(
+                        metaapi_service.trade_account,
+                        symbol,
+                        timeframe=cache_tf,
+                        count=1000
+                    )
+                    if success:
+                        total_loaded += 1
+                    await asyncio.sleep(0.5)  # Rate limit 방지
+                except Exception as e:
+                    print(f"[MetaAPI Background] ⚠️ {symbol}/{cache_tf} 로딩 실패: {e}")
+
+    # ★ 모든 심볼 병렬 실행
+    tasks = [load_symbol(symbol) for symbol in SYMBOLS]
+    await asyncio.gather(*tasks)
+
+    print(f"[MetaAPI Background] 캔들 로딩 완료: {total_loaded}개 TF 로딩됨")
+
+    # 각 심볼별 캔들 개수 로그 (M1 기준)
+    candle_counts = []
+    for symbol in SYMBOLS:
+        count = len(quote_candle_cache.get(symbol, {}).get("M1", []))
+        candle_counts.append(f"{symbol}:{count}")
+    print(f"[MetaAPI Background] M1 캔들: {', '.join(candle_counts)}")
+
+    # ★ 로딩 완료 후 캐시 파일 저장
+    save_candle_cache()
+
+
+# ============================================================
 # 서버 시작 시 호출할 초기화 함수
 # ============================================================
 async def startup_metaapi():
@@ -1596,21 +1911,31 @@ async def startup_metaapi():
             print("[MetaAPI Startup] Trade 계정 연결 실패")
             return False
 
+        # 2.5. Quote 스트리밍 연결 (실시간 틱 수신용)
+        try:
+            if await metaapi_service.connect_quote_account():
+                print("[MetaAPI Startup] Quote 스트리밍 연결 완료")
+            else:
+                print("[MetaAPI Startup] ⚠️ Quote 스트리밍 연결 실패 (폴링으로 대체)")
+        except Exception as e:
+            print(f"[MetaAPI Startup] ⚠️ Quote 스트리밍 오류: {e}")
+
         # 3. 초기 시세 조회
         prices = await metaapi_service.get_all_prices()
         print(f"[MetaAPI Startup] 초기 시세 조회 완료: {len(prices)}개 심볼")
 
-        # 4. 초기 캔들 조회 (인디케이터용)
-        await metaapi_service.update_all_candles("M1")
-        # 각 심볼별 캔들 개수 로그
-        candle_counts = []
-        for symbol in SYMBOLS:
-            count = len(quote_candle_cache.get(symbol, {}).get("M1", []))
-            candle_counts.append(f"{symbol}:{count}")
-        print(f"[MetaAPI Startup] 초기 캔들 조회 완료: {', '.join(candle_counts)}")
+        # 4. 캔들 캐시 파일에서 즉시 로드 → 백그라운드에서 최신화
+        cache_loaded = load_candle_cache()
+        asyncio.create_task(_load_all_candles_background())
+        
+        # 4.5. 캔들 캐시 자동 저장 루프 시작 (5분마다)
+        asyncio.create_task(_auto_save_candle_cache())
+        
+        if cache_loaded:
+            print("[MetaAPI Startup] ★ 캐시에서 캔들 즉시 로드 완료! 백그라운드에서 최신화 중...")
 
-        # 5. 시세 업데이트 루프 시작
-        await metaapi_service.start_price_update_loop(interval=2.0)
+        # 5. 시세 업데이트 루프 시작 (10초 간격 - Rate Limit 방지)
+        await metaapi_service.start_price_update_loop(interval=10.0)
 
         # 6. 포지션 동기화 루프 시작 (30초 주기)
         await metaapi_service.start_position_sync_loop(interval=30.0)

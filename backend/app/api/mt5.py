@@ -20,6 +20,8 @@ import json
 import httpx
 import random
 from datetime import datetime, timedelta
+from dateutil import parser as dateutil_parser
+import pytz
 
 from ..database import get_db
 from ..utils.crypto import encrypt, decrypt
@@ -287,8 +289,70 @@ def get_bridge_prices():
 
 def get_bridge_candles(symbol: str, timeframe: str = "M5"):
     """브릿지 캐시에서 캔들 데이터 조회 (타임프레임별)"""
+    # 1. 브릿지 캐시 확인
     symbol_data = bridge_cache["candles"].get(symbol, {})
-    return symbol_data.get(timeframe, [])
+    candles = symbol_data.get(timeframe, [])
+    if candles:
+        return candles
+
+    # 2. MetaAPI 캔들 캐시 확인 (fallback)
+    try:
+        from .metaapi_service import quote_candle_cache
+        # 먼저 요청된 타임프레임 확인
+        metaapi_candles = quote_candle_cache.get(symbol, {}).get(timeframe, [])
+        if metaapi_candles:
+            return metaapi_candles
+
+        # 요청 타임프레임이 없으면 M1 fallback + 합성 (MetaAPI는 M1만 저장)
+        if timeframe != "M1":
+            m1_candles = quote_candle_cache.get(symbol, {}).get("M1", [])
+            if m1_candles:
+                print(f"[Candles] {symbol}/{timeframe} → M1 fallback ({len(m1_candles)}개)")
+                # ★ 상위 타임프레임으로 합성
+                return aggregate_candles(m1_candles, timeframe)
+    except ImportError:
+        pass
+
+    return []
+
+def aggregate_candles(m1_candles: list, target_tf: str) -> list:
+    """M1 캔들을 상위 타임프레임으로 합성"""
+    tf_minutes = {
+        "M1": 1, "M5": 5, "M15": 15, "M30": 30,
+        "H1": 60, "H4": 240, "D1": 1440, "W1": 10080
+    }
+
+    minutes = tf_minutes.get(target_tf, 1)
+    if minutes <= 1 or not m1_candles:
+        return m1_candles
+
+    # 시간 기준으로 그룹화
+    aggregated = {}
+    for candle in m1_candles:
+        candle_time = candle.get("time", 0)
+        # 타임프레임 단위로 정렬 (분 단위 * 60초)
+        group_time = (candle_time // (minutes * 60)) * (minutes * 60)
+
+        if group_time not in aggregated:
+            aggregated[group_time] = {
+                "time": group_time,
+                "open": candle.get("open", 0),
+                "high": candle.get("high", 0),
+                "low": candle.get("low", 0),
+                "close": candle.get("close", 0),
+                "volume": candle.get("volume", 0)
+            }
+        else:
+            agg = aggregated[group_time]
+            agg["high"] = max(agg["high"], candle.get("high", 0))
+            agg["low"] = min(agg["low"], candle.get("low", 0))
+            agg["close"] = candle.get("close", 0)  # 마지막 close
+            agg["volume"] = agg.get("volume", 0) + candle.get("volume", 0)
+
+    # 시간순 정렬
+    result = sorted(aggregated.values(), key=lambda x: x["time"])
+    print(f"[Candles] M1 {len(m1_candles)}개 → {target_tf} {len(result)}개 합성")
+    return result
 
 def mt5_initialize_safe() -> bool:
     """MT5 초기화 래퍼 함수 (비활성화 체크 포함)"""
@@ -617,12 +681,21 @@ async def get_candles(
     else:
         # MT5 없음 - 브릿지 캐시에서 가져오기 (타임프레임별)
         cached_candles = get_bridge_candles(symbol, timeframe)
+        # ★ quote_candle_cache fallback (M1)
+        if not cached_candles:
+            from .metaapi_service import quote_candle_cache
+            cached_candles = quote_candle_cache.get(symbol, {}).get(timeframe, [])
+            # ★ 해당 타임프레임 없으면 M1에서 합성
+            if not cached_candles:
+                cached_candles = quote_candle_cache.get(symbol, {}).get("M1", [])
+                if cached_candles and timeframe != "M1":
+                    cached_candles = aggregate_candles(cached_candles, timeframe)
         if cached_candles:
             candles = cached_candles[-count:] if len(cached_candles) > count else cached_candles
             closes = [c['close'] for c in candles]
             highs = [c['high'] for c in candles]
             lows = [c['low'] for c in candles]
-            print(f"[Candles] {symbol}/{timeframe} - 브릿지 캐시에서 {len(candles)}개 로드")
+            print(f"[Candles] {symbol}/{timeframe} - 캐시에서 {len(candles)}개 로드")
 
     if not candles:
         # MT5도 없고 브릿지 캐시도 없으면 → Binance API fallback
@@ -1238,18 +1311,38 @@ async def close_position(
         if position_id:
             result = await metaapi_service.close_position(position_id)
             if result.get('success'):
-                # user_live_cache에서 포지션 제거
+                # ★★★ MT5 실제 체결 손익 우선 사용 ★★★
+                actual_profit = result.get('actual_profit')
+                actual_commission = result.get('actual_commission', 0)
+                actual_swap = result.get('actual_swap', 0)
+
+                if actual_profit is not None:
+                    profit = round(actual_profit + actual_commission + actual_swap, 2)
+                    print(f"[MetaAPI Close] ★ MT5 실제 손익: profit={actual_profit}, comm={actual_commission}, swap={actual_swap} → 총={profit}")
+                else:
+                    profit = 0
+                    print(f"[MetaAPI Close] ⚠️ actual_profit 없음")
+
+                # user_live_cache에서 포지션 제거 + today_pl 업데이트
                 if current_user.id in user_live_cache:
                     positions = user_live_cache[current_user.id].get("positions", [])
                     user_live_cache[current_user.id]["positions"] = [
                         p for p in positions if p.get("id") != position_id
                     ]
-                print(f"[MetaAPI Close] ✅ 청산 성공: positionId={position_id}")
+                    # ★★★ today_pl 업데이트 ★★★
+                    if actual_profit is not None:
+                        old_today_pl = user_live_cache[current_user.id].get("today_pl", 0)
+                        user_live_cache[current_user.id]["today_pl"] = round(old_today_pl + profit, 2)
+                        print(f"[MetaAPI Close] ★ today_pl 업데이트: ${old_today_pl:.2f} + ${profit:.2f} = ${user_live_cache[current_user.id]['today_pl']:.2f}")
+
+                print(f"[MetaAPI Close] ✅ 청산 성공: positionId={position_id}, P/L=${profit:.2f}")
                 return JSONResponse({
                     "success": True,
-                    "message": "청산 성공!",
+                    "message": f"청산 성공! P/L: ${profit:,.2f}",
+                    "profit": profit,
                     "positionId": position_id,
-                    "metaapi_mode": True
+                    "metaapi_mode": True,
+                    "actual": actual_profit is not None
                 })
             else:
                 # ★★★ 에러 시 캐시 정리 (이미 청산된 포지션일 수 있음) ★★★
@@ -1298,7 +1391,20 @@ async def close_position(
         result = await metaapi_service.close_position(pos_id)
 
         if result.get('success'):
-            profit = pos.get('profit', 0)
+            # ★★★ MT5 실제 체결 손익 우선 사용 ★★★
+            actual_profit = result.get('actual_profit')
+            actual_commission = result.get('actual_commission', 0)
+            actual_swap = result.get('actual_swap', 0)
+            
+            if actual_profit is not None:
+                # MT5 실제 손익 (commission + swap 포함)
+                profit = round(actual_profit + actual_commission + actual_swap, 2)
+                print(f"[MetaAPI Close] ★ MT5 실제 손익: profit={actual_profit}, comm={actual_commission}, swap={actual_swap} → 총={profit}")
+            else:
+                # fallback: 캐시된 손익
+                profit = pos.get('profit', 0)
+                print(f"[MetaAPI Close] ⚠️ 캐시 손익 사용: {profit}")
+            
             # user_live_cache에서 포지션 제거
             if current_user.id in user_live_cache:
                 cache_positions = user_live_cache[current_user.id].get("positions", [])
@@ -1311,7 +1417,8 @@ async def close_position(
                 "message": f"청산 성공! P/L: ${profit:,.2f}",
                 "profit": profit,
                 "positionId": pos_id,
-                "metaapi_mode": True
+                "metaapi_mode": True,
+                "actual": actual_profit is not None
             })
         else:
             # ★★★ 에러 시 캐시 정리 ★★★
@@ -1717,23 +1824,65 @@ async def close_by_profit(
 
 # ========== 거래 내역 ==========
 @router.get("/history")
-async def get_history(current_user: User = Depends(get_current_user)):
+async def get_history(
+    period: str = Query("week", description="조회 기간: today, week, month, all"),
+    current_user: User = Depends(get_current_user)
+):
     """거래 내역 조회 - MetaAPI, user_live_cache 또는 MT5 직접 연결"""
     user_id = current_user.id
+
+    # ★★★ period에 따른 조회 기간 설정 ★★★
+    now = datetime.now()
+    if period == "today":
+        start_time = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    elif period == "week":
+        start_time = now - timedelta(days=7)
+    elif period == "month":
+        start_time = now - timedelta(days=30)
+    else:  # all
+        start_time = now - timedelta(days=90)
 
     # ★★★ 1순위: MetaAPI에서 히스토리 조회 ★★★
     from .metaapi_service import metaapi_service, is_metaapi_connected
 
     if is_metaapi_connected():
         try:
-            metaapi_history = await metaapi_service.get_history(days=30)
+            metaapi_history = await metaapi_service.get_history(start_time=start_time)
             if metaapi_history:
                 # 포맷 맞추기
                 formatted_history = []
+                kst = pytz.timezone('Asia/Seoul')
                 for h in metaapi_history:
+                    # ★★★ entryType IN 필터 (청산 거래만) ★★★
+                    entry_type = h.get("entryType", "")
+                    if entry_type == "DEAL_ENTRY_IN":
+                        continue  # 진입 거래는 스킵, 청산 거래만 표시
+
+                    # ★★★ 시간 변환 + KST 변환 ★★★
                     trade_time = h.get("time", "")
-                    if isinstance(trade_time, (int, float)):
-                        trade_time = datetime.fromtimestamp(trade_time).strftime("%m/%d %H:%M")
+                    try:
+                        if isinstance(trade_time, datetime):
+                            # datetime 객체인 경우
+                            dt = trade_time
+                            if dt.tzinfo is None:
+                                dt = pytz.utc.localize(dt)
+                            dt_kst = dt.astimezone(kst)
+                            trade_time = dt_kst.strftime("%m/%d %H:%M")
+                        elif isinstance(trade_time, str) and trade_time:
+                            # ISO 문자열인 경우
+                            dt = dateutil_parser.isoparse(trade_time)
+                            if dt.tzinfo is None:
+                                dt = pytz.utc.localize(dt)
+                            dt_kst = dt.astimezone(kst)
+                            trade_time = dt_kst.strftime("%m/%d %H:%M")
+                        elif isinstance(trade_time, (int, float)):
+                            # Unix timestamp인 경우
+                            dt = datetime.fromtimestamp(trade_time, tz=pytz.utc)
+                            dt_kst = dt.astimezone(kst)
+                            trade_time = dt_kst.strftime("%m/%d %H:%M")
+                    except Exception as parse_err:
+                        print(f"[MT5 History] 시간 변환 실패: {trade_time} - {parse_err}")
+
                     formatted_history.append({
                         "ticket": h.get("ticket", 0),
                         "time": trade_time,
@@ -2324,8 +2473,8 @@ async def websocket_endpoint(websocket: WebSocket):
             position_data = None
             total_realtime_profit = 0  # ★★★ 실시간 총 P/L
 
-            # ★★★ MetaAPI 캐시 우선 사용 ★★★
-            if metaapi_positions:
+            # ★★★ MetaAPI 캐시 우선 사용 (연결 시 빈 배열도 신뢰) ★★★
+            if metaapi_connected:
                 positions_count = len(metaapi_positions)
                 for pos in metaapi_positions:
                     pos_symbol = pos.get("symbol", "")
@@ -2531,6 +2680,12 @@ async def websocket_endpoint(websocket: WebSocket):
                 sync_event["metaapi_closed"] = closed_events
                 print(f"[WS] 📢 MetaAPI 청산 이벤트: {len(closed_events)}건, P/L=${closed_profit:.2f}")
 
+                # ★★★ user_live_cache 포지션도 정리 (MT5 TP/SL 청산 동기화) ★★★
+                if user_id and user_id in user_live_cache:
+                    user_live_cache[user_id]["positions"] = []
+                    user_live_cache[user_id]["updated_at"] = time_module.time()
+                    print(f"[WS] 🧹 User {user_id} user_live_cache 포지션 정리 완료")
+
             data = {
                 "mt5_connected": user_has_mt5 or mt5_connected or metaapi_connected,  # ★ MetaAPI 상태
                 "broker": broker,
@@ -2562,8 +2717,8 @@ async def websocket_endpoint(websocket: WebSocket):
             }
             
             await websocket.send_text(json.dumps(data))
-            # ★★★ 실시간 전송: 0.5초 간격 (폴링 제거, 이벤트 기반으로 전환됨) ★★★
-            await asyncio.sleep(0.5)
+            # ★★★ 실시간 전송: 0.2초 간격 (데모와 동일) ★★★
+            await asyncio.sleep(0.2)
 
         except WebSocketDisconnect:
             break

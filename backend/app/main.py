@@ -50,7 +50,15 @@ async def startup_event():
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    """서버 종료 시 연결 해제"""
+    """서버 종료 시 캔들 캐시 저장 + 연결 해제"""
+    # ★ 캔들 캐시 파일 저장
+    try:
+        from .api.metaapi_service import save_candle_cache
+        save_candle_cache()
+        print("[Main] 캔들 캐시 저장 완료")
+    except Exception as e:
+        print(f"[Main] 캔들 캐시 저장 오류: {e}")
+
     # MetaAPI 연결 종료
     try:
         from .api.metaapi_service import metaapi_service

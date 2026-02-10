@@ -227,6 +227,10 @@ function connectWebSocket() {
             pollingInterval = null;
             console.log('[WS] Polling stopped - WebSocket connected');
         }
+        // ★★★ 초기 히스토리 로드 (접속 시 즉시) ★★★
+        setTimeout(() => {
+            if (typeof loadHistory === 'function') loadHistory();
+        }, 1500);
     };
 
     ws.onmessage = function(event) {
@@ -282,19 +286,14 @@ function connectWebSocket() {
                 }
             }
 
-            // Realtime candle update + indicators (안전한 업데이트)
-            if (data.all_candles && data.all_candles[chartSymbol]) {
-                if (typeof ChartPanel !== 'undefined' && ChartPanel.safeUpdateCandle) {
-                    ChartPanel.safeUpdateCandle(data.all_candles[chartSymbol]);
-                }
-
-                // ★ chart가 초기화된 후에만 loadCandles 호출
-                if (chart && (!window.lastIndicatorUpdate || Date.now() - window.lastIndicatorUpdate > 30000)) {
-                    window.lastIndicatorUpdate = Date.now();
-                    loadCandles();
+            // Realtime candle update (모든 타임프레임 지원 - 현재가로 캔들 업데이트)
+            if (data.all_prices && data.all_prices[chartSymbol]) {
+                var bid = data.all_prices[chartSymbol].bid;
+                if (bid && typeof ChartPanel !== 'undefined' && ChartPanel.safeUpdateCandle) {
+                    ChartPanel.safeUpdateCandle({close: bid});
                 }
             }
-            
+
             // Signal score - ★★★ 모든 score 변수 동기화 ★★★
             if (data.base_score !== undefined) {
                 baseScore = data.base_score;
@@ -448,6 +447,28 @@ function connectWebSocket() {
                 }
             }
 
+            // ★★★ Demo Today P/L 업데이트 ★★★
+            // today_pl=0이면 덮어쓰지 않음 (히스토리에서 계산한 값 유지)
+            if (data.today_pl !== undefined && data.today_pl !== 0) {
+                const accTodayPL = document.getElementById('accTodayPL');
+                if (accTodayPL) {
+                    const pl = data.today_pl;
+                    if (pl >= 0) {
+                        accTodayPL.textContent = '+$' + pl.toFixed(2);
+                        accTodayPL.style.color = 'var(--buy-color)';
+                    } else {
+                        accTodayPL.textContent = '-$' + Math.abs(pl).toFixed(2);
+                        accTodayPL.style.color = 'var(--sell-color)';
+                    }
+                }
+                const v5TodayPL = document.getElementById('v5TodayPL');
+                if (v5TodayPL) {
+                    const pl = data.today_pl;
+                    v5TodayPL.textContent = (pl >= 0 ? '+$' : '-$') + Math.abs(pl).toFixed(2);
+                    v5TodayPL.style.color = pl >= 0 ? 'var(--buy-color)' : 'var(--sell-color)';
+                }
+            }
+
             return;
         }
         
@@ -499,19 +520,14 @@ function connectWebSocket() {
             }
         }
 
-        // Realtime candle update + indicators (안전한 업데이트)
-        if (data.all_candles && data.all_candles[chartSymbol]) {
-            if (typeof ChartPanel !== 'undefined' && ChartPanel.safeUpdateCandle) {
-                ChartPanel.safeUpdateCandle(data.all_candles[chartSymbol]);
-            }
-
-            // ★ chart가 초기화된 후에만 loadCandles 호출
-            if (chart && (!window.lastIndicatorUpdate || Date.now() - window.lastIndicatorUpdate > 30000)) {
-                window.lastIndicatorUpdate = Date.now();
-                loadCandles();
+        // Realtime candle update (모든 타임프레임 지원 - 현재가로 캔들 업데이트)
+        if (data.all_prices && data.all_prices[chartSymbol]) {
+            var bid = data.all_prices[chartSymbol].bid;
+            if (bid && typeof ChartPanel !== 'undefined' && ChartPanel.safeUpdateCandle) {
+                ChartPanel.safeUpdateCandle({close: bid});
             }
         }
-        
+
         // Trade tab
         document.getElementById('tradeBalance').textContent = '$' + Math.round(data.balance).toLocaleString();
         
@@ -536,22 +552,27 @@ function connectWebSocket() {
             } else {
                 // Live 모드에서 포지션 청산 감지
                 if (!isDemo && window.lastLivePosition) {
-                    const lastProfit = window.lastLivePosition.profit || 0;
-                    playSound('close');
-                    
-                    if (lastProfit >= 0) {
-                        showToast(`🎯 청산 완료! +$${lastProfit.toFixed(2)}`, 'success');
+                    // ★★★ 사용자 청산 시 이중 팝업 방지 ★★★
+                    if (window._userClosing) {
+                        console.log('[WS Live] ⏭️ 사용자 청산 중 — WS 토스트 스킵');
                     } else {
-                        showToast(`💔 청산 완료! $${lastProfit.toFixed(2)}`, 'error');
+                        // MT5 SL/TP 또는 외부 청산 감지
+                        const lastProfit = window.lastLivePosition.profit || 0;
+                        playSound('close');
+                        
+                        if (lastProfit >= 0) {
+                            showToast(`🎯 청산 완료! +$${lastProfit.toFixed(2)}`, 'success');
+                        } else {
+                            showToast(`💔 청산 완료! -$${Math.abs(lastProfit).toFixed(2)}`, 'error');
+                        }
+                        
+                        if (typeof updateTodayPL === 'function') {
+                            updateTodayPL(lastProfit);
+                        }
+                        if (typeof loadHistory === 'function') {
+                            loadHistory();
+                        }
                     }
-                    
-                    if (typeof updateTodayPL === 'function') {
-                        updateTodayPL(lastProfit);
-                    }
-                    if (typeof loadHistory === 'function') {
-                        loadHistory();
-                    }
-                    
                     window.lastLivePosition = null;
                 }
                 updatePositionUI(false, null);
@@ -610,7 +631,8 @@ function connectWebSocket() {
         }
 
         // ★★★ 라이브 모드 Today P/L 업데이트 ★★★
-        if (data.today_pl !== undefined) {
+        // today_pl=0이면 덮어쓰지 않음 (히스토리에서 계산한 값 유지)
+        if (data.today_pl !== undefined && data.today_pl !== 0) {
             const accTodayPL = document.getElementById('accTodayPL');
             if (accTodayPL) {
                 const pl = data.today_pl;
@@ -662,6 +684,10 @@ function connectWebSocket() {
             const profit = data.sync_event.profit || 0;
             console.log('[WS Live] 🎯 SL/TP 청산 감지!', data.sync_event);
 
+            // ★ 게이지 프리즈 (MetaAPI 캐시 지연 대비)
+            window._plGaugeFrozen = true;
+            window._userClosing = true;
+
             // 1. 사운드 재생
             try {
                 playSound('close');
@@ -669,7 +695,7 @@ function connectWebSocket() {
                 setTimeout(() => { try { playSound('close'); } catch(e2) {} }, 100);
             }
 
-            // 2. 포지션 UI 숨기기 (메인 패널로 복귀)
+            // 2. 포지션 UI 즉시 숨기기
             if (typeof updatePositionUI === 'function') {
                 updatePositionUI(false, null);
             }
@@ -677,9 +703,9 @@ function connectWebSocket() {
 
             // 3. 토스트 알림
             if (profit >= 0) {
-                showToast(`🎯 MT5 SL/TP 청산! +$${profit.toFixed(2)}`, 'success');
+                showToast(`🎯 MT5 청산! +$${profit.toFixed(2)}`, 'success');
             } else {
-                showToast(`💔 MT5 SL/TP 청산! $${profit.toFixed(2)}`, 'error');
+                showToast(`💔 MT5 청산! -$${Math.abs(profit).toFixed(2)}`, 'error');
             }
 
             // 4. Today P/L 업데이트
@@ -691,6 +717,39 @@ function connectWebSocket() {
             if (typeof loadHistory === 'function') {
                 loadHistory();
             }
+
+            // ★ 5초 후 프리즈 해제 (MetaAPI 캐시 동기화 대기)
+            setTimeout(() => {
+                window._plGaugeFrozen = false;
+                window._userClosing = false;
+            }, 5000);
+        }
+
+        // ★★★ MetaAPI 청산 이벤트 처리 (on_position_removed) ★★★
+        if (data.auto_closed && !window._userClosing) {
+            const profit = data.closed_profit || 0;
+            console.log('[WS Live] 🔔 MetaAPI 자동 청산 감지!', { profit, is_win: data.is_win });
+
+            window._plGaugeFrozen = true;
+            
+            playSound('close');
+            if (typeof updatePositionUI === 'function') {
+                updatePositionUI(false, null);
+            }
+            window.lastLivePosition = null;
+
+            if (profit >= 0) {
+                showToast(`🎯 청산 완료! +$${profit.toFixed(2)}`, 'success');
+            } else {
+                showToast(`💔 청산 완료! -$${Math.abs(profit).toFixed(2)}`, 'error');
+            }
+            
+            if (typeof updateTodayPL === 'function') updateTodayPL(profit);
+            if (typeof loadHistory === 'function') loadHistory();
+
+            setTimeout(() => {
+                window._plGaugeFrozen = false;
+            }, 5000);
         }
 
         // Martin state

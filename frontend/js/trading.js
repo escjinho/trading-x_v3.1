@@ -100,46 +100,33 @@ function martinSuccessContinue() {
 
 // ========== Today P/L ==========
 function updateTodayPL(profit) {
-    // 1. Account 탭 Today P/L 즉시 업데이트
-    const accTodayPL = document.getElementById('accTodayPL');
-    if (accTodayPL) {
-        // 현재 값 파싱
-        let currentPL = 0;
-        const text = accTodayPL.textContent.replace(/[^0-9.-]/g, '');
-        if (text) {
-            currentPL = parseFloat(text) || 0;
-            // 음수 체크
-            if (accTodayPL.textContent.includes('-$')) {
-                currentPL = -Math.abs(currentPL);
-            }
-        }
-        
-        // 새 값 계산
-        const newPL = currentPL + profit;
-        
-        // Account 탭 업데이트
-        if (newPL >= 0) {
-            accTodayPL.textContent = '+$' + newPL.toFixed(2);
-            accTodayPL.style.color = 'var(--buy-color)';
-        } else {
-            accTodayPL.textContent = '-$' + Math.abs(newPL).toFixed(2);
-            accTodayPL.style.color = 'var(--sell-color)';
-        }
-        
-        console.log(`[updateTodayPL] Profit: ${profit}, Current: ${currentPL}, New: ${newPL}`);
+    // ★★★ _todayPLFixed에 profit 추가 ★★★
+    if (window._todayPLFixed === null) {
+        window._todayPLFixed = 0;
     }
-    
+    window._todayPLFixed += profit;
+    const fixedPL = window._todayPLFixed;
+
+    // 1. Account 탭 Today P/L 업데이트 (_todayPLFixed 사용)
+    const todayPLEl = document.getElementById('accTodayPL');
+    if (todayPLEl) {
+        todayPLEl.textContent = (fixedPL >= 0 ? '+$' : '-$') + Math.abs(fixedPL).toFixed(2);
+        todayPLEl.style.color = fixedPL >= 0 ? 'var(--buy-color)' : 'var(--sell-color)';
+    }
+
+    console.log(`[updateTodayPL] Profit: ${profit}, FixedPL: ${fixedPL}`);
+
     // 2. Buy/Sell 패널도 즉시 동기화
     syncTradeTodayPL();
-    
+
     // 3. V5 패널도 즉시 동기화
     if (typeof updateV5AccountInfo === 'function') {
         updateV5AccountInfo();
     }
-    
+
     // 4. 윈/로스 즉시 업데이트
     updateWinLossImmediate(profit);
-    
+
     // 5. 나중에 히스토리로 정확한 값 검증 (서버 동기화)
     setTimeout(() => {
         if (typeof loadHistory === 'function') loadHistory();
@@ -148,12 +135,17 @@ function updateTodayPL(profit) {
 
 // Buy/Sell 패널 Today P/L을 Account 탭과 동기화
 function syncTradeTodayPL() {
-    const accTodayPL = document.getElementById('accTodayPL');
     const tradeTodayPL = document.getElementById('tradeTodayPL');
-    
-    if (accTodayPL && tradeTodayPL) {
-        tradeTodayPL.textContent = accTodayPL.textContent;
-        tradeTodayPL.style.color = accTodayPL.style.color;
+    if (!tradeTodayPL) return;
+
+    // ★★★ 항상 _todayPLFixed 값 직접 사용 ★★★
+    const fixedPL = window._todayPLFixed || 0;
+    if (fixedPL >= 0) {
+        tradeTodayPL.textContent = '+$' + fixedPL.toFixed(2);
+        tradeTodayPL.style.color = 'var(--buy-color)';
+    } else {
+        tradeTodayPL.textContent = '-$' + Math.abs(fixedPL).toFixed(2);
+        tradeTodayPL.style.color = 'var(--sell-color)';
     }
 }
 
@@ -177,40 +169,84 @@ function updateWinLossImmediate(profit) {
 }
 
 // ========== P/L Gauge ==========
+// ★★★ 손익 게이지 부드러운 애니메이션 시스템 ★★★
+let _plAnimCurrent = 0;    // 현재 표시 중인 위치
+let _plAnimTarget = 0;     // 목표 위치
+let _plAnimFrame = null;   // requestAnimationFrame ID
+let _plPrevPercent = 0;    // 이전 퍼센트 (변화 감지용)
+
 function updatePLGauge(currentPL, target = null) {
-    // ★ 디버깅 로그 추가
-    console.log(`[updatePLGauge] Called with PL: ${currentPL}, Target: ${target}`);
+    // ★ 청산 중이면 게이지 프리즈
+    if (window._plGaugeFrozen) return;
     
     const actualTarget = target || targetAmount;
-    const plPercent = Math.min(1, Math.max(-1, currentPL / actualTarget));
-    const plPercentDisplay = Math.round(Math.abs(plPercent) * 100);
+    _plAnimTarget = Math.min(1, Math.max(-1, currentPL / actualTarget));
     
+    // 애니메이션 루프가 없으면 시작
+    if (!_plAnimFrame) {
+        _plAnimFrame = requestAnimationFrame(_plAnimStep);
+    }
+}
+
+function _plAnimStep() {
+    // ★ 보간 (lerp) - 0.15 = 빠르고 민감, 부드러움
+    const diff = _plAnimTarget - _plAnimCurrent;
+    
+    if (Math.abs(diff) < 0.0005) {
+        _plAnimCurrent = _plAnimTarget;
+    } else {
+        _plAnimCurrent += diff * 0.15;
+    }
+    
+    // ★ DOM 업데이트
     const fill = document.getElementById('plBarFill');
     const diamond = document.getElementById('plDiamond');
     const percentText = document.getElementById('plPercent');
     
-    const isProfit = currentPL >= 0;
+    const plPercent = _plAnimCurrent;
+    const plPercentDisplay = Math.round(Math.abs(plPercent) * 100);
+    const isProfit = plPercent >= 0;
     const color = isProfit ? '#00b450' : '#dc3246';
+    const glowColor = isProfit ? 'rgba(0,180,80,' : 'rgba(220,50,70,';
+    
+    // ★ 변화량에 따른 글로우 강도 (변화 클수록 강한 글로우)
+    const changeSpeed = Math.abs(diff);
+    const glowIntensity = Math.min(20, 8 + changeSpeed * 80);
     
     if (fill) {
         fill.style.background = isProfit 
-            ? 'linear-gradient(to right, rgba(0,180,80,0.5), #00b450)'
-            : 'linear-gradient(to left, rgba(220,50,70,0.5), #dc3246)';
+            ? `linear-gradient(to right, ${glowColor}0.3), ${color})`
+            : `linear-gradient(to left, ${glowColor}0.3), ${color})`;
         fill.style.left = isProfit ? '50%' : (50 + plPercent * 50) + '%';
         fill.style.width = Math.abs(plPercent) * 50 + '%';
         fill.style.borderRadius = isProfit ? '0 6px 6px 0' : '6px 0 0 6px';
-        fill.style.boxShadow = '0 0 10px ' + color + '80';
+        fill.style.boxShadow = `0 0 ${glowIntensity}px ${color}80`;
     }
     
     if (diamond) {
         diamond.style.left = (50 + plPercent * 50) + '%';
         diamond.style.background = color;
-        diamond.style.boxShadow = '0 0 8px ' + color;
+        diamond.style.boxShadow = `0 0 ${glowIntensity}px ${color}`;
+        
+        // ★ 큰 변화 시 펄스 애니메이션
+        if (Math.abs(plPercentDisplay - _plPrevPercent) >= 5) {
+            diamond.style.animation = 'plPulse 0.3s ease';
+            setTimeout(() => { diamond.style.animation = ''; }, 300);
+            _plPrevPercent = plPercentDisplay;
+        }
     }
     
     if (percentText) {
         percentText.textContent = plPercentDisplay + '%';
         percentText.style.color = color;
+        percentText.style.textShadow = `0 0 ${glowIntensity}px ${glowColor}0.6)`;
+    }
+    
+    // ★ 목표에 도달할 때까지 계속 애니메이션
+    if (Math.abs(_plAnimTarget - _plAnimCurrent) > 0.0003) {
+        _plAnimFrame = requestAnimationFrame(_plAnimStep);
+    } else {
+        _plAnimFrame = null;
     }
 }
 
@@ -391,6 +427,10 @@ async function closePosition() {
         return;
     }
 
+    // ★★★ 게이지 프리즈 + 이중 팝업 방지 ★★★
+    window._userClosing = true;
+    window._plGaugeFrozen = true;  // 손익 게이지 애니메이션 정지
+
     showToast('Closing...', '');
     try {
         let result = await apiCall(`/mt5/close?symbol=${currentSymbol}&magic=${BUYSELL_MAGIC_NUMBER}`, 'POST');
@@ -403,6 +443,8 @@ async function closePosition() {
                 result = pollResult;  // MT5 실제 결과로 교체
             } else {
                 showToast('Close timeout - check positions', 'warning');
+                window._userClosing = false;
+                window._plGaugeFrozen = false;
                 return;
             }
         }
@@ -410,18 +452,19 @@ async function closePosition() {
         if (result?.success) {
             playSound('close');
             const profit = result.profit || 0;  // ★ MT5 실제 P/L 사용
-            
+
+            // ★ 포지션 UI 즉시 초기화 (WS 대기 X)
+            window.lastLivePosition = null;
+            updatePositionUI(false, null);
+
             // 마틴 모드 처리
             if (currentMode === 'martin' && martinEnabled) {
-                const baseTarget = 50;  // 1단계 기본 타겟
+                const baseTarget = 50;
                 const currentDisplayTarget = baseTarget * Math.pow(2, martinStep - 1) + martinAccumulatedLoss;
                 
-                // Case 1: 수익으로 청산
                 if (profit > 0) {
                     if (profit >= martinAccumulatedLoss && martinAccumulatedLoss > 0) {
-                        // Case 1-A: 전액 회복 → 마틴 성공!
                         await apiCall('/mt5/martin/reset-full', 'POST');
-                        
                         martinStep = 1;
                         martinAccumulatedLoss = 0;
                         martinHistory = [];
@@ -429,73 +472,72 @@ async function closePosition() {
                         updateTodayPL(profit);
                         showMartinSuccessPopup(profit);
                     } else if (profit < martinAccumulatedLoss || martinAccumulatedLoss === 0) {
-                        // Case 1-B: 일부 회복 → 단계 유지, 타겟만 조정
                         const remainingLoss = Math.max(0, martinAccumulatedLoss - profit);
-                        
                         await apiCall(`/mt5/martin/update-state?step=${martinStep}&accumulated_loss=${remainingLoss}`, 'POST');
-                        
                         martinAccumulatedLoss = remainingLoss;
                         updateMartinUI();
                         updateTodayPL(profit);
-                        
                         if (remainingLoss > 0) {
                             showToast(`💰 일부 회복! +$${profit.toFixed(2)} (남은 손실: $${remainingLoss.toFixed(2)})`, 'success');
                         } else {
                             showMartinSuccessPopup(profit);
                         }
                     }
-                }
-                // Case 2: 손실로 청산 (Close 버튼)
-                else if (profit < 0) {
+                } else if (profit < 0) {
                     const lossAmount = Math.abs(profit);
                     const halfTarget = currentDisplayTarget / 2;
                     
                     if (lossAmount >= halfTarget) {
-                        // Case 2-A: 손실 >= 50% → 다음 단계로
                         const newStep = Math.min(martinStep + 1, martinLevel);
                         const newAccumulatedLoss = martinAccumulatedLoss + lossAmount;
                         
                         if (newStep > martinLevel) {
-                            // 최대 단계 초과 → 강제 리셋
                             await apiCall('/mt5/martin/reset-full', 'POST');
-                            
                             showMaxPopup(newAccumulatedLoss);
                             martinStep = 1;
                             martinAccumulatedLoss = 0;
                             martinHistory = [];
                         } else {
                             await apiCall(`/mt5/martin/update-state?step=${newStep}&accumulated_loss=${newAccumulatedLoss}`, 'POST');
-                            
                             martinStep = newStep;
                             martinAccumulatedLoss = newAccumulatedLoss;
                             showToast(`📈 Step ${newStep}로 진행! 손실: -$${lossAmount.toFixed(2)}`, 'error');
                         }
                     } else {
-                        // Case 2-B: 손실 < 50% → 단계 유지, 타겟만 조정
                         const newAccumulatedLoss = martinAccumulatedLoss + lossAmount;
-                        
                         await apiCall(`/mt5/martin/update-state?step=${martinStep}&accumulated_loss=${newAccumulatedLoss}`, 'POST');
-                        
                         martinAccumulatedLoss = newAccumulatedLoss;
                         showToast(`📊 단계 유지! 손실: -$${lossAmount.toFixed(2)} (누적: $${newAccumulatedLoss.toFixed(2)})`, 'error');
                     }
-                    
                     updateTodayPL(profit);
                     updateMartinUI();
-                }
-                // Case 3: 손익 0 (Break-even)
-                else {
+                } else {
                     showToast('청산 완료 (손익 없음)', 'success');
                 }
             } else {
                 // Basic/NoLimit 모드
                 updateTodayPL(profit);
-                showToast(result.message, 'success');
+                if (profit >= 0) {
+                    showToast(`🎯 청산 완료! +$${profit.toFixed(2)}`, 'success');
+                } else {
+                    showToast(`💔 청산 완료! -$${Math.abs(profit).toFixed(2)}`, 'error');
+                }
             }
+            
+            // ★ 히스토리 새로고침
+            setTimeout(() => {
+                if (typeof loadHistory === 'function') loadHistory();
+            }, 1000);
         } else {
             showToast(result?.message || 'Error', 'error');
         }
     } catch (e) { showToast('Network error', 'error'); }
+
+    // ★ 플래그 해제 (잠시 후 — WS가 한 번은 스킵하도록)
+    setTimeout(() => {
+        window._userClosing = false;
+        window._plGaugeFrozen = false;
+    }, 3000);
 }
 
 // ========== Demo 모드 주문 ==========
@@ -703,29 +745,77 @@ async function resetDemo() {
 
 // ========== 거래 내역 ==========
 let allHistoryData = [];
-let currentPeriod = 'week';  // 기본값: 1주일
+let currentPeriod = 'week';  // 기본값: 1주일 (MetaAPI 500개 제한 고려)
 let currentFilter = 'all';
 
-async function loadHistory() {
-    const endpoint = isDemo ? '/demo/history' : '/mt5/history';
-    const data = await apiCall(endpoint);
-    
-    if (data?.history) {
-        allHistoryData = data.history;
-        
-        // 시간순 정렬 (최신순)
-        allHistoryData.sort((a, b) => new Date(b.time) - new Date(a.time));
-        
-        updateAccountStats(allHistoryData);
-        renderFilteredHistory();
-        updateHistorySummary();
-        
-        // Account Info 업데이트 추가
-        if (typeof updateAccountInfoFromHistory === 'function') {
-            updateAccountInfoFromHistory(allHistoryData);
+// ★★★ Today P/L 고정값 및 Week 데이터 보존 ★★★
+if (window._todayPLFixed === undefined) window._todayPLFixed = null;      // 오늘 P/L 고정값
+if (window._weekHistoryData === undefined) window._weekHistoryData = null;   // Week 데이터 보존
+
+async function loadHistory(period = null) {
+    // ★★★ 중복 호출 방지 ★★★
+    if (window._historyLoading) {
+        console.log('[loadHistory] ⏳ 이미 로딩 중, 스킵');
+        return;
+    }
+    window._historyLoading = true;
+
+    // period 미지정 시 항상 'week' 사용 (MetaAPI 500개 제한 고려)
+    const requestPeriod = period || 'week';
+
+    console.log('[loadHistory] ★ 시작 - isDemo:', isDemo, 'requestPeriod:', requestPeriod);
+
+    // ★★★ 서버에 period 파라미터 전달 ★★★
+    let endpoint = isDemo ? '/demo/history' : '/mt5/history';
+    if (!isDemo) {
+        endpoint += `?period=${requestPeriod}`;
+    }
+    console.log('[loadHistory] endpoint:', endpoint);
+
+    try {
+        const data = await apiCall(endpoint);
+        console.log('[loadHistory] ★ API 응답:', data ? `history=${data.history?.length || 0}개` : 'null');
+
+        if (data?.history) {
+            allHistoryData = data.history;
+            console.log('[loadHistory] ✅ 데이터 수신:', allHistoryData.length, '개');
+
+            // 시간순 정렬 (최신순)
+            allHistoryData.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+            // ★★★ 첫 로드(week) 데이터 보존 ★★★
+            if (requestPeriod === 'week' && window._weekHistoryData === null) {
+                window._weekHistoryData = [...allHistoryData];
+                console.log('[loadHistory] ✅ Week 데이터 보존:', window._weekHistoryData.length, '개');
+
+                // ★★★ 첫 로드 시 Today P/L 고정 ★★★
+                const now = new Date();
+                const todayStr = `${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`;
+                let todayPL = 0;
+                allHistoryData.forEach(h => {
+                    if (h.time && h.time.startsWith(todayStr)) {
+                        todayPL += h.profit || 0;
+                    }
+                });
+                if (window._todayPLFixed === null) window._todayPLFixed = todayPL;
+                console.log('[loadHistory] ✅ Today P/L 고정:', window._todayPLFixed);
+            }
+
+            updateAccountStats(allHistoryData);
+            renderFilteredHistory();
+            updateHistorySummary();
+
+            // Account Info 업데이트 추가
+            if (typeof updateAccountInfoFromHistory === 'function') {
+                updateAccountInfoFromHistory(allHistoryData);
+            }
+            console.log('[loadHistory] ✅ 렌더링 완료');
+        } else {
+            console.log('[loadHistory] ⚠️ 데이터 없음 또는 에러:', data);
+            document.getElementById('historyList').innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 80px; font-size: 0.85em;">No trade history</p>';
         }
-    } else {
-        document.getElementById('historyList').innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">No trade history</p>';
+    } finally {
+        window._historyLoading = false;
     }
 }
 
@@ -733,47 +823,65 @@ function updateAccountStats(history) {
     // 오늘 날짜 (MM/DD 형식)
     const now = new Date();
     const todayStr = `${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`;
-    
-    let todayWins = 0;
-    let todayLosses = 0;
-    let todayPL = 0;
-    
-    history.forEach(h => {
-        // MM/DD 형식으로 오늘 거래만 필터링
-        if (h.time && h.time.startsWith(todayStr)) {
-            todayPL += h.profit;
-            if (h.profit >= 0) {
-                todayWins++;
-            } else {
-                todayLosses++;
+
+    // ★★★ _todayPLFixed가 null일 때만 오늘 P/L 계산 후 저장 ★★★
+    if (window._todayPLFixed === null) {
+        const sourceData = window._weekHistoryData || allHistoryData;
+        let calcTodayPL = 0;
+        sourceData.forEach(h => {
+            if (h.time && h.time.startsWith(todayStr)) {
+                calcTodayPL += h.profit || 0;
             }
+        });
+        window._todayPLFixed = calcTodayPL;
+        console.log('[updateAccountStats] Today P/L 최초 계산:', window._todayPLFixed);
+    }
+
+    // Win/Lose 통계 (인자 history 기준 - 필터에 따라 변경됨)
+    let totalWins = 0;
+    let totalLosses = 0;
+
+    history.forEach(h => {
+        const profit = h.profit || 0;
+        if (profit >= 0) {
+            totalWins++;
+        } else {
+            totalLosses++;
         }
     });
-    
+
     // Win/Lose 업데이트
     const winLoseEl = document.getElementById('accWinLose');
     if (winLoseEl) {
-        winLoseEl.textContent = `${todayWins} / ${todayLosses}`;
+        winLoseEl.textContent = `${totalWins} / ${totalLosses}`;
     }
-    
-    // Today P&L 업데이트
+
+    // ★★★ Today P/L은 항상 _todayPLFixed 사용 (절대 변하지 않음) ★★★
+    const fixedPL = window._todayPLFixed;
     const todayPLEl = document.getElementById('accTodayPL');
+    const todayPLLabel = todayPLEl?.closest('.summary-box-v2')?.querySelector('.summary-label');
+
     if (todayPLEl) {
-        if (todayPL >= 0) {
-            todayPLEl.textContent = '+$' + todayPL.toFixed(2);
+        if (fixedPL >= 0) {
+            todayPLEl.textContent = '+$' + fixedPL.toFixed(2);
             todayPLEl.style.color = 'var(--buy-color)';
         } else {
-            todayPLEl.textContent = '-$' + Math.abs(todayPL).toFixed(2);
+            todayPLEl.textContent = '-$' + Math.abs(fixedPL).toFixed(2);
             todayPLEl.style.color = 'var(--sell-color)';
         }
     }
-    
-    console.log(`[updateAccountStats] Today: ${todayStr}, Wins: ${todayWins}, Losses: ${todayLosses}, PL: ${todayPL}`);
-    
-    // 전역 변수에 저장 (다른 곳에서 사용 가능)
-    window.todayWins = todayWins;
-    window.todayLosses = todayLosses;
-    
+
+    // 라벨은 항상 Today P/L
+    if (todayPLLabel) {
+        todayPLLabel.textContent = 'Today P/L';
+    }
+
+    console.log(`[updateAccountStats] FixedPL: ${fixedPL}, Win/Lose: ${totalWins}/${totalLosses}`);
+
+    // 전역 변수에 저장
+    window.todayWins = totalWins;
+    window.todayLosses = totalLosses;
+
     // Buy/Sell 패널 Today P/L 동기화
     if (typeof syncTradeTodayPL === 'function') {
         syncTradeTodayPL();
@@ -807,21 +915,60 @@ function togglePeriodDropdown() {
     dropdown.classList.toggle('show');
 }
 
-// 기간 선택
+// 기간 선택 - 조건부 서버 요청
 function selectPeriod(period, text) {
     currentPeriod = period;
-    document.getElementById('selectedPeriodText').textContent = text;
-    
+    // "전체" → "3개월"로 표시
+    const displayText = (period === 'all') ? '3개월' : text;
+    document.getElementById('selectedPeriodText').textContent = displayText;
+
     // 옵션 활성화 상태 업데이트
     document.querySelectorAll('.period-option').forEach(opt => {
         opt.classList.toggle('active', opt.dataset.period === period);
     });
-    
+
     // 드롭다운 닫기
     document.getElementById('periodDropdown').classList.remove('show');
-    
-    renderFilteredHistory();
-    updateHistorySummary();
+
+    // ★★★ 'today', 'week': 프론트 필터링만 / 'month', 'all': 서버 재요청 ★★★
+    if (period === 'month' || period === 'all') {
+        // 30일 이상은 서버에서 다시 조회 필요
+        console.log('[selectPeriod] 서버 재요청:', period);
+
+        // ★★★ 로딩 표시 ★★★
+        const historyList = document.getElementById('historyList');
+        if (historyList) {
+            historyList.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 80px; font-size: 0.85em;">Loading...</p>';
+        }
+
+        loadHistory(period);
+    } else {
+        // ★★★ 'today', 'week': week 데이터에서 필터링 ★★★
+        console.log('[selectPeriod] 프론트 필터링:', period);
+
+        // week 데이터 복원 (month/all에서 돌아온 경우)
+        if (window._weekHistoryData && window._weekHistoryData.length > 0) {
+            allHistoryData = [...window._weekHistoryData];
+            console.log('[selectPeriod] Week 데이터 복원:', allHistoryData.length, '개');
+        }
+
+        // ★★★ accTodayPL은 항상 _todayPLFixed로 고정 ★★★
+        const fixedPL = window._todayPLFixed || 0;
+        const todayPLEl = document.getElementById('accTodayPL');
+        if (todayPLEl) {
+            if (fixedPL >= 0) {
+                todayPLEl.textContent = '+$' + fixedPL.toFixed(2);
+                todayPLEl.style.color = 'var(--buy-color)';
+            } else {
+                todayPLEl.textContent = '-$' + Math.abs(fixedPL).toFixed(2);
+                todayPLEl.style.color = 'var(--sell-color)';
+            }
+        }
+        syncTradeTodayPL();
+
+        renderFilteredHistory();
+        updateHistorySummary();
+    }
 }
 
 // 타입 필터 (All/수익/손실)
@@ -985,9 +1132,21 @@ function updateHistorySummary() {
 
 // 필터링된 히스토리 렌더링
 function renderFilteredHistory() {
+    console.log('[renderFilteredHistory] ★ 시작 - allHistoryData:', allHistoryData?.length || 0, '개');
     const container = document.getElementById('historyList');
+    console.log('[renderFilteredHistory] container:', container ? 'exists' : 'NOT FOUND');
     let filtered = getFilteredByPeriod();
-    
+
+    // ★★★ 시간 역순 정렬 (최신 먼저) ★★★
+    filtered.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+    // ★★★ 500개 제한 (최신 500개만 표시) ★★★
+    if (filtered.length > 500) {
+        console.log('[renderFilteredHistory] 500개 제한 적용:', filtered.length, '→ 500');
+        filtered = filtered.slice(0, 500);
+    }
+    console.log('[renderFilteredHistory] filtered:', filtered?.length || 0, '개 (period:', currentPeriod, ')');
+
     // 타입 필터링 (수익/손실)
     if (currentFilter === 'profit') {
         filtered = filtered.filter(h => h.profit >= 0);
@@ -1039,7 +1198,7 @@ function renderFilteredHistory() {
         });
         container.innerHTML = html;
     } else {
-        container.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">해당 조건의 거래 내역이 없습니다</p>';
+        container.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 80px; font-size: 0.85em;">해당 조건의 거래 내역이 없습니다</p>';
     }
 }
 

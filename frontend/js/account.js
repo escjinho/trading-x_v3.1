@@ -128,7 +128,8 @@ function updateAccountInfoFromHistory(historyData) {
     // 오늘 거래가 있으면 오늘 통계, 없으면 전체 통계
     const displayWins = todayTrades.length > 0 ? todayWins : allWins;
     const displayLosses = todayTrades.length > 0 ? todayLosses : allLosses;
-    const displayPL = todayTrades.length > 0 ? todayPL : allPL;
+    // ★★★ Today P/L은 항상 _todayPLFixed 사용 ★★★
+    const displayPL = window._todayPLFixed || 0;
     
     if (winLoseEl) {
         winLoseEl.textContent = `${displayWins} / ${displayLosses}`;
