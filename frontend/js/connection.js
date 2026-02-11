@@ -385,12 +385,19 @@ function connectWebSocket() {
 
                     // 마틴 모드
                     if (currentMode === 'martin' && martinEnabled) {
-                        if (data.martin_reset || isWin) {
+                        if (isWin) {
                             martinStep = 1;
                             martinAccumulatedLoss = 0;
                             martinHistory = [];
                             updateMartinUI();
                             showMartinSuccessPopup(profit);
+                        } else if (data.martin_reset && !isWin) {
+                            const totalLoss = data.martin_accumulated_loss || martinAccumulatedLoss;
+                            martinStep = 1;
+                            martinAccumulatedLoss = 0;
+                            martinHistory = [];
+                            updateMartinUI();
+                            showMaxPopup(totalLoss);
                         } else if (data.martin_step_up) {
                             showMartinPopup(profit);
                         } else {
@@ -1128,12 +1135,19 @@ async function fetchDemoData() {
 
                     // 마틴 모드
                     if (currentMode === 'martin' && martinEnabled) {
-                        if (data.martin_reset || isWin) {
+                        if (isWin) {
                             martinStep = 1;
                             martinAccumulatedLoss = 0;
                             martinHistory = [];
                             updateMartinUI();
                             showMartinSuccessPopup(profit);
+                        } else if (data.martin_reset && !isWin) {
+                            const totalLoss = data.martin_accumulated_loss || martinAccumulatedLoss;
+                            martinStep = 1;
+                            martinAccumulatedLoss = 0;
+                            martinHistory = [];
+                            updateMartinUI();
+                            showMaxPopup(totalLoss);
                         } else if (data.martin_step_up) {
                             showMartinPopup(profit);
                         } else {

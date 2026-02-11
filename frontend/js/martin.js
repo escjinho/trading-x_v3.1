@@ -33,7 +33,7 @@ function updateMartinUI() {
     const badge = document.getElementById('martinStepBadge');
     if (martinStep > 1) {
         badge.style.display = 'inline';
-        badge.textContent = 'Step ' + martinStep + ' / 누적손실: -$' + martinAccumulatedLoss.toFixed(0);
+        badge.innerHTML = '<span style="color: #ffffff;">Step ' + martinStep + ' / 누적손실:</span> <span style="color: #00d4ff; font-weight: bold;">-$' + martinAccumulatedLoss.toFixed(0) + '</span>';
     } else {
         badge.style.display = 'none';
     }
