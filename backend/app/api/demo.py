@@ -81,8 +81,9 @@ async def fetch_external_prices():
         "AUDUSD.r": {"bid": 0.6550, "ask": 0.6552, "last": 0.6551},
         "USDCAD.r": {"bid": 1.3450, "ask": 1.3452, "last": 1.3451}
     }
+from math import ceil
 from ..models.user import User
-from ..models.demo_trade import DemoTrade, DemoPosition
+from ..models.demo_trade import DemoTrade, DemoPosition, DemoMartinState
 from ..utils.security import decode_token
 from ..services.indicator_service import IndicatorService
 from .mt5 import get_bridge_prices, get_bridge_candles, bridge_cache
@@ -362,42 +363,56 @@ async def get_demo_account(
             should_close = False
             is_win = False
 
+            # ★★★ 디버그 로그 추가 ★★★
+            print(f"[MARTIN-DEBUG] Checking close: symbol={position.symbol}, profit={profit:.2f}, target={target}, magic={position.magic}")
+
             if target > 0:
                 if profit >= target:  # WIN: 정확히 target 도달
                     should_close = True
                     is_win = True
-                    print(f"[DEBUG-BRIDGE] WIN! Profit {profit} >= Target {target}")
+                    print(f"[MARTIN-DEBUG] AUTO CLOSE TRIGGERED! is_win=True, profit={profit:.2f}")
                 elif profit <= -target * 0.98:  # LOSE: target의 98% 도달 시 청산
                     should_close = True
                     is_win = False
-                    print(f"[DEBUG-BRIDGE] LOSE! Profit {profit} <= -Target*0.98 {-target * 0.98}")
+                    print(f"[MARTIN-DEBUG] AUTO CLOSE TRIGGERED! is_win=False, profit={profit:.2f}")
+
+            if not should_close and target > 0:
+                print(f"[MARTIN-DEBUG] No close: profit={profit:.2f}, target_range=[{-target*0.98:.2f}, {target:.2f}]")
 
             if should_close:
                 print(f"[DEBUG-BRIDGE] AUTO CLOSING! {'WIN' if is_win else 'LOSE'} - Profit: {profit}")
 
-                # 마틴 모드 상태 업데이트
+                # 마틴 모드 상태 업데이트 (DemoMartinState 테이블 사용)
                 martin_reset = False
                 martin_step_up = False
 
-                if current_user.demo_martin_step and current_user.demo_martin_step >= 1:
+                martin_state = get_or_create_martin_state(db, current_user.id, position.magic)
+                print(f"[MARTIN-DEBUG] Martin state BEFORE: enabled={martin_state.enabled}, step={martin_state.step}, acc_loss={martin_state.accumulated_loss}")
+
+                if martin_state.enabled and martin_state.step >= 1:
                     if is_win:
-                        current_user.demo_martin_step = 1
-                        current_user.demo_martin_accumulated_loss = 0.0
+                        martin_state.step = 1
+                        martin_state.accumulated_loss = 0.0
                         martin_reset = True
+                        print(f"[MARTIN-DEBUG] WIN -> RESET to step 1")
                     else:
-                        max_steps = current_user.demo_martin_max_steps or 5
-                        current_step = current_user.demo_martin_step or 1
-                        accumulated = current_user.demo_martin_accumulated_loss or 0.0
+                        max_steps = martin_state.max_steps or 5
+                        current_step = martin_state.step or 1
+                        accumulated = martin_state.accumulated_loss or 0.0
                         new_accumulated = accumulated + abs(profit)
                         new_step = current_step + 1
                         if new_step > max_steps:
-                            current_user.demo_martin_step = 1
-                            current_user.demo_martin_accumulated_loss = 0.0
+                            martin_state.step = 1
+                            martin_state.accumulated_loss = 0.0
                             martin_reset = True
+                            print(f"[MARTIN-DEBUG] MAX STEP REACHED -> RESET to step 1")
                         else:
-                            current_user.demo_martin_step = new_step
-                            current_user.demo_martin_accumulated_loss = new_accumulated
+                            martin_state.step = new_step
+                            martin_state.accumulated_loss = new_accumulated
                             martin_step_up = True
+                            print(f"[MARTIN-DEBUG] STEP UP: {current_step} -> {new_step}, acc_loss: {accumulated:.2f} -> {new_accumulated:.2f}")
+
+                print(f"[MARTIN-DEBUG] Martin state AFTER: step={martin_state.step}, acc_loss={martin_state.accumulated_loss}")
 
                 # 거래 내역 저장
                 trade = DemoTrade(
@@ -543,35 +558,36 @@ async def get_demo_account(
                 if should_close:
                     print(f"[DEBUG] AUTO CLOSING! {'WIN' if is_win else 'LOSE'} - Profit: {profit}")
                     
-                    # 마틴 모드 상태 업데이트
+                    # 마틴 모드 상태 업데이트 (DemoMartinState 테이블 사용)
                     martin_reset = False
                     martin_step_up = False
-                    
-                    if current_user.demo_martin_step and current_user.demo_martin_step >= 1:
+
+                    martin_state = get_or_create_martin_state(db, current_user.id, position.magic)
+                    if martin_state.enabled and martin_state.step >= 1:
                         if is_win:
                             # 마틴 모드에서 이익으로 청산 = 성공! 리셋!
-                            current_user.demo_martin_step = 1
-                            current_user.demo_martin_accumulated_loss = 0.0
+                            martin_state.step = 1
+                            martin_state.accumulated_loss = 0.0
                             martin_reset = True
                             print(f"[DEBUG] Martin SUCCESS! Reset to Step 1")
                         else:
                             # 마틴 모드에서 손실로 청산 = 다음 단계로!
-                            max_steps = current_user.demo_martin_max_steps or 5
-                            current_step = current_user.demo_martin_step or 1
-                            accumulated = current_user.demo_martin_accumulated_loss or 0.0
-                            
+                            max_steps = martin_state.max_steps or 5
+                            current_step = martin_state.step or 1
+                            accumulated = martin_state.accumulated_loss or 0.0
+
                             new_accumulated = accumulated + abs(profit)
                             new_step = current_step + 1
-                            
+
                             if new_step > max_steps:
                                 # 최대 단계 초과: 강제 리셋
-                                current_user.demo_martin_step = 1
-                                current_user.demo_martin_accumulated_loss = 0.0
+                                martin_state.step = 1
+                                martin_state.accumulated_loss = 0.0
                                 martin_reset = True
                                 print(f"[DEBUG] Martin MAX STEP! Force Reset")
                             else:
-                                current_user.demo_martin_step = new_step
-                                current_user.demo_martin_accumulated_loss = new_accumulated
+                                martin_state.step = new_step
+                                martin_state.accumulated_loss = new_accumulated
                                 martin_step_up = True
                                 print(f"[DEBUG] Martin STEP UP! Step {current_step} -> {new_step}, AccLoss: {new_accumulated}")
                     
@@ -796,40 +812,37 @@ async def place_demo_order(
         tick = mt5.symbol_info_tick(symbol)
         if tick:
             entry_price = tick.ask if order_type.upper() == "BUY" else tick.bid
-        else:
-            print(f"[DEMO ORDER] ⚠️ Tick FAILED for {symbol}, using dummy price")
-            entry_price = 50000.0 if "BTC" in symbol else 1.0
-    else:
-        print("[DEMO ORDER] ⚠️ MT5 not available, using MetaAPI cache")
-        # ★ MetaAPI 실시간 가격 우선 사용
+            print(f"[DEMO ORDER] 📊 Using MT5 price: {entry_price}")
+
+    # ★★★ MT5 실패 또는 미사용 시 MetaAPI → Bridge → Binance fallback ★★★
+    if entry_price <= 0:
+        print(f"[DEMO ORDER] ⚠️ MT5 price unavailable for {symbol}, trying MetaAPI...")
         from .metaapi_service import quote_price_cache
         if quote_price_cache and symbol in quote_price_cache:
             price_data = quote_price_cache[symbol]
             entry_price = price_data.get('ask', 0) if order_type.upper() == "BUY" else price_data.get('bid', 0)
             print(f"[DEMO ORDER] 📊 Using MetaAPI price: {entry_price}")
-        # fallback: bridge cache
-        if entry_price <= 0:
-            bridge_prices = get_bridge_prices()
-            if bridge_prices and symbol in bridge_prices:
-                price_data = bridge_prices[symbol]
+
+    if entry_price <= 0:
+        bridge_prices = get_bridge_prices()
+        if bridge_prices and symbol in bridge_prices:
+            price_data = bridge_prices[symbol]
+            entry_price = price_data.get('ask', 0) if order_type.upper() == "BUY" else price_data.get('bid', 0)
+            print(f"[DEMO ORDER] 📊 Using bridge cache price: {entry_price}")
+
+    if entry_price <= 0:
+        try:
+            external_prices = await fetch_external_prices()
+            if external_prices and symbol in external_prices:
+                price_data = external_prices[symbol]
                 entry_price = price_data.get('ask', 0) if order_type.upper() == "BUY" else price_data.get('bid', 0)
-                print(f"[DEMO ORDER] 📊 Using bridge cache price: {entry_price}")
-        
-        # bridge cache도 없으면 → Binance API fallback
-        if entry_price <= 0:
-            try:
-                external_prices = await fetch_external_prices()
-                if external_prices and symbol in external_prices:
-                    price_data = external_prices[symbol]
-                    entry_price = price_data.get('ask', 0) if order_type.upper() == "BUY" else price_data.get('bid', 0)
-                    print(f"[DEMO ORDER] 📡 Using Binance API price: {entry_price}")
-            except Exception as e:
-                print(f"[DEMO ORDER] ⚠️ Binance API error: {e}")
-        
-        # 그래도 없으면 더미 가격 사용
-        if entry_price <= 0:
-            entry_price = 50000.0 if "BTC" in symbol else 1.0
-            print(f"[DEMO ORDER] ⚠️ All sources empty, using dummy: {entry_price}")
+                print(f"[DEMO ORDER] 📡 Using Binance API price: {entry_price}")
+        except Exception as e:
+            print(f"[DEMO ORDER] ⚠️ Binance API error: {e}")
+
+    if entry_price <= 0:
+        entry_price = 50000.0 if "BTC" in symbol else 1.0
+        print(f"[DEMO ORDER] ⚠️ All sources failed, using dummy: {entry_price}")
     print(f"[DEMO ORDER] 📊 Entry price: {entry_price}")
 
     # 포지션 생성 (Basic/NoLimit 모드용 - target 그대로 사용)
@@ -1027,52 +1040,87 @@ async def close_demo_position(
                 else:
                     profit = (entry_price - exit_price) * position.volume
     else:
-        # MT5 없음 - bridge cache에서 가격 가져오기
-        bridge_prices = get_bridge_prices()
-        if bridge_prices and position.symbol in bridge_prices:
-            price_data = bridge_prices[position.symbol]
-            exit_price = price_data.get('bid', entry_price) if position.trade_type == "BUY" else price_data.get('ask', entry_price)
+        # MT5 없음 - ★ MetaAPI 우선 사용 (주문 진입과 동일한 가격 소스)
+        from .metaapi_service import quote_price_cache
+        if quote_price_cache and position.symbol in quote_price_cache:
+            price_data = quote_price_cache[position.symbol]
+            exit_price = price_data.get('bid', 0) if position.trade_type == "BUY" else price_data.get('ask', 0)
+            print(f"[DEMO CLOSE] 📊 Using MetaAPI price: {exit_price}")
             
-            # 손익 계산 (bridge cache 사용)
-            symbol_info = bridge_cache.get("symbol_info", {}).get(position.symbol)
-            if symbol_info:
-                tick_size = symbol_info.get('tick_size', 0.01)
-                tick_value = symbol_info.get('tick_value', 1)
-                if position.trade_type == "BUY":
-                    price_diff = exit_price - entry_price
+            if exit_price > 0:
+                # symbol_info로 정확한 손익 계산
+                sym_info = bridge_cache.get("symbol_info", {}).get(position.symbol)
+                if sym_info and sym_info.get('tick_size', 0) > 0 and sym_info.get('tick_value', 0) > 0:
+                    tick_size = sym_info['tick_size']
+                    tick_value = sym_info['tick_value']
+                    if position.trade_type == "BUY":
+                        price_diff = exit_price - entry_price
+                    else:
+                        price_diff = entry_price - exit_price
+                    if tick_size > 0:
+                        ticks = price_diff / tick_size
+                        profit = ticks * tick_value * position.volume
+                    else:
+                        profit = price_diff * position.volume
                 else:
-                    price_diff = entry_price - exit_price
-                if tick_size > 0:
+                    # DEFAULT_SYMBOL_SPECS fallback
+                    specs = DEFAULT_SYMBOL_SPECS.get(position.symbol, {"tick_size": 0.01, "tick_value": 0.01})
+                    tick_size = specs['tick_size']
+                    tick_value = specs['tick_value']
+                    if position.trade_type == "BUY":
+                        price_diff = exit_price - entry_price
+                    else:
+                        price_diff = entry_price - exit_price
                     ticks = price_diff / tick_size
                     profit = ticks * tick_value * position.volume
+        
+        # MetaAPI 실패 시 bridge cache fallback
+        if exit_price <= 0 or exit_price == entry_price:
+            bridge_prices = get_bridge_prices()
+            if bridge_prices and position.symbol in bridge_prices:
+                price_data = bridge_prices[position.symbol]
+                exit_price = price_data.get('bid', entry_price) if position.trade_type == "BUY" else price_data.get('ask', entry_price)
+                
+                # 손익 계산 (bridge cache 사용)
+                symbol_info = bridge_cache.get("symbol_info", {}).get(position.symbol)
+                if symbol_info:
+                    tick_size = symbol_info.get('tick_size', 0.01)
+                    tick_value = symbol_info.get('tick_value', 1)
+                    if position.trade_type == "BUY":
+                        price_diff = exit_price - entry_price
+                    else:
+                        price_diff = entry_price - exit_price
+                    if tick_size > 0:
+                        ticks = price_diff / tick_size
+                        profit = ticks * tick_value * position.volume
+                    else:
+                        profit = price_diff * position.volume
                 else:
-                    profit = price_diff * position.volume
-            else:
-                # symbol_info 없으면 간단 계산
-                if position.trade_type == "BUY":
-                    profit = (exit_price - entry_price) * position.volume
-                else:
-                    profit = (entry_price - exit_price) * position.volume
-        else:
-            # bridge cache도 없으면 → Binance API fallback
-            try:
-                external_prices = await fetch_external_prices()
-                if external_prices and position.symbol in external_prices:
-                    price_data = external_prices[position.symbol]
-                    exit_price = price_data.get('bid', entry_price) if position.trade_type == "BUY" else price_data.get('ask', entry_price)
-                    
+                    # symbol_info 없으면 간단 계산
                     if position.trade_type == "BUY":
                         profit = (exit_price - entry_price) * position.volume
                     else:
                         profit = (entry_price - exit_price) * position.volume
-                    print(f"[DEMO CLOSE] 📡 Using Binance API price: {exit_price}")
-                else:
+            else:
+                # bridge cache도 없으면 → Binance API fallback
+                try:
+                    external_prices = await fetch_external_prices()
+                    if external_prices and position.symbol in external_prices:
+                        price_data = external_prices[position.symbol]
+                        exit_price = price_data.get('bid', entry_price) if position.trade_type == "BUY" else price_data.get('ask', entry_price)
+                        
+                        if position.trade_type == "BUY":
+                            profit = (exit_price - entry_price) * position.volume
+                        else:
+                            profit = (entry_price - exit_price) * position.volume
+                        print(f"[DEMO CLOSE] 📡 Using Binance API price: {exit_price}")
+                    else:
+                        exit_price = entry_price
+                        profit = 0
+                except Exception as e:
+                    print(f"[DEMO CLOSE] ⚠️ Binance API error: {e}")
                     exit_price = entry_price
                     profit = 0
-            except Exception as e:
-                print(f"[DEMO CLOSE] ⚠️ Binance API error: {e}")
-                exit_price = entry_price
-                profit = 0
     
     profit = round(profit, 2)
     
@@ -1095,16 +1143,51 @@ async def close_demo_position(
     current_user.demo_balance = (current_user.demo_balance or 10000.0) + profit
     current_user.demo_equity = current_user.demo_balance
     current_user.demo_today_profit = (current_user.demo_today_profit or 0.0) + profit
-    
+
+    # ★★★ 수동 청산 마틴 상태 업데이트 (DemoMartinState 테이블) ★★★
+    martin_reset = False
+    martin_step = 1
+    martin_accumulated_loss = 0.0
+
+    martin_state = get_or_create_martin_state(db, current_user.id, position.magic)
+    if martin_state.enabled:
+        martin_step = martin_state.step
+        martin_accumulated_loss = martin_state.accumulated_loss
+
+        if profit > 0:
+            # 수익: 누적손실에서 수익만큼 차감
+            new_accumulated = martin_state.accumulated_loss - profit
+            if new_accumulated <= 0:
+                # 누적손실 완전 회복 → 리셋
+                martin_state.step = 1
+                martin_state.accumulated_loss = 0.0
+                martin_reset = True
+                print(f"[DEMO CLOSE] Martin RESET! Profit {profit} recovered all loss")
+            else:
+                # 일부 회복 → 단계 유지, 누적손실만 감소
+                martin_state.accumulated_loss = new_accumulated
+                print(f"[DEMO CLOSE] Martin partial recovery: {profit}, remaining loss: {new_accumulated}")
+        elif profit < 0:
+            # 손실: 누적손실에 추가 (단계 올리지 않음)
+            new_accumulated = martin_state.accumulated_loss + abs(profit)
+            martin_state.accumulated_loss = new_accumulated
+            print(f"[DEMO CLOSE] Martin loss added: {abs(profit)}, total loss: {new_accumulated}")
+
+        martin_step = martin_state.step
+        martin_accumulated_loss = martin_state.accumulated_loss
+
     # 포지션 삭제
     db.delete(position)
     db.commit()
-    
+
     return JSONResponse({
         "success": True,
         "message": f"[DEMO] 청산 완료! P/L: ${profit:+,.2f}",
         "profit": profit,
-        "new_balance": current_user.demo_balance
+        "new_balance": current_user.demo_balance,
+        "martin_step": martin_step,
+        "martin_accumulated_loss": martin_accumulated_loss,
+        "martin_reset": martin_reset
     })
 
 
@@ -1118,7 +1201,7 @@ async def get_demo_history(
     trades = db.query(DemoTrade).filter(
         DemoTrade.user_id == current_user.id,
         DemoTrade.is_closed == True
-    ).order_by(DemoTrade.closed_at.desc()).limit(20).all()
+    ).order_by(DemoTrade.closed_at.desc()).limit(500).all()
     
     history = []
     for t in trades:
@@ -1193,45 +1276,62 @@ async def topup_demo_balance(
     })
 
     # ========== 데모 마틴 모드 API ==========
+
+# ========== 마틴 상태 헬퍼 함수 ==========
+def get_or_create_martin_state(db: Session, user_id: int, magic: int) -> DemoMartinState:
+    """magic별 마틴 상태 조회 또는 생성"""
+    state = db.query(DemoMartinState).filter_by(user_id=user_id, magic=magic).first()
+    if not state:
+        state = DemoMartinState(user_id=user_id, magic=magic)
+        db.add(state)
+        db.commit()
+        db.refresh(state)
+    return state
+
 @router.get("/martin/state")
 async def get_demo_martin_state(
+    magic: int = 100001,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """데모 마틴 상태 조회"""
-    step = current_user.demo_martin_step or 1
-    max_steps = current_user.demo_martin_max_steps or 5
-    base_lot = current_user.demo_martin_base_lot or 0.01
-    accumulated_loss = current_user.demo_martin_accumulated_loss or 0.0
-    
+    """데모 마틴 상태 조회 (magic별 독립 관리)"""
+    state = get_or_create_martin_state(db, current_user.id, magic)
+
     # 현재 랏 계산: base_lot × 2^(step-1)
-    current_lot = base_lot * (2 ** (step - 1))
+    current_lot = state.base_lot * (2 ** (state.step - 1))
     current_lot = round(current_lot, 2)
-    
+
     return {
-        "enabled": step > 1 or accumulated_loss != 0,
-        "step": step,
-        "max_steps": max_steps,
-        "base_lot": base_lot,
+        "enabled": state.enabled,
+        "step": state.step,
+        "max_steps": state.max_steps,
+        "base_lot": state.base_lot,
+        "base_target": state.base_target,
         "current_lot": current_lot,
-        "accumulated_loss": accumulated_loss
+        "accumulated_loss": state.accumulated_loss,
+        "magic": magic
     }
 
 
 @router.post("/martin/enable")
 async def enable_demo_martin(
+    magic: int = 100001,
     base_lot: float = 0.01,
     max_steps: int = 5,
+    base_target: float = 50.0,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """데모 마틴 모드 활성화"""
-    current_user.demo_martin_step = 1
-    current_user.demo_martin_max_steps = max_steps
-    current_user.demo_martin_base_lot = base_lot
-    current_user.demo_martin_accumulated_loss = 0.0
+    """데모 마틴 모드 활성화 (magic별 독립 관리)"""
+    state = get_or_create_martin_state(db, current_user.id, magic)
+    state.enabled = True
+    state.step = 1
+    state.max_steps = max_steps
+    state.base_lot = base_lot
+    state.base_target = base_target
+    state.accumulated_loss = 0.0
     db.commit()
-    
+
     return JSONResponse({
         "success": True,
         "message": f"마틴 모드 활성화! 기본 랏: {base_lot}, 최대 단계: {max_steps}",
@@ -1239,25 +1339,31 @@ async def enable_demo_martin(
             "step": 1,
             "max_steps": max_steps,
             "base_lot": base_lot,
+            "base_target": base_target,
             "current_lot": base_lot,
-            "accumulated_loss": 0.0
+            "accumulated_loss": 0.0,
+            "magic": magic
         }
     })
 
 
 @router.post("/martin/disable")
 async def disable_demo_martin(
+    magic: int = 100001,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """데모 마틴 모드 비활성화 (리셋)"""
-    current_user.demo_martin_step = 1
-    current_user.demo_martin_accumulated_loss = 0.0
+    """데모 마틴 모드 비활성화 (magic별 독립 관리)"""
+    state = get_or_create_martin_state(db, current_user.id, magic)
+    state.enabled = False
+    state.step = 1
+    state.accumulated_loss = 0.0
     db.commit()
-    
+
     return JSONResponse({
         "success": True,
-        "message": "마틴 모드 비활성화 및 리셋 완료"
+        "message": "마틴 모드 비활성화 및 리셋 완료",
+        "magic": magic
     })
 
 
@@ -1266,20 +1372,30 @@ async def place_demo_martin_order(
     symbol: str = "BTCUSD",
     order_type: str = "BUY",
     target: float = 50,
+    magic: int = 100001,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """데모 마틴 주문 (마틴 랏 자동 계산)"""
-    # 이미 열린 포지션 확인
+    """데모 마틴 주문 (magic별 독립 관리)"""
+    # 이미 열린 포지션 확인 (같은 magic)
     existing = db.query(DemoPosition).filter(
-        DemoPosition.user_id == current_user.id
+        DemoPosition.user_id == current_user.id,
+        DemoPosition.magic == magic
     ).first()
-    
+
     if existing:
         return JSONResponse({
             "success": False,
             "message": "이미 열린 포지션이 있습니다. 먼저 청산해주세요."
         })
+
+    # 마틴 상태 조회
+    state = get_or_create_martin_state(db, current_user.id, magic)
+
+    # ★★★ 프론트에서 보낸 target으로 base_target 업데이트 ★★★
+    if target > 0 and target != state.base_target:
+        state.base_target = target
+        print(f"[MARTIN ORDER] Updated base_target: {target}")
 
     # 현재가 조회
     entry_price = 0.0
@@ -1287,23 +1403,46 @@ async def place_demo_martin_order(
         tick = mt5.symbol_info_tick(symbol)
         if tick:
             entry_price = tick.ask if order_type.upper() == "BUY" else tick.bid
-        else:
-            entry_price = 50000.0 if "BTC" in symbol else 1.0
-    else:
-        # MT5 없음 - 더미 가격 사용
+            print(f"[MARTIN ORDER] 📊 Using MT5 price: {entry_price}")
+
+    # ★★★ MT5 실패 시 MetaAPI → Bridge → Binance fallback ★★★
+    if entry_price <= 0:
+        print(f"[MARTIN ORDER] ⚠️ MT5 price unavailable for {symbol}, trying MetaAPI...")
+        from .metaapi_service import quote_price_cache
+        if quote_price_cache and symbol in quote_price_cache:
+            price_data = quote_price_cache[symbol]
+            entry_price = price_data.get('ask', 0) if order_type.upper() == "BUY" else price_data.get('bid', 0)
+            print(f"[MARTIN ORDER] 📊 Using MetaAPI price: {entry_price}")
+
+    if entry_price <= 0:
+        bridge_prices = get_bridge_prices()
+        if bridge_prices and symbol in bridge_prices:
+            price_data = bridge_prices[symbol]
+            entry_price = price_data.get('ask', 0) if order_type.upper() == "BUY" else price_data.get('bid', 0)
+            print(f"[MARTIN ORDER] 📊 Using bridge cache price: {entry_price}")
+
+    if entry_price <= 0:
+        try:
+            external_prices = await fetch_external_prices()
+            if external_prices and symbol in external_prices:
+                price_data = external_prices[symbol]
+                entry_price = price_data.get('ask', 0) if order_type.upper() == "BUY" else price_data.get('bid', 0)
+                print(f"[MARTIN ORDER] 📡 Using Binance API price: {entry_price}")
+        except Exception as e:
+            print(f"[MARTIN ORDER] ⚠️ Binance API error: {e}")
+
+    if entry_price <= 0:
         entry_price = 50000.0 if "BTC" in symbol else 1.0
-    
-    # 마틴 랏 계산
-    step = current_user.demo_martin_step or 1
-    base_lot = current_user.demo_martin_base_lot or 0.01
-    martin_lot = base_lot * (2 ** (step - 1))
+        print(f"[MARTIN ORDER] ⚠️ All sources failed, using dummy: {entry_price}")
+
+    # 마틴 랏 계산: base_lot * 2^(step-1)
+    martin_lot = state.base_lot * (2 ** (state.step - 1))
     martin_lot = round(martin_lot, 2)
-    
-    # 마틴 목표 계산: 누적손실 + 기본목표 (손실 복구 + 이익)
-    accumulated_loss = current_user.demo_martin_accumulated_loss or 0.0
-    real_target = accumulated_loss + target
-    print(f"[DEBUG] Martin Order: Step {step}, Lot {martin_lot}, AccLoss {accumulated_loss}, Target {target}, RealTarget {real_target}")
-    
+
+    # 마틴 목표 계산: ceil((accumulated_loss + base_target) / 5) * 5
+    real_target = ceil((state.accumulated_loss + state.base_target) / 5) * 5
+    print(f"[DEBUG] Martin Order: Magic {magic}, Step {state.step}, Lot {martin_lot}, AccLoss {state.accumulated_loss}, BaseTarget {state.base_target}, RealTarget {real_target}")
+
     # 포지션 생성
     new_position = DemoPosition(
         user_id=current_user.id,
@@ -1311,79 +1450,82 @@ async def place_demo_martin_order(
         trade_type=order_type.upper(),
         volume=martin_lot,
         entry_price=entry_price,
-        target_profit=real_target
+        target_profit=real_target,
+        magic=magic
     )
-    
+
     db.add(new_position)
     db.commit()
-    
+
     return JSONResponse({
         "success": True,
-        "message": f"[MARTIN Step {step}] {order_type.upper()} {martin_lot} lot @ {entry_price:,.2f}",
+        "message": f"[MARTIN Step {state.step}] {order_type.upper()} {martin_lot} lot @ {entry_price:,.2f}",
         "position_id": new_position.id,
-        "martin_step": step,
-        "martin_lot": martin_lot
+        "martin_step": state.step,
+        "martin_lot": martin_lot,
+        "magic": magic
     })
 
 
 @router.post("/martin/update")
 async def update_demo_martin_after_close(
     profit: float = 0,
+    magic: int = 100001,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """청산 후 마틴 상태 업데이트"""
-    step = current_user.demo_martin_step or 1
-    max_steps = current_user.demo_martin_max_steps or 5
-    accumulated_loss = current_user.demo_martin_accumulated_loss or 0.0
-    
+    """청산 후 마틴 상태 업데이트 (magic별 독립 관리)"""
+    state = get_or_create_martin_state(db, current_user.id, magic)
+
     if profit >= 0:
         # 이익: 마틴 리셋!
-        current_user.demo_martin_step = 1
-        current_user.demo_martin_accumulated_loss = 0.0
+        state.step = 1
+        state.accumulated_loss = 0.0
         db.commit()
-        
+
         return JSONResponse({
             "success": True,
             "message": f"🎉 마틴 성공! +${profit:,.2f} → Step 1 리셋",
             "new_step": 1,
             "accumulated_loss": 0.0,
-            "reset": True
+            "reset": True,
+            "magic": magic
         })
     else:
         # 손실: 다음 단계로
-        new_accumulated = accumulated_loss + abs(profit)
-        new_step = step + 1
-        
-        if new_step > max_steps:
+        new_accumulated = state.accumulated_loss + abs(profit)
+        new_step = state.step + 1
+
+        if new_step > state.max_steps:
             # 최대 단계 초과: 강제 리셋
-            current_user.demo_martin_step = 1
-            current_user.demo_martin_accumulated_loss = 0.0
+            state.step = 1
+            state.accumulated_loss = 0.0
             db.commit()
-            
+
             return JSONResponse({
                 "success": False,
                 "message": f"❌ 마틴 실패! 최대 단계 도달 → 강제 리셋",
                 "new_step": 1,
                 "accumulated_loss": 0.0,
                 "reset": True,
-                "total_loss": new_accumulated
+                "total_loss": new_accumulated,
+                "magic": magic
             })
         else:
-            current_user.demo_martin_step = new_step
-            current_user.demo_martin_accumulated_loss = new_accumulated
+            state.step = new_step
+            state.accumulated_loss = new_accumulated
             db.commit()
-            
-            base_lot = current_user.demo_martin_base_lot or 0.01
-            next_lot = base_lot * (2 ** (new_step - 1))
-            
+
+            next_lot = state.base_lot * (2 ** (new_step - 1))
+
             return JSONResponse({
                 "success": True,
                 "message": f"📈 Step {new_step}로 진행! 다음 랏: {next_lot:.2f}",
                 "new_step": new_step,
                 "accumulated_loss": new_accumulated,
                 "next_lot": round(next_lot, 2),
-                "reset": False
+                "reset": False,
+                "magic": magic
             })
 
 
@@ -1391,17 +1533,20 @@ async def update_demo_martin_after_close(
 @router.post("/martin/update-loss")
 async def update_demo_martin_loss(
     accumulated_loss: float = 0,
+    magic: int = 100001,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """마틴 누적손실만 업데이트 (단계/랏수 유지)"""
-    current_user.demo_martin_accumulated_loss = accumulated_loss
+    """마틴 누적손실만 업데이트 (magic별 독립 관리)"""
+    state = get_or_create_martin_state(db, current_user.id, magic)
+    state.accumulated_loss = accumulated_loss
     db.commit()
-    
+
     return JSONResponse({
         "success": True,
         "message": f"누적손실 업데이트: ${accumulated_loss:,.2f}",
-        "accumulated_loss": accumulated_loss
+        "accumulated_loss": accumulated_loss,
+        "magic": magic
     })
 
 
@@ -1410,42 +1555,47 @@ async def update_demo_martin_loss(
 async def update_demo_martin_state(
     step: int = 1,
     accumulated_loss: float = 0,
+    magic: int = 100001,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """마틴 단계와 누적손실 업데이트"""
-    current_user.demo_martin_step = step
-    current_user.demo_martin_accumulated_loss = accumulated_loss
+    """마틴 단계와 누적손실 업데이트 (magic별 독립 관리)"""
+    state = get_or_create_martin_state(db, current_user.id, magic)
+    state.step = step
+    state.accumulated_loss = accumulated_loss
     db.commit()
-    
-    base_lot = current_user.demo_martin_base_lot or 0.01
-    current_lot = base_lot * (2 ** (step - 1))
-    
+
+    current_lot = state.base_lot * (2 ** (step - 1))
+
     return JSONResponse({
         "success": True,
         "message": f"마틴 상태 업데이트: Step {step}, 누적손실 ${accumulated_loss:,.2f}",
         "step": step,
         "accumulated_loss": accumulated_loss,
-        "current_lot": round(current_lot, 2)
+        "current_lot": round(current_lot, 2),
+        "magic": magic
     })
 
 
 # ========== 데모 마틴 완전 리셋 ==========
 @router.post("/martin/reset-full")
 async def reset_demo_martin_full(
+    magic: int = 100001,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """마틴 완전 초기화 (1단계, 누적손실 0)"""
-    current_user.demo_martin_step = 1
-    current_user.demo_martin_accumulated_loss = 0.0
+    """마틴 완전 초기화 (magic별 독립 관리)"""
+    state = get_or_create_martin_state(db, current_user.id, magic)
+    state.step = 1
+    state.accumulated_loss = 0.0
     db.commit()
-    
+
     return JSONResponse({
         "success": True,
         "message": "마틴 초기화 완료",
         "step": 1,
-        "accumulated_loss": 0
+        "accumulated_loss": 0,
+        "magic": magic
     })
 
 # ========== 일괄 청산 ==========
@@ -1961,6 +2111,37 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                                 if should_close:
                                     # 자동청산 실행
                                     try:
+                                        # ★★★ 마틴 상태 업데이트 (DemoMartinState) ★★★
+                                        martin_state = get_or_create_martin_state(db, user.id, pos.magic)
+                                        martin_step = martin_state.step
+                                        martin_accumulated_loss = martin_state.accumulated_loss
+                                        martin_reset = False
+                                        martin_step_up = False
+
+                                        if martin_state.enabled:
+                                            if is_win:
+                                                martin_state.step = 1
+                                                martin_state.accumulated_loss = 0.0
+                                                martin_reset = True
+                                                print(f"[MARTIN-DEBUG] WIN -> RESET to step 1")
+                                            else:
+                                                new_accumulated = martin_state.accumulated_loss + abs(profit)
+                                                if martin_state.step >= martin_state.max_steps:
+                                                    martin_state.step = 1
+                                                    martin_state.accumulated_loss = 0.0
+                                                    martin_reset = True
+                                                    print(f"[MARTIN-DEBUG] MAX STEP REACHED -> RESET to step 1")
+                                                else:
+                                                    old_step = martin_state.step
+                                                    new_step = martin_state.step + 1
+                                                    martin_state.step = new_step
+                                                    martin_state.accumulated_loss = new_accumulated
+                                                    martin_step_up = True
+                                                    print(f"[MARTIN-DEBUG] STEP UP: {old_step} -> {new_step}, acc_loss: {new_accumulated:.2f}")
+
+                                            martin_step = martin_state.step
+                                            martin_accumulated_loss = martin_state.accumulated_loss
+
                                         # 거래 내역 저장
                                         trade = DemoTrade(
                                             user_id=user_id,
@@ -1990,7 +2171,11 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                                             "closed_profit": profit,
                                             "is_win": is_win,
                                             "message": f"🎯 목표 도달! +${profit:,.2f}" if is_win else f"💔 손절! ${profit:,.2f}",
-                                            "closed_at": current_time  # ★ 청산 시간 추가
+                                            "closed_at": current_time,  # ★ 청산 시간 추가
+                                            "martin_step": martin_step,
+                                            "martin_accumulated_loss": martin_accumulated_loss,
+                                            "martin_reset": martin_reset,
+                                            "martin_step_up": martin_step_up
                                         }
 
                                         # ★★★ 10초 동안 자동청산 정보 유지 (프론트엔드가 놓치지 않도록) ★★★

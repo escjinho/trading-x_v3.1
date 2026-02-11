@@ -347,13 +347,18 @@ async function applySettings() {
 
     if (currentMode === 'martin' && martinEnabled) {
         if (isDemo) {
-            await apiCall(`/demo/martin/enable?base_lot=${lotSize}&max_steps=${martinLevel}`, 'POST');
+            await apiCall(`/demo/martin/enable?base_lot=${lotSize}&max_steps=${martinLevel}&base_target=${targetAmount}&magic=100001`, 'POST');
         } else {
             await apiCall(`/mt5/martin/enable?base_lot=${lotSize}&target=${targetAmount}&max_steps=${martinLevel}`, 'POST');
         }
+        // ★★★ 프론트엔드 마틴 상태도 리셋 ★★★
+        martinStep = 1;
+        martinAccumulatedLoss = 0;
+        martinHistory = [];
+        updateMartinUI();
     } else {
         if (isDemo) {
-            await apiCall('/demo/martin/disable', 'POST');
+            await apiCall('/demo/martin/disable?magic=100001', 'POST');
         } else {
             await apiCall('/mt5/martin/disable', 'POST');
         }
@@ -461,18 +466,10 @@ function updateMainPanelForMode() {
 }
 
 function updateMartinUI() {
-    // 마틴 타겟 계산: 단계별 2배 + 누적손실 회복
-    let displayTarget = targetAmount;  // 기본 목표
-
-    if (martinStep > 1) {
-        // 단계 진행 시: 기본목표 × 2^(step-1) + 누적손실
-        displayTarget = targetAmount * Math.pow(2, martinStep - 1) + martinAccumulatedLoss;
-    } else if (martinAccumulatedLoss > 0) {
-        // 1단계인데 누적손실이 있는 경우 (중간 청산 후)
-        displayTarget = targetAmount + martinAccumulatedLoss;
-    }
-
-    displayTarget = Math.ceil(displayTarget);
+    // ★★★ 마틴 타겟 계산: ceil((누적손실 + 기본타겟) / 5) * 5 ★★★
+    // 백엔드 공식과 동일: 타겟 = ceil((accumulated_loss + base_target) / 5) * 5
+    // martinStep에 따라 랏만 2배, 타겟은 누적손실 기반 계산
+    let displayTarget = Math.ceil((martinAccumulatedLoss + targetAmount) / 5) * 5;
 
     document.getElementById('martinTargetDisplay').textContent = '$' + displayTarget;
     document.getElementById('martinTargetInfo').textContent = displayTarget;
@@ -484,7 +481,11 @@ function updateMartinUI() {
     }
     document.getElementById('martinLotDisplay').innerHTML = lotText;
 
-    document.getElementById('martinCurrentStep').textContent = martinStep;
+    // Step 정보 - 현재 스텝을 cyan으로 강조
+    const stepInfoEl = document.getElementById('martinCurrentStep');
+    if (stepInfoEl) {
+        stepInfoEl.innerHTML = '<span style="color: #00d4ff; font-weight: bold;">' + martinStep + '</span>';
+    }
     document.getElementById('martinMaxStepsDisplay').textContent = martinLevel;
 
     const badge = document.getElementById('martinStepBadge');
@@ -503,12 +504,33 @@ function renderMartinDots() {
     if (!container) return;
 
     const displaySteps = 8;
-    const hasMoreSteps = martinLevel > displaySteps;
 
+    // 현재 스텝이 뒤에서 3번째쯤 위치하도록 startStep 조정
+    let startStep = 1;
+    if (martinStep > displaySteps - 2) {
+        startStep = martinStep - displaySteps + 3;  // 현재 단계 뒤로 2개 여유
+        if (startStep < 1) startStep = 1;
+    }
+    // startStep + displaySteps - 1이 martinLevel을 초과하면 조정
+    if (startStep + displaySteps - 1 > martinLevel) {
+        startStep = Math.max(1, martinLevel - displaySteps + 1);
+    }
+
+    const hasMoreSteps = (startStep + displaySteps - 1) < martinLevel;
     let html = '';
 
+    // 왼쪽 화살표 (startStep > 1이면)
+    if (startStep > 1) {
+        html += `<div style="display: flex; flex-direction: column; align-items: center; gap: 2px; margin-right: 4px;">`;
+        html += `<div style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; color: #666; font-size: 14px;">◀</div>`;
+        html += `<span style="font-size: 8px; color: #9ca3af;">-${startStep - 1}</span>`;
+        html += '</div>';
+    }
+
     for (let i = 0; i < displaySteps; i++) {
-        const stepNum = i + 1;
+        const stepNum = startStep + i;
+        if (stepNum > martinLevel) break;
+
         const isCurrent = stepNum === martinStep;
         const isPast = stepNum < martinStep;
         const isActive = stepNum <= martinLevel;
@@ -520,10 +542,10 @@ function renderMartinDots() {
 
         if (isActive) {
             if (isPast) {
-            // 마틴은 손실 후 다음 단계로 가니까, 이전 단계는 모두 손실!
-            bgColor = '#dc3246';
-            content = '✗';
-            boxShadow = '0 0 8px #dc3246';
+                // 마틴은 손실 후 다음 단계로 가니까, 이전 단계는 모두 손실!
+                bgColor = '#dc3246';
+                content = '✗';
+                boxShadow = '0 0 8px #dc3246';
             } else if (isCurrent) {
                 bgColor = '#00d4ff';
                 content = stepNum;
@@ -539,10 +561,11 @@ function renderMartinDots() {
         html += '</div>';
     }
 
+    // 오른쪽 화살표 (더 있으면)
     if (hasMoreSteps) {
         html += `<div style="display: flex; flex-direction: column; align-items: center; gap: 2px; margin-left: 4px;">`;
         html += `<div style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; color: #00d4ff; font-size: 14px;">▶</div>`;
-        html += `<span style="font-size: 8px; color: #9ca3af;">+${martinLevel - displaySteps}</span>`;
+        html += `<span style="font-size: 8px; color: #9ca3af;">+${martinLevel - (startStep + displaySteps - 1)}</span>`;
         html += '</div>';
     }
 

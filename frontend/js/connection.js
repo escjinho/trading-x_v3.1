@@ -227,10 +227,6 @@ function connectWebSocket() {
             pollingInterval = null;
             console.log('[WS] Polling stopped - WebSocket connected');
         }
-        // ★★★ 초기 히스토리 로드 (접속 시 즉시) ★★★
-        setTimeout(() => {
-            if (typeof loadHistory === 'function') loadHistory();
-        }, 1500);
     };
 
     ws.onmessage = function(event) {
@@ -428,11 +424,11 @@ function connectWebSocket() {
                 window.currentProfit = data.position.profit || 0;
                 window.currentTarget = data.position.target || targetAmount;
 
-                // ★ 포지션의 실제 volume으로 Lot Size 표시 (새로고침 시 복원)
+                // ★ 포지션의 실제 volume 표시 (lotSize는 변경하지 않음 - 마틴 버그 방지)
                 if (data.position.volume) {
-                    lotSize = data.position.volume;
                     const tradeLotSize = document.getElementById('tradeLotSize');
                     if (tradeLotSize) tradeLotSize.textContent = data.position.volume.toFixed(2);
+                    // lotSize는 base_lot 유지, 마틴 모드에서는 connection.js의 martin state에서 복원
                 }
 
                 if (typeof updatePositionUI === 'function') {
@@ -447,25 +443,26 @@ function connectWebSocket() {
                 }
             }
 
-            // ★★★ Demo Today P/L 업데이트 ★★★
-            // today_pl=0이면 덮어쓰지 않음 (히스토리에서 계산한 값 유지)
-            if (data.today_pl !== undefined && data.today_pl !== 0) {
+            // ★★★ Demo Today P/L — _todayPLFixed 단일 소스 ★★★
+            // WS의 data.today_pl(DB값)은 일별 리셋 안 되므로 사용하지 않음
+            // _todayPLFixed만 유일한 진실의 소스로 사용
+            if (window._todayPLFixed !== null && window._todayPLFixed !== undefined) {
+                const fixedPL = window._todayPLFixed;
                 const accTodayPL = document.getElementById('accTodayPL');
                 if (accTodayPL) {
-                    const pl = data.today_pl;
-                    if (pl >= 0) {
-                        accTodayPL.textContent = '+$' + pl.toFixed(2);
-                        accTodayPL.style.color = 'var(--buy-color)';
-                    } else {
-                        accTodayPL.textContent = '-$' + Math.abs(pl).toFixed(2);
-                        accTodayPL.style.color = 'var(--sell-color)';
+                    const newText = (fixedPL >= 0 ? '+$' : '-$') + Math.abs(fixedPL).toFixed(2);
+                    if (accTodayPL.textContent !== newText) {
+                        accTodayPL.textContent = newText;
+                        accTodayPL.style.color = fixedPL >= 0 ? 'var(--buy-color)' : 'var(--sell-color)';
                     }
                 }
                 const v5TodayPL = document.getElementById('v5TodayPL');
                 if (v5TodayPL) {
-                    const pl = data.today_pl;
-                    v5TodayPL.textContent = (pl >= 0 ? '+$' : '-$') + Math.abs(pl).toFixed(2);
-                    v5TodayPL.style.color = pl >= 0 ? 'var(--buy-color)' : 'var(--sell-color)';
+                    const newV5 = (fixedPL >= 0 ? '+$' : '-$') + Math.abs(fixedPL).toFixed(2);
+                    if (v5TodayPL.textContent !== newV5) {
+                        v5TodayPL.textContent = newV5;
+                        v5TodayPL.style.color = fixedPL >= 0 ? 'var(--buy-color)' : 'var(--sell-color)';
+                    }
                 }
             }
 
@@ -630,18 +627,16 @@ function connectWebSocket() {
             }
         }
 
-        // ★★★ 라이브 모드 Today P/L 업데이트 ★★★
-        // today_pl=0이면 덮어쓰지 않음 (히스토리에서 계산한 값 유지)
-        if (data.today_pl !== undefined && data.today_pl !== 0) {
+        // ★★★ 라이브 모드 Today P/L — _todayPLFixed 단일 소스 ★★★
+        // WS의 data.today_pl 대신 _todayPLFixed만 사용 (정확한 히스토리 기반)
+        if (window._todayPLFixed !== null && window._todayPLFixed !== undefined) {
+            const fixedPL = window._todayPLFixed;
             const accTodayPL = document.getElementById('accTodayPL');
             if (accTodayPL) {
-                const pl = data.today_pl;
-                if (pl >= 0) {
-                    accTodayPL.textContent = '+$' + pl.toFixed(2);
-                    accTodayPL.style.color = 'var(--buy-color)';
-                } else {
-                    accTodayPL.textContent = '-$' + Math.abs(pl).toFixed(2);
-                    accTodayPL.style.color = 'var(--sell-color)';
+                const newText = (fixedPL >= 0 ? '+$' : '-$') + Math.abs(fixedPL).toFixed(2);
+                if (accTodayPL.textContent !== newText) {
+                    accTodayPL.textContent = newText;
+                    accTodayPL.style.color = fixedPL >= 0 ? 'var(--buy-color)' : 'var(--sell-color)';
                 }
             }
         }
@@ -915,18 +910,9 @@ async function fetchAccountData() {
                         showToast(`💔 청산 완료! $${lastProfit.toFixed(2)}`, 'error');
                     }
                     
-                    // Today P/L 업데이트
-                    const accTodayPL = document.getElementById('accTodayPL');
-                    if (accTodayPL) {
-                        const currentPL = parseFloat(accTodayPL.textContent.replace(/[^0-9.-]/g, '')) || 0;
-                        const newPL = currentPL + lastProfit;
-                        if (newPL >= 0) {
-                            accTodayPL.textContent = '+$' + newPL.toFixed(2);
-                            accTodayPL.style.color = 'var(--buy-color)';
-                        } else {
-                            accTodayPL.textContent = '-$' + Math.abs(newPL).toFixed(2);
-                            accTodayPL.style.color = 'var(--sell-color)';
-                        }
+                    // Today P/L 업데이트 — _todayPLFixed 사용
+                    if (typeof updateTodayPL === 'function') {
+                        updateTodayPL(lastProfit);
                     }
                     
                     // 거래내역 새로고침 (약간 딜레이 후)
@@ -1278,7 +1264,7 @@ async function fetchDemoData() {
             if (currentMode === 'martin' && martinEnabled) {
                 console.log("[checkUserMode] About to try connectWebSocket - Live mode");
             try {
-                    const martinRes = await fetch(`${API_URL}/demo/martin/state`, {
+                    const martinRes = await fetch(`${API_URL}/demo/martin/state?magic=100001`, {
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
                     const martinData = await martinRes.json();
@@ -1421,6 +1407,9 @@ function switchTradingMode(mode) {
         if (demoControl) demoControl.style.display = 'block';
         
         isDemo = true;
+        // ★★★ 모드 전환 시 히스토리 캐시 리셋 (라이브 데이터 잔류 방지) ★★★
+        window._weekHistoryData = null;
+        window._todayPLFixed = null;
         showToast('🎮 Demo 모드로 전환되었습니다', 'success');
         updateHeroCTA('demo_with_live');
 
@@ -1486,6 +1475,9 @@ function switchTradingMode(mode) {
                 if (demoControl) demoControl.style.display = 'none';
                 
                 isDemo = false;
+                // ★★★ 모드 전환 시 히스토리 캐시 리셋 (데모 데이터 잔류 방지) ★★★
+                window._weekHistoryData = null;
+                window._todayPLFixed = null;
                 showToast('💎 Live 모드로 전환되었습니다', 'success');
                 updateHeroCTA('live');
 

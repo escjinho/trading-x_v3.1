@@ -13,15 +13,9 @@ let pendingLoss = 0;
 
 // ========== Martin UI Update ==========
 function updateMartinUI() {
-    let displayTarget = targetAmount;
-    
-    if (martinStep > 1) {
-        displayTarget = targetAmount * Math.pow(2, martinStep - 1) + martinAccumulatedLoss;
-    } else if (martinAccumulatedLoss > 0) {
-        displayTarget = targetAmount + martinAccumulatedLoss;
-    }
-    
-    displayTarget = Math.ceil(displayTarget);
+    // ★★★ 마틴 타겟 계산: ceil((누적손실 + 기본타겟) / 5) * 5 ★★★
+    // 백엔드 공식과 동일: 타겟 = ceil((accumulated_loss + base_target) / 5) * 5
+    let displayTarget = Math.ceil((martinAccumulatedLoss + targetAmount) / 5) * 5;
     
     document.getElementById('martinTargetDisplay').textContent = '$' + displayTarget;
     document.getElementById('martinTargetInfo').textContent = displayTarget;

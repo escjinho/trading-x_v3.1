@@ -32,3 +32,18 @@ class DemoPosition(Base):
     target_profit = Column(Float, default=100.0)  # 목표 수익
     magic = Column(Integer, default=100001)  # 패널 구분용 매직넘버
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+# ========== 데모 마틴 상태 ==========
+class DemoMartinState(Base):
+    __tablename__ = "demo_martin_states"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    magic = Column(Integer, nullable=False, default=100001)
+    step = Column(Integer, default=1)
+    max_steps = Column(Integer, default=5)
+    accumulated_loss = Column(Float, default=0.0)
+    base_lot = Column(Float, default=0.01)
+    base_target = Column(Float, default=50.0)
+    enabled = Column(Boolean, default=False)
