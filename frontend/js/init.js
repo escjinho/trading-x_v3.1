@@ -127,7 +127,7 @@ function updateGreeting() {
 // 홈 슬라이더 변수
 let homeSliderInterval = null;
 let homeSliderPaused = false;
-const HOME_SLIDE_INTERVAL = 5000; // 5초
+const HOME_SLIDE_INTERVAL = 10000; // 10초
 
 // 홈 슬라이더 초기화
 function initHomeSlider() {

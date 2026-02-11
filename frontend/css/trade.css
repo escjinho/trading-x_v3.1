@@ -2,14 +2,20 @@
 
         .ea-panel {
             background: var(--bg-primary);
-            border: 2px solid var(--accent-cyan);
+            /* [원본] border: 2px solid var(--accent-cyan); */
+            border-top: none;
+            border-bottom: none;
+            border-left: 1px solid rgba(0, 212, 255, 0.25);
+            border-right: 1px solid rgba(0, 212, 255, 0.25);
             border-radius: 16px;
             overflow: hidden;
-            box-shadow: 0 0 40px var(--accent-cyan-glow), 0 25px 60px rgba(0,0,0,0.6);
+            /* [원본] box-shadow: 0 0 40px var(--accent-cyan-glow), 0 25px 60px rgba(0,0,0,0.6); */
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            position: relative;
         }
         .ea-header {
             padding: 15px 20px; text-align: center;
-            border-bottom: 2px solid var(--accent-cyan);
+            border-bottom: 2px solid rgba(255, 255, 255, 0.5);
             position: relative;
         }
         .ea-header::before {

@@ -15,7 +15,7 @@
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css?v=20260212e">
+    <link rel="stylesheet" href="css/styles.css?v=20260212n">
     <link rel="stylesheet" href="css/chart.css?v=50">
 </head>
 <body>
@@ -555,12 +555,12 @@
             <!-- ========== Trade 탭 ========== -->
             <div class="page" id="page-trade">
                 
-                <!-- Buy/Sell 패널 (기본) -->
+                <!-- Buy/Sell Pro (기본) -->
                 <div class="buysell-panel" id="buysellPanel">
                 <div class="ea-panel">
                     <!-- EA Header -->
                     <div class="ea-header">
-                        <div class="ea-title title-font">FUMA Buy/Sell</div>
+                        <div class="ea-title title-font">Buy/Sell Pro</div>
                         <button class="settings-btn" onclick="openSettings()">
                             <svg width="20" height="16" viewBox="0 0 20 16" fill="currentColor">
                                 <rect y="0" width="20" height="2" rx="1"/>
@@ -763,12 +763,12 @@
                         </div>
                     </div>
                     
-                    <div class="ea-footer">FUMA Buy/Sell • v3.2</div>
+                    <div class="ea-footer">Buy/Sell Pro • v3.2</div>
                 </div>
                 </div><!-- buysellPanel 닫기 -->
 
                 
-                <!-- Multi Order V5 패널 -->
+                <!-- Multi Order V5 -->
                 <div class="multi-v5-panel" id="multiOrderPanelV5" style="display: none;">
                     
                     <!-- 섹션 1: 타이틀 + Account Info -->
@@ -999,15 +999,15 @@
                     
                 </div><!-- multiOrderPanelV5 닫기 -->
                 
-                <!-- Quick & Easy 패널 (준비중) -->
+                <!-- Quick & Easy (준비중) -->
                 <div id="quickPanel" style="display: none; padding: 20px;">
                     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center;">
                         <div style="font-size: 80px; margin-bottom: 20px;">🚧</div>
-                        <h2 style="color: #00d4ff; font-size: 24px; margin-bottom: 12px;">Quick & Easy 패널</h2>
+                        <h2 style="color: #00d4ff; font-size: 24px; margin-bottom: 12px;">Quick & Easy</h2>
                         <p style="color: var(--text-muted); font-size: 16px; margin-bottom: 8px;">준비중입니다</p>
                         <p style="color: var(--text-muted); font-size: 14px;">빠른 시일 내에 오픈 예정입니다!</p>
                         <div style="margin-top: 30px; padding: 16px 24px; background: rgba(0, 212, 255, 0.1); border: 1px solid rgba(0, 212, 255, 0.3); border-radius: 12px;">
-                            <p style="color: #00d4ff; font-size: 14px;">💡 Buy/Sell 또는 Multi Order V5 패널을 이용해주세요</p>
+                            <p style="color: #00d4ff; font-size: 14px;">💡 Buy/Sell 또는 Multi Order V5을 이용해주세요</p>
                         </div>
                     </div>
                 </div>
@@ -1751,62 +1751,7 @@
         <div class="submenu-handle"></div>
         <div class="submenu-title">Trading</div>
         
-        <div class="submenu-items">
-            <!-- Buy/Sell 패널 -->
-            <div class="submenu-item" 
-                 onclick="selectTradeSubmenuItem('buysell')"
-                 onmousedown="tradeSubmenuItemPressStart('buysell', this)"
-                 onmouseup="tradeSubmenuItemPressEnd()"
-                 onmouseleave="tradeSubmenuItemPressEnd()"
-                 ontouchstart="tradeSubmenuItemPressStart('buysell', this)"
-                 ontouchend="tradeSubmenuItemPressEnd()"
-                 ontouchcancel="tradeSubmenuItemPressEnd()">
-                <div class="submenu-item-left">
-                    <div class="submenu-item-icon cyan">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="22" height="22">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                        </svg>
-                    </div>
-                    <div class="submenu-item-content">
-                        <div class="submenu-item-title">Buy/Sell 패널</div>
-                        <div class="submenu-item-subtitle">Binary Mode</div>
-                    </div>
-                </div>
-                <div class="submenu-item-badge" id="submenuBuysellBadge" style="display: none;">기본</div>
-                <svg class="submenu-item-arrow" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-                <div class="submenu-item-progress"></div>
-            </div>
-            
-            <!-- Multi Order V5 패널 -->
-            <div class="submenu-item" 
-                 onclick="selectTradeSubmenuItem('multiV5')"
-                 onmousedown="tradeSubmenuItemPressStart('multiV5', this)"
-                 onmouseup="tradeSubmenuItemPressEnd()"
-                 onmouseleave="tradeSubmenuItemPressEnd()"
-                 ontouchstart="tradeSubmenuItemPressStart('multiV5', this)"
-                 ontouchend="tradeSubmenuItemPressEnd()"
-                 ontouchcancel="tradeSubmenuItemPressEnd()">
-                <div class="submenu-item-left">
-                    <div class="submenu-item-icon" style="background: rgba(0, 212, 255, 0.12); color: #00d4ff;">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="22" height="22">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                        </svg>
-                    </div>
-                    <div class="submenu-item-content">
-                        <div class="submenu-item-title">Multi Order V5 패널</div>
-                        <div class="submenu-item-subtitle">New Design</div>
-                    </div>
-                </div>
-                <div class="submenu-item-badge" id="submenuMultiV5Badge" style="display: none;">기본</div>
-                <svg class="submenu-item-arrow" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-                <div class="submenu-item-progress"></div>
-            </div>
-
-            <!-- Quick & Easy 패널 -->
+                <div class="submenu-items">
             <div class="submenu-item" 
                  onclick="selectTradeSubmenuItem('multi')"
                  onmousedown="tradeSubmenuItemPressStart('multi', this)"
@@ -1822,11 +1767,61 @@
                         </svg>
                     </div>
                     <div class="submenu-item-content">
-                        <div class="submenu-item-title">Quick & Easy 패널</div>
+                        <div class="submenu-item-title">Quick & Easy</div>
                         <div class="submenu-item-subtitle">Easy Mode</div>
                     </div>
                 </div>
                 <div class="submenu-item-badge" id="submenuMultiBadge" style="display: none;">기본</div>
+                <svg class="submenu-item-arrow" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+                <div class="submenu-item-progress"></div>
+            </div>
+            <div class="submenu-item" 
+                 onclick="selectTradeSubmenuItem('buysell')"
+                 onmousedown="tradeSubmenuItemPressStart('buysell', this)"
+                 onmouseup="tradeSubmenuItemPressEnd()"
+                 onmouseleave="tradeSubmenuItemPressEnd()"
+                 ontouchstart="tradeSubmenuItemPressStart('buysell', this)"
+                 ontouchend="tradeSubmenuItemPressEnd()"
+                 ontouchcancel="tradeSubmenuItemPressEnd()">
+                <div class="submenu-item-left">
+                    <div class="submenu-item-icon cyan">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="22" height="22">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                        </svg>
+                    </div>
+                    <div class="submenu-item-content">
+                        <div class="submenu-item-title">Buy/Sell Pro</div>
+                        <div class="submenu-item-subtitle">Binary Mode</div>
+                    </div>
+                </div>
+                <div class="submenu-item-badge" id="submenuBuysellBadge" style="display: none;">기본</div>
+                <svg class="submenu-item-arrow" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+                <div class="submenu-item-progress"></div>
+            </div>
+            <div class="submenu-item" 
+                 onclick="selectTradeSubmenuItem('multiV5')"
+                 onmousedown="tradeSubmenuItemPressStart('multiV5', this)"
+                 onmouseup="tradeSubmenuItemPressEnd()"
+                 onmouseleave="tradeSubmenuItemPressEnd()"
+                 ontouchstart="tradeSubmenuItemPressStart('multiV5', this)"
+                 ontouchend="tradeSubmenuItemPressEnd()"
+                 ontouchcancel="tradeSubmenuItemPressEnd()">
+                <div class="submenu-item-left">
+                    <div class="submenu-item-icon" style="background: rgba(0, 212, 255, 0.12); color: #00d4ff;">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="22" height="22">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                        </svg>
+                    </div>
+                    <div class="submenu-item-content">
+                        <div class="submenu-item-title">Multi Order V5</div>
+                        <div class="submenu-item-subtitle">New Design</div>
+                    </div>
+                </div>
+                <div class="submenu-item-badge" id="submenuMultiV5Badge" style="display: none;">기본</div>
                 <svg class="submenu-item-arrow" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                 </svg>
