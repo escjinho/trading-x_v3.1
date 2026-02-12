@@ -1204,10 +1204,14 @@ async def place_order(
 ):
     """일반 주문 실행 (BUY/SELL) - MetaAPI 버전 + 마틴 모드 지원"""
     import time as time_module
-    from .metaapi_service import metaapi_service, quote_price_cache, metaapi_positions_cache, is_metaapi_connected, get_metaapi_account
+    from .metaapi_service import metaapi_service, quote_price_cache, metaapi_positions_cache, is_metaapi_connected, get_metaapi_account, place_order_for_user
 
-    # ★★★ MetaAPI 연결 상태 체크 ★★★
-    if not is_metaapi_connected():
+    # ★★★ 유저별 MetaAPI 판단 ★★★
+    _use_user_metaapi = bool(current_user.metaapi_account_id and current_user.metaapi_status == 'deployed')
+    _user_mid = current_user.metaapi_account_id if _use_user_metaapi else None
+
+    # ★★★ MetaAPI 연결 상태 체크 (유저별 MetaAPI가 있으면 공유 연결 불필요) ★★★
+    if not _use_user_metaapi and not is_metaapi_connected():
         print(f"[MetaAPI Order] ❌ MetaAPI 연결 끊김 - 주문 거부")
         return JSONResponse({
             "success": False,
@@ -1339,16 +1343,33 @@ async def place_order(
                 sl_points = int((target * 0.98) / (volume * point_value)) if volume * point_value > 0 else tp_points
                 print(f"[MetaAPI Order] 가격 없음, 기본 SL/TP: tp={tp_points}, sl={sl_points}")
 
-        # MetaAPI 주문 실행
-        result = await metaapi_service.place_order(
-            symbol=symbol,
-            order_type=order_type.upper(),
-            volume=volume,
-            sl_points=sl_points,
-            tp_points=tp_points,
-            magic=magic,
-            comment=f"Trading-X {order_type.upper()}"
-        )
+        # ★★★ MetaAPI 주문 실행 (유저별 or 공유) ★★★
+        if _use_user_metaapi:
+            result = await place_order_for_user(
+                user_id=current_user.id,
+                metaapi_account_id=_user_mid,
+                symbol=symbol,
+                order_type=order_type.upper(),
+                volume=volume,
+                sl_points=sl_points,
+                tp_points=tp_points,
+                magic=magic,
+                comment=f"Trading-X {order_type.upper()}"
+            )
+            # 활동 시각 갱신
+            current_user.metaapi_last_active = datetime.utcnow()
+            db.commit()
+            print(f"[Order] User {current_user.id} 유저별 MetaAPI 주문")
+        else:
+            result = await metaapi_service.place_order(
+                symbol=symbol,
+                order_type=order_type.upper(),
+                volume=volume,
+                sl_points=sl_points,
+                tp_points=tp_points,
+                magic=magic,
+                comment=f"Trading-X {order_type.upper()}"
+            )
 
         if result.get('success'):
             position_id = result.get('positionId', '')
@@ -1432,19 +1453,29 @@ async def close_position(
     symbol: str = "BTCUSD",
     magic: int = None,
     position_id: str = None,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
     """포지션 청산 (magic 필터 옵션) - MetaAPI 버전"""
     import time as time_module
-    from .metaapi_service import metaapi_service, remove_position_from_cache
+    from .metaapi_service import metaapi_service, remove_position_from_cache, close_position_for_user, get_user_positions
 
-    print(f"[MetaAPI Close] 청산 요청: symbol={symbol}, magic={magic}, position_id={position_id}")
+    # ★★★ 유저별 MetaAPI 판단 ★★★
+    _use_user_metaapi = bool(current_user.metaapi_account_id and current_user.metaapi_status == 'deployed')
+    _user_mid = current_user.metaapi_account_id if _use_user_metaapi else None
+
+    print(f"[MetaAPI Close] 청산 요청: symbol={symbol}, magic={magic}, position_id={position_id}, user_metaapi={_use_user_metaapi}")
 
     # ★★★ MetaAPI를 통한 청산 실행 ★★★
     try:
         # 1) position_id가 직접 전달된 경우
         if position_id:
-            result = await metaapi_service.close_position(position_id)
+            if _use_user_metaapi:
+                result = await close_position_for_user(current_user.id, _user_mid, position_id)
+                current_user.metaapi_last_active = datetime.utcnow()
+                db.commit()
+            else:
+                result = await metaapi_service.close_position(position_id)
             if result.get('success'):
                 # ★★★ MT5 실제 체결 손익 우선 사용 ★★★
                 actual_profit = result.get('actual_profit')
@@ -1504,7 +1535,10 @@ async def close_position(
                 })
 
         # 2) symbol/magic으로 포지션 찾아서 청산
-        positions = await metaapi_service.get_positions()
+        if _use_user_metaapi:
+            positions = await get_user_positions(current_user.id, _user_mid)
+        else:
+            positions = await metaapi_service.get_positions()
         if not positions:
             return JSONResponse({"success": False, "message": "열린 포지션 없음"})
 
@@ -1523,7 +1557,12 @@ async def close_position(
         # 첫 번째 매칭 포지션 청산
         pos = target_positions[0]
         pos_id = pos.get('id')
-        result = await metaapi_service.close_position(pos_id)
+        if _use_user_metaapi:
+            result = await close_position_for_user(current_user.id, _user_mid, pos_id)
+            current_user.metaapi_last_active = datetime.utcnow()
+            db.commit()
+        else:
+            result = await metaapi_service.close_position(pos_id)
 
         if result.get('success'):
             # ★★★ MT5 실제 체결 손익 우선 사용 ★★★
@@ -1742,17 +1781,25 @@ async def get_positions(
 async def close_all_positions(
     magic: int = None,
     symbol: str = None,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
     """모든 포지션 청산 (magic/symbol 필터 옵션) - MetaAPI 버전"""
-    from .metaapi_service import metaapi_service
+    from .metaapi_service import metaapi_service, close_position_for_user, get_user_positions
 
-    print(f"[MetaAPI CloseAll] 전체 청산 요청: magic={magic}, symbol={symbol}")
+    # ★★★ 유저별 MetaAPI 판단 ★★★
+    _use_user_metaapi = bool(current_user.metaapi_account_id and current_user.metaapi_status == 'deployed')
+    _user_mid = current_user.metaapi_account_id if _use_user_metaapi else None
+
+    print(f"[MetaAPI CloseAll] 전체 청산 요청: magic={magic}, symbol={symbol}, user_metaapi={_use_user_metaapi}")
 
     # ★★★ MetaAPI를 통한 전체 청산 ★★★
     try:
         # 모든 포지션 조회
-        positions = await metaapi_service.get_positions()
+        if _use_user_metaapi:
+            positions = await get_user_positions(current_user.id, _user_mid)
+        else:
+            positions = await metaapi_service.get_positions()
         if not positions:
             return JSONResponse({"success": False, "message": "열린 포지션 없음"})
 
@@ -1774,7 +1821,10 @@ async def close_all_positions(
 
         for pos in target_positions:
             pos_id = pos.get('id')
-            result = await metaapi_service.close_position(pos_id)
+            if _use_user_metaapi:
+                result = await close_position_for_user(current_user.id, _user_mid, pos_id)
+            else:
+                result = await metaapi_service.close_position(pos_id)
 
             if result.get('success'):
                 closed_count += 1
@@ -1796,6 +1846,9 @@ async def close_all_positions(
                 user_live_cache[current_user.id]["positions"] = []
 
         if closed_count > 0:
+            if _use_user_metaapi:
+                current_user.metaapi_last_active = datetime.utcnow()
+                db.commit()
             print(f"[MetaAPI CloseAll] ✅ {closed_count}개 청산 완료, 총 P/L=${total_profit:.2f}")
             return JSONResponse({
                 "success": True,
