@@ -52,11 +52,24 @@ ws_clients: List = []  # WebSocket 클라이언트 목록
 metaapi_positions_cache: List[Dict] = []  # 실시간 포지션 목록
 metaapi_account_cache: Dict[str, Any] = {}  # 계정 정보 (balance, equity, margin 등)
 metaapi_closed_events: List[Dict] = []  # 청산 이벤트 큐 (프론트에 알림용)
+_initial_sync_complete = False  # ★ 초기 동기화 완료 플래그 (재시작 시 가짜 이벤트 방지)
+_server_start_time = time.time()  # ★ 서버 시작 시간
 
 
 def add_closed_event(position_id: str, symbol: str, profit: float, reason: str = 'closed'):
     """청산 이벤트 추가 (중복 방지)"""
-    global metaapi_closed_events
+    global metaapi_closed_events, _initial_sync_complete, _server_start_time
+
+    # ★★★ 초기 동기화 완료 전에는 이벤트 무시 (서버 재시작 시 가짜 팝업 방지) ★★★
+    if not _initial_sync_complete:
+        elapsed = time.time() - _server_start_time
+        if elapsed < 60:  # 서버 시작 후 60초 이내
+            print(f"[MetaAPI] ⏳ 초기 동기화 중 - 청산 이벤트 무시: {symbol} P/L=${profit:.2f} (경과 {elapsed:.0f}초)")
+            return False
+        else:
+            # 60초 지났으면 동기화 완료로 간주
+            _initial_sync_complete = True
+            print(f"[MetaAPI] ✅ 초기 동기화 완료 (60초 경과)")
 
     # 중복 체크: 같은 position_id가 이미 있으면 스킵
     for event in metaapi_closed_events:
@@ -569,7 +582,10 @@ class QuotePriceListener:
             print(f"    - {pos['symbol']} {pos['type']} {pos['volume']} lot, P/L: ${pos['profit']:.2f}")
 
     async def on_positions_synchronized(self, instance_index, synchronization_id):
-        pass
+        global _initial_sync_complete
+        if not _initial_sync_complete:
+            _initial_sync_complete = True
+            print(f"[MetaAPI Listener] ✅ 초기 포지션 동기화 완료 - 청산 이벤트 감지 활성화")
 
     async def on_position_updated(self, instance_index, position):
         """포지션 업데이트 (신규 또는 기존 포지션 변경)"""
@@ -760,6 +776,10 @@ class TradeSyncListener:
     async def on_synchronization_started(self, instance_index, specifications_hash, positions_hash, orders_hash, synchronization_id):
         print(f"[MetaAPI Trade] 🔄 동기화 시작...")
     async def on_positions_synchronized(self, instance_index, synchronization_id):
+        global _initial_sync_complete
+        if not _initial_sync_complete:
+            _initial_sync_complete = True
+            print(f"[MetaAPI Trade] ✅ 초기 포지션 동기화 완료 - 청산 이벤트 감지 활성화")
         print(f"[MetaAPI Trade] ✅ 포지션 동기화 완료")
     async def on_broker_connection_status_changed(self, instance_index, connected):
         print(f"[MetaAPI Trade] 브로커: {'연결됨' if connected else '연결 끊김'}")

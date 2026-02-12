@@ -7,6 +7,7 @@ let intentionalClose = false;  // ★ 의도적 종료 플래그 (재연결 방�
 let isPageVisible = true;  // ★ 페이지 가시성 상태
 let lastWsMessageTime = 0;  // ★ 마지막 WS 메시지 수신 시간
 let heartbeatTimer = null;  // ★ 하트비트 모니터 타이머
+let wsConnectionStartTime = 0;  // ★ WS 연결 시작 시간 (가짜 이벤트 방지)
 
 // ★★★ 페이지 가시성 변경 핸들러 (모바일 앱 전환 대응) ★★★
 document.addEventListener('visibilitychange', function() {
@@ -283,6 +284,7 @@ function connectWebSocket() {
 
         // ★★★ 하트비트 모니터 시작 ★★★
         lastWsMessageTime = Date.now();
+        wsConnectionStartTime = Date.now();
         startHeartbeatMonitor();
     };
 
@@ -428,6 +430,10 @@ function connectWebSocket() {
 
             // ★★★ Demo WS 자동청산 처리 (중복 방지 강화) ★★★
             if (data.auto_closed) {
+                // ★★★ WS 연결 직후 5초간은 이전 이벤트 무시 (서버 재시작 가짜 팝업 방지) ★★★
+                if (Date.now() - wsConnectionStartTime < 5000) {
+                    console.log('[WS Demo] ⏳ 연결 직후 청산 이벤트 무시 (가짜 팝업 방지)');
+                } else {
                 // closed_at이 없으면 현재 시간으로 대체
                 const closedAt = data.closed_at || Date.now() / 1000;
                 const lastClosedAt = window._lastAutoClosedAt || 0;
@@ -489,6 +495,7 @@ function connectWebSocket() {
                         updatePositionUI(false, null);
                     }
                 }
+                }  // ★ wsConnectionStartTime 체크 else 블록 닫기
             }
 
             // ★ Demo 포지션 업데이트
@@ -796,6 +803,10 @@ function connectWebSocket() {
 
         // ★★★ 라이브 자동청산 처리 (데모와 동일 구조 - Basic/NoLimit/Martin 모드별 분기) ★★★
         if (data.auto_closed && !window._userClosing) {
+            // ★★★ WS 연결 직후 5초간은 이전 이벤트 무시 (서버 재시작 가짜 팝업 방지) ★★★
+            if (Date.now() - wsConnectionStartTime < 5000) {
+                console.log('[WS Live] ⏳ 연결 직후 청산 이벤트 무시 (가짜 팝업 방지)');
+            } else {
             const closedAt = data.closed_at || Date.now() / 1000;
             const lastClosedAt = window._lastLiveAutoClosedAt || 0;
             const profit = data.closed_profit || 0;
@@ -865,6 +876,7 @@ function connectWebSocket() {
                     window._plGaugeFrozen = false;
                 }, 5000);
             }
+            }  // ★ wsConnectionStartTime 체크 else 블록 닫기
         }
 
         // ★★★ Live Martin state (DB 기반) ★★★
@@ -1119,6 +1131,7 @@ async function checkUserMode() {
             console.log('[checkUserMode] Live mode - has_mt5=true');
             // MT5 계정 연결됨 → Live 모드
             isDemo = false;
+            window._checkUserModeRetries = 0;  // ★ 재시도 카운터 리셋
             document.getElementById('headerStatus').textContent = 'Connected';
             document.getElementById('statusDot').style.background = '#00ff88';
             document.getElementById('statusDot').classList.remove('disconnected');
@@ -1183,6 +1196,7 @@ async function checkUserMode() {
         } else {
             // MT5 없음 → Demo 모드
             isDemo = true;
+            window._checkUserModeRetries = 0;  // ★ 재시도 카운터 리셋
             document.getElementById('headerStatus').textContent = 'Connected';
             document.getElementById('statusDot').style.background = '#00d4ff';
             
@@ -1244,6 +1258,20 @@ async function checkUserMode() {
     } catch (error) {
         console.error("[checkUserMode] Error:", error);
         console.error('Mode check error:', error);
+
+        // ★★★ 재시도 로직: 서버가 아직 시작 중일 수 있음 ★★★
+        if (!window._checkUserModeRetries) window._checkUserModeRetries = 0;
+        window._checkUserModeRetries++;
+
+        if (window._checkUserModeRetries <= 3) {
+            console.log(`[checkUserMode] 재시도 ${window._checkUserModeRetries}/3 (3초 후)`);
+            showToast('서버 연결 중... 잠시만 기다려주세요', '');
+            setTimeout(() => checkUserMode(), 3000);
+            return;
+        }
+
+        // 3회 실패 → 데모 모드 fallback
+        console.warn('[checkUserMode] 3회 재시도 실패 → 데모 모드 전환');
         isDemo = true;
         fetchDemoData();
     }
@@ -1275,6 +1303,10 @@ async function fetchDemoData() {
             
             // ★★★ 백엔드에서 자동 청산된 경우 (중복 방지 적용) ★★★
             if (data.auto_closed) {
+                // ★★★ WS 연결 직후 5초간은 이전 이벤트 무시 (서버 재시작 가짜 팝업 방지) ★★★
+                if (Date.now() - wsConnectionStartTime < 5000) {
+                    console.log('[fetchDemoData] ⏳ 연결 직후 청산 이벤트 무시 (가짜 팝업 방지)');
+                } else {
                 const closedAt = data.closed_at || Date.now() / 1000;
                 const lastClosedAt = window._lastAutoClosedAt || 0;
                 const profit = data.closed_profit || 0;
@@ -1326,8 +1358,9 @@ async function fetchDemoData() {
                     // 포지션 UI 업데이트
                     updatePositionUI(false, null);
                 }
+                }  // ★ wsConnectionStartTime 체크 else 블록 닫기
             }
-            
+
             // Home 탭 업데이트 - ★ WS 연결 중이면 건너뛰기 (깜빡임 방지)
             if (!wsActive) {
             const homeBalance = document.getElementById('homeBalance');
