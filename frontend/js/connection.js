@@ -2103,9 +2103,13 @@ async function checkMetaAPIStatus() {
             }
 
         } else {
-            // none 또는 기타
+            // none 또는 기타 - MT5 연결된 경우 Waiting, 아니면 -
             if (mt5StatusEl) {
-                mt5StatusEl.innerHTML = '<span style="color: var(--text-muted);">-</span>';
+                if (data.has_mt5_account) {
+                    mt5StatusEl.innerHTML = '<span style="color: #f0b90b;">Waiting</span>';
+                } else {
+                    mt5StatusEl.innerHTML = '<span style="color: var(--text-muted);">-</span>';
+                }
             }
         }
 
