@@ -727,31 +727,72 @@ function connectWebSocket() {
             }, 5000);
         }
 
-        // ★★★ MetaAPI 청산 이벤트 처리 (on_position_removed) ★★★
+        // ★★★ 라이브 자동청산 처리 (데모와 동일 구조 - Basic/NoLimit/Martin 모드별 분기) ★★★
         if (data.auto_closed && !window._userClosing) {
+            const closedAt = data.closed_at || Date.now() / 1000;
+            const lastClosedAt = window._lastLiveAutoClosedAt || 0;
             const profit = data.closed_profit || 0;
-            console.log('[WS Live] 🔔 MetaAPI 자동 청산 감지!', { profit, is_win: data.is_win });
 
-            window._plGaugeFrozen = true;
-            
-            playSound('close');
-            if (typeof updatePositionUI === 'function') {
-                updatePositionUI(false, null);
+            // ★ 중복 방지: closed_at 기준 (1초 이내면 무시)
+            const timeDiff = Math.abs(closedAt - lastClosedAt);
+            const isDuplicate = timeDiff < 1;
+
+            if (!isDuplicate) {
+                window._lastLiveAutoClosedAt = closedAt;
+                console.log('[WS Live] 🔔 자동 청산 감지!', { profit, closedAt, isWin: data.is_win, mode: currentMode });
+
+                window._plGaugeFrozen = true;
+
+                // 사운드 재생
+                try { playSound('close'); } catch(e) {}
+
+                // 포지션 UI 초기화
+                if (typeof updatePositionUI === 'function') {
+                    updatePositionUI(false, null);
+                }
+                window.lastLivePosition = null;
+
+                const isWin = data.is_win !== false && profit >= 0;
+
+                // ★★★ 모드별 분기 (데모와 동일) ★★★
+                if (currentMode === 'martin' && martinEnabled) {
+                    // 마틴 모드 (추후 구현)
+                    if (isWin) {
+                        martinStep = 1;
+                        martinAccumulatedLoss = 0;
+                        martinHistory = [];
+                        updateMartinUI();
+                        showMartinSuccessPopup(profit);
+                    } else if (data.martin_reset && !isWin) {
+                        const totalLoss = data.martin_accumulated_loss || martinAccumulatedLoss;
+                        martinStep = 1;
+                        martinAccumulatedLoss = 0;
+                        martinHistory = [];
+                        updateMartinUI();
+                        showMaxPopup(totalLoss);
+                    } else if (data.martin_step_up) {
+                        showMartinPopup(profit);
+                    } else {
+                        showToast(`💔 손절! $${profit.toFixed(2)}`, 'error');
+                    }
+                } else {
+                    // ★★★ Basic/NoLimit 모드 ★★★
+                    if (isWin) {
+                        showToast(`🎯 목표 도달! +$${Math.abs(profit).toFixed(2)}`, 'success');
+                    } else {
+                        showToast(`💔 손절! -$${Math.abs(profit).toFixed(2)}`, 'error');
+                    }
+                }
+
+                // Today P/L 업데이트
+                if (typeof updateTodayPL === 'function') updateTodayPL(profit);
+                if (typeof loadHistory === 'function') loadHistory();
+
+                // 5초 후 프리즈 해제
+                setTimeout(() => {
+                    window._plGaugeFrozen = false;
+                }, 5000);
             }
-            window.lastLivePosition = null;
-
-            if (profit >= 0) {
-                showToast(`🎯 청산 완료! +$${profit.toFixed(2)}`, 'success');
-            } else {
-                showToast(`💔 청산 완료! -$${Math.abs(profit).toFixed(2)}`, 'error');
-            }
-            
-            if (typeof updateTodayPL === 'function') updateTodayPL(profit);
-            if (typeof loadHistory === 'function') loadHistory();
-
-            setTimeout(() => {
-                window._plGaugeFrozen = false;
-            }, 5000);
         }
 
         // Martin state

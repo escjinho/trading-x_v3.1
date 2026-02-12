@@ -1367,24 +1367,68 @@ class MetaAPIService:
             if result.get('stringCode') == 'TRADE_RETCODE_DONE':
                 position_id = result.get('positionId')
 
-                # ★★★ 주문 성공 후 SL/TP 설정 (별도 요청) ★★★
+                # ★★★ TP/SL 설정 확인 + 실패 시 강제 청산 (안전장치) ★★★
                 if position_id and (options.get('stopLoss') or options.get('takeProfit')):
+                    tp_sl_confirmed = False
+                    
+                    # 1차: modify_position으로 TP/SL 확실히 설정
                     try:
-                        await asyncio.sleep(0.5)  # 포지션 생성 대기
+                        await asyncio.sleep(0.5)
                         modify_result = await self.trade_connection.modify_position(
                             position_id=position_id,
                             stop_loss=options.get('stopLoss'),
                             take_profit=options.get('takeProfit')
                         )
-                        print(f"[MetaAPI] SL/TP 수정 결과: {modify_result}")
+                        print(f"[MetaAPI] SL/TP 설정 결과: {modify_result}")
+                        if modify_result and modify_result.get('stringCode') == 'TRADE_RETCODE_DONE':
+                            tp_sl_confirmed = True
+                            print(f"[MetaAPI] ✅ SL/TP 설정 확인 완료")
+                        else:
+                            print(f"[MetaAPI] ⚠️ SL/TP 설정 응답 불확실: {modify_result}")
                     except Exception as e:
-                        print(f"[MetaAPI] SL/TP 수정 실패 (주문은 성공): {e}")
+                        print(f"[MetaAPI] ❌ SL/TP 설정 실패: {e}")
+
+                    # 2차: TP/SL 미확인 시 재시도
+                    if not tp_sl_confirmed:
+                        try:
+                            await asyncio.sleep(1.0)
+                            modify_result2 = await self.trade_connection.modify_position(
+                                position_id=position_id,
+                                stop_loss=options.get('stopLoss'),
+                                take_profit=options.get('takeProfit')
+                            )
+                            print(f"[MetaAPI] SL/TP 재시도 결과: {modify_result2}")
+                            if modify_result2 and modify_result2.get('stringCode') == 'TRADE_RETCODE_DONE':
+                                tp_sl_confirmed = True
+                                print(f"[MetaAPI] ✅ SL/TP 재시도 성공")
+                        except Exception as e2:
+                            print(f"[MetaAPI] ❌ SL/TP 재시도도 실패: {e2}")
+
+                    # 3차: 최종 실패 시 포지션 강제 청산 (TP/SL 없는 포지션 방지)
+                    if not tp_sl_confirmed:
+                        print(f"[MetaAPI] 🚨 SL/TP 설정 불가! 포지션 강제 청산: {position_id}")
+                        try:
+                            await self.close_position(position_id)
+                            return {
+                                'success': False,
+                                'error': 'TP/SL 설정 실패로 안전을 위해 주문이 취소되었습니다. 다시 시도해주세요.',
+                                'tp_sl_failed': True
+                            }
+                        except Exception as close_err:
+                            print(f"[MetaAPI] 🚨🚨 강제 청산도 실패!: {close_err}")
+                            return {
+                                'success': False,
+                                'error': 'TP/SL 설정 및 청산 모두 실패! MT5에서 수동 청산 필요!',
+                                'tp_sl_failed': True,
+                                'critical': True
+                            }
 
                 return {
                     'success': True,
                     'orderId': result.get('orderId'),
                     'positionId': position_id,
-                    'message': f"{order_type.upper()} 주문 성공"
+                    'message': f"{order_type.upper()} 주문 성공",
+                    'tp_sl_set': True
                 }
             else:
                 return {

@@ -110,6 +110,8 @@ user_live_cache = {}
 
 # ★★★ 유저별 타겟 금액 캐시 (자동청산용) ★★★
 user_target_cache = {}
+# ★★★ 자동청산 캐시 (프론트엔드 전달용) ★★★
+auto_closed_cache = {}
 
 # ★★★ 자동청산 쿨다운 (중복 방지) ★★★
 auto_close_cooldown = {}
@@ -1210,15 +1212,55 @@ async def place_order(
 
     # ★★★ MetaAPI를 통한 주문 실행 ★★★
     try:
-        # TP/SL points 계산 (target > 0일 때만)
+        # ★★★ 스프레드 체크 (30% 기준) + TP/SL points 계산 ★★★
         tp_points = 0
         sl_points = 0
         if target > 0:
-            specs = SYMBOL_SPECS.get(symbol, {"tick_value": 0.01})
-            point_value = specs["tick_value"] if specs["tick_value"] > 0 else 1
-            tp_points = int(target / (volume * point_value)) if volume * point_value > 0 else 500
-            sl_points = tp_points
-            print(f"[MetaAPI Order] SL/TP 계산: target=${target} -> tp_points={tp_points}")
+            from .metaapi_service import quote_price_cache as qpc
+            price_data = qpc.get(symbol, {})
+            bid = price_data.get('bid', 0)
+            ask = price_data.get('ask', 0)
+            
+            if bid > 0 and ask > 0:
+                spread_raw = ask - bid  # 가격 스프레드
+                
+                # 스프레드 비용 계산 (volume * tick_value 기준)
+                specs = SYMBOL_SPECS.get(symbol, {"tick_value": 0.01, "tick_size": 0.01})
+                tick_value = specs.get("tick_value", 0.01)
+                tick_size = specs.get("tick_size", 0.01)
+                
+                if tick_size > 0 and tick_value > 0:
+                    spread_points = spread_raw / tick_size
+                    spread_cost = spread_points * tick_value * volume
+                else:
+                    spread_cost = 0
+                
+                spread_ratio = (spread_cost / target) if target > 0 else 0
+                print(f"[MetaAPI Order] 스프레드 체크: spread={spread_raw}, cost=${spread_cost:.2f}, target=${target}, ratio={spread_ratio:.1%}")
+                
+                # ★★★ 스프레드가 타겟의 30% 초과 시 주문 거부 ★★★
+                if spread_ratio > 0.30:
+                    print(f"[MetaAPI Order] ❌ 스프레드 거부: {spread_ratio:.1%} > 30%")
+                    return JSONResponse({
+                        "success": False, 
+                        "message": f"스프레드 비용(${spread_cost:.1f})이 타겟(${target})의 {spread_ratio:.0%}입니다. 타겟 금액을 높이거나 랏 사이즈를 줄여주세요.",
+                        "spread_rejected": True,
+                        "spread_cost": round(spread_cost, 2),
+                        "spread_ratio": round(spread_ratio * 100, 1)
+                    })
+                
+                # ★★★ TP/SL 포인트 계산 ★★★
+                point_value = tick_value if tick_value > 0 else 1
+                tp_points = int(target / (volume * point_value)) if volume * point_value > 0 else 500
+                sl_points = int((target * 0.98) / (volume * point_value)) if volume * point_value > 0 else tp_points  # SL = target * 0.98
+                print(f"[MetaAPI Order] TP/SL 계산: target=${target}, SL=${target*0.98:.0f} -> tp_points={tp_points}, sl_points={sl_points}")
+            else:
+                # 가격 없으면 기본값
+                specs = SYMBOL_SPECS.get(symbol, {"tick_value": 0.01})
+                point_value = specs.get("tick_value", 0.01)
+                tp_points = int(target / (volume * point_value)) if volume * point_value > 0 else 500
+                sl_points = int((target * 0.98) / (volume * point_value)) if volume * point_value > 0 else tp_points
+                print(f"[MetaAPI Order] 가격 없음, 기본 SL/TP: tp={tp_points}, sl={sl_points}")
 
         # MetaAPI 주문 실행
         result = await metaapi_service.place_order(
@@ -2552,63 +2594,15 @@ async def websocket_endpoint(websocket: WebSocket):
                 if user_cache.get("account_info"):
                     equity = balance + total_realtime_profit
 
-                # ★★★ 자동청산 체크 (타겟 도달 시) ★★★
+                # ★★★ [Option A] MT5 TP/SL에 위임 — 서버는 모니터링만 ★★★
+                # 서버가 직접 청산하지 않음. MT5 TP/SL이 자동 청산 처리.
+                # 여기서는 로그만 남겨서 상태 확인용으로 사용.
                 target = user_target_cache.get(user_id, 0)
                 if target > 0 and positions_count > 0 and position_data:
-                    cooldown_key = f"{user_id}"
-                    current_ts = time_module.time()
-
-                    # 쿨다운 체크 (10초 내 중복 청산 방지)
-                    if cooldown_key not in auto_close_cooldown or current_ts - auto_close_cooldown.get(cooldown_key, 0) > 10:
-                        should_close = False
-                        is_win = False
-
-                        if total_realtime_profit >= target:  # WIN
-                            should_close = True
-                            is_win = True
-                            print(f"[LIVE WS] 🎯 AUTO CLOSE WIN! User {user_id}: ${total_realtime_profit:.2f} >= Target ${target}")
-                        elif total_realtime_profit <= -target * 0.98:  # LOSE (98%)
-                            should_close = True
-                            is_win = False
-                            print(f"[LIVE WS] 💔 AUTO CLOSE LOSE! User {user_id}: ${total_realtime_profit:.2f} <= -${target * 0.98:.2f}")
-
-                        if should_close:
-                            # 쿨다운 설정
-                            auto_close_cooldown[cooldown_key] = current_ts
-
-                            # 청산 주문 추가
-                            import uuid
-                            close_order_id = str(uuid.uuid4())[:8]
-                            close_order_data = {
-                                "order_id": close_order_id,
-                                "action": "close",
-                                "symbol": position_data["symbol"],
-                                "magic": 100001,
-                                "user_id": user_id,
-                                "timestamp": current_ts
-                            }
-
-                            # 유저의 MT5 계정 정보 추가
-                            if user_mt5_account:
-                                close_order_data["mt5_account"] = user_mt5_account
-                                close_order_data["mt5_server"] = user_mt5_server
-                                # 비밀번호는 DB에서 다시 가져와야 함
-                                try:
-                                    db = next(get_db())
-                                    user_obj = db.query(User).filter(User.id == user_id).first()
-                                    if user_obj and user_obj.mt5_password_encrypted:
-                                        from ..utils.crypto import decrypt
-                                        close_order_data["mt5_password"] = decrypt(user_obj.mt5_password_encrypted)
-                                    db.close()
-                                except Exception as e:
-                                    print(f"[LIVE WS] 자동청산 비밀번호 조회 실패: {e}")
-
-                            append_order(close_order_data)
-                            print(f"[LIVE WS] 자동청산 주문 추가: {close_order_id}")
-
-                            # 타겟 캐시 삭제 (청산 후)
-                            if user_id in user_target_cache:
-                                del user_target_cache[user_id]
+                    if total_realtime_profit >= target:
+                        print(f"[LIVE WS] 📊 모니터링: User {user_id} WIN 영역 ${total_realtime_profit:.2f} >= Target ${target} (MT5 TP 대기)")
+                    elif total_realtime_profit <= -target * 0.98:
+                        print(f"[LIVE WS] 📊 모니터링: User {user_id} LOSE 영역 ${total_realtime_profit:.2f} <= -${target*0.98:.2f} (MT5 SL 대기)")
 
             elif mt5_connected:
                 positions = mt5.positions_get()
@@ -2669,19 +2663,45 @@ async def websocket_endpoint(websocket: WebSocket):
                 sync_event = user_sync_events.pop(user_id)
                 print(f"[WS] 📢 User {user_id} sync_event 전송: {sync_event}")
 
+            # ★★★ 자동청산 캐시 확인 (WS 루프 기반 자동청산) ★★★
+            ws_auto_closed_info = None
+            if user_id and user_id in auto_closed_cache:
+                cached = auto_closed_cache[user_id]
+                if current_ts <= cached.get("until", 0):
+                    ws_auto_closed_info = cached.get("info")
+                else:
+                    del auto_closed_cache[user_id]
+
             # ★★★ MetaAPI 청산 이벤트 처리 ★★★
             auto_closed = False
             closed_profit = 0
             is_win = False
             closed_message = None
+            closed_at = None
+            martin_reset = False
+            martin_step_up = False
+            martin_step = 1
+            martin_accumulated_loss = 0
 
-            if closed_events:
+            # 우선순위: WS 자동청산 캐시 > MetaAPI 청산 이벤트
+            if ws_auto_closed_info:
+                auto_closed = True
+                closed_profit = ws_auto_closed_info.get("closed_profit", 0)
+                is_win = ws_auto_closed_info.get("is_win", False)
+                closed_message = ws_auto_closed_info.get("message", "")
+                closed_at = ws_auto_closed_info.get("closed_at", 0)
+                martin_reset = ws_auto_closed_info.get("martin_reset", False)
+                martin_step_up = ws_auto_closed_info.get("martin_step_up", False)
+                martin_step = ws_auto_closed_info.get("martin_step", 1)
+                martin_accumulated_loss = ws_auto_closed_info.get("martin_accumulated_loss", 0)
+            elif closed_events:
                 # 첫 번째 이벤트 기준으로 설정
                 first_event = closed_events[0]
                 auto_closed = True
                 closed_profit = first_event.get('profit', 0)
                 is_win = closed_profit >= 0
                 closed_message = f"{'이익' if is_win else '손실'} 청산: ${closed_profit:.2f}"
+                closed_at = current_ts
 
                 if sync_event is None:
                     sync_event = {}
@@ -2721,7 +2741,12 @@ async def websocket_endpoint(websocket: WebSocket):
                 "auto_closed": auto_closed,
                 "closed_profit": closed_profit,
                 "is_win": is_win,
-                "closed_message": closed_message
+                "closed_message": closed_message,
+                "closed_at": closed_at,
+                "martin_reset": martin_reset,
+                "martin_step_up": martin_step_up,
+                "martin_step": martin_step,
+                "martin_accumulated_loss": martin_accumulated_loss
             }
             
             await websocket.send_text(json.dumps(data))

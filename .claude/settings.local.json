@@ -63,7 +63,9 @@
       "Bash(true sleep 2 timeout 120 /var/www/trading-x/backend/venv/bin/python3 -c \"\nimport asyncio\nfrom app.api.metaapi_service import startup_metaapi\n\nasync def test\\(\\):\n    print\\(''''Testing MetaAPI startup...''''\\)\n    try:\n        result = await asyncio.wait_for\\(startup_metaapi\\(\\), timeout=60\\)\n        print\\(f''''Result: {result}''''\\)\n    except asyncio.TimeoutError:\n        print\\(''''TIMEOUT after 60 seconds''''\\)\n    except Exception as e:\n        print\\(f''''Error: {e}''''\\)\n\nasyncio.run\\(test\\(\\)\\)\n\")",
       "Bash(head -15 __NEW_LINE_30e662d08822b0b4__ echo \"\" echo \"=== updateAccountStats \\(accTodayPL 부분\\) ===\")",
       "Bash(head -10 __NEW_LINE_30e662d08822b0b4__ echo \"\" echo \"=== selectPeriod \\(today/week 복원\\) ===\")",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(sudo nginx:*)",
+      "Bash(head -3 __NEW_LINE_5764320ec213e89c__ echo \"\" echo \"==========================================\" echo \"  ★ 기대값 ★\" echo \"==========================================\" echo \"[1-1~1-4] 모두 1 이상\" echo \"[2-1~2-2] 모두 1 이상\" echo \"[3-1] 2 이상\" echo \"[4-1] 2, [4-2] 0, [4-3] 0  ← 핵심!\" echo \"[5-1~5-3] 모두 1 이상\" echo \"[6] active \\(running\\)\")"
     ]
   }
 }
