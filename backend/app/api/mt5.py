@@ -414,7 +414,11 @@ async def get_account_info(
     """MT5 계정 정보 + 인디케이터 + 포지션 조회"""
     try:
         # ★★★ MetaAPI에서 계정/포지션 정보 가져오기 ★★★
-        from .metaapi_service import get_metaapi_account, get_metaapi_positions, is_metaapi_connected
+        from .metaapi_service import get_metaapi_account, get_metaapi_positions, is_metaapi_connected, user_metaapi_cache
+
+        # ★★★ 유저별 MetaAPI 판단 ★★★
+        _use_user_metaapi = bool(current_user.metaapi_account_id and current_user.metaapi_status == 'deployed')
+        _user_ma_cache = user_metaapi_cache.get(current_user.id) if _use_user_metaapi else None
 
         metaapi_account = get_metaapi_account()
         metaapi_positions = get_metaapi_positions()
@@ -433,8 +437,75 @@ async def get_account_info(
             except Exception:
                 buy_count, sell_count, neutral_count, base_score = 33, 33, 34, 50
 
-            # ★★★ MetaAPI 계정 정보 우선 사용 ★★★
-            if metaapi_connected and metaapi_account:
+            # ★★★ 0순위: 유저별 MetaAPI 계정 데이터 ★★★
+            if _use_user_metaapi and _user_ma_cache and _user_ma_cache.get("account_info"):
+                _u_acc = _user_ma_cache["account_info"]
+                balance = _u_acc.get("balance", 0)
+                equity = _u_acc.get("equity", balance)
+                margin = _u_acc.get("margin", 0)
+                free_margin = _u_acc.get("freeMargin", balance)
+                profit = _u_acc.get("profit", 0)
+                leverage = _u_acc.get("leverage", 500)
+
+                # 유저별 포지션
+                _u_positions = _user_ma_cache.get("positions", [])
+                position_data = None
+                for pos in _u_positions:
+                    if pos.get("magic") == magic:
+                        pos_type = pos.get("type", "")
+                        if isinstance(pos_type, int):
+                            pos_type = "BUY" if pos_type == 0 else "SELL"
+                        elif "BUY" in str(pos_type):
+                            pos_type = "BUY"
+                        else:
+                            pos_type = "SELL"
+                        position_data = {
+                            "type": pos_type,
+                            "symbol": pos.get("symbol", ""),
+                            "volume": pos.get("volume", 0),
+                            "entry": pos.get("openPrice", 0),
+                            "profit": pos.get("profit", 0),
+                            "ticket": pos.get("id", 0),
+                            "magic": pos.get("magic", 0)
+                        }
+                        break
+
+                # DB 업데이트
+                if current_user.has_mt5_account:
+                    current_user.mt5_balance = balance
+                    current_user.mt5_equity = equity
+                    current_user.mt5_margin = margin
+                    current_user.mt5_free_margin = free_margin
+                    current_user.mt5_profit = profit
+                    current_user.mt5_leverage = leverage
+                    current_user.metaapi_last_active = datetime.utcnow()
+                    db.commit()
+
+                return {
+                    "broker": "HedgeHood Pty Ltd",
+                    "account": current_user.mt5_account_number or "MetaAPI",
+                    "server": current_user.mt5_server or "HedgeHood-MT5",
+                    "balance": balance,
+                    "equity": equity,
+                    "margin": margin,
+                    "free_margin": free_margin,
+                    "profit": profit,
+                    "leverage": leverage,
+                    "currency": "USD",
+                    "positions_count": len(_u_positions),
+                    "position": position_data,
+                    "buy_count": buy_count,
+                    "sell_count": sell_count,
+                    "neutral_count": neutral_count,
+                    "base_score": base_score,
+                    "prices": get_bridge_prices(),
+                    "martin": martin_service.get_state(),
+                    "has_mt5": True,
+                    "metaapi_mode": "user"
+                }
+
+            # ★★★ 1순위: 공유 MetaAPI (유저별 MetaAPI가 없는 경우만) ★★★
+            if metaapi_connected and metaapi_account and not _use_user_metaapi:
                 balance = metaapi_account.get("balance", 0)
                 equity = metaapi_account.get("equity", balance)
                 margin = metaapi_account.get("margin", 0)
@@ -2014,7 +2085,8 @@ async def close_by_profit(
 @router.get("/history")
 async def get_history(
     period: str = Query("week", description="조회 기간: today, week, month, all"),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
     """거래 내역 조회 - MetaAPI, user_live_cache 또는 MT5 직접 연결"""
     user_id = current_user.id
@@ -2030,10 +2102,66 @@ async def get_history(
     else:  # all
         start_time = now - timedelta(days=90)
 
-    # ★★★ 1순위: MetaAPI에서 히스토리 조회 ★★★
-    from .metaapi_service import metaapi_service, is_metaapi_connected
+    # ★★★ 0순위: 유저별 MetaAPI 히스토리 조회 ★★★
+    from .metaapi_service import metaapi_service, is_metaapi_connected, get_user_history
 
-    if is_metaapi_connected():
+    _use_user_metaapi = bool(current_user.metaapi_account_id and current_user.metaapi_status == 'deployed')
+
+    if _use_user_metaapi:
+        try:
+            metaapi_history = await get_user_history(
+                user_id=user_id,
+                metaapi_account_id=current_user.metaapi_account_id,
+                start_time=start_time
+            )
+            if metaapi_history:
+                # 포맷 맞추기 (기존 MetaAPI 히스토리와 동일 로직)
+                formatted_history = []
+                kst = pytz.timezone('Asia/Seoul')
+                for h in metaapi_history:
+                    entry_type = h.get("entryType", "")
+                    if entry_type == "DEAL_ENTRY_IN":
+                        continue
+
+                    trade_time = h.get("time", "")
+                    try:
+                        if isinstance(trade_time, datetime):
+                            dt = trade_time
+                            if dt.tzinfo is None:
+                                dt = pytz.utc.localize(dt)
+                            dt_kst = dt.astimezone(kst)
+                            trade_time = dt_kst.strftime("%m/%d %H:%M")
+                        elif isinstance(trade_time, str) and trade_time:
+                            dt = dateutil_parser.isoparse(trade_time)
+                            if dt.tzinfo is None:
+                                dt = pytz.utc.localize(dt)
+                            dt_kst = dt.astimezone(kst)
+                            trade_time = dt_kst.strftime("%m/%d %H:%M")
+                        elif isinstance(trade_time, (int, float)):
+                            dt = datetime.fromtimestamp(trade_time, tz=pytz.utc)
+                            dt_kst = dt.astimezone(kst)
+                            trade_time = dt_kst.strftime("%m/%d %H:%M")
+                    except Exception as parse_err:
+                        print(f"[MT5 History] 시간 변환 실패: {trade_time} - {parse_err}")
+
+                    formatted_history.append({
+                        "ticket": h.get("ticket", h.get("id", 0)),
+                        "time": trade_time,
+                        "symbol": h.get("symbol", ""),
+                        "type": h.get("type", ""),
+                        "volume": h.get("volume", 0),
+                        "price": h.get("price", 0),
+                        "profit": h.get("profit", 0),
+                        "entry": h.get("entry", h.get("price", 0)),
+                        "exit": h.get("exit", h.get("price", 0))
+                    })
+                print(f"[MT5 History] User {user_id}: {len(formatted_history)}개 (from User MetaAPI)")
+                return {"history": formatted_history, "source": "user_metaapi"}
+        except Exception as e:
+            print(f"[MT5 History] User MetaAPI 조회 실패: {e}")
+
+    # ★★★ 1순위: 공유 MetaAPI에서 히스토리 조회 (유저별 MetaAPI 없는 경우) ★★★
+    if not _use_user_metaapi and is_metaapi_connected():
         try:
             metaapi_history = await metaapi_service.get_history(start_time=start_time)
             if metaapi_history:

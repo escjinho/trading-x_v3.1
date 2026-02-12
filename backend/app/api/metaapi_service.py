@@ -2378,6 +2378,48 @@ async def close_position_for_user(user_id: int, metaapi_account_id: str, positio
         return {"success": False, "error": str(e)}
 
 
+async def get_user_history(user_id: int, metaapi_account_id: str, start_time=None, end_time=None) -> List[Dict]:
+    """유저별 MetaAPI 계정에서 거래 히스토리 조회"""
+    rpc = await get_user_trade_connection(user_id, metaapi_account_id)
+    if not rpc:
+        return []
+
+    try:
+        if not start_time:
+            start_time = datetime.now() - timedelta(days=7)
+        if not end_time:
+            end_time = datetime.now() + timedelta(minutes=1)
+
+        result = await rpc.get_deals_by_time_range(start_time, end_time)
+        deals = result.get('deals', []) if isinstance(result, dict) else result
+
+        history = []
+        for deal in deals:
+            history.append({
+                'id': deal.get('id'),
+                'symbol': deal.get('symbol'),
+                'type': 'BUY' if 'BUY' in deal.get('type', '') else 'SELL',
+                'volume': deal.get('volume'),
+                'price': deal.get('price'),
+                'profit': deal.get('profit'),
+                'commission': deal.get('commission'),
+                'swap': deal.get('swap'),
+                'time': deal.get('time'),
+                'positionId': deal.get('positionId'),
+                'orderId': deal.get('orderId'),
+                'entryType': deal.get('entryType'),
+                'magic': deal.get('magic', 0)
+            })
+
+        history.sort(key=lambda x: x.get('time') or datetime.min, reverse=True)
+        print(f"[MetaAPI UserHistory] User {user_id}: {len(history)}개 조회")
+        return history
+
+    except Exception as e:
+        print(f"[MetaAPI UserHistory] User {user_id} 히스토리 조회 실패: {e}")
+        return []
+
+
 # ============================================================
 # 비활동 유저 자동 Undeploy 백그라운드 태스크
 # ============================================================
