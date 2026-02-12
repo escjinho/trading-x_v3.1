@@ -2714,6 +2714,11 @@ async def websocket_endpoint(websocket: WebSocket):
                     user_live_cache[user_id]["updated_at"] = time_module.time()
                     print(f"[WS] 🧹 User {user_id} user_live_cache 포지션 정리 완료")
 
+                # ★★★ user_target_cache 정리 (Option A: MT5 TP/SL 청산 후 모니터링 중단) ★★★
+                if user_id in user_target_cache:
+                    del user_target_cache[user_id]
+                    print(f"[WS] 🧹 User {user_id} target_cache 삭제 (MT5 TP/SL 청산 완료)")
+
             data = {
                 "mt5_connected": user_has_mt5 or mt5_connected or metaapi_connected,  # ★ MetaAPI 상태
                 "broker": broker,

@@ -384,6 +384,18 @@ async function placeBuy() {
         return;
     }
 
+    // ★★★ 버튼 쿨다운 (이중 클릭 방지 - 5초) ★★★
+    if (window._orderCooldown) {
+        showToast('주문 처리 중입니다. 잠시만 기다려주세요.', 'error');
+        return;
+    }
+    window._orderCooldown = true;
+    document.querySelectorAll('.trade-btn').forEach(b => { b.style.opacity = '0.5'; b.style.pointerEvents = 'none'; });
+    setTimeout(() => {
+        window._orderCooldown = false;
+        document.querySelectorAll('.trade-btn').forEach(b => { b.style.opacity = '1'; b.style.pointerEvents = 'auto'; });
+    }, 5000);
+
     showToast('Processing...', '');
     try {
         let result;
@@ -421,6 +433,15 @@ async function placeBuy() {
             return;
         }
 
+        // ★★★ 스프레드 거부 + TP/SL 실패 특별 처리 ★★★
+        if (result?.spread_rejected) {
+            showToast('⚠️ 스프레드 비용이 너무 높습니다!\n타겟 금액을 높이거나 랏 사이즈를 줄여주세요.', 'error', 5000);
+            return;
+        }
+        if (result?.tp_sl_failed) {
+            showToast('⚠️ TP/SL 설정 실패! 안전을 위해 주문이 취소되었습니다.\n다시 시도해주세요.', 'error', 5000);
+            return;
+        }
         showToast(result?.message || 'Error', result?.success ? 'success' : 'error');
         if (result?.success) playSound('buy');
     } catch (e) { showToast('Network error', 'error'); }
@@ -440,6 +461,18 @@ async function placeSell() {
         showToast('이미 포지션이 있습니다', 'error');
         return;
     }
+
+    // ★★★ 버튼 쿨다운 (이중 클릭 방지 - 5초) ★★★
+    if (window._orderCooldown) {
+        showToast('주문 처리 중입니다. 잠시만 기다려주세요.', 'error');
+        return;
+    }
+    window._orderCooldown = true;
+    document.querySelectorAll('.trade-btn').forEach(b => { b.style.opacity = '0.5'; b.style.pointerEvents = 'none'; });
+    setTimeout(() => {
+        window._orderCooldown = false;
+        document.querySelectorAll('.trade-btn').forEach(b => { b.style.opacity = '1'; b.style.pointerEvents = 'auto'; });
+    }, 5000);
 
     showToast('Processing...', '');
     try {
@@ -478,6 +511,15 @@ async function placeSell() {
             return;
         }
 
+        // ★★★ 스프레드 거부 + TP/SL 실패 특별 처리 ★★★
+        if (result?.spread_rejected) {
+            showToast('⚠️ 스프레드 비용이 너무 높습니다!\n타겟 금액을 높이거나 랏 사이즈를 줄여주세요.', 'error', 5000);
+            return;
+        }
+        if (result?.tp_sl_failed) {
+            showToast('⚠️ TP/SL 설정 실패! 안전을 위해 주문이 취소되었습니다.\n다시 시도해주세요.', 'error', 5000);
+            return;
+        }
         showToast(result?.message || 'Error', result?.success ? 'success' : 'error');
         if (result?.success) playSound('sell');
     } catch (e) { showToast('Network error', 'error'); }
