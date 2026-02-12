@@ -436,43 +436,59 @@ def initialize_candles(symbol: str, current_price: float, count: int = 100):
     initialize_candles_synthetic(symbol, current_price, count)
 
 
+# 타임프레임별 분 단위 + 최대 유지 개수
+_TF_CONFIG = {
+    "M1":  (1,     1500),
+    "M5":  (5,     1500),
+    "M15": (15,    1500),
+    "M30": (30,    1500),
+    "H1":  (60,    1500),
+    "H4":  (240,   1500),
+    "D1":  (1440,  1000),
+    "W1":  (10080, 500),
+}
+
+
 def update_candle_realtime(symbol: str, current_price: float):
-    """실시간 캔들 업데이트"""
+    """실시간 캔들 업데이트 - 모든 타임프레임 동시 업데이트"""
     global quote_candle_cache
 
     if current_price <= 0:
         return
 
     current_ts = int(time.time())
-    candle_time = current_ts - (current_ts % 60)  # 1분 단위 정렬
 
     if symbol not in quote_candle_cache:
-        quote_candle_cache[symbol] = {"M1": []}
+        quote_candle_cache[symbol] = {}
 
-    if "M1" not in quote_candle_cache[symbol]:
-        quote_candle_cache[symbol]["M1"] = []
+    for tf, (minutes, max_candles) in _TF_CONFIG.items():
+        seconds = minutes * 60
+        candle_time = (current_ts // seconds) * seconds  # 타임프레임별 정렬
 
-    candles = quote_candle_cache[symbol]["M1"]
+        if tf not in quote_candle_cache[symbol]:
+            quote_candle_cache[symbol][tf] = []
 
-    if candles and candles[-1].get('time') == candle_time:
-        # 현재 캔들 업데이트
-        candles[-1]['close'] = current_price
-        candles[-1]['high'] = max(candles[-1]['high'], current_price)
-        candles[-1]['low'] = min(candles[-1]['low'], current_price)
-    else:
-        # 새 캔들 추가
-        new_candle = {
-            'time': candle_time,
-            'open': current_price,
-            'high': current_price,
-            'low': current_price,
-            'close': current_price,
-            'volume': 0
-        }
-        candles.append(new_candle)
-        # 최대 200개 유지
-        if len(candles) > 200:
-            candles.pop(0)
+        candles = quote_candle_cache[symbol][tf]
+
+        if candles and candles[-1].get('time') == candle_time:
+            # 현재 캔들 업데이트
+            candles[-1]['close'] = current_price
+            candles[-1]['high'] = max(candles[-1]['high'], current_price)
+            candles[-1]['low'] = min(candles[-1]['low'], current_price)
+        else:
+            # 새 캔들 추가
+            new_candle = {
+                'time': candle_time,
+                'open': current_price,
+                'high': current_price,
+                'low': current_price,
+                'close': current_price,
+                'volume': 0
+            }
+            candles.append(new_candle)
+            # 최대 개수 유지
+            while len(candles) > max_candles:
+                candles.pop(0)
 
 
 # ============================================================
@@ -1065,57 +1081,15 @@ class MetaAPIService:
         return prices
 
     async def get_candles(self, symbol: str, timeframe: str = "M1", count: int = 100) -> List[Dict]:
-        """캔들 데이터 조회 - 현재 가격 기반 합성"""
-        global quote_candle_cache, quote_price_cache
-
-        # MetaAPI RPC에서 캔들 조회가 어려우므로 현재가 기반 합성
-        # TODO: 히스토리 API 사용 검토
+        """캔들 데이터 조회 - 캐시에서 직접 반환 (모든 TF가 실시간 업데이트됨)"""
+        global quote_candle_cache
         try:
-            current_ts = int(time.time())
-            candle_time = current_ts - (current_ts % 60)  # 1분 단위 정렬
-
-            price_data = quote_price_cache.get(symbol, {})
-            current_price = price_data.get('bid', 0)
-
-            if current_price > 0:
-                # 기존 캔들 있으면 업데이트, 없으면 새로 생성
-                if symbol in quote_candle_cache and timeframe in quote_candle_cache[symbol]:
-                    candles = quote_candle_cache[symbol][timeframe]
-                    if candles and candles[-1].get('time') == candle_time:
-                        # 현재 캔들 업데이트
-                        candles[-1]['close'] = current_price
-                        candles[-1]['high'] = max(candles[-1]['high'], current_price)
-                        candles[-1]['low'] = min(candles[-1]['low'], current_price)
-                    else:
-                        # 새 캔들 추가
-                        candles.append({
-                            'time': candle_time,
-                            'open': current_price,
-                            'high': current_price,
-                            'low': current_price,
-                            'close': current_price,
-                            'volume': 0
-                        })
-                        # 최대 1500개 유지
-                        if len(candles) > 1500:
-                            candles.pop(0)
-                else:
-                    # 캐시 초기화
-                    if symbol not in quote_candle_cache:
-                        quote_candle_cache[symbol] = {}
-                    quote_candle_cache[symbol][timeframe] = [{
-                        'time': candle_time,
-                        'open': current_price,
-                        'high': current_price,
-                        'low': current_price,
-                        'close': current_price,
-                        'volume': 0
-                    }]
-
-            return quote_candle_cache.get(symbol, {}).get(timeframe, [])
-
+            candles = quote_candle_cache.get(symbol, {}).get(timeframe, [])
+            if candles:
+                return candles[-count:]
+            return []
         except Exception as e:
-            print(f"[MetaAPI] 캔들 생성 실패 ({symbol} {timeframe}): {e}")
+            print(f"[MetaAPI] 캔들 조회 실패 ({symbol} {timeframe}): {e}")
             return []
 
     async def update_all_candles(self, timeframe: str = "M1"):

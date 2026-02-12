@@ -296,31 +296,9 @@ def get_bridge_prices():
 
 def get_bridge_candles(symbol: str, timeframe: str = "M5"):
     """브릿지 캐시에서 캔들 데이터 조회 (타임프레임별)"""
-    # 1. 브릿지 캐시 확인
     symbol_data = bridge_cache["candles"].get(symbol, {})
     candles = symbol_data.get(timeframe, [])
-    if candles:
-        return candles
-
-    # 2. MetaAPI 캔들 캐시 확인 (fallback)
-    try:
-        from .metaapi_service import quote_candle_cache
-        # 먼저 요청된 타임프레임 확인
-        metaapi_candles = quote_candle_cache.get(symbol, {}).get(timeframe, [])
-        if metaapi_candles:
-            return metaapi_candles
-
-        # 요청 타임프레임이 없으면 M1 fallback + 합성 (MetaAPI는 M1만 저장)
-        if timeframe != "M1":
-            m1_candles = quote_candle_cache.get(symbol, {}).get("M1", [])
-            if m1_candles:
-                print(f"[Candles] {symbol}/{timeframe} → M1 fallback ({len(m1_candles)}개)")
-                # ★ 상위 타임프레임으로 합성
-                return aggregate_candles(m1_candles, timeframe)
-    except ImportError:
-        pass
-
-    return []
+    return candles
 
 def aggregate_candles(m1_candles: list, target_tf: str) -> list:
     """M1 캔들을 상위 타임프레임으로 합성"""
@@ -758,17 +736,12 @@ async def get_candles(
                 highs.append(r['high'])
                 lows.append(r['low'])
     else:
-        # MT5 없음 - 브릿지 캐시에서 가져오기 (타임프레임별)
-        cached_candles = get_bridge_candles(symbol, timeframe)
-        # ★ quote_candle_cache fallback (M1)
+        # MT5 없음 - MetaAPI 캔들 캐시에서 직접 반환 (모든 TF 실시간 업데이트됨)
+        from .metaapi_service import quote_candle_cache
+        cached_candles = quote_candle_cache.get(symbol, {}).get(timeframe, [])
+        # fallback: 브릿지 캐시
         if not cached_candles:
-            from .metaapi_service import quote_candle_cache
-            cached_candles = quote_candle_cache.get(symbol, {}).get(timeframe, [])
-            # ★ 해당 타임프레임 없으면 M1에서 합성
-            if not cached_candles:
-                cached_candles = quote_candle_cache.get(symbol, {}).get("M1", [])
-                if cached_candles and timeframe != "M1":
-                    cached_candles = aggregate_candles(cached_candles, timeframe)
+            cached_candles = get_bridge_candles(symbol, timeframe)
         if cached_candles:
             candles = cached_candles[-count:] if len(cached_candles) > count else cached_candles
             closes = [c['close'] for c in candles]
