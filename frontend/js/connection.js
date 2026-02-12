@@ -754,16 +754,17 @@ function connectWebSocket() {
 
                 const isWin = data.is_win !== false && profit >= 0;
 
-                // ★★★ 모드별 분기 (데모와 동일) ★★★
+                // ★★★ 라이브 마틴 모드 처리 (DB 기반) ★★★
                 if (currentMode === 'martin' && martinEnabled) {
-                    // 마틴 모드 (추후 구현)
                     if (isWin) {
+                        // WIN: 마틴 리셋 (DB에서 이미 처리됨)
                         martinStep = 1;
                         martinAccumulatedLoss = 0;
                         martinHistory = [];
                         updateMartinUI();
                         showMartinSuccessPopup(profit);
                     } else if (data.martin_reset && !isWin) {
+                        // MAX STEP 도달: 강제 리셋 (DB에서 이미 처리됨)
                         const totalLoss = data.martin_accumulated_loss || martinAccumulatedLoss;
                         martinStep = 1;
                         martinAccumulatedLoss = 0;
@@ -771,6 +772,10 @@ function connectWebSocket() {
                         updateMartinUI();
                         showMaxPopup(totalLoss);
                     } else if (data.martin_step_up) {
+                        // STEP UP: 다음 단계로 (DB에서 이미 처리됨)
+                        martinStep = data.martin_step || (martinStep + 1);
+                        martinAccumulatedLoss = data.martin_accumulated_loss || (martinAccumulatedLoss + Math.abs(profit));
+                        updateMartinUI();
                         showMartinPopup(profit);
                     } else {
                         showToast(`💔 손절! $${profit.toFixed(2)}`, 'error');
@@ -795,21 +800,27 @@ function connectWebSocket() {
             }
         }
 
-        // Martin state
+        // ★★★ Live Martin state (DB 기반) ★★★
         if (data.martin) {
             martinEnabled = data.martin.enabled;
             martinLevel = data.martin.max_steps;
             martinStep = data.martin.step;
             martinAccumulatedLoss = data.martin.accumulated_loss;
-            
+
             if (currentMode === 'martin' && martinEnabled) {
+                // base_target 사용 (백엔드 DB 필드명)
+                const baseTarget = data.martin.base_target || targetAmount;
                 if (martinAccumulatedLoss > 0) {
-                    targetAmount = Math.ceil((martinAccumulatedLoss + 11 + data.martin.target_amount) / 10) * 10;
+                    targetAmount = Math.ceil((martinAccumulatedLoss + baseTarget) / 5) * 5;
                 } else {
-                    targetAmount = data.martin.target_amount;
+                    targetAmount = baseTarget;
                 }
-                
-                document.getElementById('tradeLotSize').textContent = data.martin.current_lot.toFixed(2);
+
+                // current_lot 표시
+                if (data.martin.current_lot) {
+                    const tradeLotSize = document.getElementById('tradeLotSize');
+                    if (tradeLotSize) tradeLotSize.textContent = data.martin.current_lot.toFixed(2);
+                }
                 updateMartinUI();
             }
         }

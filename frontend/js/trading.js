@@ -400,7 +400,9 @@ async function placeBuy() {
     try {
         let result;
         if (currentMode === 'martin' && martinEnabled) {
-            result = await apiCall(`/mt5/martin/buy?symbol=${currentSymbol}`, 'POST');
+            // ★★★ 라이브 마틴: is_martin=true, 백엔드에서 랏/타겟 계산 ★★★
+            const lot = calculateLot();  // base_lot 전달
+            result = await apiCall(`/mt5/order?symbol=${currentSymbol}&order_type=BUY&volume=${lot}&target=${targetAmount}&magic=${BUYSELL_MAGIC_NUMBER}&is_martin=true`, 'POST');
         } else {
             const lot = calculateLot();
             result = await apiCall(`/mt5/order?symbol=${currentSymbol}&order_type=BUY&volume=${lot}&target=${targetAmount}&magic=${BUYSELL_MAGIC_NUMBER}`, 'POST');
@@ -478,7 +480,9 @@ async function placeSell() {
     try {
         let result;
         if (currentMode === 'martin' && martinEnabled) {
-            result = await apiCall(`/mt5/martin/sell?symbol=${currentSymbol}`, 'POST');
+            // ★★★ 라이브 마틴: is_martin=true, 백엔드에서 랏/타겟 계산 ★★★
+            const lot = calculateLot();  // base_lot 전달
+            result = await apiCall(`/mt5/order?symbol=${currentSymbol}&order_type=SELL&volume=${lot}&target=${targetAmount}&magic=${BUYSELL_MAGIC_NUMBER}&is_martin=true`, 'POST');
         } else {
             const lot = calculateLot();
             result = await apiCall(`/mt5/order?symbol=${currentSymbol}&order_type=SELL&volume=${lot}&target=${targetAmount}&magic=${BUYSELL_MAGIC_NUMBER}`, 'POST');

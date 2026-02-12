@@ -66,7 +66,8 @@
       "Bash(git reset:*)",
       "Bash(sudo nginx:*)",
       "Bash(head -3 __NEW_LINE_5764320ec213e89c__ echo \"\" echo \"==========================================\" echo \"  ★ 기대값 ★\" echo \"==========================================\" echo \"[1-1~1-4] 모두 1 이상\" echo \"[2-1~2-2] 모두 1 이상\" echo \"[3-1] 2 이상\" echo \"[4-1] 2, [4-2] 0, [4-3] 0  ← 핵심!\" echo \"[5-1~5-3] 모두 1 이상\" echo \"[6] active \\(running\\)\")",
-      "Bash(head -3 __NEW_LINE_0304f7bdb9e2e513__ echo \"\" echo \"==========================================\" echo \"  ★ 기대값 ★\" echo \"==========================================\" echo \"[1-1] spread_rejected: 2 \\(BUY+SELL\\)\" echo \"[1-2] tp_sl_failed: 2 \\(BUY+SELL\\)\" echo \"[2-1] target_cache 삭제: 1 이상\" echo \"[2-2] closed_at: 3 이상\" echo \"[3-1] _lastLiveAutoClosedAt: 2 이상\" echo \"[3-2] Basic/NoLimit: 1 이상\" echo \"[3-3] martin_reset: 3 이상\" echo \"[4-1] _orderCooldown: 6 이상 \\(BUY+SELL 각 3\\)\" echo \"[4-2] pointerEvents: 4 이상\" echo \"[5] active \\(running\\)\")"
+      "Bash(head -3 __NEW_LINE_0304f7bdb9e2e513__ echo \"\" echo \"==========================================\" echo \"  ★ 기대값 ★\" echo \"==========================================\" echo \"[1-1] spread_rejected: 2 \\(BUY+SELL\\)\" echo \"[1-2] tp_sl_failed: 2 \\(BUY+SELL\\)\" echo \"[2-1] target_cache 삭제: 1 이상\" echo \"[2-2] closed_at: 3 이상\" echo \"[3-1] _lastLiveAutoClosedAt: 2 이상\" echo \"[3-2] Basic/NoLimit: 1 이상\" echo \"[3-3] martin_reset: 3 이상\" echo \"[4-1] _orderCooldown: 6 이상 \\(BUY+SELL 각 3\\)\" echo \"[4-2] pointerEvents: 4 이상\" echo \"[5] active \\(running\\)\")",
+      "Bash(timeout 30 uvicorn:*)"
     ]
   }
 }

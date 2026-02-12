@@ -73,9 +73,11 @@ async def fetch_binance_candles(symbol: str, timeframe: str, count: int):
 
     return []
 from ..models.user import User
+from ..models.live_martin_state import LiveMartinState
 from ..utils.security import decode_token
 from ..services.indicator_service import IndicatorService
 from ..services.martin_service import martin_service
+from math import ceil
 # calculate_indicators_from_bridge는 함수 내부에서 지연 import (순환 참조 방지)
 
 # ============================================================
@@ -1196,13 +1198,40 @@ async def place_order(
     volume: float = 0.01,
     target: int = 100,
     magic: int = 100001,
-    current_user: User = Depends(get_current_user)
+    is_martin: bool = False,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
-    """일반 주문 실행 (BUY/SELL) - MetaAPI 버전"""
+    """일반 주문 실행 (BUY/SELL) - MetaAPI 버전 + 마틴 모드 지원"""
     import time as time_module
     from .metaapi_service import metaapi_service, quote_price_cache, metaapi_positions_cache
 
-    print(f"[MetaAPI Order] 주문 요청: {order_type} {symbol} {volume} lot, target=${target}")
+    # ★★★ 마틴 모드 감지 및 랏/타겟 재계산 ★★★
+    martin_state = None
+    martin_step = 1
+    if is_martin:
+        martin_state = get_or_create_live_martin_state(db, current_user.id, magic)
+        if martin_state.enabled:
+            # 마틴 랏 계산: base_lot × 2^(step-1)
+            martin_lot = martin_state.base_lot * (2 ** (martin_state.step - 1))
+            martin_lot = round(martin_lot, 2)
+
+            # 프론트에서 보낸 target으로 base_target 업데이트
+            if target > 0 and target != martin_state.base_target:
+                martin_state.base_target = target
+                db.commit()
+                print(f"[MARTIN ORDER] Updated base_target: {target}")
+
+            # 마틴 목표 계산: ceil((accumulated_loss + base_target) / 5) * 5
+            real_target = ceil((martin_state.accumulated_loss + martin_state.base_target) / 5) * 5
+
+            martin_step = martin_state.step
+            print(f"[MARTIN ORDER] User {current_user.id} Step {martin_step}: Lot {volume:.2f} → {martin_lot:.2f}, Target ${target} → ${real_target} (AccLoss=${martin_state.accumulated_loss:.2f})")
+
+            volume = martin_lot
+            target = real_target
+
+    print(f"[MetaAPI Order] 주문 요청: {order_type} {symbol} {volume} lot, target=${target}, martin={is_martin}")
 
     # ★★★ 중복 주문 방지: 같은 매직넘버 포지션 확인 ★★★
     existing = [p for p in metaapi_positions_cache if p.get('magic') == magic]
@@ -1306,13 +1335,22 @@ async def place_order(
 
             print(f"[MetaAPI Order] ✅ 주문 성공: {order_type} {symbol} {volume} lot, positionId={position_id}")
 
-            return JSONResponse({
+            response_data = {
                 "success": True,
                 "message": f"{order_type.upper()} 성공! {volume} lot",
                 "ticket": order_id,
                 "positionId": position_id,
                 "metaapi_mode": True
-            })
+            }
+
+            # ★★★ 마틴 모드 정보 추가 ★★★
+            if is_martin and martin_state and martin_state.enabled:
+                response_data["martin_step"] = martin_step
+                response_data["martin_lot"] = volume
+                response_data["martin_target"] = target
+                response_data["message"] = f"[MARTIN Step {martin_step}] {order_type.upper()} {volume} lot"
+
+            return JSONResponse(response_data)
         else:
             error_msg = result.get('error', 'Unknown error')
             print(f"[MetaAPI Order] ❌ 주문 실패: {error_msg}")
@@ -2015,95 +2053,214 @@ async def get_history(
     return {"history": history}
 
 
-# ========== 마틴게일 API ==========
-@router.post("/martin/enable")
-async def enable_martin(
-    base_lot: float = 0.01,
-    target: int = 50,
-    max_steps: int = 7,
-    current_user: User = Depends(get_current_user)
-):
-    """마틴게일 모드 활성화"""
-    result = martin_service.enable(base_lot, target, max_steps)
-    return JSONResponse(result)
-
-
-@router.post("/martin/disable")
-async def disable_martin(current_user: User = Depends(get_current_user)):
-    """마틴게일 모드 비활성화"""
-    result = martin_service.disable()
-    return JSONResponse(result)
+# ========== 라이브 마틴게일 API (DB 기반) ==========
+def get_or_create_live_martin_state(db: Session, user_id: int, magic: int) -> LiveMartinState:
+    """magic별 라이브 마틴 상태 조회 또는 생성"""
+    state = db.query(LiveMartinState).filter_by(user_id=user_id, magic=magic).first()
+    if not state:
+        state = LiveMartinState(user_id=user_id, magic=magic)
+        db.add(state)
+        db.commit()
+        db.refresh(state)
+    return state
 
 
 @router.get("/martin/state")
-async def get_martin_state(current_user: User = Depends(get_current_user)):
-    """마틴게일 상태 조회"""
-    return martin_service.get_state()
-
-
-@router.post("/martin/buy")
-async def martin_buy(
-    symbol: str = "BTCUSD",
-    current_user: User = Depends(get_current_user)
+async def get_live_martin_state(
+    magic: int = 100001,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
-    """마틴게일 BUY 주문"""
-    result = martin_service.place_order(symbol, "BUY")
-    return JSONResponse(result)
+    """라이브 마틴 상태 조회 (magic별 독립 관리)"""
+    state = get_or_create_live_martin_state(db, current_user.id, magic)
+
+    current_lot = state.base_lot * (2 ** (state.step - 1))
+    current_lot = round(current_lot, 2)
+
+    return {
+        "enabled": state.enabled,
+        "step": state.step,
+        "max_steps": state.max_steps,
+        "base_lot": state.base_lot,
+        "base_target": state.base_target,
+        "current_lot": current_lot,
+        "accumulated_loss": state.accumulated_loss,
+        "magic": magic
+    }
 
 
-@router.post("/martin/sell")
-async def martin_sell(
-    symbol: str = "BTCUSD",
-    current_user: User = Depends(get_current_user)
+@router.post("/martin/enable")
+async def enable_live_martin(
+    magic: int = 100001,
+    base_lot: float = 0.01,
+    max_steps: int = 7,
+    base_target: float = 50.0,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
-    """마틴게일 SELL 주문"""
-    result = martin_service.place_order(symbol, "SELL")
-    return JSONResponse(result)
+    """라이브 마틴 모드 활성화 (magic별 독립 관리)"""
+    state = get_or_create_live_martin_state(db, current_user.id, magic)
+    state.enabled = True
+    state.step = 1
+    state.max_steps = max_steps
+    state.base_lot = base_lot
+    state.base_target = base_target
+    state.accumulated_loss = 0.0
+    db.commit()
+
+    print(f"[LIVE MARTIN] User {current_user.id} 활성화: magic={magic}, base_lot={base_lot}, max_steps={max_steps}, target=${base_target}")
+
+    return JSONResponse({
+        "success": True,
+        "message": f"마틴 모드 활성화! 기본 랏: {base_lot}, 최대 단계: {max_steps}",
+        "state": {
+            "step": 1,
+            "max_steps": max_steps,
+            "base_lot": base_lot,
+            "base_target": base_target,
+            "current_lot": base_lot,
+            "accumulated_loss": 0.0,
+            "magic": magic
+        }
+    })
+
+
+@router.post("/martin/disable")
+async def disable_live_martin(
+    magic: int = 100001,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """라이브 마틴 모드 비활성화 (magic별 독립 관리)"""
+    state = get_or_create_live_martin_state(db, current_user.id, magic)
+    state.enabled = False
+    state.step = 1
+    state.accumulated_loss = 0.0
+    db.commit()
+
+    print(f"[LIVE MARTIN] User {current_user.id} 비활성화: magic={magic}")
+
+    return JSONResponse({
+        "success": True,
+        "message": "마틴 모드 비활성화 및 리셋 완료",
+        "magic": magic
+    })
 
 
 @router.post("/martin/update")
-async def martin_update(
+async def update_live_martin_after_close(
     profit: float = 0,
-    current_user: User = Depends(get_current_user)
+    magic: int = 100001,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
-    """포지션 청산 후 마틴 상태 업데이트"""
-    result = martin_service.update_after_close(profit)
-    return JSONResponse(result)
+    """청산 후 라이브 마틴 상태 업데이트 (magic별 독립 관리)"""
+    state = get_or_create_live_martin_state(db, current_user.id, magic)
+
+    if profit >= 0:
+        # 이익: 마틴 리셋!
+        state.step = 1
+        state.accumulated_loss = 0.0
+        db.commit()
+
+        print(f"[LIVE MARTIN] User {current_user.id} WIN! +${profit:.2f} → Step 1 리셋")
+
+        return JSONResponse({
+            "success": True,
+            "message": f"마틴 성공! +${profit:,.2f} → Step 1 리셋",
+            "new_step": 1,
+            "accumulated_loss": 0.0,
+            "reset": True,
+            "magic": magic
+        })
+    else:
+        # 손실: 다음 단계로
+        new_accumulated = state.accumulated_loss + abs(profit)
+        new_step = state.step + 1
+
+        if new_step > state.max_steps:
+            # 최대 단계 초과: 강제 리셋
+            state.step = 1
+            state.accumulated_loss = 0.0
+            db.commit()
+
+            print(f"[LIVE MARTIN] User {current_user.id} MAX STEP! 총손실=${new_accumulated:.2f} → 강제 리셋")
+
+            return JSONResponse({
+                "success": False,
+                "message": f"마틴 실패! 최대 단계 도달 → 강제 리셋",
+                "new_step": 1,
+                "accumulated_loss": 0.0,
+                "reset": True,
+                "total_loss": new_accumulated,
+                "magic": magic
+            })
+        else:
+            state.step = new_step
+            state.accumulated_loss = new_accumulated
+            db.commit()
+
+            next_lot = state.base_lot * (2 ** (new_step - 1))
+
+            print(f"[LIVE MARTIN] User {current_user.id} LOSS! -${abs(profit):.2f} → Step {new_step}, NextLot {next_lot:.2f}")
+
+            return JSONResponse({
+                "success": True,
+                "message": f"Step {new_step}로 진행! 다음 랏: {next_lot:.2f}",
+                "new_step": new_step,
+                "accumulated_loss": new_accumulated,
+                "next_lot": round(next_lot, 2),
+                "reset": False,
+                "magic": magic
+            })
 
 
 @router.post("/martin/update-state")
-async def martin_update_state(
+async def update_live_martin_state(
     step: int = 1,
     accumulated_loss: float = 0,
-    current_user: User = Depends(get_current_user)
+    magic: int = 100001,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
-    """마틴 단계와 누적손실 업데이트"""
-    martin_service.state.step = step
-    martin_service.state.accumulated_loss = accumulated_loss
-    
+    """라이브 마틴 단계와 누적손실 업데이트 (magic별 독립 관리)"""
+    state = get_or_create_live_martin_state(db, current_user.id, magic)
+    state.step = step
+    state.accumulated_loss = accumulated_loss
+    db.commit()
+
+    current_lot = state.base_lot * (2 ** (step - 1))
+
     return JSONResponse({
         "success": True,
         "message": f"마틴 상태 업데이트: Step {step}, 누적손실 ${accumulated_loss:,.2f}",
         "step": step,
         "accumulated_loss": accumulated_loss,
-        "current_lot": martin_service.get_current_lot()
+        "current_lot": round(current_lot, 2),
+        "magic": magic
     })
 
 
 @router.post("/martin/reset-full")
-async def martin_reset_full(
-    current_user: User = Depends(get_current_user)
+async def reset_live_martin_full(
+    magic: int = 100001,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
-    """마틴 완전 초기화 (1단계, 누적손실 0)"""
-    martin_service.state.step = 1
-    martin_service.state.accumulated_loss = 0
-    # current_lot은 get_current_lot() 메서드로 자동 계산됨
-    
+    """라이브 마틴 완전 초기화 (magic별 독립 관리)"""
+    state = get_or_create_live_martin_state(db, current_user.id, magic)
+    state.step = 1
+    state.accumulated_loss = 0.0
+    db.commit()
+
+    print(f"[LIVE MARTIN] User {current_user.id} 완전 리셋: magic={magic}")
+
     return JSONResponse({
         "success": True,
         "message": "마틴 초기화 완료",
         "step": 1,
-        "accumulated_loss": 0
+        "accumulated_loss": 0,
+        "magic": magic
     })
 
 
@@ -2640,8 +2797,30 @@ async def websocket_endpoint(websocket: WebSocket):
             
             # ★★★ 인디케이터는 이미 realtime_data에서 동기화 계산됨 (위에서) ★★★
 
-            # 마틴 상태
-            martin_state = martin_service.get_state()
+            # ★★★ 라이브 마틴 상태 (DB 기반) ★★★
+            martin_state = None
+            if user_id:
+                try:
+                    ws_db2 = next(get_db())
+                    live_martin_state = ws_db2.query(LiveMartinState).filter_by(user_id=user_id, magic=magic).first()
+                    if live_martin_state:
+                        current_lot = live_martin_state.base_lot * (2 ** (live_martin_state.step - 1))
+                        martin_state = {
+                            "enabled": live_martin_state.enabled,
+                            "step": live_martin_state.step,
+                            "max_steps": live_martin_state.max_steps,
+                            "base_lot": live_martin_state.base_lot,
+                            "base_target": live_martin_state.base_target,
+                            "current_lot": round(current_lot, 2),
+                            "accumulated_loss": live_martin_state.accumulated_loss,
+                            "magic": magic
+                        }
+                    ws_db2.close()
+                except Exception as martin_db_err:
+                    print(f"[WS] 마틴 상태 조회 오류: {martin_db_err}")
+                    martin_state = martin_service.get_state()  # fallback
+            else:
+                martin_state = martin_service.get_state()  # 비로그인 fallback
             
             # ★★★ 유저의 MT5 계정 우선 사용 (브릿지 계정 노출 방지) ★★★
             display_account = user_mt5_account if user_mt5_account else login
@@ -2707,6 +2886,51 @@ async def websocket_endpoint(websocket: WebSocket):
                     sync_event = {}
                 sync_event["metaapi_closed"] = closed_events
                 print(f"[WS] 📢 MetaAPI 청산 이벤트: {len(closed_events)}건, P/L=${closed_profit:.2f}")
+
+                # ★★★ 라이브 마틴 상태 업데이트 (DB 기반) ★★★
+                if user_id:
+                    try:
+                        ws_db = next(get_db())
+                        live_martin = ws_db.query(LiveMartinState).filter_by(user_id=user_id, magic=magic).first()
+                        if live_martin and live_martin.enabled:
+                            if is_win:
+                                # WIN: 마틴 리셋
+                                live_martin.step = 1
+                                live_martin.accumulated_loss = 0.0
+                                ws_db.commit()
+                                martin_reset = True
+                                martin_step_up = False
+                                martin_step = 1
+                                martin_accumulated_loss = 0
+                                print(f"[WS MARTIN] User {user_id} WIN! +${closed_profit:.2f} → Step 1 리셋")
+                            else:
+                                # LOSE: 다음 단계로
+                                new_accumulated = live_martin.accumulated_loss + abs(closed_profit)
+                                new_step = live_martin.step + 1
+
+                                if new_step > live_martin.max_steps:
+                                    # 최대 단계 초과: 강제 리셋
+                                    live_martin.step = 1
+                                    live_martin.accumulated_loss = 0.0
+                                    ws_db.commit()
+                                    martin_reset = True
+                                    martin_step_up = False
+                                    martin_step = 1
+                                    martin_accumulated_loss = 0
+                                    print(f"[WS MARTIN] User {user_id} MAX STEP! 총손실=${new_accumulated:.2f} → 강제 리셋")
+                                else:
+                                    live_martin.step = new_step
+                                    live_martin.accumulated_loss = new_accumulated
+                                    ws_db.commit()
+                                    martin_reset = False
+                                    martin_step_up = True
+                                    martin_step = new_step
+                                    martin_accumulated_loss = new_accumulated
+                                    next_lot = live_martin.base_lot * (2 ** (new_step - 1))
+                                    print(f"[WS MARTIN] User {user_id} LOSE! -${abs(closed_profit):.2f} → Step {new_step}, NextLot {next_lot:.2f}")
+                        ws_db.close()
+                    except Exception as martin_err:
+                        print(f"[WS MARTIN] DB 업데이트 오류: {martin_err}")
 
                 # ★★★ user_live_cache 포지션도 정리 (MT5 TP/SL 청산 동기화) ★★★
                 if user_id and user_id in user_live_cache:
