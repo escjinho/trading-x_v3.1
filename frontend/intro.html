@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Trading-X Intro</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
@@ -559,7 +562,7 @@
         (function() {
             const token = localStorage.getItem('access_token');
             if (token) {
-                window.location.replace('index.html');
+                window.location.replace('index.html?v=20260213a');
                 return;
             }
         })();
@@ -808,7 +811,7 @@
         function guestMode() {
             sessionStorage.setItem('intro_shown', 'true');
             sessionStorage.setItem('guest_mode', 'true');
-            window.location.href = 'index.html';
+            window.location.href = 'index.html?v=20260213a';
         }
 
         // ========== 앱 시작 (기존 호환) ==========
