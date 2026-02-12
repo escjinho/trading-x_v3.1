@@ -2903,6 +2903,20 @@ async def get_metaapi_status(
     # ★ 에러 메시지 포함 (있으면)
     error_msg = metaapi_error_messages.get(current_user.id)
 
+    # ★★★ undeployed 상태면 자동 deploy 시도 (홈 탭 등에서 폴링 시 자동 복구) ★★★
+    _status = current_user.metaapi_status
+    _account_id = current_user.metaapi_account_id
+    if _account_id and _status in ('undeployed', 'error', None):
+        _mt5_pw = decrypt(current_user.mt5_password_encrypted) if current_user.mt5_password_encrypted else ""
+        if _mt5_pw and current_user.mt5_account_number:
+            print(f"[MetaAPI Status] 🔄 User {current_user.id} 자동 deploy 시작 (status={_status})")
+            asyncio.create_task(_provision_metaapi_background(
+                user_id=current_user.id,
+                login=current_user.mt5_account_number,
+                password=_mt5_pw,
+                server=current_user.mt5_server or "HedgeHood-MT5"
+            ))
+
     return JSONResponse({
         "success": True,
         "metaapi_status": current_user.metaapi_status or 'none',
