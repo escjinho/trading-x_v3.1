@@ -1896,6 +1896,7 @@ async def _load_all_candles_background():
 
     async def load_symbol(symbol):
         nonlocal total_loaded
+        failed_tfs = []
         for meta_tf, cache_tf in timeframes.items():
             async with semaphore:
                 try:
@@ -1907,9 +1908,32 @@ async def _load_all_candles_background():
                     )
                     if success:
                         total_loaded += 1
+                    else:
+                        failed_tfs.append((meta_tf, cache_tf))
                     await asyncio.sleep(0.5)  # Rate limit 방지
                 except Exception as e:
                     print(f"[MetaAPI Background] ⚠️ {symbol}/{cache_tf} 로딩 실패: {e}")
+                    failed_tfs.append((meta_tf, cache_tf))
+
+        # ★ 실패한 TF 재시도 (5초 대기 후)
+        if failed_tfs:
+            print(f"[MetaAPI Background] 🔄 {symbol} 실패 {len(failed_tfs)}개 TF 재시도 대기 (5초)...")
+            await asyncio.sleep(5)
+            for meta_tf, cache_tf in failed_tfs:
+                async with semaphore:
+                    try:
+                        success = await initialize_candles_from_api(
+                            metaapi_service.trade_account,
+                            symbol,
+                            timeframe=cache_tf,
+                            count=1000
+                        )
+                        if success:
+                            total_loaded += 1
+                            print(f"[MetaAPI Background] ✅ {symbol}/{cache_tf} 재시도 성공!")
+                        await asyncio.sleep(1.0)  # 재시도는 더 느리게
+                    except Exception as e:
+                        print(f"[MetaAPI Background] ❌ {symbol}/{cache_tf} 재시도도 실패: {e}")
 
     # ★ 모든 심볼 병렬 실행
     tasks = [load_symbol(symbol) for symbol in SYMBOLS]

@@ -749,6 +749,13 @@ async def get_candles(
             lows = [c['low'] for c in candles]
             print(f"[Candles] {symbol}/{timeframe} - 캐시에서 {len(candles)}개 로드")
 
+    # ★ null/0 값 캔들 필터링 (lightweight-charts "Value is null" 에러 방지)
+    if candles:
+        candles = [c for c in candles if c.get('time') and c.get('open') and c.get('high') and c.get('low') and c.get('close')]
+        closes = [c['close'] for c in candles]
+        highs = [c['high'] for c in candles]
+        lows = [c['low'] for c in candles]
+
     if not candles:
         # MT5도 없고 브릿지 캐시도 없으면 → Binance API fallback
         try:

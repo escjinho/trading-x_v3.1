@@ -34,7 +34,7 @@ const ChartPanel = {
      * ★ 부드러운 보간 적용
      */
     safeUpdateCandle(candleData) {
-        if (!candleData || !chart || !candleSeries) {
+        if (!candleData || !chart || !candleSeries || !candleData.time || !candleData.close) {
             return false;
         }
 
