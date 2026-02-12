@@ -2453,9 +2453,92 @@ def get_all_symbols():
                 })
         
         return {"success": True, "symbols": results, "total": len(results)}
-        
+
     except Exception as e:
         return {"success": False, "symbols": [], "message": str(e)}
+
+
+# ========== MetaAPI 백그라운드 프로비저닝 ==========
+async def _provision_metaapi_background(user_id: int, login: str, password: str, server: str):
+    """백그라운드에서 MetaAPI 유저 계정 프로비저닝 + Deploy"""
+    from .metaapi_service import provision_user_metaapi, deploy_user_metaapi
+    import time as time_module
+
+    print(f"[MetaAPI BG] 🔵 User {user_id} 백그라운드 프로비저닝 시작")
+    start_time = time_module.time()
+
+    try:
+        db = next(get_db())
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            print(f"[MetaAPI BG] ❌ User {user_id} 찾을 수 없음")
+            return
+
+        # 이미 프로비저닝된 경우 deploy만 시도
+        if user.metaapi_account_id:
+            print(f"[MetaAPI BG] User {user_id} 기존 MetaAPI 계정 있음: {user.metaapi_account_id[:8]}...")
+            deploy_result = await deploy_user_metaapi(user.metaapi_account_id)
+            if deploy_result.get("success"):
+                user.metaapi_status = 'deployed'
+                user.metaapi_deployed_at = datetime.utcnow()
+                db.commit()
+                elapsed = time_module.time() - start_time
+                print(f"[MetaAPI BG] ✅ User {user_id} 기존 계정 deploy 완료 ({elapsed:.1f}초)")
+            else:
+                user.metaapi_status = 'error'
+                db.commit()
+                print(f"[MetaAPI BG] ❌ User {user_id} deploy 실패: {deploy_result.get('error')}")
+            db.close()
+            return
+
+        # 1단계: MetaAPI에 계정 등록
+        provision_result = await provision_user_metaapi(
+            user_id=user_id,
+            login=login,
+            password=password,
+            server=server
+        )
+
+        if not provision_result.get("success"):
+            user.metaapi_status = 'error'
+            db.commit()
+            db.close()
+            print(f"[MetaAPI BG] ❌ User {user_id} 프로비저닝 실패: {provision_result.get('error')}")
+            return
+
+        account_id = provision_result["account_id"]
+        user.metaapi_account_id = account_id
+        user.metaapi_status = 'deploying'
+        db.commit()
+        print(f"[MetaAPI BG] User {user_id} 계정 생성 완료: {account_id[:8]}...")
+
+        # 2단계: Deploy (활성화)
+        deploy_result = await deploy_user_metaapi(account_id)
+        if deploy_result.get("success"):
+            user.metaapi_status = 'deployed'
+            user.metaapi_deployed_at = datetime.utcnow()
+            db.commit()
+            elapsed = time_module.time() - start_time
+            print(f"[MetaAPI BG] ✅ User {user_id} 프로비저닝+Deploy 완료 ({elapsed:.1f}초)")
+        else:
+            user.metaapi_status = 'error'
+            db.commit()
+            print(f"[MetaAPI BG] ❌ User {user_id} deploy 실패: {deploy_result.get('error')}")
+
+        db.close()
+
+    except Exception as e:
+        print(f"[MetaAPI BG] ❌ User {user_id} 백그라운드 오류: {e}")
+        try:
+            db = next(get_db())
+            user = db.query(User).filter(User.id == user_id).first()
+            if user:
+                user.metaapi_status = 'error'
+                db.commit()
+            db.close()
+        except:
+            pass
+
 
 # ========== MT5 계정 연결 ==========
 from pydantic import BaseModel
@@ -2527,16 +2610,28 @@ async def connect_mt5_account(
                 current_user.mt5_leverage = account_info.get("leverage", 500)
                 current_user.mt5_currency = account_info.get("currency", "USD")
 
+                # ★★★ MetaAPI 유저별 프로비저닝 시작 (백그라운드) ★★★
+                current_user.metaapi_status = 'provisioning'
+                current_user.metaapi_last_active = datetime.utcnow()
                 db.commit()
                 print(f"[CONNECT] 🎉 DB 저장 완료: {request.account}")
                 print(f"[CONNECT]    Balance: ${account_info.get('balance', 0)}, Equity: ${account_info.get('equity', 0)}")
+
+                # 백그라운드에서 MetaAPI 프로비저닝 실행
+                asyncio.create_task(_provision_metaapi_background(
+                    user_id=current_user.id,
+                    login=request.account,
+                    password=request.password,
+                    server=request.server
+                ))
 
                 return JSONResponse({
                     "success": True,
                     "message": "MT5 계정 검증 완료!",
                     "account": request.account,
                     "server": request.server,
-                    "account_info": result.get("account_info", {})
+                    "account_info": result.get("account_info", {}),
+                    "metaapi_status": "provisioning"
                 })
             else:
                 # 검증 실패
@@ -2564,17 +2659,95 @@ async def disconnect_mt5_account(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """MT5 계정 연결 해제 - 모든 정보 완전 삭제"""
+    """MT5 계정 연결 해제 - MetaAPI undeploy + 모든 정보 삭제"""
+    from .metaapi_service import undeploy_user_metaapi, user_trade_connections
+
+    # ★★★ MetaAPI undeploy (백그라운드) ★★★
+    if current_user.metaapi_account_id:
+        print(f"[DISCONNECT] User {current_user.id} MetaAPI undeploy 시작: {current_user.metaapi_account_id[:8]}...")
+        try:
+            await undeploy_user_metaapi(current_user.metaapi_account_id)
+        except Exception as e:
+            print(f"[DISCONNECT] MetaAPI undeploy 오류: {e}")
+
+        # 연결 풀 정리
+        if current_user.id in user_trade_connections:
+            try:
+                conn = user_trade_connections[current_user.id].get("rpc")
+                if conn:
+                    await conn.close()
+            except:
+                pass
+            del user_trade_connections[current_user.id]
+
+    # MT5 정보 초기화
     current_user.has_mt5_account = False
     current_user.mt5_account_number = None
     current_user.mt5_server = None
     current_user.mt5_password_encrypted = None
     current_user.mt5_connected_at = None
+
+    # MetaAPI 정보 초기화 (account_id는 유지 - 재연결 시 재사용 가능)
+    current_user.metaapi_status = 'undeployed'
+    current_user.metaapi_deployed_at = None
+
     db.commit()
 
     return JSONResponse({
         "success": True,
         "message": "MT5 계정 연결이 해제되었습니다"
+    })
+
+
+@router.get("/metaapi-status")
+async def get_metaapi_status(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """유저의 MetaAPI 프로비저닝 상태 조회"""
+    return JSONResponse({
+        "success": True,
+        "metaapi_status": current_user.metaapi_status or 'none',
+        "metaapi_account_id": current_user.metaapi_account_id[:8] + '...' if current_user.metaapi_account_id else None,
+        "has_mt5_account": current_user.has_mt5_account,
+        "mt5_account": current_user.mt5_account_number,
+        "deployed_at": current_user.metaapi_deployed_at.isoformat() if current_user.metaapi_deployed_at else None,
+        "last_active": current_user.metaapi_last_active.isoformat() if current_user.metaapi_last_active else None
+    })
+
+
+@router.get("/admin/users")
+async def admin_get_users(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """[어드민] 전체 유저 MetaAPI 계정 상태 조회"""
+    if not current_user.is_admin:
+        return JSONResponse({"success": False, "message": "관리자 권한이 필요합니다"}, status_code=403)
+
+    users = db.query(User).filter(User.has_mt5_account == True).all()
+
+    user_list = []
+    for u in users:
+        user_list.append({
+            "id": u.id,
+            "email": u.email,
+            "name": u.name,
+            "mt5_account": u.mt5_account_number,
+            "mt5_server": u.mt5_server,
+            "mt5_balance": u.mt5_balance,
+            "mt5_equity": u.mt5_equity,
+            "metaapi_status": u.metaapi_status or 'none',
+            "metaapi_account_id": u.metaapi_account_id[:8] + '...' if u.metaapi_account_id else None,
+            "deployed_at": u.metaapi_deployed_at.isoformat() if u.metaapi_deployed_at else None,
+            "last_active": u.metaapi_last_active.isoformat() if u.metaapi_last_active else None,
+            "connected_at": u.mt5_connected_at.isoformat() if u.mt5_connected_at else None
+        })
+
+    return JSONResponse({
+        "success": True,
+        "total": len(user_list),
+        "users": user_list
     })
 
 # ========== WebSocket 실시간 데이터 ==========
