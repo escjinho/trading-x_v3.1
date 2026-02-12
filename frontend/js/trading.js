@@ -396,10 +396,11 @@ async function placeBuy() {
         return;
     }
     window._orderCooldown = true;
-    document.querySelectorAll('.trade-btn').forEach(b => { b.style.opacity = '0.5'; b.style.pointerEvents = 'none'; });
+    // ★★★ BUY/SELL 버튼만 비활성화 (CLOSE 버튼은 제외) ★★★
+    document.querySelectorAll('.trade-btn.buy-btn, .trade-btn.sell-btn').forEach(b => { b.style.opacity = '0.5'; b.style.pointerEvents = 'none'; });
     setTimeout(() => {
         window._orderCooldown = false;
-        document.querySelectorAll('.trade-btn').forEach(b => { b.style.opacity = '1'; b.style.pointerEvents = 'auto'; });
+        document.querySelectorAll('.trade-btn.buy-btn, .trade-btn.sell-btn').forEach(b => { b.style.opacity = '1'; b.style.pointerEvents = 'auto'; });
     }, 5000);
 
     showToast('Processing...', '');
@@ -461,7 +462,12 @@ async function placeBuy() {
             return;
         }
         showToast(result?.message || 'Error', result?.success ? 'success' : 'error');
-        if (result?.success) playSound('buy');
+        if (result?.success) {
+            playSound('buy');
+            // ★★★ 포지션 확인 → 쿨다운 즉시 해제 ★★★
+            window._orderCooldown = false;
+            document.querySelectorAll('.trade-btn.buy-btn, .trade-btn.sell-btn').forEach(b => { b.style.opacity = '1'; b.style.pointerEvents = 'auto'; });
+        }
     } catch (e) { showToast('Network error', 'error'); }
 }
 
@@ -492,10 +498,11 @@ async function placeSell() {
         return;
     }
     window._orderCooldown = true;
-    document.querySelectorAll('.trade-btn').forEach(b => { b.style.opacity = '0.5'; b.style.pointerEvents = 'none'; });
+    // ★★★ BUY/SELL 버튼만 비활성화 (CLOSE 버튼은 제외) ★★★
+    document.querySelectorAll('.trade-btn.buy-btn, .trade-btn.sell-btn').forEach(b => { b.style.opacity = '0.5'; b.style.pointerEvents = 'none'; });
     setTimeout(() => {
         window._orderCooldown = false;
-        document.querySelectorAll('.trade-btn').forEach(b => { b.style.opacity = '1'; b.style.pointerEvents = 'auto'; });
+        document.querySelectorAll('.trade-btn.buy-btn, .trade-btn.sell-btn').forEach(b => { b.style.opacity = '1'; b.style.pointerEvents = 'auto'; });
     }, 5000);
 
     showToast('Processing...', '');
@@ -557,7 +564,12 @@ async function placeSell() {
             return;
         }
         showToast(result?.message || 'Error', result?.success ? 'success' : 'error');
-        if (result?.success) playSound('sell');
+        if (result?.success) {
+            playSound('sell');
+            // ★★★ 포지션 확인 → 쿨다운 즉시 해제 ★★★
+            window._orderCooldown = false;
+            document.querySelectorAll('.trade-btn.buy-btn, .trade-btn.sell-btn').forEach(b => { b.style.opacity = '1'; b.style.pointerEvents = 'auto'; });
+        }
     } catch (e) { showToast('Network error', 'error'); }
 }
 

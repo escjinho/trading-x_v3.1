@@ -1980,13 +1980,15 @@ async function connectMT5Account() {
             startMetaAPIStatusPoll();
 
         } else {
-            // 연결 실패 시 팝업 표시
-            showToast('계좌번호 또는 비밀번호가 올바르지 않습니다.', 'error');
+            // 연결 실패 시 서버 메시지 표시
+            const errorMsg = result.message || '계좌번호 또는 비밀번호가 올바르지 않습니다.';
+            console.error('[MT5 Connect] 실패:', errorMsg);
+            showToast(errorMsg, 'error');
         }
 
     } catch (error) {
         console.error('MT5 Connect error:', error);
-        showToast('계좌번호 또는 비밀번호가 올바르지 않습니다.', 'error');
+        showToast('서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.', 'error');
     } finally {
         // 버튼 상태 복원
         if (connectBtn) {

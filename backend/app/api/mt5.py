@@ -2999,6 +2999,8 @@ async def websocket_endpoint(websocket: WebSocket):
         _ws_user_metaapi_id = None
         _ws_user_metaapi_status = None
     last_user_metaapi_sync = 0  # 유저 MetaAPI 동기화 타이머
+    _prev_user_position = None  # ★ 이전 유저 포지션 (청산 감지용)
+    _position_disappeared_count = 0  # ★ 포지션 사라짐 연속 카운트 (오탐 방지)
 
     symbols_list = ["BTCUSD", "EURUSD.r", "USDJPY.r", "XAUUSD.r", "US100.", "GBPUSD.r", "AUDUSD.r", "USDCAD.r", "ETHUSD"]
 
@@ -3098,6 +3100,37 @@ async def websocket_endpoint(websocket: WebSocket):
             metaapi_account = get_metaapi_account()
             metaapi_positions = get_metaapi_positions()
             closed_events = pop_metaapi_closed_events()
+
+            # ★★★ 유저별 MetaAPI 포지션 청산 감지 ★★★
+            _user_closed_event = None
+            if _ws_use_user_metaapi and user_id:
+                _user_ma_positions_now = user_metaapi_cache.get(user_id, {}).get("positions", [])
+                # 유저 매직 넘버와 매칭되는 포지션만 필터
+                _user_magic_positions = [p for p in _user_ma_positions_now if p.get("magic", 0) == magic]
+                _has_position_now = len(_user_magic_positions) > 0
+
+                if _prev_user_position and not _has_position_now:
+                    _position_disappeared_count += 1
+                    # 2회 연속 확인 시 청산으로 확정 (일시적 API 오류 방지)
+                    if _position_disappeared_count >= 2:
+                        # ★ 청산 감지! 이전 포지션의 profit 사용
+                        _prev_profit = _prev_user_position.get("profit", 0)
+                        _prev_symbol = _prev_user_position.get("symbol", "")
+                        _is_win = _prev_profit >= 0
+
+                        _user_closed_event = {
+                            "profit": _prev_profit,
+                            "symbol": _prev_symbol,
+                            "is_win": _is_win,
+                            "position_id": _prev_user_position.get("id", ""),
+                        }
+                        print(f"[LIVE WS] 🔔 유저별 MetaAPI 포지션 청산 감지! User {user_id}, {_prev_symbol} P/L=${_prev_profit:.2f}")
+
+                        _prev_user_position = None
+                        _position_disappeared_count = 0
+                elif _has_position_now:
+                    _prev_user_position = _user_magic_positions[0]  # 최신 포지션 저장
+                    _position_disappeared_count = 0
 
             # ★ 계정 정보 (유저별 MetaAPI > 공유 MetaAPI > user_cache > MT5)
             _user_ma_cache = user_metaapi_cache.get(user_id) if user_id else None
@@ -3390,6 +3423,67 @@ async def websocket_endpoint(websocket: WebSocket):
                 martin_step_up = ws_auto_closed_info.get("martin_step_up", False)
                 martin_step = ws_auto_closed_info.get("martin_step", 1)
                 martin_accumulated_loss = ws_auto_closed_info.get("martin_accumulated_loss", 0)
+            elif _user_closed_event:
+                # ★★★ 유저별 MetaAPI 포지션 청산 ★★★
+                auto_closed = True
+                closed_profit = _user_closed_event["profit"]
+                is_win = _user_closed_event["is_win"]
+                closed_message = f"{'이익' if is_win else '손실'} 청산: ${closed_profit:.2f}"
+                closed_at = current_ts
+
+                print(f"[WS] 📢 유저별 MetaAPI 청산: {_user_closed_event['symbol']} P/L=${closed_profit:.2f}")
+
+                # ★★★ 라이브 마틴 상태 업데이트 (DB 기반) ★★★
+                if user_id:
+                    try:
+                        ws_db = next(get_db())
+                        live_martin = ws_db.query(LiveMartinState).filter_by(user_id=user_id, magic=magic).first()
+                        if live_martin and live_martin.enabled:
+                            if is_win:
+                                live_martin.step = 1
+                                live_martin.accumulated_loss = 0.0
+                                ws_db.commit()
+                                martin_reset = True
+                                martin_step_up = False
+                                martin_step = 1
+                                martin_accumulated_loss = 0
+                                print(f"[WS MARTIN] User {user_id} WIN! +${closed_profit:.2f} → Step 1 리셋")
+                            else:
+                                new_accumulated = live_martin.accumulated_loss + abs(closed_profit)
+                                new_step = live_martin.step + 1
+
+                                if new_step > live_martin.max_steps:
+                                    live_martin.step = 1
+                                    live_martin.accumulated_loss = 0.0
+                                    ws_db.commit()
+                                    martin_reset = True
+                                    martin_step_up = False
+                                    martin_step = 1
+                                    martin_accumulated_loss = new_accumulated
+                                    print(f"[WS MARTIN] User {user_id} MAX STEP! 총손실=${new_accumulated:.2f} → 강제 리셋")
+                                else:
+                                    live_martin.step = new_step
+                                    live_martin.accumulated_loss = new_accumulated
+                                    ws_db.commit()
+                                    martin_reset = False
+                                    martin_step_up = True
+                                    martin_step = new_step
+                                    martin_accumulated_loss = new_accumulated
+                                    next_lot = live_martin.base_lot * (2 ** (new_step - 1))
+                                    print(f"[WS MARTIN] User {user_id} LOSE! -${abs(closed_profit):.2f} → Step {new_step}, NextLot {next_lot:.2f}")
+                        ws_db.close()
+                    except Exception as martin_err:
+                        print(f"[WS MARTIN] DB 업데이트 오류: {martin_err}")
+
+                # user_live_cache 포지션 정리
+                if user_id and user_id in user_live_cache:
+                    user_live_cache[user_id]["positions"] = []
+                    user_live_cache[user_id]["updated_at"] = time_module.time()
+
+                # user_target_cache 정리
+                if user_id in user_target_cache:
+                    del user_target_cache[user_id]
+
             elif closed_events:
                 # 첫 번째 이벤트 기준으로 설정
                 first_event = closed_events[0]
