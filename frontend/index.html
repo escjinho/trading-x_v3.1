@@ -203,6 +203,10 @@
                                 <span class="mt5-info-label">Leverage</span>
                                 <span class="mt5-info-value" id="mt5Leverage">-</span>
                             </div>
+                            <div class="mt5-info-item" style="border-top: 1px solid var(--border-color); padding-top: 8px; margin-top: 4px;">
+                                <span class="mt5-info-label">Trading API</span>
+                                <span class="mt5-info-value" id="mt5MetaapiStatus" style="font-size: 12px;">-</span>
+                            </div>
                         </div>
                         <button class="mt5-disconnect-btn" onclick="disconnectMT5()">
                             <span class="material-icons-round" style="font-size: 16px;">link_off</span>
@@ -1530,9 +1534,15 @@
                     <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color);"><span style="color: var(--text-muted); font-size: 13px;">Account</span><span style="font-weight: 600; font-size: 13px;" id="successAccount">-</span></div>
                     <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color);"><span style="color: var(--text-muted); font-size: 13px;">Server</span><span style="font-weight: 600; font-size: 13px;" id="successServer">-</span></div>
                     <div style="display: flex; justify-content: space-between; padding: 8px 0;"><span style="color: var(--text-muted); font-size: 13px;">Leverage</span><span style="font-weight: 600; font-size: 13px;" id="successLeverage">1:500</span></div>
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-top: 1px solid var(--border-color);" id="metaapiStatusRow">
+                        <span style="color: var(--text-muted); font-size: 13px;">Trading API</span>
+                        <span style="font-weight: 600; font-size: 13px;" id="metaapiStatusText">
+                            <span style="color: #f0b90b;">⏳ 준비중...</span>
+                        </span>
+                    </div>
                 </div>
-                
-                <div style="font-size: 13px; color: var(--accent-cyan); margin-bottom: 15px;">💎 이제 Live 거래를 시작하세요!</div>
+
+                <div style="font-size: 13px; color: var(--accent-cyan); margin-bottom: 15px;" id="successMessage">💎 거래 시스템을 준비하고 있습니다...</div>
                 
                 <button onclick="closeMT5SuccessModal()" style="width: 100%; padding: 14px; background: linear-gradient(135deg, var(--buy-color) 0%, #008040 100%); border: none; border-radius: 10px; color: white; font-weight: 700; cursor: pointer;">
                     확인

@@ -1688,6 +1688,7 @@ async function disconnectMT5() {
         if (data.success) {
             updateMT5AccountUI(false);
             switchTradingMode('demo');
+            stopMetaAPIStatusPoll();
             showToast('MT5 계좌 연결이 해제되었습니다', 'success');
         } else {
             showToast(data.message || '연결 해제 실패', 'error');
@@ -1720,6 +1721,9 @@ async function checkAndUpdateMT5Status() {
                 server: mt5Data.server,
                 leverage: mt5Data.leverage
             });
+
+            // ★★★ MetaAPI 상태 체크 ★★★
+            checkMetaAPIStatus();
         } else {
             updateMT5AccountUI(false);
         }
@@ -1870,7 +1874,10 @@ async function connectMT5Account() {
             // ★ 폴링은 ws.onclose에서 자동 시작됨 (중복 방지)
 
             showToast('🎉 MT5 계정 연결 완료!', 'success');
-            
+
+            // ★★★ MetaAPI 프로비저닝 상태 폴링 시작 ★★★
+            startMetaAPIStatusPoll();
+
         } else {
             // 연결 실패 시 팝업 표시
             showToast('계좌번호 또는 비밀번호가 올바르지 않습니다.', 'error');
@@ -1892,6 +1899,113 @@ async function connectMT5Account() {
 
 function closeMT5SuccessModal() {
     document.getElementById('mt5SuccessModal').classList.remove('show');
+}
+
+// ========== MetaAPI 프로비저닝 상태 폴링 ==========
+let _metaapiPollTimer = null;
+
+function startMetaAPIStatusPoll() {
+    // 기존 타이머 정리
+    if (_metaapiPollTimer) {
+        clearInterval(_metaapiPollTimer);
+        _metaapiPollTimer = null;
+    }
+
+    console.log('[MetaAPI] 프로비저닝 상태 폴링 시작');
+
+    // 즉시 1회 체크
+    checkMetaAPIStatus();
+
+    // 3초마다 체크
+    _metaapiPollTimer = setInterval(() => {
+        checkMetaAPIStatus();
+    }, 3000);
+}
+
+function stopMetaAPIStatusPoll() {
+    if (_metaapiPollTimer) {
+        clearInterval(_metaapiPollTimer);
+        _metaapiPollTimer = null;
+        console.log('[MetaAPI] 폴링 중지');
+    }
+}
+
+async function checkMetaAPIStatus() {
+    try {
+        const response = await fetch(`${API_URL}/mt5/metaapi-status`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+
+        if (!data.success) return;
+
+        const status = data.metaapi_status;
+        console.log(`[MetaAPI] 상태: ${status}`);
+
+        // 성공 모달 내 상태 업데이트
+        const modalStatusText = document.getElementById('metaapiStatusText');
+        const successMsg = document.getElementById('successMessage');
+
+        // MT5 연결 영역 상태 업데이트
+        const mt5StatusEl = document.getElementById('mt5MetaapiStatus');
+
+        if (status === 'deployed') {
+            // ✅ 준비 완료
+            if (modalStatusText) {
+                modalStatusText.innerHTML = '<span style="color: #00ff88;">✅ 준비 완료</span>';
+            }
+            if (successMsg) {
+                successMsg.innerHTML = '💎 거래 준비 완료! 지금 바로 거래를 시작하세요!';
+                successMsg.style.color = '#00ff88';
+            }
+            if (mt5StatusEl) {
+                mt5StatusEl.innerHTML = '<span style="color: #00ff88;">✅ Ready</span>';
+            }
+            stopMetaAPIStatusPoll();
+
+        } else if (status === 'provisioning' || status === 'deploying') {
+            // ⏳ 준비중
+            if (modalStatusText) {
+                modalStatusText.innerHTML = '<span style="color: #f0b90b;">⏳ 준비중...</span>';
+            }
+            if (successMsg) {
+                successMsg.innerHTML = '💎 거래 시스템을 준비하고 있습니다... (1~3분 소요)';
+                successMsg.style.color = 'var(--accent-cyan)';
+            }
+            if (mt5StatusEl) {
+                mt5StatusEl.innerHTML = '<span style="color: #f0b90b;">⏳ Preparing...</span>';
+            }
+
+        } else if (status === 'error') {
+            // ❌ 오류
+            if (modalStatusText) {
+                modalStatusText.innerHTML = '<span style="color: #ff4444;">❌ 오류</span>';
+            }
+            if (successMsg) {
+                successMsg.innerHTML = '⚠️ 거래 시스템 연결에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.';
+                successMsg.style.color = '#ff4444';
+            }
+            if (mt5StatusEl) {
+                mt5StatusEl.innerHTML = '<span style="color: #ff4444;">❌ Error</span>';
+            }
+            stopMetaAPIStatusPoll();
+
+        } else if (status === 'undeployed') {
+            // 비활성 (재연결 시)
+            if (mt5StatusEl) {
+                mt5StatusEl.innerHTML = '<span style="color: var(--text-muted);">💤 Standby</span>';
+            }
+
+        } else {
+            // none 또는 기타
+            if (mt5StatusEl) {
+                mt5StatusEl.innerHTML = '<span style="color: var(--text-muted);">-</span>';
+            }
+        }
+
+    } catch (e) {
+        console.error('[MetaAPI] 상태 확인 실패:', e);
+    }
 }
 
 // ========== 히어로 섹션 CTA 업데이트 ==========
