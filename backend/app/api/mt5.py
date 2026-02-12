@@ -2635,6 +2635,7 @@ async def websocket_endpoint(websocket: WebSocket):
     # ★★★ 마지막 전송 시간 추적 (실시간 전환용) ★★★
     last_send_time = 0
     last_data_timestamp = 0
+    last_user_refresh = 0  # ★ 유저 MT5 정보 DB 갱신 타이머
 
     while True:
         try:
@@ -2660,6 +2661,28 @@ async def websocket_endpoint(websocket: WebSocket):
 
             last_send_time = current_time
             last_data_timestamp = data_timestamp
+
+            # ★★★ 유저 MT5 계정 정보 주기적 DB 갱신 (30초마다) ★★★
+            if user_id and (current_time - last_user_refresh) > 30:
+                last_user_refresh = current_time
+                try:
+                    _refresh_db = next(get_db())
+                    _refresh_user = _refresh_db.query(User).filter(User.id == user_id).first()
+                    if _refresh_user and _refresh_user.has_mt5_account:
+                        if _refresh_user.mt5_account_number != user_mt5_account:
+                            print(f"[LIVE WS] 🔄 User {user_id} MT5 계정 갱신: {user_mt5_account} → {_refresh_user.mt5_account_number}")
+                        user_mt5_account = _refresh_user.mt5_account_number
+                        user_mt5_server = _refresh_user.mt5_server
+                        user_mt5_balance = _refresh_user.mt5_balance
+                        user_mt5_equity = _refresh_user.mt5_equity
+                        user_mt5_leverage = _refresh_user.mt5_leverage
+                    elif _refresh_user and not _refresh_user.has_mt5_account and user_mt5_account:
+                        print(f"[LIVE WS] 🔄 User {user_id} MT5 계정 해제 감지")
+                        user_mt5_account = None
+                        user_mt5_server = None
+                    _refresh_db.close()
+                except Exception as _refresh_err:
+                    print(f"[LIVE WS] DB refresh error: {_refresh_err}")
 
             # MetaAPI 연결 상태
             metaapi_connected = is_metaapi_connected()
@@ -2703,8 +2726,9 @@ async def websocket_endpoint(websocket: WebSocket):
             elif mt5_connected:
                 account = mt5.account_info()
                 broker = account.company if account else "N/A"
-                login = account.login if account else 0
-                server = account.server if account else "N/A"
+                # ★★★ 공유 MT5 터미널 계정 노출 방지 - 유저 계정 우선 ★★★
+                login = user_mt5_account or 0
+                server = user_mt5_server or (account.server if account else "N/A")
                 balance = account.balance if account else 0
                 equity = account.equity if account else 0
                 margin = account.margin if account else 0

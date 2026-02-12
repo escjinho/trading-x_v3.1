@@ -555,6 +555,15 @@
     </div>
     
     <script>
+        // ★★★ 이미 로그인된 유저는 인트로 건너뛰고 바로 홈으로 ★★★
+        (function() {
+            const token = localStorage.getItem('access_token');
+            if (token) {
+                window.location.replace('index.html');
+                return;
+            }
+        })();
+
         // ========== 전역 변수 ==========
         let audioContext = null;
         let isMuted = false;
