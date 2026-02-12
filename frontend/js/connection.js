@@ -5,6 +5,8 @@ const maxRetries = 5;
 let pollingInterval = null;  // ★ 폴링 인터벌 저장용
 let intentionalClose = false;  // ★ 의도적 종료 플래그 (재연결 방지)
 let isPageVisible = true;  // ★ 페이지 가시성 상태
+let lastWsMessageTime = 0;  // ★ 마지막 WS 메시지 수신 시간
+let heartbeatTimer = null;  // ★ 하트비트 모니터 타이머
 
 // ★★★ 페이지 가시성 변경 핸들러 (모바일 앱 전환 대응) ★★★
 document.addEventListener('visibilitychange', function() {
@@ -115,6 +117,56 @@ function getReconnectDelay() {
     return delay;
 }
 
+// ★★★ 하트비트 모니터: 10초간 WS 메시지 없으면 좀비 연결 감지 → 강제 재연결 ★★★
+function startHeartbeatMonitor() {
+    stopHeartbeatMonitor();  // 기존 타이머 정리
+
+    heartbeatTimer = setInterval(() => {
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+            stopHeartbeatMonitor();
+            return;
+        }
+
+        const elapsed = Date.now() - lastWsMessageTime;
+
+        if (elapsed > 10000) {
+            // 10초 동안 메시지 없음 = 좀비 연결
+            console.warn(`[WS] ⚠️ 하트비트 타임아웃 (${Math.round(elapsed/1000)}초 무응답) → 강제 재연결`);
+            stopHeartbeatMonitor();
+
+            // 좀비 연결 강제 종료
+            try {
+                ws.onclose = null;  // 중복 재연결 방지
+                ws.onerror = null;
+                ws.close();
+            } catch (e) {}
+
+            ws = null;
+            window.wsConnected = false;
+            updateConnectionStatus('disconnected');
+
+            // 즉시 재연결 (백오프 리셋)
+            reconnectAttempt = 0;
+            if (reconnectTimer) {
+                clearTimeout(reconnectTimer);
+                reconnectTimer = null;
+            }
+            reconnectWithBackoff();
+
+        } else if (elapsed > 5000) {
+            // 5초 경과 - 경고 로그만
+            console.log(`[WS] 하트비트: ${Math.round(elapsed/1000)}초 경과 (10초 후 재연결)`);
+        }
+    }, 3000);  // 3초마다 체크
+}
+
+function stopHeartbeatMonitor() {
+    if (heartbeatTimer) {
+        clearInterval(heartbeatTimer);
+        heartbeatTimer = null;
+    }
+}
+
 function reconnectWithBackoff() {
     // ★ 의도적 종료면 재연결 안 함
     if (intentionalClose) {
@@ -192,6 +244,7 @@ window.getReconnectStatus = function() {
 
 function connectWebSocket() {
     // ★ 기존 WS 정리 (중복 연결 방지)
+    stopHeartbeatMonitor();  // ★ 하트비트 정리
     if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
         console.log('[WS] 기존 연결 정리 중...');
         ws.onclose = null;  // onclose 핸들러 제거 (재연결 트리거 방지)
@@ -227,11 +280,25 @@ function connectWebSocket() {
             pollingInterval = null;
             console.log('[WS] Polling stopped - WebSocket connected');
         }
+
+        // ★★★ 하트비트 모니터 시작 ★★★
+        lastWsMessageTime = Date.now();
+        startHeartbeatMonitor();
     };
 
     ws.onmessage = function(event) {
+        lastWsMessageTime = Date.now();  // ★ 하트비트 갱신
+
         const data = JSON.parse(event.data);
-        
+
+        // ★★★ 서버 ping에 pong 응답 ★★★
+        if (data.type === 'ping') {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'pong', ts: data.ts }));
+            }
+            return;  // ping은 UI 업데이트 불필요
+        }
+
         // ★ 디버깅 로그
         
         // ★ 즉시 호가 업데이트 (최상단에서 처리)
@@ -880,6 +947,7 @@ function connectWebSocket() {
     ws.onclose = function(event) {
         console.log('[WS] WebSocket disconnected, code:', event.code, 'reason:', event.reason);
         window.wsConnected = false;
+        stopHeartbeatMonitor();  // ★ 하트비트 중지
 
         // ★ 의도적 종료면 재연결하지 않음 (모드 전환 시)
         if (intentionalClose) {

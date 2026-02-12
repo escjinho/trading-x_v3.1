@@ -3006,6 +3006,8 @@ async def websocket_endpoint(websocket: WebSocket):
     last_send_time = 0
     last_data_timestamp = 0
     last_user_refresh = 0  # ★ 유저 MT5 정보 DB 갱신 타이머
+    last_ping_time = 0  # ★ 서버 ping 타이머
+    last_client_pong = time.time() if 'time' in dir() else 0  # ★ 클라이언트 응답 시간
 
     while True:
         try:
@@ -3495,12 +3497,34 @@ async def websocket_endpoint(websocket: WebSocket):
             }
             
             await websocket.send_text(json.dumps(data))
+
+            # ★★★ 서버 ping (20초마다) ★★★
+            if current_time - last_ping_time > 20:
+                last_ping_time = current_time
+                try:
+                    await websocket.send_text(json.dumps({"type": "ping", "ts": current_time}))
+                except Exception:
+                    break  # 전송 실패 = 연결 죽음
+
+            # ★★★ 클라이언트 메시지 비동기 수신 (pong 등) ★★★
+            try:
+                client_msg = await asyncio.wait_for(websocket.receive_text(), timeout=0.05)
+                if client_msg:
+                    parsed = json.loads(client_msg)
+                    if parsed.get("type") == "pong":
+                        last_client_pong = current_time
+            except asyncio.TimeoutError:
+                pass  # 타임아웃 OK - 클라이언트가 보낸 게 없음
+            except Exception:
+                break  # 수신 실패 = 연결 죽음
+
             # ★★★ 실시간 전송: 0.2초 간격 (데모와 동일) ★★★
-            await asyncio.sleep(0.2)
+            await asyncio.sleep(0.15)
 
         except WebSocketDisconnect:
+            print(f"[LIVE WS] User {user_id} WebSocket disconnected")
             break
         except Exception as e:
                 if str(e):
-                    print(f"WebSocket Error: {e}")
+                    print(f"[LIVE WS] WebSocket Error (user {user_id}): {e}")
                 await asyncio.sleep(random.uniform(1.0, 3.0))
