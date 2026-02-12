@@ -384,6 +384,12 @@ async function placeBuy() {
         return;
     }
 
+    // ★★★ 마틴 모드: MetaAPI 연결 상태 사전 체크 ★★★
+    if (currentMode === 'martin' && martinEnabled && window._metaapiConnected === false) {
+        showToast('⚠️ MetaAPI 연결이 불안정합니다.\n잠시 후 다시 시도해주세요.', 'error', 5000);
+        return;
+    }
+
     // ★★★ 버튼 쿨다운 (이중 클릭 방지 - 5초) ★★★
     if (window._orderCooldown) {
         showToast('주문 처리 중입니다. 잠시만 기다려주세요.', 'error');
@@ -471,6 +477,12 @@ async function placeSell() {
     // ★★★ 중복 주문 방지 ★★★
     if (!isDemo && window.lastLivePosition) {
         showToast('이미 포지션이 있습니다', 'error');
+        return;
+    }
+
+    // ★★★ 마틴 모드: MetaAPI 연결 상태 사전 체크 ★★★
+    if (currentMode === 'martin' && martinEnabled && window._metaapiConnected === false) {
+        showToast('⚠️ MetaAPI 연결이 불안정합니다.\n잠시 후 다시 시도해주세요.', 'error', 5000);
         return;
     }
 
