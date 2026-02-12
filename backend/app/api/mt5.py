@@ -1242,37 +1242,43 @@ async def place_order(
 
     print(f"[MetaAPI Order] 주문 요청: {order_type} {symbol} {volume} lot, target=${target}, martin={is_martin}")
 
+    # ★★★ 종목별 1 lot 증거금 (실제 브로커 기준) ★★★
+    SYMBOL_MARGIN_PER_LOT = {
+        "BTCUSD": 672,
+        "ETHUSD": 200,
+        "US100.": 2517,
+        "XAUUSD.r": 1012,
+        "EURUSD.r": 237,
+        "USDJPY.r": 200,
+        "GBPUSD.r": 250,
+        "AUDUSD.r": 150,
+        "USDCAD.r": 200
+    }
+
     # ★★★ 증거금 사전 체크 (마틴 모드 필수) ★★★
-    if is_martin:
+    if is_martin and martin_state and martin_state.enabled:
         account_info = get_metaapi_account()
         free_margin = account_info.get('freeMargin', 0)
 
-        # 필요 증거금 계산 (심볼별 레버리지 고려)
-        price_data = quote_price_cache.get(symbol, {})
-        current_price = price_data.get('ask', 0) if order_type.upper() == 'BUY' else price_data.get('bid', 0)
-        leverage = account_info.get('leverage', 500)
+        # 종목별 1 lot 증거금 조회
+        margin_per_lot = SYMBOL_MARGIN_PER_LOT.get(symbol, 500)
 
-        # 대략적인 필요 증거금 계산
-        specs = SYMBOL_SPECS.get(symbol, {"contract_size": 1})
-        contract_size = specs.get("contract_size", 1)
-
-        if current_price > 0 and leverage > 0:
-            required_margin = (current_price * volume * contract_size) / leverage
-        else:
-            required_margin = volume * 100  # fallback: 랏당 $100 추정
-
+        # 현재 step 기준 필요 증거금: step_lot × margin_per_lot
+        required_margin = volume * margin_per_lot
         required_margin = round(required_margin, 2)
 
-        print(f"[MetaAPI Order] 증거금 체크: free_margin=${free_margin:.2f}, required=${required_margin:.2f}")
+        print(f"[MetaAPI Order] 증거금 체크: free_margin=${free_margin:.2f}, required=${required_margin:.2f} (Step {martin_step}, {volume:.2f} lot)")
 
         if required_margin > free_margin:
             print(f"[MetaAPI Order] ❌ 증거금 부족: 필요 ${required_margin:.2f} > 가용 ${free_margin:.2f}")
             return JSONResponse({
                 "success": False,
-                "message": f"증거금이 부족합니다. 현재 가용마진: ${free_margin:.0f}, 필요마진: ${required_margin:.0f}",
+                "message": f"증거금 부족! 가용마진: ${free_margin:.0f}, 필요마진: ${required_margin:.0f} (Step {martin_step}, {volume:.2f} lot)",
                 "margin_insufficient": True,
                 "free_margin": free_margin,
-                "required_margin": required_margin
+                "required_margin": required_margin,
+                "martin_step": martin_step,
+                "martin_lot": volume
             })
 
     # ★★★ 중복 주문 방지: 같은 매직넘버 포지션 확인 ★★★

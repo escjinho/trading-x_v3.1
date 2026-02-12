@@ -311,17 +311,61 @@ function adjustMartinLevel(delta) {
     updateSettingsUI();
 }
 
+// ★★★ 종목별 1 lot 증거금 (실제 브로커 기준) ★★★
+const SYMBOL_MARGIN_PER_LOT = {
+    "BTCUSD": 672,
+    "ETHUSD": 200,
+    "US100.": 2517,
+    "XAUUSD.r": 1012,
+    "EURUSD.r": 237,
+    "USDJPY.r": 200,
+    "GBPUSD.r": 250,
+    "AUDUSD.r": 150,
+    "USDCAD.r": 200
+};
+
 function calculateMartinMax() {
+    // ★★★ 새로운 공식: 누적손실 + 해당 단계 증거금 ★★★
+    const marginPerLot = SYMBOL_MARGIN_PER_LOT[settingsSymbol] || 500;
+
     for (let n = 20; n >= 1; n--) {
-        const required = settingsLotSize * settingsTarget * (Math.pow(2, n) - 1);
-        if (balance >= required) return n;
+        const stepLot = settingsLotSize * Math.pow(2, n - 1);
+        const stepMargin = stepLot * marginPerLot;
+
+        // Step 1~(N-1)까지 전부 LOSE 했을 때 누적 손실
+        let accumulatedLoss = 0;
+        for (let i = 1; i < n; i++) {
+            const prevLot = settingsLotSize * Math.pow(2, i - 1);
+            accumulatedLoss += prevLot * settingsTarget;
+        }
+
+        // 이 단계 진입에 필요한 금액 = 누적손실 + 이번 단계 증거금
+        const required = accumulatedLoss + stepMargin;
+
+        if (balance >= required) {
+            // 마진콜 안전장치: -1 적용
+            return Math.max(1, n - 1);
+        }
     }
     return 1;
 }
 
 function updateMartinMaxInfo() {
     const maxStep = calculateMartinMax();
-    const required = settingsLotSize * settingsTarget * (Math.pow(2, maxStep) - 1);
+    const marginPerLot = SYMBOL_MARGIN_PER_LOT[settingsSymbol] || 500;
+
+    // maxStep 진입에 필요한 금액 계산
+    const stepLot = settingsLotSize * Math.pow(2, maxStep - 1);
+    const stepMargin = stepLot * marginPerLot;
+
+    let accumulatedLoss = 0;
+    for (let i = 1; i < maxStep; i++) {
+        const prevLot = settingsLotSize * Math.pow(2, i - 1);
+        accumulatedLoss += prevLot * settingsTarget;
+    }
+
+    const required = accumulatedLoss + stepMargin;
+
     document.getElementById('martinMaxStep').textContent = maxStep;
     document.getElementById('martinRequired').textContent = '$' + Math.round(required).toLocaleString() + '+';
 }
