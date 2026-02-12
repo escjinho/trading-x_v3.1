@@ -1984,6 +1984,9 @@ async def startup_metaapi():
         # 6. 포지션 동기화 루프 시작 (30초 주기)
         await metaapi_service.start_position_sync_loop(interval=30.0)
 
+        # 7. 비활동 유저 자동 undeploy 루프 시작 (5분마다 체크, 30분 비활동 시 undeploy)
+        asyncio.create_task(_auto_undeploy_inactive_users())
+
         print("[MetaAPI Startup] 초기화 완료!")
         return True
 
@@ -2373,6 +2376,64 @@ async def close_position_for_user(user_id: int, metaapi_account_id: str, positio
     except Exception as e:
         print(f"[MetaAPI User Close] ❌ User {user_id} 청산 실패: {e}")
         return {"success": False, "error": str(e)}
+
+
+# ============================================================
+# 비활동 유저 자동 Undeploy 백그라운드 태스크
+# ============================================================
+async def _auto_undeploy_inactive_users():
+    """
+    5분마다 비활동(30분 이상) 유저의 MetaAPI 계정을 undeploy
+    비용 절감 목적
+    """
+    from ..database import SessionLocal
+    from ..models.user import User
+    from datetime import datetime, timedelta
+
+    INACTIVITY_THRESHOLD = 30 * 60  # 30분 (초)
+    CHECK_INTERVAL = 5 * 60  # 5분마다 체크
+
+    print("[MetaAPI AutoUndeploy] 비활동 계정 자동 undeploy 태스크 시작")
+
+    while True:
+        try:
+            await asyncio.sleep(CHECK_INTERVAL)
+
+            db = SessionLocal()
+            try:
+                now = datetime.utcnow()
+                threshold_time = now - timedelta(seconds=INACTIVITY_THRESHOLD)
+
+                # deployed 상태이고 마지막 활동이 30분 이상 된 사용자 조회
+                inactive_users = db.query(User).filter(
+                    User.metaapi_status == 'deployed',
+                    User.metaapi_last_active < threshold_time
+                ).all()
+
+                for user in inactive_users:
+                    if user.metaapi_account_id:
+                        print(f"[MetaAPI AutoUndeploy] User {user.id} 비활동 감지 - undeploy 시작")
+                        try:
+                            result = await undeploy_user_metaapi(user.metaapi_account_id)
+                            if result:
+                                user.metaapi_status = 'undeployed'
+                                db.commit()
+                                # 연결 풀 정리
+                                if user.id in user_trade_connections:
+                                    del user_trade_connections[user.id]
+                                if user.id in user_metaapi_cache:
+                                    del user_metaapi_cache[user.id]
+                                print(f"[MetaAPI AutoUndeploy] ✅ User {user.id} undeploy 완료")
+                            else:
+                                print(f"[MetaAPI AutoUndeploy] ⚠️ User {user.id} undeploy 실패")
+                        except Exception as undeploy_err:
+                            print(f"[MetaAPI AutoUndeploy] ❌ User {user.id} undeploy 오류: {undeploy_err}")
+            finally:
+                db.close()
+
+        except Exception as e:
+            print(f"[MetaAPI AutoUndeploy] 루프 오류: {e}")
+            await asyncio.sleep(60)  # 오류 시 1분 대기 후 재시도
 
 
 if __name__ == '__main__':

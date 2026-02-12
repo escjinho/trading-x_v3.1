@@ -2814,7 +2814,8 @@ async def websocket_endpoint(websocket: WebSocket):
         get_metaapi_prices, get_metaapi_candles, is_metaapi_connected,
         get_metaapi_last_update, get_metaapi_indicators, get_realtime_data,
         quote_price_cache, quote_last_update,
-        get_metaapi_positions, get_metaapi_account, pop_metaapi_closed_events
+        get_metaapi_positions, get_metaapi_account, pop_metaapi_closed_events,
+        get_user_account_info, get_user_positions, user_metaapi_cache
     )
 
     # ★ Query parameter에서 토큰/magic으로 유저 식별
@@ -2847,7 +2848,15 @@ async def websocket_endpoint(websocket: WebSocket):
                     user_mt5_profit = user.mt5_profit
                     user_mt5_leverage = user.mt5_leverage
                     user_mt5_server = user.mt5_server
-                    print(f"[LIVE WS] User {user_id} connected (MT5: {user_mt5_account}, Balance: ${user_mt5_balance})")
+
+                    # ★★★ 유저별 MetaAPI 정보 ★★★
+                    _ws_user_metaapi_id = user.metaapi_account_id
+                    _ws_user_metaapi_status = user.metaapi_status
+                    _ws_use_user_metaapi = bool(_ws_user_metaapi_id and _ws_user_metaapi_status == 'deployed')
+                    if _ws_use_user_metaapi:
+                        print(f"[LIVE WS] User {user_id} connected (MT5: {user_mt5_account}, Balance: ${user_mt5_balance}, MetaAPI: ✅ {_ws_user_metaapi_id[:8]}...)")
+                    else:
+                        print(f"[LIVE WS] User {user_id} connected (MT5: {user_mt5_account}, Balance: ${user_mt5_balance}, MetaAPI: ❌ {_ws_user_metaapi_status})")
                 else:
                     print(f"[LIVE WS] User {user_id} connected (No MT5 account)")
                 db.close()
@@ -2855,6 +2864,13 @@ async def websocket_endpoint(websocket: WebSocket):
             print(f"[LIVE WS] Token decode error: {e}")
     else:
         print(f"[LIVE WS] Anonymous connection (no token)")
+
+    # ★★★ 유저별 MetaAPI 변수 초기화 ★★★
+    if '_ws_use_user_metaapi' not in dir():
+        _ws_use_user_metaapi = False
+        _ws_user_metaapi_id = None
+        _ws_user_metaapi_status = None
+    last_user_metaapi_sync = 0  # 유저 MetaAPI 동기화 타이머
 
     symbols_list = ["BTCUSD", "EURUSD.r", "USDJPY.r", "XAUUSD.r", "US100.", "GBPUSD.r", "AUDUSD.r", "USDCAD.r", "ETHUSD"]
 
@@ -2902,6 +2918,15 @@ async def websocket_endpoint(websocket: WebSocket):
                         user_mt5_balance = _refresh_user.mt5_balance
                         user_mt5_equity = _refresh_user.mt5_equity
                         user_mt5_leverage = _refresh_user.mt5_leverage
+
+                        # ★★★ MetaAPI 상태 갱신 ★★★
+                        _old_status = _ws_user_metaapi_status
+                        _ws_user_metaapi_id = _refresh_user.metaapi_account_id
+                        _ws_user_metaapi_status = _refresh_user.metaapi_status
+                        _ws_use_user_metaapi = bool(_ws_user_metaapi_id and _ws_user_metaapi_status == 'deployed')
+                        if _old_status != _ws_user_metaapi_status:
+                            print(f"[LIVE WS] 🔄 User {user_id} MetaAPI 상태 변경: {_old_status} → {_ws_user_metaapi_status}")
+
                     elif _refresh_user and not _refresh_user.has_mt5_account and user_mt5_account:
                         print(f"[LIVE WS] 🔄 User {user_id} MT5 계정 해제 감지")
                         user_mt5_account = None
@@ -2909,6 +2934,21 @@ async def websocket_endpoint(websocket: WebSocket):
                     _refresh_db.close()
                 except Exception as _refresh_err:
                     print(f"[LIVE WS] DB refresh error: {_refresh_err}")
+
+            # ★★★ 유저별 MetaAPI 데이터 동기화 (10초마다) ★★★
+            if _ws_use_user_metaapi and user_id and (current_time - last_user_metaapi_sync) > 10:
+                last_user_metaapi_sync = current_time
+                try:
+                    _u_account = await get_user_account_info(user_id, _ws_user_metaapi_id)
+                    _u_positions = await get_user_positions(user_id, _ws_user_metaapi_id)
+                    if _u_account:
+                        user_metaapi_cache[user_id] = {
+                            "account_info": _u_account,
+                            "positions": _u_positions or [],
+                            "last_sync": current_time
+                        }
+                except Exception as _sync_err:
+                    print(f"[LIVE WS] User {user_id} MetaAPI sync error: {_sync_err}")
 
             # MetaAPI 연결 상태
             metaapi_connected = is_metaapi_connected()
@@ -2929,8 +2969,20 @@ async def websocket_endpoint(websocket: WebSocket):
             metaapi_positions = get_metaapi_positions()
             closed_events = pop_metaapi_closed_events()
 
-            # ★ 계정 정보 (MetaAPI 캐시 우선)
-            if metaapi_account and metaapi_account.get("balance"):
+            # ★ 계정 정보 (유저별 MetaAPI > 공유 MetaAPI > user_cache > MT5)
+            _user_ma_cache = user_metaapi_cache.get(user_id) if user_id else None
+            if _ws_use_user_metaapi and _user_ma_cache and _user_ma_cache.get("account_info"):
+                # ★★★ 유저별 MetaAPI 계정 데이터 ★★★
+                _u_acc = _user_ma_cache["account_info"]
+                broker = "HedgeHood Pty Ltd"
+                login = user_mt5_account or 0
+                server = user_mt5_server or "HedgeHood-MT5"
+                balance = _u_acc.get("balance", 0)
+                equity = _u_acc.get("equity", 0)
+                margin = _u_acc.get("margin", 0)
+                free_margin = _u_acc.get("freeMargin", 0)
+                leverage = _u_acc.get("leverage", 0) or user_mt5_leverage or 500
+            elif metaapi_account and metaapi_account.get("balance"):
                 broker = "HedgeHood Pty Ltd"
                 login = user_mt5_account or 0
                 server = user_mt5_server or "HedgeHood-MT5"
@@ -2973,13 +3025,49 @@ async def websocket_endpoint(websocket: WebSocket):
 
             # ★★★ 시세/캔들은 이미 realtime_data에서 가져옴 (위에서) ★★★
 
-            # 포지션 정보 (MetaAPI 캐시 → user_cache → MT5 → Bridge)
+            # 포지션 정보 (유저 MetaAPI → 공유 MetaAPI → user_cache → MT5 → Bridge)
             positions_count = 0
             position_data = None
             total_realtime_profit = 0  # ★★★ 실시간 총 P/L
 
-            # ★★★ MetaAPI 캐시 우선 사용 (연결 시 빈 배열도 신뢰) ★★★
-            if metaapi_connected:
+            # ★★★ 유저별 MetaAPI 포지션 우선 ★★★
+            if _ws_use_user_metaapi and _user_ma_cache and "positions" in _user_ma_cache:
+                _u_positions = _user_ma_cache["positions"]
+                positions_count = len(_u_positions)
+                for pos in _u_positions:
+                    pos_symbol = pos.get("symbol", "")
+                    pos_type_str = pos.get("type", "")
+                    pos_type = 0 if "BUY" in str(pos_type_str) else 1
+                    pos_volume = pos.get("volume", 0)
+                    pos_open = pos.get("openPrice", 0)
+
+                    # ★ 현재 가격으로 P/L 재계산
+                    current_price_data = all_prices.get(pos_symbol, {})
+                    current_bid = current_price_data.get("bid", pos_open)
+                    current_ask = current_price_data.get("ask", pos_open)
+
+                    realtime_profit = calculate_realtime_profit(
+                        pos_type, pos_symbol, pos_volume, pos_open, current_bid, current_ask
+                    )
+                    total_realtime_profit += realtime_profit
+
+                    # 패널용 포지션 (magic 파라미터로 필터링)
+                    if pos.get("magic") == magic:
+                        position_data = {
+                            "type": "BUY" if pos_type == 0 else "SELL",
+                            "symbol": pos_symbol,
+                            "volume": pos_volume,
+                            "entry": pos_open,
+                            "profit": realtime_profit,
+                            "ticket": pos.get("id", 0),
+                            "magic": pos.get("magic", 0)
+                        }
+
+                # equity 재계산
+                equity = balance + total_realtime_profit
+
+            # ★★★ 공유 MetaAPI 캐시 사용 (연결 시 빈 배열도 신뢰) ★★★
+            elif metaapi_connected:
                 positions_count = len(metaapi_positions)
                 for pos in metaapi_positions:
                     pos_symbol = pos.get("symbol", "")
