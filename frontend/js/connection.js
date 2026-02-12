@@ -2062,7 +2062,7 @@ async function checkMetaAPIStatus() {
                 successMsg.style.color = '#00ff88';
             }
             if (mt5StatusEl) {
-                mt5StatusEl.innerHTML = '<span style="color: #00ff88;">✅ Ready</span>';
+                mt5StatusEl.innerHTML = '<span style="color: #00ff88;">Ready</span>';
             }
             stopMetaAPIStatusPoll();
 
@@ -2076,7 +2076,7 @@ async function checkMetaAPIStatus() {
                 successMsg.style.color = 'var(--accent-cyan)';
             }
             if (mt5StatusEl) {
-                mt5StatusEl.innerHTML = '<span style="color: #f0b90b;">⏳ Preparing...</span>';
+                mt5StatusEl.innerHTML = '<span style="color: #f0b90b;">Preparing...</span>';
             }
 
         } else if (status === 'error') {
@@ -2092,14 +2092,14 @@ async function checkMetaAPIStatus() {
             // ★ 에러 토스트도 표시
             showToast(`❌ ${errorDetail}`, 'error');
             if (mt5StatusEl) {
-                mt5StatusEl.innerHTML = '<span style="color: #f0b90b;">🔄 Waiting</span>';
+                mt5StatusEl.innerHTML = '<span style="color: #f0b90b;">Waiting</span>';
             }
             stopMetaAPIStatusPoll();
 
         } else if (status === 'undeployed') {
             // 비활성 (재연결 시)
             if (mt5StatusEl) {
-                mt5StatusEl.innerHTML = '<span style="color: var(--text-muted);">💤 Standby</span>';
+                mt5StatusEl.innerHTML = '<span style="color: var(--text-muted);">Standby</span>';
             }
 
         } else {
