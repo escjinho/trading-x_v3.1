@@ -1204,7 +1204,16 @@ async def place_order(
 ):
     """일반 주문 실행 (BUY/SELL) - MetaAPI 버전 + 마틴 모드 지원"""
     import time as time_module
-    from .metaapi_service import metaapi_service, quote_price_cache, metaapi_positions_cache
+    from .metaapi_service import metaapi_service, quote_price_cache, metaapi_positions_cache, is_metaapi_connected, get_metaapi_account
+
+    # ★★★ MetaAPI 연결 상태 체크 ★★★
+    if not is_metaapi_connected():
+        print(f"[MetaAPI Order] ❌ MetaAPI 연결 끊김 - 주문 거부")
+        return JSONResponse({
+            "success": False,
+            "message": "MetaAPI 연결이 불안정합니다. 잠시 후 다시 시도해주세요.",
+            "metaapi_disconnected": True
+        })
 
     # ★★★ 마틴 모드 감지 및 랏/타겟 재계산 ★★★
     martin_state = None
@@ -1232,6 +1241,39 @@ async def place_order(
             target = real_target
 
     print(f"[MetaAPI Order] 주문 요청: {order_type} {symbol} {volume} lot, target=${target}, martin={is_martin}")
+
+    # ★★★ 증거금 사전 체크 (마틴 모드 필수) ★★★
+    if is_martin:
+        account_info = get_metaapi_account()
+        free_margin = account_info.get('freeMargin', 0)
+
+        # 필요 증거금 계산 (심볼별 레버리지 고려)
+        price_data = quote_price_cache.get(symbol, {})
+        current_price = price_data.get('ask', 0) if order_type.upper() == 'BUY' else price_data.get('bid', 0)
+        leverage = account_info.get('leverage', 500)
+
+        # 대략적인 필요 증거금 계산
+        specs = SYMBOL_SPECS.get(symbol, {"contract_size": 1})
+        contract_size = specs.get("contract_size", 1)
+
+        if current_price > 0 and leverage > 0:
+            required_margin = (current_price * volume * contract_size) / leverage
+        else:
+            required_margin = volume * 100  # fallback: 랏당 $100 추정
+
+        required_margin = round(required_margin, 2)
+
+        print(f"[MetaAPI Order] 증거금 체크: free_margin=${free_margin:.2f}, required=${required_margin:.2f}")
+
+        if required_margin > free_margin:
+            print(f"[MetaAPI Order] ❌ 증거금 부족: 필요 ${required_margin:.2f} > 가용 ${free_margin:.2f}")
+            return JSONResponse({
+                "success": False,
+                "message": f"증거금이 부족합니다. 현재 가용마진: ${free_margin:.0f}, 필요마진: ${required_margin:.0f}",
+                "margin_insufficient": True,
+                "free_margin": free_margin,
+                "required_margin": required_margin
+            })
 
     # ★★★ 중복 주문 방지: 같은 매직넘버 포지션 확인 ★★★
     existing = [p for p in metaapi_positions_cache if p.get('magic') == magic]
@@ -2944,7 +2986,8 @@ async def websocket_endpoint(websocket: WebSocket):
                     print(f"[WS] 🧹 User {user_id} target_cache 삭제 (MT5 TP/SL 청산 완료)")
 
             data = {
-                "mt5_connected": user_has_mt5 or mt5_connected or metaapi_connected,  # ★ MetaAPI 상태
+                "mt5_connected": user_has_mt5 or mt5_connected or metaapi_connected,  # ★ 전체 연결 상태
+                "metaapi_connected": metaapi_connected,  # ★★★ MetaAPI 연결 상태 (마틴 주문 제한용) ★★★
                 "broker": broker,
                 "account": display_account,  # ★ 유저 계정 우선
                 "server": server,

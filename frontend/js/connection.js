@@ -824,7 +824,45 @@ function connectWebSocket() {
                 updateMartinUI();
             }
         }
-        
+
+        // ★★★ MetaAPI 연결 상태 체크 (마틴 모드에서 연결 끊김 경고) ★★★
+        if (data.metaapi_connected !== undefined) {
+            const wasConnected = window._metaapiConnected;
+            window._metaapiConnected = data.metaapi_connected;
+
+            // 연결 끊김 감지 (이전에 연결되어 있었는데 끊김)
+            if (wasConnected === true && !data.metaapi_connected) {
+                console.log('[WS Live] ⚠️ MetaAPI 연결 끊김 감지!');
+
+                // 마틴 모드일 때 경고 토스트
+                if (currentMode === 'martin' && martinEnabled) {
+                    showToast('⚠️ MetaAPI 연결이 불안정합니다. 주문이 제한됩니다.', 'error', 5000);
+
+                    // 마틴 주문 버튼 비활성화
+                    document.querySelectorAll('.trade-btn').forEach(btn => {
+                        btn.style.opacity = '0.5';
+                        btn.style.pointerEvents = 'none';
+                    });
+                }
+            }
+
+            // 연결 복구 감지
+            if (wasConnected === false && data.metaapi_connected) {
+                console.log('[WS Live] ✅ MetaAPI 연결 복구!');
+
+                // 마틴 모드일 때 복구 토스트
+                if (currentMode === 'martin' && martinEnabled) {
+                    showToast('✅ MetaAPI 연결이 복구되었습니다.', 'success', 3000);
+
+                    // 마틴 주문 버튼 활성화
+                    document.querySelectorAll('.trade-btn').forEach(btn => {
+                        btn.style.opacity = '1';
+                        btn.style.pointerEvents = 'auto';
+                    });
+                }
+            }
+        }
+
         // ★ V5 패널 실시간 업데이트 (라이브 모드) - 3초 쓰로틀
         if (typeof updateMultiOrderPanelV5 === 'function') {
             if (!window._lastV5Update || Date.now() - window._lastV5Update > 3000) {

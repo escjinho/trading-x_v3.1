@@ -444,6 +444,16 @@ async function placeBuy() {
             showToast('⚠️ TP/SL 설정 실패! 안전을 위해 주문이 취소되었습니다.\n다시 시도해주세요.', 'error', 5000);
             return;
         }
+        // ★★★ MetaAPI 연결 끊김 처리 ★★★
+        if (result?.metaapi_disconnected) {
+            showToast('⚠️ MetaAPI 연결이 불안정합니다.\n잠시 후 다시 시도해주세요.', 'error', 5000);
+            return;
+        }
+        // ★★★ 증거금 부족 처리 ★★★
+        if (result?.margin_insufficient) {
+            showToast(`⚠️ 증거금이 부족합니다!\n가용마진: $${result.free_margin?.toFixed(0) || 0}, 필요마진: $${result.required_margin?.toFixed(0) || 0}`, 'error', 5000);
+            return;
+        }
         showToast(result?.message || 'Error', result?.success ? 'success' : 'error');
         if (result?.success) playSound('buy');
     } catch (e) { showToast('Network error', 'error'); }
@@ -522,6 +532,16 @@ async function placeSell() {
         }
         if (result?.tp_sl_failed) {
             showToast('⚠️ TP/SL 설정 실패! 안전을 위해 주문이 취소되었습니다.\n다시 시도해주세요.', 'error', 5000);
+            return;
+        }
+        // ★★★ MetaAPI 연결 끊김 처리 ★★★
+        if (result?.metaapi_disconnected) {
+            showToast('⚠️ MetaAPI 연결이 불안정합니다.\n잠시 후 다시 시도해주세요.', 'error', 5000);
+            return;
+        }
+        // ★★★ 증거금 부족 처리 ★★★
+        if (result?.margin_insufficient) {
+            showToast(`⚠️ 증거금이 부족합니다!\n가용마진: $${result.free_margin?.toFixed(0) || 0}, 필요마진: $${result.required_margin?.toFixed(0) || 0}`, 'error', 5000);
             return;
         }
         showToast(result?.message || 'Error', result?.success ? 'success' : 'error');
