@@ -1974,7 +1974,7 @@ async function connectMT5Account() {
             fetchAccountData();
             // ★ 폴링은 ws.onclose에서 자동 시작됨 (중복 방지)
 
-            showToast('🎉 MT5 계정 연결 완료!', 'success');
+            showToast('🔄 MT5 계정 연결 중... 잠시만 기다려주세요', 'success');
 
             // ★★★ MetaAPI 프로비저닝 상태 폴링 시작 ★★★
             startMetaAPIStatusPoll();
@@ -2080,14 +2080,17 @@ async function checkMetaAPIStatus() {
             }
 
         } else if (status === 'error') {
-            // ❌ 오류
+            // ❌ 오류 (서버에서 에러 메시지 포함)
+            const errorDetail = data.error_message || '거래 시스템 연결에 문제가 발생했습니다.';
             if (modalStatusText) {
-                modalStatusText.innerHTML = '<span style="color: #ff4444;">❌ 오류</span>';
+                modalStatusText.innerHTML = '<span style="color: #ff4444;">❌ 연결 실패</span>';
             }
             if (successMsg) {
-                successMsg.innerHTML = '⚠️ 거래 시스템 연결에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.';
+                successMsg.innerHTML = `⚠️ ${errorDetail}`;
                 successMsg.style.color = '#ff4444';
             }
+            // ★ 에러 토스트도 표시
+            showToast(`❌ ${errorDetail}`, 'error');
             if (mt5StatusEl) {
                 mt5StatusEl.innerHTML = '<span style="color: #ff4444;">❌ Error</span>';
             }

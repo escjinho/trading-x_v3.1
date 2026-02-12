@@ -118,6 +118,9 @@ auto_closed_cache = {}
 # ★★★ 자동청산 쿨다운 (중복 방지) ★★★
 auto_close_cooldown = {}
 
+# ★★★ MetaAPI 프로비저닝 에러 메시지 (metaapi-status에서 전달) ★★★
+metaapi_error_messages = {}
+
 # ★★★ 심볼별 스펙 (실시간 P/L 계산용) ★★★
 SYMBOL_SPECS = {
     "BTCUSD":   {"contract_size": 1,      "tick_size": 0.01,    "tick_value": 0.01},
@@ -2649,12 +2652,25 @@ def get_all_symbols():
 
 # ========== MetaAPI 백그라운드 프로비저닝 ==========
 async def _provision_metaapi_background(user_id: int, login: str, password: str, server: str):
-    """백그라운드에서 MetaAPI 유저 계정 프로비저닝 + Deploy"""
-    from .metaapi_service import provision_user_metaapi, deploy_user_metaapi
+    """백그라운드에서 MetaAPI 유저 계정 Deploy + 검증 + 잔고 조회"""
+    from .metaapi_service import provision_user_metaapi, deploy_user_metaapi, get_user_account_info
     import time as time_module
 
     print(f"[MetaAPI BG] 🔵 User {user_id} 백그라운드 프로비저닝 시작")
     start_time = time_module.time()
+
+    def _save_error(error_msg: str):
+        """에러 상태 저장 (DB + 메시지 캐시)"""
+        metaapi_error_messages[user_id] = error_msg
+        try:
+            _db = next(get_db())
+            _user = _db.query(User).filter(User.id == user_id).first()
+            if _user:
+                _user.metaapi_status = 'error'
+                _db.commit()
+            _db.close()
+        except:
+            pass
 
     try:
         db = next(get_db())
@@ -2663,70 +2679,80 @@ async def _provision_metaapi_background(user_id: int, login: str, password: str,
             print(f"[MetaAPI BG] ❌ User {user_id} 찾을 수 없음")
             return
 
-        # 이미 프로비저닝된 경우 deploy만 시도
-        if user.metaapi_account_id:
-            print(f"[MetaAPI BG] User {user_id} 기존 MetaAPI 계정 있음: {user.metaapi_account_id[:8]}...")
-            deploy_result = await deploy_user_metaapi(user.metaapi_account_id)
-            if deploy_result.get("success"):
-                user.metaapi_status = 'deployed'
-                user.metaapi_deployed_at = datetime.utcnow()
-                db.commit()
-                elapsed = time_module.time() - start_time
-                print(f"[MetaAPI BG] ✅ User {user_id} 기존 계정 deploy 완료 ({elapsed:.1f}초)")
-            else:
-                user.metaapi_status = 'error'
-                db.commit()
-                print(f"[MetaAPI BG] ❌ User {user_id} deploy 실패: {deploy_result.get('error')}")
-            db.close()
-            return
+        # ★★★ MetaAPI 계정 ID 확인 (이미 등록 or 신규) ★★★
+        account_id = user.metaapi_account_id
 
-        # 1단계: MetaAPI에 계정 등록
-        provision_result = await provision_user_metaapi(
-            user_id=user_id,
-            login=login,
-            password=password,
-            server=server
-        )
+        if not account_id:
+            # 신규 등록 필요
+            print(f"[MetaAPI BG] User {user_id} 신규 MetaAPI 계정 등록...")
+            provision_result = await provision_user_metaapi(
+                user_id=user_id, login=login, password=password, server=server
+            )
+            if not provision_result.get("success"):
+                error_msg = provision_result.get("error", "계정 등록 실패")
+                print(f"[MetaAPI BG] ❌ User {user_id} 프로비저닝 실패: {error_msg}")
+                db.close()
+                _save_error(error_msg)
+                return
 
-        if not provision_result.get("success"):
-            user.metaapi_status = 'error'
+            account_id = provision_result["account_id"]
+            user.metaapi_account_id = account_id
+            user.metaapi_status = 'deploying'
             db.commit()
-            db.close()
-            print(f"[MetaAPI BG] ❌ User {user_id} 프로비저닝 실패: {provision_result.get('error')}")
-            return
+            print(f"[MetaAPI BG] User {user_id} 계정 등록 완료: {account_id[:8]}...")
 
-        account_id = provision_result["account_id"]
-        user.metaapi_account_id = account_id
-        user.metaapi_status = 'deploying'
-        db.commit()
-        print(f"[MetaAPI BG] User {user_id} 계정 생성 완료: {account_id[:8]}...")
-
-        # 2단계: Deploy (활성화)
+        # ★★★ Deploy (활성화 + MT5 브로커 연결 = 계정 검증) ★★★
+        print(f"[MetaAPI BG] User {user_id} Deploy 시작: {account_id[:8]}...")
         deploy_result = await deploy_user_metaapi(account_id)
-        if deploy_result.get("success"):
-            user.metaapi_status = 'deployed'
-            user.metaapi_deployed_at = datetime.utcnow()
-            db.commit()
-            elapsed = time_module.time() - start_time
-            print(f"[MetaAPI BG] ✅ User {user_id} 프로비저닝+Deploy 완료 ({elapsed:.1f}초)")
-        else:
+
+        if not deploy_result.get("success"):
+            error_msg = deploy_result.get("error", "연결 실패")
+            # ★ 비밀번호/계정 오류 판별
+            error_lower = error_msg.lower()
+            if 'auth' in error_lower or 'password' in error_lower or 'credential' in error_lower or 'login' in error_lower:
+                user_msg = "계좌번호 또는 비밀번호가 올바르지 않습니다."
+            elif 'server' in error_lower or 'connect' in error_lower:
+                user_msg = "MT5 서버에 연결할 수 없습니다. 서버명을 확인해주세요."
+            else:
+                user_msg = f"연결 실패: {error_msg}"
+
+            print(f"[MetaAPI BG] ❌ User {user_id} Deploy 실패: {error_msg}")
             user.metaapi_status = 'error'
             db.commit()
-            print(f"[MetaAPI BG] ❌ User {user_id} deploy 실패: {deploy_result.get('error')}")
+            db.close()
+            metaapi_error_messages[user_id] = user_msg
+            return
 
+        # ★★★ Deploy 성공 → 계정 검증 완료! 잔고 조회 ★★★
+        user.metaapi_status = 'deployed'
+        user.metaapi_deployed_at = datetime.utcnow()
+        elapsed = time_module.time() - start_time
+        print(f"[MetaAPI BG] ✅ User {user_id} Deploy 완료 ({elapsed:.1f}초)")
+
+        # ★★★ 잔고 정보 가져오기 (deploy 직후) ★★★
+        try:
+            account_info = await get_user_account_info(user_id, account_id)
+            if account_info:
+                user.mt5_balance = account_info.get("balance", 0)
+                user.mt5_equity = account_info.get("equity", account_info.get("balance", 0))
+                user.mt5_margin = account_info.get("margin", 0)
+                user.mt5_free_margin = account_info.get("freeMargin", account_info.get("balance", 0))
+                user.mt5_profit = account_info.get("profit", 0)
+                user.mt5_leverage = account_info.get("leverage", 500)
+                user.mt5_currency = account_info.get("currency", "USD")
+                print(f"[MetaAPI BG] 💰 User {user_id} 잔고: ${account_info.get('balance', 0)}, Equity: ${account_info.get('equity', 0)}")
+        except Exception as info_err:
+            print(f"[MetaAPI BG] ⚠️ User {user_id} 잔고 조회 실패 (무시): {info_err}")
+
+        db.commit()
         db.close()
+
+        # 에러 메시지 정리
+        metaapi_error_messages.pop(user_id, None)
 
     except Exception as e:
         print(f"[MetaAPI BG] ❌ User {user_id} 백그라운드 오류: {e}")
-        try:
-            db = next(get_db())
-            user = db.query(User).filter(User.id == user_id).first()
-            if user:
-                user.metaapi_status = 'error'
-                db.commit()
-            db.close()
-        except:
-            pass
+        _save_error(str(e))
 
 
 # ========== MT5 계정 연결 ==========
@@ -2743,104 +2769,111 @@ async def connect_mt5_account(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """MT5 계정 연결 - 브릿지를 통한 실제 검증 후 저장"""
+    """MT5 계정 연결 - MetaAPI 직접 프로비저닝으로 검증 + 연결"""
     import time as time_module
+    from .metaapi_service import provision_user_metaapi
 
     print(f"[CONNECT] 🔵 User {current_user.id} 연결 시도: {request.account}@{request.server}")
 
     if not request.account or not request.password:
         return JSONResponse({"success": False, "message": "계좌번호와 비밀번호를 입력하세요"})
 
-    # 1. 브릿지 연결 확인 (파일 기반 하트비트)
-    bridge_age = time_module.time() - get_bridge_heartbeat()
-    print(f"[CONNECT] 브릿지 상태: age={bridge_age:.1f}초")
-    if bridge_age > 60:
+    # ★★★ 이전 에러 메시지 초기화 ★★★
+    metaapi_error_messages.pop(current_user.id, None)
+
+    # ★★★ 이미 MetaAPI 계정이 있는 경우: 같은 계정이면 deploy만, 다른 계정이면 새로 프로비저닝 ★★★
+    _existing_account_id = current_user.metaapi_account_id
+    _same_account = (current_user.mt5_account_number == request.account and _existing_account_id)
+
+    if _same_account:
+        print(f"[CONNECT] 🔄 User {current_user.id} 기존 계정 재연결: {_existing_account_id[:8]}...")
+        # DB 업데이트 (비밀번호 변경 대응)
+        current_user.has_mt5_account = True
+        current_user.mt5_server = request.server
+        current_user.mt5_password_encrypted = encrypt(request.password)
+        current_user.mt5_connected_at = datetime.utcnow()
+        current_user.metaapi_status = 'deploying'
+        current_user.metaapi_last_active = datetime.utcnow()
+        db.commit()
+
+        # 백그라운드에서 deploy
+        asyncio.create_task(_provision_metaapi_background(
+            user_id=current_user.id,
+            login=request.account,
+            password=request.password,
+            server=request.server
+        ))
+
         return JSONResponse({
-            "success": False,
-            "message": "MT5 브릿지 연결 없음. Windows 서버에서 브릿지를 실행해주세요."
+            "success": True,
+            "message": "MT5 계정 연결 중...",
+            "account": request.account,
+            "server": request.server,
+            "account_info": {
+                "balance": current_user.mt5_balance or 0,
+                "equity": current_user.mt5_equity or 0,
+                "leverage": current_user.mt5_leverage or 500,
+            },
+            "metaapi_status": "deploying"
         })
 
-    # 2. 검증 요청 생성 (파일 기반)
-    verify_id = str(uuid.uuid4())
-    set_pending_verification(verify_id, {
-        "account": request.account,
-        "password": request.password,
-        "server": request.server,
-        "created_at": time_module.time()
-    })
-    print(f"[CONNECT] 📝 검증 요청 생성: {verify_id[:8]}...")
+    # ★★★ 신규 계정: MetaAPI create_account로 등록 ★★★
+    try:
+        print(f"[CONNECT] 📝 MetaAPI 계정 등록 시작: {request.account}@{request.server}")
+        provision_result = await provision_user_metaapi(
+            user_id=current_user.id,
+            login=request.account,
+            password=request.password,
+            server=request.server
+        )
 
-    # 3. 브릿지가 검증하고 결과를 보낼 때까지 대기 (최대 15초)
-    max_wait = 15
-    waited = 0
-    while waited < max_wait:
-        results = get_verification_results()
-        if verify_id in results:
-            result = pop_verification_result(verify_id)
-            remove_pending_verification(verify_id)
-            print(f"[CONNECT] ✅ 검증 결과 수신: success={result.get('success')}")
+        if not provision_result.get("success"):
+            error_msg = provision_result.get("error", "MetaAPI 계정 등록 실패")
+            print(f"[CONNECT] ❌ MetaAPI 계정 등록 실패: {error_msg}")
+            return JSONResponse({
+                "success": False,
+                "message": f"계정 등록 실패: {error_msg}"
+            })
 
-            if result and result.get("success"):
-                # 검증 성공 - DB에 저장 (비밀번호 암호화 + 잔고 정보)
-                account_info = result.get("account_info", {})
+        account_id = provision_result["account_id"]
+        print(f"[CONNECT] ✅ MetaAPI 계정 등록 완료: {account_id[:8]}...")
 
-                current_user.has_mt5_account = True
-                current_user.mt5_account_number = request.account
-                current_user.mt5_server = request.server
-                current_user.mt5_password_encrypted = encrypt(request.password)
-                current_user.mt5_connected_at = datetime.utcnow()
+        # DB 저장
+        current_user.has_mt5_account = True
+        current_user.mt5_account_number = request.account
+        current_user.mt5_server = request.server
+        current_user.mt5_password_encrypted = encrypt(request.password)
+        current_user.mt5_connected_at = datetime.utcnow()
+        current_user.metaapi_account_id = account_id
+        current_user.metaapi_status = 'deploying'
+        current_user.metaapi_last_active = datetime.utcnow()
+        db.commit()
 
-                # ★★★ MT5 잔고 정보 저장 (검증 시점 스냅샷) ★★★
-                current_user.mt5_balance = account_info.get("balance", 0)
-                current_user.mt5_equity = account_info.get("equity", account_info.get("balance", 0))
-                current_user.mt5_margin = account_info.get("margin", 0)
-                current_user.mt5_free_margin = account_info.get("free_margin", account_info.get("balance", 0))
-                current_user.mt5_profit = account_info.get("profit", 0)
-                current_user.mt5_leverage = account_info.get("leverage", 500)
-                current_user.mt5_currency = account_info.get("currency", "USD")
+        print(f"[CONNECT] 🎉 DB 저장 완료: {request.account}, MetaAPI: {account_id[:8]}...")
 
-                # ★★★ MetaAPI 유저별 프로비저닝 시작 (백그라운드) ★★★
-                current_user.metaapi_status = 'provisioning'
-                current_user.metaapi_last_active = datetime.utcnow()
-                db.commit()
-                print(f"[CONNECT] 🎉 DB 저장 완료: {request.account}")
-                print(f"[CONNECT]    Balance: ${account_info.get('balance', 0)}, Equity: ${account_info.get('equity', 0)}")
+        # 백그라운드에서 deploy + 계정 검증 + 잔고 조회
+        asyncio.create_task(_provision_metaapi_background(
+            user_id=current_user.id,
+            login=request.account,
+            password=request.password,
+            server=request.server
+        ))
 
-                # 백그라운드에서 MetaAPI 프로비저닝 실행
-                asyncio.create_task(_provision_metaapi_background(
-                    user_id=current_user.id,
-                    login=request.account,
-                    password=request.password,
-                    server=request.server
-                ))
+        return JSONResponse({
+            "success": True,
+            "message": "MT5 계정 연결 중...",
+            "account": request.account,
+            "server": request.server,
+            "account_info": {},
+            "metaapi_status": "deploying"
+        })
 
-                return JSONResponse({
-                    "success": True,
-                    "message": "MT5 계정 검증 완료!",
-                    "account": request.account,
-                    "server": request.server,
-                    "account_info": result.get("account_info", {}),
-                    "metaapi_status": "provisioning"
-                })
-            else:
-                # 검증 실패
-                msg = result.get("message", "계좌번호 또는 비밀번호가 올바르지 않습니다") if result else "검증 실패"
-                print(f"[CONNECT] ❌ 검증 실패: {msg}")
-                return JSONResponse({
-                    "success": False,
-                    "message": msg
-                })
-
-        await asyncio.sleep(0.5)
-        waited += 0.5
-
-    # 4. 타임아웃
-    remove_pending_verification(verify_id)
-    print(f"[CONNECT] ⏰ 타임아웃 ({max_wait}초): 브릿지 응답 없음")
-    return JSONResponse({
-        "success": False,
-        "message": f"검증 시간 초과 ({max_wait}초). 브릿지가 응답하지 않습니다."
-    })
+    except Exception as e:
+        print(f"[CONNECT] ❌ 오류: {e}")
+        return JSONResponse({
+            "success": False,
+            "message": f"연결 오류: {str(e)}"
+        })
 
 
 @router.post("/disconnect")
@@ -2894,6 +2927,9 @@ async def get_metaapi_status(
     db: Session = Depends(get_db)
 ):
     """유저의 MetaAPI 프로비저닝 상태 조회"""
+    # ★ 에러 메시지 포함 (있으면)
+    error_msg = metaapi_error_messages.get(current_user.id)
+
     return JSONResponse({
         "success": True,
         "metaapi_status": current_user.metaapi_status or 'none',
@@ -2901,7 +2937,8 @@ async def get_metaapi_status(
         "has_mt5_account": current_user.has_mt5_account,
         "mt5_account": current_user.mt5_account_number,
         "deployed_at": current_user.metaapi_deployed_at.isoformat() if current_user.metaapi_deployed_at else None,
-        "last_active": current_user.metaapi_last_active.isoformat() if current_user.metaapi_last_active else None
+        "last_active": current_user.metaapi_last_active.isoformat() if current_user.metaapi_last_active else None,
+        "error_message": error_msg
     })
 
 
