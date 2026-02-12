@@ -2866,7 +2866,7 @@ async def websocket_endpoint(websocket: WebSocket):
         print(f"[LIVE WS] Anonymous connection (no token)")
 
     # ★★★ 유저별 MetaAPI 변수 초기화 ★★★
-    if '_ws_use_user_metaapi' not in dir():
+    if '_ws_use_user_metaapi' not in locals():
         _ws_use_user_metaapi = False
         _ws_user_metaapi_id = None
         _ws_user_metaapi_status = None
@@ -2982,7 +2982,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 margin = _u_acc.get("margin", 0)
                 free_margin = _u_acc.get("freeMargin", 0)
                 leverage = _u_acc.get("leverage", 0) or user_mt5_leverage or 500
-            elif metaapi_account and metaapi_account.get("balance"):
+            elif metaapi_account and metaapi_account.get("balance") and not _ws_use_user_metaapi:
+                # ★★★ 유저별 MetaAPI가 없는 경우에만 공유 MetaAPI 사용 ★★★
                 broker = "HedgeHood Pty Ltd"
                 login = user_mt5_account or 0
                 server = user_mt5_server or "HedgeHood-MT5"
@@ -3066,8 +3067,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 # equity 재계산
                 equity = balance + total_realtime_profit
 
-            # ★★★ 공유 MetaAPI 캐시 사용 (연결 시 빈 배열도 신뢰) ★★★
-            elif metaapi_connected:
+            # ★★★ 공유 MetaAPI 캐시 사용 (유저별 MetaAPI가 없는 경우만) ★★★
+            elif metaapi_connected and not _ws_use_user_metaapi:
                 positions_count = len(metaapi_positions)
                 for pos in metaapi_positions:
                     pos_symbol = pos.get("symbol", "")
