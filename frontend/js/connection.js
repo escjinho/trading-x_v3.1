@@ -2114,7 +2114,7 @@ async function checkMetaAPIStatus() {
             // ★ 에러 토스트도 표시
             showToast(`❌ ${errorDetail}`, 'error');
             if (mt5StatusEl) {
-                mt5StatusEl.innerHTML = '<span style="color: var(--accent-cyan);">Connecting..</span>';
+                mt5StatusEl.innerHTML = '<span style="color: var(--accent-cyan);">Connecting...</span>';
             }
             stopMetaAPIStatusPoll();
 
@@ -2128,7 +2128,7 @@ async function checkMetaAPIStatus() {
             // none 또는 기타 - MT5 연결된 경우 Waiting, 아니면 -
             if (mt5StatusEl) {
                 if (data.has_mt5_account) {
-                    mt5StatusEl.innerHTML = '<span style="color: var(--accent-cyan);">Connecting..</span>';
+                    mt5StatusEl.innerHTML = '<span style="color: var(--accent-cyan);">Connecting...</span>';
                 } else {
                     mt5StatusEl.innerHTML = '<span style="color: var(--text-muted);">-</span>';
                 }
