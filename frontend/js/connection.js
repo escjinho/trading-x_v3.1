@@ -8,6 +8,7 @@ let isPageVisible = true;  // ★ 페이지 가시성 상태
 let lastWsMessageTime = 0;  // ★ 마지막 WS 메시지 수신 시간
 let heartbeatTimer = null;  // ★ 하트비트 모니터 타이머
 let wsConnectionStartTime = 0;  // ★ WS 연결 시작 시간 (가짜 이벤트 방지)
+let _wsHasConnectedBefore = false;  // ★ 재연결 감지용 (최초 연결 vs 재연결 구분)
 
 // ★★★ 페이지 가시성 변경 핸들러 (모바일 앱 전환 대응) ★★★
 document.addEventListener('visibilitychange', function() {
@@ -281,6 +282,27 @@ function connectWebSocket() {
             pollingInterval = null;
             console.log('[WS] Polling stopped - WebSocket connected');
         }
+
+        // ★★★ 재연결 감지 시 전체 데이터 새로고침 ★★★
+        if (_wsHasConnectedBefore) {
+            console.log('[WS] 🔄 재연결 감지! 전체 데이터 새로고침...');
+            setTimeout(() => {
+                if (typeof loadCandles === 'function') {
+                    loadCandles();
+                    console.log('[WS] 📊 차트 캔들 리로드 완료');
+                }
+            }, 500);
+            if (isDemo) {
+                if (typeof fetchDemoData === 'function') fetchDemoData();
+            } else {
+                if (typeof fetchAccountData === 'function') fetchAccountData();
+            }
+            if (!isDemo && typeof checkMetaAPIStatus === 'function') {
+                setTimeout(() => checkMetaAPIStatus(), 1000);
+            }
+            window.lastIndicatorUpdate = 0;
+        }
+        _wsHasConnectedBefore = true;
 
         // ★★★ 하트비트 모니터 시작 ★★★
         lastWsMessageTime = Date.now();
