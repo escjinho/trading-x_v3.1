@@ -1473,6 +1473,14 @@ async def place_order(
                 user_target_cache[current_user.id] = target
                 print(f"[MetaAPI Order] 타겟 저장: User {current_user.id} = ${target}")
 
+            # ★★★ 주문 직후 빠른 동기화 예약 (3초 + 6초 후) ★★★
+            _now = time_module.time()
+            if current_user.id not in globals().get('_user_sync_soon_map', {}):
+                if '_user_sync_soon_map' not in globals():
+                    globals()['_user_sync_soon_map'] = {}
+                globals()['_user_sync_soon_map'][current_user.id] = [_now + 3, _now + 6]
+                print(f"[MetaAPI Order] ⏰ User {current_user.id} 빠른 동기화 예약: 3초+6초 후")
+
             print(f"[MetaAPI Order] ✅ 주문 성공: {order_type} {symbol} {volume} lot, positionId={position_id}")
 
             response_data = {
@@ -3001,6 +3009,8 @@ async def websocket_endpoint(websocket: WebSocket):
     last_user_metaapi_sync = 0  # 유저 MetaAPI 동기화 타이머
     _prev_user_position = None  # ★ 이전 유저 포지션 (청산 감지용)
     _position_disappeared_count = 0  # ★ 포지션 사라짐 연속 카운트 (오탐 방지)
+    _user_has_position = False  # ★ 유저 포지션 보유 여부 (동기화 주기 결정)
+    _user_sync_soon_at = []  # ★ 주문 직후 빠른 동기화 예약 시간 리스트
 
     symbols_list = ["BTCUSD", "EURUSD.r", "USDJPY.r", "XAUUSD.r", "US100.", "GBPUSD.r", "AUDUSD.r", "USDCAD.r", "ETHUSD"]
 
@@ -3067,20 +3077,44 @@ async def websocket_endpoint(websocket: WebSocket):
                 except Exception as _refresh_err:
                     print(f"[LIVE WS] DB refresh error: {_refresh_err}")
 
-            # ★★★ 유저별 MetaAPI 데이터 동기화 (10초마다) ★★★
-            if _ws_use_user_metaapi and user_id and (current_time - last_user_metaapi_sync) > 10:
-                last_user_metaapi_sync = current_time
-                try:
-                    _u_account = await get_user_account_info(user_id, _ws_user_metaapi_id)
-                    _u_positions = await get_user_positions(user_id, _ws_user_metaapi_id)
-                    if _u_account:
-                        user_metaapi_cache[user_id] = {
-                            "account_info": _u_account,
-                            "positions": _u_positions or [],
-                            "last_sync": current_time
-                        }
-                except Exception as _sync_err:
-                    print(f"[LIVE WS] User {user_id} MetaAPI sync error: {_sync_err}")
+            # ★ 주문 후 빠른 동기화 예약 확인
+            if user_id and '_user_sync_soon_map' in globals() and user_id in globals()['_user_sync_soon_map']:
+                _user_sync_soon_at = globals()['_user_sync_soon_map'].pop(user_id)
+                print(f"[LIVE WS] User {user_id} 빠른 동기화 예약 수신: {len(_user_sync_soon_at)}건")
+
+            # ★★★ 유저별 MetaAPI 데이터 동기화 (적응형 주기) ★★★
+            # 포지션 보유: 15초 | 대기: 60초 | 주문 직후: 즉시
+            if _ws_use_user_metaapi and user_id:
+                _sync_interval = 15 if _user_has_position else 60
+                _should_sync = (current_time - last_user_metaapi_sync) > _sync_interval
+
+                # ★ 주문 직후 빠른 동기화 (예약된 시간 도달 시)
+                if _user_sync_soon_at and current_time >= _user_sync_soon_at[0]:
+                    _should_sync = True
+                    _user_sync_soon_at.pop(0)
+                    print(f"[LIVE WS] User {user_id} 주문 후 빠른 동기화 실행")
+
+                if _should_sync:
+                    last_user_metaapi_sync = current_time
+                    try:
+                        _u_account = await get_user_account_info(user_id, _ws_user_metaapi_id)
+                        if _user_has_position:
+                            # 포지션 있을 때만 포지션도 조회 (API 1콜 절약)
+                            _u_positions = await get_user_positions(user_id, _ws_user_metaapi_id)
+                        else:
+                            # 포지션 없으면 계정정보만 (60초에 1콜)
+                            _u_positions = user_metaapi_cache.get(user_id, {}).get("positions", [])
+
+                        if _u_account:
+                            user_metaapi_cache[user_id] = {
+                                "account_info": _u_account,
+                                "positions": _u_positions or [],
+                                "last_sync": current_time
+                            }
+                            # ★ 포지션 보유 여부 업데이트
+                            _user_has_position = len([p for p in (_u_positions or []) if p.get("magic", 0) == magic]) > 0
+                    except Exception as _sync_err:
+                        print(f"[LIVE WS] User {user_id} MetaAPI sync error: {_sync_err}")
 
             # MetaAPI 연결 상태
             metaapi_connected = is_metaapi_connected()

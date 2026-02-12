@@ -2001,8 +2001,8 @@ async def startup_metaapi():
         # 5. 시세 업데이트 루프 시작 (10초 간격 - Rate Limit 방지)
         await metaapi_service.start_price_update_loop(interval=10.0)
 
-        # 6. 포지션 동기화 루프 시작 (30초 주기)
-        await metaapi_service.start_position_sync_loop(interval=30.0)
+        # 6. 포지션 동기화 루프 시작 (120초 주기)
+        await metaapi_service.start_position_sync_loop(interval=120.0)  # ★ 120초 (Rate Limit 최적화, Listener가 실시간 push)
 
         # 7. 비활동 유저 자동 undeploy 루프 시작 (5분마다 체크, 30분 비활동 시 undeploy)
         asyncio.create_task(_auto_undeploy_inactive_users())
