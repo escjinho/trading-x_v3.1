@@ -3003,6 +3003,17 @@ async def websocket_endpoint(websocket: WebSocket):
                         print(f"[LIVE WS] User {user_id} connected (MT5: {user_mt5_account}, Balance: ${user_mt5_balance}, MetaAPI: ✅ {_ws_user_metaapi_id[:8]}...)")
                     else:
                         print(f"[LIVE WS] User {user_id} connected (MT5: {user_mt5_account}, Balance: ${user_mt5_balance}, MetaAPI: ❌ {_ws_user_metaapi_status})")
+                        # ★★★ undeployed/error 상태면 자동 deploy 시도 ★★★
+                        if _ws_user_metaapi_id and _ws_user_metaapi_status in ('undeployed', 'error', None):
+                            print(f"[LIVE WS] 🔄 User {user_id} MetaAPI 자동 deploy 시작...")
+                            _mt5_pw = decrypt(user.mt5_password_encrypted) if user.mt5_password_encrypted else ""
+                            if _mt5_pw:
+                                asyncio.create_task(_provision_metaapi_background(
+                                    user_id=user_id,
+                                    login=user.mt5_account_number,
+                                    password=_mt5_pw,
+                                    server=user.mt5_server or "HedgeHood-MT5"
+                                ))
                 else:
                     print(f"[LIVE WS] User {user_id} connected (No MT5 account)")
                 db.close()
