@@ -2039,5 +2039,341 @@ async def test_connection():
     return True
 
 
+# ============================================================
+# 유저별 MetaAPI 계정 프로비저닝
+# ============================================================
+
+# 유저별 Trade 연결 풀 (메모리 캐시)
+user_trade_connections: Dict[int, Dict] = {}
+# 구조: {user_id: {"rpc": connection, "account": metaapi_account_obj, "last_active": timestamp, "account_info": {}, "positions": []}}
+
+# 유저별 MetaAPI 데이터 캐시
+user_metaapi_cache: Dict[int, Dict] = {}
+# 구조: {user_id: {"account_info": {...}, "positions": [...], "last_sync": timestamp}}
+
+
+async def provision_user_metaapi(user_id: int, login: str, password: str, server: str, name: str = "") -> Dict:
+    """
+    유저의 MT5 계정을 MetaAPI에 프로비저닝 (계정 생성)
+    - /mt5/connect 성공 후 호출됨
+    - 이미 프로비저닝된 경우 기존 account_id 반환
+    """
+    if not metaapi_service.api:
+        if not await metaapi_service.initialize():
+            return {"success": False, "error": "MetaAPI 초기화 실패"}
+
+    try:
+        print(f"[MetaAPI Provision] 🔵 User {user_id} 프로비저닝 시작: {login}@{server}")
+
+        # MetaAPI에 MT5 계정 등록
+        account = await metaapi_service.api.metatrader_account_api.create_account({
+            'name': f'TradingX-User{user_id}-{login}',
+            'type': 'cloud',
+            'login': str(login),
+            'password': password,
+            'server': server,
+            'platform': 'mt5',
+            'application': 'MetaApi',
+            'magic': 0
+        })
+
+        account_id = account.id
+        print(f"[MetaAPI Provision] ✅ User {user_id} 계정 생성 완료: {account_id}")
+
+        return {
+            "success": True,
+            "account_id": account_id,
+            "state": account.state
+        }
+
+    except Exception as e:
+        error_msg = str(e)
+        print(f"[MetaAPI Provision] ❌ User {user_id} 프로비저닝 실패: {error_msg}")
+
+        # 이미 존재하는 계정인 경우 처리
+        if 'already exists' in error_msg.lower() or 'duplicate' in error_msg.lower():
+            # 기존 계정 검색 시도
+            try:
+                accounts = await metaapi_service.api.metatrader_account_api.get_accounts()
+                for acc in accounts:
+                    if hasattr(acc, 'login') and str(acc.login) == str(login):
+                        print(f"[MetaAPI Provision] 🔄 User {user_id} 기존 계정 발견: {acc.id}")
+                        return {"success": True, "account_id": acc.id, "state": acc.state}
+            except Exception as search_err:
+                print(f"[MetaAPI Provision] 계정 검색 실패: {search_err}")
+
+        return {"success": False, "error": error_msg}
+
+
+async def deploy_user_metaapi(metaapi_account_id: str) -> Dict:
+    """
+    유저의 MetaAPI 계정을 deploy (활성화)
+    - deploy → wait_connected 순서
+    - 이미 deployed면 즉시 반환
+    """
+    if not metaapi_service.api:
+        return {"success": False, "error": "MetaAPI 미초기화"}
+
+    try:
+        account = await metaapi_service.api.metatrader_account_api.get_account(metaapi_account_id)
+
+        if account.state == 'DEPLOYED':
+            print(f"[MetaAPI Deploy] ✅ 이미 deployed: {metaapi_account_id[:8]}...")
+            return {"success": True, "state": "DEPLOYED", "already_deployed": True}
+
+        print(f"[MetaAPI Deploy] 🔵 Deploying: {metaapi_account_id[:8]}... (현재: {account.state})")
+        await account.deploy()
+        await account.wait_connected()
+
+        print(f"[MetaAPI Deploy] ✅ Deploy 완료: {metaapi_account_id[:8]}...")
+        return {"success": True, "state": "DEPLOYED"}
+
+    except Exception as e:
+        print(f"[MetaAPI Deploy] ❌ Deploy 실패: {e}")
+        return {"success": False, "error": str(e)}
+
+
+async def undeploy_user_metaapi(metaapi_account_id: str) -> Dict:
+    """
+    유저의 MetaAPI 계정을 undeploy (비활성화 - 비용 절감)
+    - 30분 비활동 시 호출
+    """
+    if not metaapi_service.api:
+        return {"success": False, "error": "MetaAPI 미초기화"}
+
+    try:
+        account = await metaapi_service.api.metatrader_account_api.get_account(metaapi_account_id)
+
+        if account.state == 'UNDEPLOYED':
+            print(f"[MetaAPI Undeploy] 이미 undeployed: {metaapi_account_id[:8]}...")
+            return {"success": True, "state": "UNDEPLOYED"}
+
+        # 연결 풀에서 제거
+        for uid, conn_data in list(user_trade_connections.items()):
+            if conn_data.get("metaapi_account_id") == metaapi_account_id:
+                try:
+                    if conn_data.get("rpc"):
+                        await conn_data["rpc"].close()
+                except:
+                    pass
+                del user_trade_connections[uid]
+                print(f"[MetaAPI Undeploy] User {uid} 연결 풀 정리")
+                break
+
+        await account.undeploy()
+        print(f"[MetaAPI Undeploy] ✅ Undeploy 완료: {metaapi_account_id[:8]}...")
+        return {"success": True, "state": "UNDEPLOYED"}
+
+    except Exception as e:
+        print(f"[MetaAPI Undeploy] ❌ Undeploy 실패: {e}")
+        return {"success": False, "error": str(e)}
+
+
+async def get_user_trade_connection(user_id: int, metaapi_account_id: str):
+    """
+    유저별 Trade RPC 연결 가져오기 (없으면 생성)
+    - Connection Pool 역할
+    """
+    import time as time_module
+
+    # 1. 캐시에 있으면 반환
+    if user_id in user_trade_connections:
+        conn_data = user_trade_connections[user_id]
+        rpc = conn_data.get("rpc")
+        if rpc:
+            conn_data["last_active"] = time_module.time()
+            return rpc
+
+    # 2. 없으면 새로 연결
+    if not metaapi_service.api:
+        if not await metaapi_service.initialize():
+            return None
+
+    try:
+        print(f"[MetaAPI Pool] 🔵 User {user_id} RPC 연결 생성: {metaapi_account_id[:8]}...")
+
+        account = await metaapi_service.api.metatrader_account_api.get_account(metaapi_account_id)
+
+        # Deploy 안 되어 있으면 deploy
+        if account.state != 'DEPLOYED':
+            print(f"[MetaAPI Pool] User {user_id} deploy 필요 (현재: {account.state})")
+            await account.deploy()
+            await account.wait_connected()
+
+        # RPC 연결
+        rpc = account.get_rpc_connection()
+        await rpc.connect()
+        await rpc.wait_synchronized()
+
+        # 풀에 저장
+        user_trade_connections[user_id] = {
+            "rpc": rpc,
+            "account": account,
+            "metaapi_account_id": metaapi_account_id,
+            "last_active": time_module.time(),
+            "connected_at": time_module.time()
+        }
+
+        print(f"[MetaAPI Pool] ✅ User {user_id} RPC 연결 완료")
+        return rpc
+
+    except Exception as e:
+        print(f"[MetaAPI Pool] ❌ User {user_id} RPC 연결 실패: {e}")
+        return None
+
+
+async def get_user_account_info(user_id: int, metaapi_account_id: str) -> Optional[Dict]:
+    """유저별 계정 정보 조회 (잔고, 자산, 마진 등)"""
+    rpc = await get_user_trade_connection(user_id, metaapi_account_id)
+    if not rpc:
+        return None
+
+    try:
+        info = await rpc.get_account_information()
+        result = {
+            "broker": info.get("broker", ""),
+            "balance": info.get("balance", 0),
+            "equity": info.get("equity", 0),
+            "margin": info.get("margin", 0),
+            "freeMargin": info.get("freeMargin", 0) or info.get("free_margin", 0),
+            "leverage": info.get("leverage", 0),
+            "currency": info.get("currency", "USD"),
+            "login": info.get("login", 0)
+        }
+
+        # 캐시 업데이트
+        if user_id not in user_metaapi_cache:
+            user_metaapi_cache[user_id] = {}
+        user_metaapi_cache[user_id]["account_info"] = result
+        user_metaapi_cache[user_id]["last_sync"] = time.time()
+
+        return result
+    except Exception as e:
+        print(f"[MetaAPI] User {user_id} 계정정보 조회 실패: {e}")
+        return user_metaapi_cache.get(user_id, {}).get("account_info")
+
+
+async def get_user_positions(user_id: int, metaapi_account_id: str) -> List[Dict]:
+    """유저별 포지션 목록 조회"""
+    rpc = await get_user_trade_connection(user_id, metaapi_account_id)
+    if not rpc:
+        return []
+
+    try:
+        positions = await rpc.get_positions()
+        result = positions if positions else []
+
+        # 캐시 업데이트
+        if user_id not in user_metaapi_cache:
+            user_metaapi_cache[user_id] = {}
+        user_metaapi_cache[user_id]["positions"] = result
+        user_metaapi_cache[user_id]["last_sync"] = time.time()
+
+        return result
+    except Exception as e:
+        print(f"[MetaAPI] User {user_id} 포지션 조회 실패: {e}")
+        return user_metaapi_cache.get(user_id, {}).get("positions", [])
+
+
+async def place_order_for_user(user_id: int, metaapi_account_id: str, symbol: str, order_type: str, volume: float, sl_points: int = 0, tp_points: int = 0, magic: int = 100000, comment: str = "Trading-X") -> Dict:
+    """유저별 MetaAPI 계정으로 주문 실행"""
+    rpc = await get_user_trade_connection(user_id, metaapi_account_id)
+    if not rpc:
+        return {"success": False, "error": "MetaAPI 연결 실패"}
+
+    try:
+        # 심볼별 스펙
+        SYMBOL_SPECS = {
+            "BTCUSD":   {"tick_size": 0.01},
+            "ETHUSD":   {"tick_size": 0.01},
+            "XAUUSD.r": {"tick_size": 0.01},
+            "EURUSD.r": {"tick_size": 0.00001},
+            "USDJPY.r": {"tick_size": 0.001},
+            "GBPUSD.r": {"tick_size": 0.00001},
+            "AUDUSD.r": {"tick_size": 0.00001},
+            "USDCAD.r": {"tick_size": 0.00001},
+            "US100.":   {"tick_size": 0.01},
+        }
+        tick_size = SYMBOL_SPECS.get(symbol, {"tick_size": 0.01})["tick_size"]
+
+        options = {'comment': comment, 'magic': magic}
+
+        # SL/TP 가격 계산
+        if sl_points > 0 or tp_points > 0:
+            price_data = quote_price_cache.get(symbol, {})
+            bid = price_data.get('bid', 0)
+            ask = price_data.get('ask', 0)
+
+            if bid > 0 and ask > 0:
+                if order_type.upper() == 'BUY':
+                    if tp_points > 0:
+                        options['takeProfit'] = round(ask + (tp_points * tick_size), 5)
+                    if sl_points > 0:
+                        options['stopLoss'] = round(ask - (sl_points * tick_size), 5)
+                else:
+                    if tp_points > 0:
+                        options['takeProfit'] = round(bid - (tp_points * tick_size), 5)
+                    if sl_points > 0:
+                        options['stopLoss'] = round(bid + (sl_points * tick_size), 5)
+
+        if order_type.upper() == 'BUY':
+            result = await rpc.create_market_buy_order(symbol=symbol, volume=volume, options=options)
+        else:
+            result = await rpc.create_market_sell_order(symbol=symbol, volume=volume, options=options)
+
+        print(f"[MetaAPI User Order] User {user_id}: {order_type} {symbol} {volume} lot → {result}")
+
+        if result.get('stringCode') == 'TRADE_RETCODE_DONE':
+            position_id = result.get('positionId')
+
+            # TP/SL 재설정 (안전장치)
+            if position_id and (options.get('stopLoss') or options.get('takeProfit')):
+                try:
+                    await asyncio.sleep(0.5)
+                    await rpc.modify_position(
+                        position_id=position_id,
+                        stop_loss=options.get('stopLoss'),
+                        take_profit=options.get('takeProfit')
+                    )
+                except Exception as mod_err:
+                    print(f"[MetaAPI User Order] TP/SL modify 실패: {mod_err}")
+
+            return {
+                "success": True,
+                "positionId": position_id,
+                "orderId": result.get('orderId', ''),
+                "stringCode": result.get('stringCode')
+            }
+        else:
+            return {
+                "success": False,
+                "error": result.get('description', result.get('stringCode', 'Unknown')),
+                "stringCode": result.get('stringCode')
+            }
+
+    except Exception as e:
+        print(f"[MetaAPI User Order] ❌ User {user_id} 주문 실패: {e}")
+        return {"success": False, "error": str(e)}
+
+
+async def close_position_for_user(user_id: int, metaapi_account_id: str, position_id: str) -> Dict:
+    """유저별 MetaAPI 계정으로 포지션 청산"""
+    rpc = await get_user_trade_connection(user_id, metaapi_account_id)
+    if not rpc:
+        return {"success": False, "error": "MetaAPI 연결 실패"}
+
+    try:
+        result = await rpc.close_position(position_id)
+        print(f"[MetaAPI User Close] User {user_id}: position {position_id} → {result}")
+
+        if result.get('stringCode') == 'TRADE_RETCODE_DONE':
+            return {"success": True, "stringCode": result.get('stringCode')}
+        else:
+            return {"success": False, "error": result.get('description', 'Unknown')}
+    except Exception as e:
+        print(f"[MetaAPI User Close] ❌ User {user_id} 청산 실패: {e}")
+        return {"success": False, "error": str(e)}
+
+
 if __name__ == '__main__':
     asyncio.run(test_connection())

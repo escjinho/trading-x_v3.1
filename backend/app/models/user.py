@@ -32,7 +32,13 @@ class User(Base):
     mt5_profit = Column(Float, nullable=True)         # MT5 미실현 손익
     mt5_leverage = Column(Integer, nullable=True)     # MT5 레버리지
     mt5_currency = Column(String(10), nullable=True)  # MT5 통화 (USD 등)
-    
+
+    # ========== MetaAPI 유저별 계정 관리 ==========
+    metaapi_account_id = Column(String(100), nullable=True)   # MetaAPI에서 발급받은 계정 UUID
+    metaapi_status = Column(String(20), default='none')       # none/provisioning/deployed/undeployed/error
+    metaapi_deployed_at = Column(DateTime(timezone=True), nullable=True)   # 마지막 deploy 시각
+    metaapi_last_active = Column(DateTime(timezone=True), nullable=True)   # 마지막 활동 시각
+
     # ========== Demo 마틴 모드 필드 ==========
     demo_martin_step = Column(Integer, default=1)           # 현재 마틴 단계
     demo_martin_max_steps = Column(Integer, default=5)      # 최대 마틴 단계
