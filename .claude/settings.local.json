@@ -71,7 +71,8 @@
       "Bash(__NEW_LINE_b325a9e26ab46114__ echo \"==========================================\")",
       "Bash(__NEW_LINE_b325a9e26ab46114__ echo \"\")",
       "Bash(psql:*)",
-      "Bash(ssh root@158.247.251.146 \"git pull origin main && systemctl restart trading-x\")"
+      "Bash(ssh root@158.247.251.146 \"git pull origin main && systemctl restart trading-x\")",
+      "Bash(git revert:*)"
     ]
   }
 }

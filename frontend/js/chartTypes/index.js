@@ -221,34 +221,38 @@ const ChartTypeManager = {
      * 실시간 캔들 업데이트
      */
     updateLastCandle(candle) {
-        if (!this.series) return;
+        if (!this.series || !candle) return;
 
-        // candleData 업데이트
-        if (this.candleData.length > 0) {
-            const lastIndex = this.candleData.length - 1;
-            if (this.candleData[lastIndex].time === candle.time) {
-                this.candleData[lastIndex] = candle;
-            } else {
-                this.candleData.push(candle);
+        try {
+            // candleData 업데이트
+            if (this.candleData.length > 0) {
+                const lastIndex = this.candleData.length - 1;
+                if (this.candleData[lastIndex].time === candle.time) {
+                    this.candleData[lastIndex] = candle;
+                } else {
+                    this.candleData.push(candle);
+                }
             }
-        }
 
-        // 시리즈 업데이트
-        const type = this.currentType;
+            // 시리즈 업데이트
+            const type = this.currentType;
 
-        if (type === this.TYPES.LINE) {
-            this.series.update({
-                time: candle.time,
-                value: candle.close
-            });
-        } else {
-            this.series.update({
-                time: candle.time,
-                open: candle.open,
-                high: candle.high,
-                low: candle.low,
-                close: candle.close
-            });
+            if (type === this.TYPES.LINE) {
+                this.series.update({
+                    time: candle.time,
+                    value: candle.close
+                });
+            } else {
+                this.series.update({
+                    time: candle.time,
+                    open: candle.open,
+                    high: candle.high,
+                    low: candle.low,
+                    close: candle.close
+                });
+            }
+        } catch (e) {
+            // lightweight-charts "Value is null" 무시
         }
     },
 
