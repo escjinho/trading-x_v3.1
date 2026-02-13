@@ -3472,7 +3472,7 @@ async def websocket_endpoint(websocket: WebSocket):
             ws_auto_closed_info = None
             if user_id and user_id in auto_closed_cache:
                 cached = auto_closed_cache[user_id]
-                if current_ts <= cached.get("until", 0):
+                if current_time <= cached.get("until", 0):
                     ws_auto_closed_info = cached.get("info")
                 else:
                     del auto_closed_cache[user_id]
@@ -3505,7 +3505,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 closed_profit = _user_closed_event["profit"]
                 is_win = _user_closed_event["is_win"]
                 closed_message = f"{'이익' if is_win else '손실'} 청산: ${closed_profit:.2f}"
-                closed_at = current_ts
+                closed_at = current_time
 
                 print(f"[WS] 📢 유저별 MetaAPI 청산: {_user_closed_event['symbol']} P/L=${closed_profit:.2f}")
 
@@ -3567,7 +3567,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 closed_profit = first_event.get('profit', 0)
                 is_win = closed_profit >= 0
                 closed_message = f"{'이익' if is_win else '손실'} 청산: ${closed_profit:.2f}"
-                closed_at = current_ts
+                closed_at = current_time
 
                 if sync_event is None:
                     sync_event = {}
