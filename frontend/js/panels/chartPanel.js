@@ -34,7 +34,7 @@ const ChartPanel = {
      * ★ 부드러운 보간 적용
      */
     safeUpdateCandle(candleData) {
-        if (!candleData || !chart || !candleSeries || !candleData.time || !candleData.close) {
+        if (!candleData || !chart || !candleSeries || !candleData.close) {
             return false;
         }
 
@@ -102,8 +102,8 @@ const ChartPanel = {
             this._animCurrent += diff * 0.3;
         }
 
-        // 캔들 업데이트
-        if (this.lastCandleData && candleSeries) {
+        // 캔들 업데이트 (★ try-catch로 "Value is null" 에러 방어)
+        if (this.lastCandleData && candleSeries && this.lastCandleTime) {
             this.lastCandleData.close = this._animCurrent;
             const updatedCandle = {
                 time: this.lastCandleTime,
@@ -113,10 +113,14 @@ const ChartPanel = {
                 close: this._animCurrent
             };
 
-            if (typeof ChartTypeManager !== 'undefined') {
-                ChartTypeManager.updateLastCandle(updatedCandle);
-            } else {
-                candleSeries.update(updatedCandle);
+            try {
+                if (typeof ChartTypeManager !== 'undefined') {
+                    ChartTypeManager.updateLastCandle(updatedCandle);
+                } else {
+                    candleSeries.update(updatedCandle);
+                }
+            } catch (e) {
+                // lightweight-charts "Value is null" 에러 무시
             }
         }
 
@@ -331,20 +335,31 @@ const ChartPanel = {
                 // 기준가격 설정 (첫 번째 캔들의 시가)
                 this.referencePrice = data.candles[0].open;
 
-                // 인디케이터 데이터 설정 (★ null 체크 추가)
+                // 인디케이터 데이터 설정 (★ null 체크 + try-catch)
                 if (data.indicators) {
-                    if (data.indicators.bb_upper && bbUpperSeries) bbUpperSeries.setData(data.indicators.bb_upper);
-                    if (data.indicators.bb_middle && bbMiddleSeries) bbMiddleSeries.setData(data.indicators.bb_middle);
-                    if (data.indicators.bb_lower && bbLowerSeries) bbLowerSeries.setData(data.indicators.bb_lower);
-                    if (data.indicators.lwma && lwmaSeries) lwmaSeries.setData(data.indicators.lwma);
+                    try {
+                        if (data.indicators.bb_upper && data.indicators.bb_upper.length > 0 && bbUpperSeries) bbUpperSeries.setData(data.indicators.bb_upper);
+                        if (data.indicators.bb_middle && data.indicators.bb_middle.length > 0 && bbMiddleSeries) bbMiddleSeries.setData(data.indicators.bb_middle);
+                        if (data.indicators.bb_lower && data.indicators.bb_lower.length > 0 && bbLowerSeries) bbLowerSeries.setData(data.indicators.bb_lower);
+                        if (data.indicators.lwma && data.indicators.lwma.length > 0 && lwmaSeries) lwmaSeries.setData(data.indicators.lwma);
+                    } catch (e) {
+                        console.warn('[ChartPanel] 인디케이터 setData 에러 (무시):', e.message);
+                    }
                 }
 
-                // 보이는 범위 설정 (최근 150개 캔들) + 오른쪽 여백 유지
+                // ★ 보이는 범위 명시적 설정 (최근 150개 캔들)
                 const visibleBars = 150;
                 if (data.candles.length > visibleBars) {
                     const from = data.candles[data.candles.length - visibleBars].time;
-                    // setVisibleRange 대신 scrollToRealTime 사용 (rightOffset 유지)
-                    chart.timeScale().scrollToRealTime();
+                    const to = data.candles[data.candles.length - 1].time;
+                    try {
+                        chart.timeScale().setVisibleRange({ from, to });
+                    } catch (e) {
+                        console.warn('[ChartPanel] setVisibleRange failed, using fitContent:', e.message);
+                        chart.timeScale().fitContent();
+                    }
+                } else {
+                    chart.timeScale().fitContent();
                 }
 
                 // 마지막 가격 업데이트
