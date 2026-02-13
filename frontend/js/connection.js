@@ -655,17 +655,20 @@ function connectWebSocket() {
                     // ★★★ 사용자 청산 시 이중 팝업 방지 ★★★
                     if (window._userClosing) {
                         console.log('[WS Live] ⏭️ 사용자 청산 중 — WS 토스트 스킵');
+                    } else if (currentMode === 'martin' && martinEnabled) {
+                        // ★★★ 마틴 모드: auto_closed 이벤트 대기 (베이직 팝업 차단) ★★★
+                        console.log('[WS Live] ⏳ 마틴 모드 — auto_closed 이벤트 대기 중');
                     } else {
-                        // MT5 SL/TP 또는 외부 청산 감지
+                        // ★★★ Basic/NoLimit 모드: 즉시 청산 토스트 ★★★
                         const lastProfit = window.lastLivePosition.profit || 0;
                         playSound('close');
-                        
+
                         if (lastProfit >= 0) {
                             showToast(`🎯 청산 완료! +$${lastProfit.toFixed(2)}`, 'success');
                         } else {
                             showToast(`💔 청산 완료! -$${Math.abs(lastProfit).toFixed(2)}`, 'error');
                         }
-                        
+
                         if (typeof updateTodayPL === 'function') {
                             updateTodayPL(lastProfit);
                         }

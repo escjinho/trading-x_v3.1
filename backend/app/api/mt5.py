@@ -3321,6 +3321,35 @@ async def websocket_endpoint(websocket: WebSocket):
                             "magic": pos.get("magic", 0)
                         }
 
+                # ★★★ MetaAPI 동기화 지연 보완: user_live_cache fallback ★★★
+                # MetaAPI에 포지션 없지만 user_live_cache에 있으면 (주문 직후 3~10초)
+                if not position_data and user_cache and user_cache.get("positions"):
+                    for pos in user_cache["positions"]:
+                        if pos.get("magic") == magic:
+                            pos_symbol = pos.get("symbol", "")
+                            pos_type = pos.get("type", 0)
+                            pos_volume = pos.get("volume", 0)
+                            pos_open = pos.get("price_open", 0)
+
+                            current_price_data = all_prices.get(pos_symbol, {})
+                            current_bid = current_price_data.get("bid", pos_open)
+                            current_ask = current_price_data.get("ask", pos_open)
+                            realtime_profit = calculate_realtime_profit(
+                                pos_type, pos_symbol, pos_volume, pos_open, current_bid, current_ask
+                            )
+
+                            position_data = {
+                                "type": "BUY" if pos_type == 0 else "SELL",
+                                "symbol": pos_symbol,
+                                "volume": pos_volume,
+                                "entry": pos_open,
+                                "profit": realtime_profit,
+                                "ticket": pos.get("ticket", 0),
+                                "magic": pos.get("magic", 0)
+                            }
+                            positions_count = max(positions_count, 1)
+                            break
+
                 # equity 재계산
                 equity = balance + total_realtime_profit
 
