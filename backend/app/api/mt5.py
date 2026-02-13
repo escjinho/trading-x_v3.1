@@ -121,6 +121,10 @@ auto_close_cooldown = {}
 # ★★★ MetaAPI 프로비저닝 에러 메시지 (metaapi-status에서 전달) ★★★
 metaapi_error_messages = {}
 
+# ★ 자동 deploy 쿨다운 (유저별 마지막 시도 시간)
+_auto_deploy_cooldown = {}  # {user_id: timestamp}
+AUTO_DEPLOY_COOLDOWN_SEC = 60  # 60초 쿨다운
+
 # ★★★ 심볼별 스펙 (실시간 P/L 계산용) ★★★
 SYMBOL_SPECS = {
     "BTCUSD":   {"contract_size": 1,      "tick_size": 0.01,    "tick_value": 0.01},
@@ -2910,19 +2914,26 @@ async def get_metaapi_status(
     # ★ 에러 메시지 포함 (있으면)
     error_msg = metaapi_error_messages.get(current_user.id)
 
-    # ★★★ undeployed 상태면 자동 deploy 시도 (홈 탭 등에서 폴링 시 자동 복구) ★★★
+    # ★★★ undeployed 상태면 자동 deploy 시도 (쿨다운 60초) ★★★
     _status = current_user.metaapi_status
     _account_id = current_user.metaapi_account_id
     if _account_id and _status in ('undeployed', 'error', None):
-        _mt5_pw = decrypt(current_user.mt5_password_encrypted) if current_user.mt5_password_encrypted else ""
-        if _mt5_pw and current_user.mt5_account_number:
-            print(f"[MetaAPI Status] 🔄 User {current_user.id} 자동 deploy 시작 (status={_status})")
-            asyncio.create_task(_provision_metaapi_background(
-                user_id=current_user.id,
-                login=current_user.mt5_account_number,
-                password=_mt5_pw,
-                server=current_user.mt5_server or "HedgeHood-MT5"
-            ))
+        import time as _time
+        _now = _time.time()
+        _last_attempt = _auto_deploy_cooldown.get(current_user.id, 0)
+        if _now - _last_attempt >= AUTO_DEPLOY_COOLDOWN_SEC:
+            _mt5_pw = decrypt(current_user.mt5_password_encrypted) if current_user.mt5_password_encrypted else ""
+            if _mt5_pw and current_user.mt5_account_number:
+                _auto_deploy_cooldown[current_user.id] = _now
+                print(f"[MetaAPI Status] 🔄 User {current_user.id} 자동 deploy 시작 (status={_status})")
+                asyncio.create_task(_provision_metaapi_background(
+                    user_id=current_user.id,
+                    login=current_user.mt5_account_number,
+                    password=_mt5_pw,
+                    server=current_user.mt5_server or "HedgeHood-MT5"
+                ))
+        else:
+            print(f"[MetaAPI Status] ⏳ User {current_user.id} deploy 쿨다운 중 ({int(AUTO_DEPLOY_COOLDOWN_SEC - (_now - _last_attempt))}초 남음)")
 
     return JSONResponse({
         "success": True,
@@ -3024,17 +3035,24 @@ async def websocket_endpoint(websocket: WebSocket):
                         print(f"[LIVE WS] User {user_id} connected (MT5: {user_mt5_account}, Balance: ${user_mt5_balance}, MetaAPI: ✅ {_ws_user_metaapi_id[:8]}...)")
                     else:
                         print(f"[LIVE WS] User {user_id} connected (MT5: {user_mt5_account}, Balance: ${user_mt5_balance}, MetaAPI: ❌ {_ws_user_metaapi_status})")
-                        # ★★★ undeployed/error 상태면 자동 deploy 시도 ★★★
+                        # ★★★ undeployed/error 상태면 자동 deploy 시도 (쿨다운 60초) ★★★
                         if _ws_user_metaapi_id and _ws_user_metaapi_status in ('undeployed', 'error', None):
-                            print(f"[LIVE WS] 🔄 User {user_id} MetaAPI 자동 deploy 시작...")
-                            _mt5_pw = decrypt(user.mt5_password_encrypted) if user.mt5_password_encrypted else ""
-                            if _mt5_pw:
-                                asyncio.create_task(_provision_metaapi_background(
-                                    user_id=user_id,
-                                    login=user.mt5_account_number,
-                                    password=_mt5_pw,
-                                    server=user.mt5_server or "HedgeHood-MT5"
-                                ))
+                            import time as _time
+                            _now = _time.time()
+                            _last_attempt = _auto_deploy_cooldown.get(user_id, 0)
+                            if _now - _last_attempt >= AUTO_DEPLOY_COOLDOWN_SEC:
+                                _auto_deploy_cooldown[user_id] = _now
+                                print(f"[LIVE WS] 🔄 User {user_id} MetaAPI 자동 deploy 시작...")
+                                _mt5_pw = decrypt(user.mt5_password_encrypted) if user.mt5_password_encrypted else ""
+                                if _mt5_pw:
+                                    asyncio.create_task(_provision_metaapi_background(
+                                        user_id=user_id,
+                                        login=user.mt5_account_number,
+                                        password=_mt5_pw,
+                                        server=user.mt5_server or "HedgeHood-MT5"
+                                    ))
+                            else:
+                                print(f"[LIVE WS] ⏳ User {user_id} deploy 쿨다운 중 ({int(AUTO_DEPLOY_COOLDOWN_SEC - (_now - _last_attempt))}초 남음)")
                 else:
                     print(f"[LIVE WS] User {user_id} connected (No MT5 account)")
                 db.close()
