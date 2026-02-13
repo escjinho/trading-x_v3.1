@@ -3071,6 +3071,9 @@ async def websocket_endpoint(websocket: WebSocket):
     _position_disappeared_count = 0  # ★ 포지션 사라짐 연속 카운트 (오탐 방지)
     _user_has_position = False  # ★ 유저 포지션 보유 여부 (동기화 주기 결정)
     _user_sync_soon_at = []  # ★ 주문 직후 빠른 동기화 예약 시간 리스트
+    _last_sent_position = None  # ★ 포지션 홀드: 마지막 전송 포지션
+    _last_position_time = 0  # ★ 포지션 홀드: 마지막 포지션 있었던 시간
+    POSITION_HOLD_SEC = 3  # ★ 포지션 홀드: null 유예 시간 (초)
 
     symbols_list = ["BTCUSD", "EURUSD.r", "USDJPY.r", "XAUUSD.r", "US100.", "GBPUSD.r", "AUDUSD.r", "USDCAD.r", "ETHUSD"]
 
@@ -3676,6 +3679,18 @@ async def websocket_endpoint(websocket: WebSocket):
                 if user_id in user_target_cache:
                     del user_target_cache[user_id]
                     print(f"[WS] 🧹 User {user_id} target_cache 삭제 (MT5 TP/SL 청산 완료)")
+
+            # ★★★ 포지션 홀드: MetaAPI 동기화 지연 시 null 깜빡임 방지 ★★★
+            if position_data:
+                _last_sent_position = position_data
+                _last_position_time = current_time
+            elif _last_sent_position and (current_time - _last_position_time) < POSITION_HOLD_SEC:
+                # 포지션이 사라졌지만 3초 이내 → 이전 포지션 유지 (자동청산 아닐 때만)
+                if not auto_closed:
+                    position_data = _last_sent_position
+                    positions_count = max(positions_count, 1)
+            else:
+                _last_sent_position = None
 
             data = {
                 "mt5_connected": user_has_mt5 or mt5_connected or metaapi_connected,  # ★ 전체 연결 상태

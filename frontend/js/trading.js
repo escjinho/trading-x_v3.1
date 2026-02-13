@@ -384,9 +384,9 @@ async function placeBuy() {
         return;
     }
 
-    // ★★★ 마틴 모드: MetaAPI 연결 상태 사전 체크 ★★★
-    if (currentMode === 'martin' && martinEnabled && window._metaapiConnected === false) {
-        showToast('⚠️ MetaAPI 연결이 불안정합니다.\n잠시 후 다시 시도해주세요.', 'error', 5000);
+    // ★★★ 라이브 모드: MetaAPI 연결 상태 사전 체크 (모든 모드) ★★★
+    if (window._metaapiConnected === false) {
+        showToast('⚠️ Trading API 연결 중입니다.\n잠시 후 다시 시도해주세요.', 'error', 5000);
         return;
     }
 
@@ -486,9 +486,9 @@ async function placeSell() {
         return;
     }
 
-    // ★★★ 마틴 모드: MetaAPI 연결 상태 사전 체크 ★★★
-    if (currentMode === 'martin' && martinEnabled && window._metaapiConnected === false) {
-        showToast('⚠️ MetaAPI 연결이 불안정합니다.\n잠시 후 다시 시도해주세요.', 'error', 5000);
+    // ★★★ 라이브 모드: MetaAPI 연결 상태 사전 체크 (모든 모드) ★★★
+    if (window._metaapiConnected === false) {
+        showToast('⚠️ Trading API 연결 중입니다.\n잠시 후 다시 시도해주세요.', 'error', 5000);
         return;
     }
 

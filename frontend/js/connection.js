@@ -526,6 +526,8 @@ function connectWebSocket() {
                 console.log('[WS Demo] ✅ Has position - calling updatePositionUI(true)');
                 window.currentProfit = data.position.profit || 0;
                 window.currentTarget = data.position.target || targetAmount;
+                window._demoPositionHeld = true;  // ★ 유령 포지션 감지용
+                window._demoNullCount = 0;
 
                 // ★ 포지션의 실제 volume 표시 (lotSize는 변경하지 않음 - 마틴 버그 방지)
                 if (data.position.volume) {
@@ -541,6 +543,17 @@ function connectWebSocket() {
                 }
             } else if (!data.auto_closed) {  // 자동청산이 아닐 때만 포지션 없음 처리
                 console.log('[WS Demo] ❌ No position - calling updatePositionUI(false)');
+                // ★★★ 유령 포지션 정리: 서버가 null 연속 보내면 프론트엔드 강제 초기화 ★★★
+                if (window._demoPositionHeld) {
+                    window._demoNullCount = (window._demoNullCount || 0) + 1;
+                    if (window._demoNullCount >= 3) {
+                        console.log('[WS Demo] 🧹 유령 포지션 정리 (서버 null 3회 연속)');
+                        window._demoPositionHeld = false;
+                        window._demoNullCount = 0;
+                        window.currentProfit = 0;
+                        window.currentTarget = 0;
+                    }
+                }
                 if (typeof updatePositionUI === 'function') {
                     updatePositionUI(false, null);
                 }
