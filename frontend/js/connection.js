@@ -947,15 +947,9 @@ function connectWebSocket() {
                             window._martinStateUpdating = false;
                         }
                     } else {
-                        // Basic/NoLimit 모드
-                        if (actualProfit >= 0) {
-                            showToast(`🎯 청산 손익: +$${actualProfit.toFixed(2)}`, 'success');
-                        } else {
-                            showToast(`💔 청산 손익: -$${Math.abs(actualProfit).toFixed(2)}`, 'error');
-                        }
-                        if (typeof updateTodayPL === 'function') updateTodayPL(actualProfit);
+                        // Basic/NoLimit 모드 — 금액은 Today P/L과 히스토리에서 자동 반영
+                        if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
                     }
-                    if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
                 } catch (e) {
                     console.error('[SL/TP] 실패:', e);
                     if (typeof updateTodayPL === 'function') updateTodayPL(profit);
@@ -1055,30 +1049,13 @@ function connectWebSocket() {
                         }
                     }, 1500);
                 } else {
-                    // ★★★ Basic/NoLimit 모드: 2단계 알림 ★★★
+                    // ★★★ Basic/NoLimit 모드: 간소화 (금액 토스트 없음) ★★★
                     showToast('📊 포지션이 청산되었습니다!', 'success');
-
-                    setTimeout(async () => {
-                        try {
-                            if (typeof loadHistory === 'function') loadHistory();
-                            const histResp = await apiCall('/mt5/history?period=today');
-                            if (histResp && histResp.trades && histResp.trades.length > 0) {
-                                const lastTrade = histResp.trades[0];
-                                const actualProfit = lastTrade.profit || 0;
-                                if (actualProfit >= 0) {
-                                    showToast(`🎯 청산 손익: +$${actualProfit.toFixed(2)}`, 'success');
-                                } else {
-                                    showToast(`💔 청산 손익: -$${Math.abs(actualProfit).toFixed(2)}`, 'error');
-                                }
-                                if (typeof updateTodayPL === 'function') updateTodayPL(actualProfit);
-                            } else {
-                                if (typeof updateTodayPL === 'function') updateTodayPL(profit);
-                            }
-                            if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
-                        } catch (e) {
-                            if (typeof updateTodayPL === 'function') updateTodayPL(profit);
-                        }
-                    }, 1500);
+                    // 2초 후 히스토리 + Today P/L 동기화
+                    setTimeout(() => {
+                        if (typeof loadHistory === 'function') loadHistory();
+                        if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
+                    }, 2000);
                 }
 
                 // 5초 후 프리즈 해제
