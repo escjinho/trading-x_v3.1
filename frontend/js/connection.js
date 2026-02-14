@@ -896,22 +896,32 @@ function connectWebSocket() {
                 window._closeConfirmedAt = null;
             }, 20000);
 
-            // 3. 토스트 알림
-            if (profit >= 0) {
-                showToast(`🎯 MT5 청산! +$${profit.toFixed(2)}`, 'success');
-            } else {
-                showToast(`💔 MT5 청산! -$${Math.abs(profit).toFixed(2)}`, 'error');
-            }
+            // 3. 즉시 청산 알림 (금액은 1.5초 후 정확한 값으로)
+            showToast('📊 포지션이 청산되었습니다!', 'success');
 
-            // 4. Today P/L 업데이트
-            if (typeof updateTodayPL === 'function') {
-                updateTodayPL(profit);
-            }
-
-            // 5. 히스토리 새로고침
-            if (typeof loadHistory === 'function') {
-                loadHistory();
-            }
+            // 4. 1.5초 후 히스토리에서 실제 체결 금액 조회
+            setTimeout(async () => {
+                try {
+                    if (typeof loadHistory === 'function') loadHistory();
+                    const histResp = await apiCall('/mt5/history?period=today');
+                    if (histResp && histResp.trades && histResp.trades.length > 0) {
+                        const lastTrade = histResp.trades[0];
+                        const actualProfit = lastTrade.profit || 0;
+                        if (actualProfit >= 0) {
+                            showToast(`🎯 청산 손익: +$${actualProfit.toFixed(2)}`, 'success');
+                        } else {
+                            showToast(`💔 청산 손익: -$${Math.abs(actualProfit).toFixed(2)}`, 'error');
+                        }
+                        if (typeof updateTodayPL === 'function') updateTodayPL(actualProfit);
+                    } else {
+                        if (typeof updateTodayPL === 'function') updateTodayPL(profit);
+                    }
+                    if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
+                } catch (e) {
+                    console.error('[SL/TP] 히스토리 조회 실패:', e);
+                    if (typeof updateTodayPL === 'function') updateTodayPL(profit);
+                }
+            }, 1500);
 
             // ★ 5초 후 프리즈 해제 (MetaAPI 캐시 동기화 대기)
             setTimeout(() => {
@@ -985,18 +995,35 @@ function connectWebSocket() {
                     } else {
                         showToast(`💔 손절! $${profit.toFixed(2)}`, 'error');
                     }
+                    // 마틴 모드는 즉시 P/L 업데이트
+                    if (typeof updateTodayPL === 'function') updateTodayPL(profit);
+                    if (typeof loadHistory === 'function') loadHistory();
                 } else {
-                    // ★★★ Basic/NoLimit 모드 ★★★
-                    if (isWin) {
-                        showToast(`🎯 목표 도달! +$${Math.abs(profit).toFixed(2)}`, 'success');
-                    } else {
-                        showToast(`💔 손절! -$${Math.abs(profit).toFixed(2)}`, 'error');
-                    }
-                }
+                    // ★★★ Basic/NoLimit 모드: 2단계 알림 ★★★
+                    showToast('📊 포지션이 청산되었습니다!', 'success');
 
-                // Today P/L 업데이트
-                if (typeof updateTodayPL === 'function') updateTodayPL(profit);
-                if (typeof loadHistory === 'function') loadHistory();
+                    setTimeout(async () => {
+                        try {
+                            if (typeof loadHistory === 'function') loadHistory();
+                            const histResp = await apiCall('/mt5/history?period=today');
+                            if (histResp && histResp.trades && histResp.trades.length > 0) {
+                                const lastTrade = histResp.trades[0];
+                                const actualProfit = lastTrade.profit || 0;
+                                if (actualProfit >= 0) {
+                                    showToast(`🎯 청산 손익: +$${actualProfit.toFixed(2)}`, 'success');
+                                } else {
+                                    showToast(`💔 청산 손익: -$${Math.abs(actualProfit).toFixed(2)}`, 'error');
+                                }
+                                if (typeof updateTodayPL === 'function') updateTodayPL(actualProfit);
+                            } else {
+                                if (typeof updateTodayPL === 'function') updateTodayPL(profit);
+                            }
+                            if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
+                        } catch (e) {
+                            if (typeof updateTodayPL === 'function') updateTodayPL(profit);
+                        }
+                    }, 1500);
+                }
 
                 // 5초 후 프리즈 해제
                 setTimeout(() => {
