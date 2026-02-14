@@ -693,7 +693,27 @@ async function closePosition() {
                 if (typeof loadHistory === 'function') loadHistory();
             }, 1000);
         } else {
-            showToast(result?.message || 'Error', 'error');
+            const errMsg = result?.message || 'Error';
+            // ★★★ "포지션 없음" 응답 시 UI 강제 초기화 (MT5에서 이미 청산된 경우) ★★★
+            if (errMsg.includes('포지션 없음') || errMsg.includes('이미 청산') || result?.force_sync) {
+                console.log('[closePosition] ⚠️ 포지션 이미 청산됨 → UI 강제 초기화');
+                window.lastLivePosition = null;
+                window._closeConfirmedAt = Date.now();
+                updatePositionUI(false, null);
+                showToast('포지션이 이미 청산되었습니다', 'success');
+                // 히스토리 새로고침
+                setTimeout(() => {
+                    if (typeof loadHistory === 'function') loadHistory();
+                }, 1000);
+                // 20초 후 플래그 해제
+                setTimeout(() => {
+                    window._closeConfirmedAt = null;
+                    window._userClosing = false;
+                    window._plGaugeFrozen = false;
+                }, 20000);
+            } else {
+                showToast(errMsg, 'error');
+            }
         }
     } catch (e) { showToast('Network error', 'error'); }
 

@@ -858,8 +858,8 @@ function connectWebSocket() {
             }, 5000);
         }
 
-        // ★★★ 라이브 자동청산 처리 — 사용자 청산 후 이중 감지 완전 차단 ★★★
-        if (data.auto_closed && !window._userClosing && !window._closeConfirmedAt) {
+        // ★★★ 라이브 자동청산 처리 ★★★
+        if (data.auto_closed && !window._userClosing) {
             // ★★★ WS 연결 직후 10초간은 이전 이벤트 무시 (서버 재시작/모드 전환 가짜 팝업 방지) ★★★
             if (Date.now() - wsConnectionStartTime < 10000) {
                 console.log('[WS Live] ⏳ 연결 직후 청산 이벤트 무시 (가짜 팝업 방지)');
@@ -872,7 +872,8 @@ function connectWebSocket() {
             const timeDiff = Math.abs(closedAt - lastClosedAt);
             const isDuplicate = timeDiff < 1;
 
-            if (!isDuplicate) {
+            // ★★★ 사용자 청산으로 이미 처리된 경우 스킵 ★★★
+            if (!isDuplicate && !window._closeConfirmedAt) {
                 window._lastLiveAutoClosedAt = closedAt;
                 console.log('[WS Live] 🔔 자동 청산 감지!', { profit, closedAt, isWin: data.is_win, mode: currentMode });
 

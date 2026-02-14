@@ -1578,6 +1578,7 @@ async def close_position(
 
                 # ★★★ WS 이중 감지 방지 플래그 ★★★
                 user_close_acknowledged[current_user.id] = time_module.time()
+                user_close_acknowledged[f"{current_user.id}_pos_id"] = str(position_id)
                 print(f"[MetaAPI Close] ✅ 청산 성공: positionId={position_id}, P/L=${profit:.2f}")
                 return JSONResponse({
                     "success": True,
@@ -1671,6 +1672,7 @@ async def close_position(
                 print(f"[MetaAPI Close] 🧹 user_metaapi_cache 포지션 제거: {pos_id}")
             # ★★★ WS 이중 감지 방지 플래그 ★★★
             user_close_acknowledged[current_user.id] = time_module.time()
+            user_close_acknowledged[f"{current_user.id}_pos_id"] = str(pos_id)
             print(f"[MetaAPI Close] ✅ 청산 성공: {symbol} P/L=${profit:.2f}")
             return JSONResponse({
                 "success": True,
@@ -3239,8 +3241,8 @@ async def websocket_endpoint(websocket: WebSocket):
                             user_live_cache[user_id]["positions"] = []
                     else:
                         _position_disappeared_count += 1
-                        # 4회 연속 확인 시 청산으로 확정 (기존 2회 → 4회로 강화)
-                        if _position_disappeared_count >= 4:
+                        # 2회 연속 확인 시 청산으로 확정 (SL/TP 빠른 감지 필요)
+                        if _position_disappeared_count >= 2:
                             _prev_profit = _prev_user_position.get("profit", 0)
                             _prev_symbol = _prev_user_position.get("symbol", "")
                             _is_win = _prev_profit >= 0
@@ -3738,11 +3740,17 @@ async def websocket_endpoint(websocket: WebSocket):
             else:
                 _last_sent_position = None
 
-            # ★★★ 사용자 청산 확인 후 20초간 포지션 데이터 전송 차단 ★★★
+            # ★★★ 사용자 청산 확인 후 포지션 데이터 전송 차단 ★★★
+            # 단, 새로운 포지션이 열린 경우(다른 ticket/id)는 전송 허용
             if _is_user_close_recent and position_data and not auto_closed:
-                print(f"[LIVE WS] ⏭️ User {user_id} 청산 확인 후 — position_data 제거 (캐시 지연 방지)")
-                position_data = None
-                _last_sent_position = None
+                _ack_pos_id = user_close_acknowledged.get(f"{user_id}_pos_id", "")
+                _current_pos_id = str(position_data.get("ticket", ""))
+                if not _ack_pos_id or _ack_pos_id == _current_pos_id:
+                    print(f"[LIVE WS] ⏭️ User {user_id} 청산 확인 후 — 동일 포지션 데이터 제거")
+                    position_data = None
+                    _last_sent_position = None
+                else:
+                    print(f"[LIVE WS] ✅ User {user_id} 새 포지션 감지 — 전송 허용 (old={_ack_pos_id}, new={_current_pos_id})")
 
             data = {
                 "mt5_connected": user_has_mt5 or mt5_connected or metaapi_connected,  # ★ 전체 연결 상태
