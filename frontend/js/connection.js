@@ -904,30 +904,62 @@ function connectWebSocket() {
                 window._closeConfirmedAt = null;
             }, 20000);
 
-            // 3. 즉시 청산 알림 (금액은 1.5초 후 정확한 값으로)
+            // 3. 즉시 청산 알림
             showToast('📊 포지션이 청산되었습니다!', 'success');
 
             // 4. 1.5초 후 히스토리에서 실제 체결 금액 조회
             setTimeout(async () => {
                 try {
                     if (typeof loadHistory === 'function') loadHistory();
+                    let actualProfit = profit;
                     const histResp = await apiCall('/mt5/history?period=today');
                     if (histResp && histResp.trades && histResp.trades.length > 0) {
-                        const lastTrade = histResp.trades[0];
-                        const actualProfit = lastTrade.profit || 0;
+                        actualProfit = histResp.trades[0].profit || profit;
+                    }
+
+                    // ★★★ 마틴 모드: 팝업으로 처리 ★★★
+                    if (currentMode === 'martin' && martinEnabled) {
+                        window._martinStateUpdating = true;
+                        if (actualProfit > 0) {
+                            if (actualProfit >= martinAccumulatedLoss && martinAccumulatedLoss > 0) {
+                                await apiCall('/mt5/martin/reset-full', 'POST');
+                                updateTodayPL(actualProfit);
+                                showMartinSuccessPopup(actualProfit);
+                                martinStep = 1;
+                                martinAccumulatedLoss = 0;
+                                martinHistory = [];
+                                updateMartinUI();
+                                window._martinStateUpdating = false;
+                            } else {
+                                const remainingLoss = Math.max(0, martinAccumulatedLoss - actualProfit);
+                                await apiCall(`/mt5/martin/update-state?step=${martinStep}&accumulated_loss=${remainingLoss}`, 'POST');
+                                martinAccumulatedLoss = remainingLoss;
+                                updateMartinUI();
+                                updateTodayPL(actualProfit);
+                                window._martinStateUpdating = false;
+                                showToast(`💰 일부 회복! +$${actualProfit.toFixed(2)}`, 'success');
+                            }
+                        } else if (actualProfit < 0) {
+                            showMartinPopup(actualProfit);
+                            // _martinStateUpdating은 팝업 닫힐 때 해제
+                        } else {
+                            updateTodayPL(0);
+                            window._martinStateUpdating = false;
+                        }
+                    } else {
+                        // Basic/NoLimit 모드
                         if (actualProfit >= 0) {
                             showToast(`🎯 청산 손익: +$${actualProfit.toFixed(2)}`, 'success');
                         } else {
                             showToast(`💔 청산 손익: -$${Math.abs(actualProfit).toFixed(2)}`, 'error');
                         }
                         if (typeof updateTodayPL === 'function') updateTodayPL(actualProfit);
-                    } else {
-                        if (typeof updateTodayPL === 'function') updateTodayPL(profit);
                     }
                     if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
                 } catch (e) {
-                    console.error('[SL/TP] 히스토리 조회 실패:', e);
+                    console.error('[SL/TP] 실패:', e);
                     if (typeof updateTodayPL === 'function') updateTodayPL(profit);
+                    window._martinStateUpdating = false;
                 }
             }, 1500);
 
@@ -977,35 +1009,51 @@ function connectWebSocket() {
 
                 const isWin = data.is_win !== false && profit >= 0;
 
-                // ★★★ 라이브 마틴 모드 처리 (DB 기반) ★★★
+                // ★★★ 라이브 마틴 모드: 1.5초 후 정확한 손익 → 팝업 ★★★
                 if (currentMode === 'martin' && martinEnabled) {
-                    if (isWin) {
-                        // WIN: 마틴 리셋 (DB에서 이미 처리됨)
-                        martinStep = 1;
-                        martinAccumulatedLoss = 0;
-                        martinHistory = [];
-                        updateMartinUI();
-                        showMartinSuccessPopup(profit);
-                    } else if (data.martin_reset && !isWin) {
-                        // MAX STEP 도달: 강제 리셋 (DB에서 이미 처리됨)
-                        const totalLoss = data.martin_accumulated_loss || martinAccumulatedLoss;
-                        martinStep = 1;
-                        martinAccumulatedLoss = 0;
-                        martinHistory = [];
-                        updateMartinUI();
-                        showMaxPopup(totalLoss);
-                    } else if (data.martin_step_up) {
-                        // STEP UP: 다음 단계로 (DB에서 이미 처리됨)
-                        martinStep = data.martin_step || (martinStep + 1);
-                        martinAccumulatedLoss = data.martin_accumulated_loss || (martinAccumulatedLoss + Math.abs(profit));
-                        updateMartinUI();
-                        showMartinPopup(profit);
-                    } else {
-                        showToast(`💔 손절! $${profit.toFixed(2)}`, 'error');
-                    }
-                    // 마틴 모드는 즉시 P/L 업데이트
-                    if (typeof updateTodayPL === 'function') updateTodayPL(profit);
-                    if (typeof loadHistory === 'function') loadHistory();
+                    window._martinStateUpdating = true;
+                    showToast('📊 포지션이 청산되었습니다!', 'success');
+
+                    setTimeout(async () => {
+                        try {
+                            let actualProfit = profit;
+                            const histResp = await apiCall('/mt5/history?period=today');
+                            if (histResp && histResp.trades && histResp.trades.length > 0) {
+                                actualProfit = histResp.trades[0].profit || profit;
+                            }
+                            if (typeof loadHistory === 'function') loadHistory();
+
+                            if (actualProfit > 0) {
+                                if (actualProfit >= martinAccumulatedLoss && martinAccumulatedLoss > 0) {
+                                    await apiCall('/mt5/martin/reset-full', 'POST');
+                                    updateTodayPL(actualProfit);
+                                    showMartinSuccessPopup(actualProfit);
+                                    martinStep = 1;
+                                    martinAccumulatedLoss = 0;
+                                    martinHistory = [];
+                                    updateMartinUI();
+                                    window._martinStateUpdating = false;
+                                } else {
+                                    const remainingLoss = Math.max(0, martinAccumulatedLoss - actualProfit);
+                                    await apiCall(`/mt5/martin/update-state?step=${martinStep}&accumulated_loss=${remainingLoss}`, 'POST');
+                                    martinAccumulatedLoss = remainingLoss;
+                                    updateMartinUI();
+                                    updateTodayPL(actualProfit);
+                                    window._martinStateUpdating = false;
+                                    showToast(`💰 일부 회복! +$${actualProfit.toFixed(2)}`, 'success');
+                                }
+                            } else if (actualProfit < 0) {
+                                showMartinPopup(actualProfit);
+                            } else {
+                                updateTodayPL(0);
+                                window._martinStateUpdating = false;
+                            }
+                            if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
+                        } catch (e) {
+                            updateTodayPL(profit);
+                            window._martinStateUpdating = false;
+                        }
+                    }, 1500);
                 } else {
                     // ★★★ Basic/NoLimit 모드: 2단계 알림 ★★★
                     showToast('📊 포지션이 청산되었습니다!', 'success');

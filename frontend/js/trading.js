@@ -2,65 +2,107 @@
 const BUYSELL_MAGIC_NUMBER = 100001;
 
 // ========== 마틴 팝업 ==========
-function showMartinPopup(currentLoss) {
-    pendingLoss = Math.abs(currentLoss);
+// ★★★ 임시 저장: 팝업 표시 중 유저 선택 대기 ★★★
+let _martinPendingLoss = 0;        // 이번 청산 손실 (양수)
+let _martinPendingAccLoss = 0;     // 새 누적손실 (기존 + 이번)
+let _martinPendingProfit = 0;      // 이번 청산 손익 (원본, 음수 가능)
+
+function showMartinPopup(profit) {
+    const lossAmount = Math.abs(profit);
+    _martinPendingLoss = lossAmount;
+    _martinPendingProfit = profit;
+    _martinPendingAccLoss = martinAccumulatedLoss + lossAmount;
+
+    const baseT = martinBaseTarget || targetAmount;
     const nextStep = martinStep + 1;
     const nextLot = lotSize * Math.pow(2, martinStep);
-    const accumulated = martinAccumulatedLoss + pendingLoss;
-    const recoveryTarget = Math.ceil((accumulated + (martinBaseTarget || targetAmount)) / 5) * 5;
-    
+    const recoveryTarget = Math.ceil((_martinPendingAccLoss + baseT) / 5) * 5;
+
     document.getElementById('popupCurrentStep').textContent = martinStep;
     document.getElementById('popupCurrentStepKr').textContent = martinStep;
-    document.getElementById('popupCurrentLoss').textContent = '-$' + pendingLoss.toFixed(2);
-    document.getElementById('popupAccumulatedLoss').textContent = '-$' + accumulated.toFixed(2);
+    document.getElementById('popupCurrentLoss').textContent = '-$' + lossAmount.toFixed(2);
+    document.getElementById('popupAccumulatedLoss').textContent = '-$' + _martinPendingAccLoss.toFixed(2);
     document.getElementById('popupNextLot').textContent = nextLot.toFixed(2) + ' lot';
     document.getElementById('popupRecoveryTarget').textContent = '+$' + recoveryTarget;
     document.getElementById('popupNextStep').textContent = nextStep;
     document.getElementById('popupNextStepKr').textContent = nextStep;
-    
+
     document.getElementById('martinPopup').style.display = 'flex';
 }
 
 function hideMartinPopup() {
     document.getElementById('martinPopup').style.display = 'none';
+    window._martinStateUpdating = false;
 }
 
 function martinPopupSettings() {
-    document.getElementById('martinPopup').style.display = 'none';
+    hideMartinPopup();
+    // 마틴 리셋 후 설정으로
+    if (isDemo) {
+        apiCall(`/demo/martin/reset-full?magic=${BUYSELL_MAGIC_NUMBER}`, 'POST');
+    } else {
+        apiCall('/mt5/martin/reset-full', 'POST');
+    }
     martinStep = 1;
     martinAccumulatedLoss = 0;
     martinHistory = [];
+    updateMartinUI();
     openSettings();
 }
 
-async function martinPopupContinue() {
-    martinHistory[martinStep - 1] = -1;
+async function martinPopupStay() {
+    // ★★★ 단계 유지: step 그대로, accumulated_loss만 업데이트 ★★★
+    hideMartinPopup();
+    martinAccumulatedLoss = _martinPendingAccLoss;
 
-    let result;
     if (isDemo) {
-        // ★ 데모 모드: /demo/martin/state에서 최신 상태 조회
-        result = await apiCall('/demo/martin/state?magic=100001', 'GET');
-        if (result && result.step) {
-            martinStep = result.step;
-            martinAccumulatedLoss = result.accumulated_loss || 0;
-            // targetAmount은 변경하지 않음! updateMartinUI()가 acc_loss 반영함
-            updateMartinUI();
-            showToast('Step ' + martinStep + '으로 이동 (Lot: ' + (lotSize * Math.pow(2, martinStep - 1)).toFixed(2) + ')', 'error');
-        }
+        await fetch(`${API_URL}/demo/martin/update-state?step=${martinStep}&accumulated_loss=${martinAccumulatedLoss}&magic=${BUYSELL_MAGIC_NUMBER}`, {
+            method: 'POST', headers: { 'Authorization': `Bearer ${token}` }
+        });
     } else {
-        // Live 모드: 기존 로직
-        result = await apiCall(`/mt5/martin/update?profit=${-pendingLoss}`, 'POST');
-
-        if (result && result.success && result.action === 'next_step') {
-            martinStep = result.state.step;
-            martinAccumulatedLoss = result.state.accumulated_loss;
-            // targetAmount은 변경하지 않음! updateMartinUI()가 acc_loss 반영함
-            updateMartinUI();
-            showToast('Step ' + martinStep + '으로 이동 (Lot: ' + (lotSize * Math.pow(2, martinStep - 1)).toFixed(2) + ')', 'error');
-        }
+        await apiCall(`/mt5/martin/update-state?step=${martinStep}&accumulated_loss=${martinAccumulatedLoss}`, 'POST');
     }
 
+    updateMartinUI();
+    updateTodayPL(_martinPendingProfit);
+    showToast(`📊 Step ${martinStep} 유지! 누적손실: -$${martinAccumulatedLoss.toFixed(2)}`, 'error');
+}
+
+async function martinPopupContinue() {
+    // ★★★ 다음 단계로: step up + accumulated_loss 업데이트 ★★★
     hideMartinPopup();
+    martinHistory[martinStep - 1] = -1;
+
+    const newStep = Math.min(martinStep + 1, martinLevel);
+    martinAccumulatedLoss = _martinPendingAccLoss;
+
+    if (newStep > martinLevel) {
+        // 최대 단계 초과 → 강제 리셋
+        if (isDemo) {
+            await fetch(`${API_URL}/demo/martin/reset-full?magic=${BUYSELL_MAGIC_NUMBER}`, {
+                method: 'POST', headers: { 'Authorization': `Bearer ${token}` }
+            });
+        } else {
+            await apiCall('/mt5/martin/reset-full', 'POST');
+        }
+        showMaxPopup(martinAccumulatedLoss);
+        martinStep = 1;
+        martinAccumulatedLoss = 0;
+        martinHistory = [];
+    } else {
+        martinStep = newStep;
+        if (isDemo) {
+            await fetch(`${API_URL}/demo/martin/update-state?step=${martinStep}&accumulated_loss=${martinAccumulatedLoss}&magic=${BUYSELL_MAGIC_NUMBER}`, {
+                method: 'POST', headers: { 'Authorization': `Bearer ${token}` }
+            });
+        } else {
+            await apiCall(`/mt5/martin/update-state?step=${martinStep}&accumulated_loss=${martinAccumulatedLoss}`, 'POST');
+        }
+        showToast(`📈 Step ${martinStep}로 진행! (Lot: ${(lotSize * Math.pow(2, martinStep - 1)).toFixed(2)})`, 'error');
+    }
+
+    updateMartinUI();
+    updateTodayPL(_martinPendingProfit);
 }
 
 function showMaxPopup(totalLoss) {
@@ -632,7 +674,7 @@ async function closePosition() {
             updatePositionUI(false, null);
 
             if (currentMode === 'martin' && martinEnabled) {
-                // ★★★ 마틴 모드: 즉시 알림 → 1.5초 후 MT5 실제 손익으로 상태 업데이트 ★★★
+                // ★★★ 마틴 모드: 즉시 알림 → 1.5초 후 MT5 실제 손익으로 팝업/처리 ★★★
                 showToast('📊 포지션이 청산되었습니다! 손익 확인 중...', 'success');
 
                 setTimeout(async () => {
@@ -642,29 +684,33 @@ async function closePosition() {
                         let profit = apiProfit;
                         const histResp = await apiCall('/mt5/history?period=today');
                         if (histResp && histResp.trades && histResp.trades.length > 0) {
-                            const lastTrade = histResp.trades[0];
-                            profit = lastTrade.profit || apiProfit;
-                            console.log(`[Martin Close] MT5 실제 손익: ${profit} (API 반환: ${apiProfit})`);
+                            profit = histResp.trades[0].profit || apiProfit;
+                            console.log(`[Martin Close] MT5 실제 손익: ${profit} (API: ${apiProfit})`);
                         }
 
-                        const baseTarget = martinBaseTarget || targetAmount;
-                        const currentDisplayTarget = Math.ceil((martinAccumulatedLoss + baseTarget) / 5) * 5;
+                        if (typeof loadHistory === 'function') loadHistory();
+                        if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
 
                         if (profit > 0) {
+                            // 수익 청산
                             if (profit >= martinAccumulatedLoss && martinAccumulatedLoss > 0) {
+                                // 전액 회복 → 마틴 성공!
                                 await apiCall('/mt5/martin/reset-full', 'POST');
+                                updateTodayPL(profit);
+                                showMartinSuccessPopup(profit);
                                 martinStep = 1;
                                 martinAccumulatedLoss = 0;
                                 martinHistory = [];
                                 updateMartinUI();
-                                updateTodayPL(profit);
-                                showMartinSuccessPopup(profit);
-                            } else if (profit < martinAccumulatedLoss || martinAccumulatedLoss === 0) {
+                                window._martinStateUpdating = false;
+                            } else {
+                                // 일부 회복 → 누적손실 감소
                                 const remainingLoss = Math.max(0, martinAccumulatedLoss - profit);
                                 await apiCall(`/mt5/martin/update-state?step=${martinStep}&accumulated_loss=${remainingLoss}`, 'POST');
                                 martinAccumulatedLoss = remainingLoss;
                                 updateMartinUI();
                                 updateTodayPL(profit);
+                                window._martinStateUpdating = false;
                                 if (remainingLoss > 0) {
                                     showToast(`💰 일부 회복! +$${profit.toFixed(2)} (남은 손실: $${remainingLoss.toFixed(2)})`, 'success');
                                 } else {
@@ -672,42 +718,16 @@ async function closePosition() {
                                 }
                             }
                         } else if (profit < 0) {
-                            const lossAmount = Math.abs(profit);
-                            const halfTarget = currentDisplayTarget / 2;
-
-                            if (lossAmount >= halfTarget) {
-                                const newStep = Math.min(martinStep + 1, martinLevel);
-                                const newAccumulatedLoss = martinAccumulatedLoss + lossAmount;
-
-                                if (newStep > martinLevel) {
-                                    await apiCall('/mt5/martin/reset-full', 'POST');
-                                    showMaxPopup(newAccumulatedLoss);
-                                    martinStep = 1;
-                                    martinAccumulatedLoss = 0;
-                                    martinHistory = [];
-                                } else {
-                                    await apiCall(`/mt5/martin/update-state?step=${newStep}&accumulated_loss=${newAccumulatedLoss}`, 'POST');
-                                    martinStep = newStep;
-                                    martinAccumulatedLoss = newAccumulatedLoss;
-                                    showToast(`📈 Step ${newStep}로 진행! 손실: -$${lossAmount.toFixed(2)}`, 'error');
-                                }
-                            } else {
-                                const newAccumulatedLoss = martinAccumulatedLoss + lossAmount;
-                                await apiCall(`/mt5/martin/update-state?step=${martinStep}&accumulated_loss=${newAccumulatedLoss}`, 'POST');
-                                martinAccumulatedLoss = newAccumulatedLoss;
-                                showToast(`📊 단계 유지! 손실: -$${lossAmount.toFixed(2)} (누적: $${newAccumulatedLoss.toFixed(2)})`, 'error');
-                            }
-                            updateTodayPL(profit);
-                            updateMartinUI();
+                            // ★★★ 손실 → 팝업으로 유저 선택 (DB 업데이트는 팝업 버튼에서) ★★★
+                            showMartinPopup(profit);
+                            // _martinStateUpdating은 팝업 닫힐 때 해제됨
                         } else {
+                            updateTodayPL(0);
+                            window._martinStateUpdating = false;
                             showToast('청산 완료 (손익 없음)', 'success');
                         }
-
-                        if (typeof loadHistory === 'function') loadHistory();
-                        if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
-                        setTimeout(() => { window._martinStateUpdating = false; }, 3000);
                     } catch (e) {
-                        console.error('[Martin Close] 히스토리 조회 실패:', e);
+                        console.error('[Martin Close] 실패:', e);
                         updateTodayPL(apiProfit);
                         window._martinStateUpdating = false;
                     }
@@ -832,93 +852,36 @@ async function closeDemoPosition() {
             
             // 마틴 모드 처리
             if (currentMode === 'martin' && martinEnabled) {
-                const baseTarget = martinBaseTarget || targetAmount;
-                const currentDisplayTarget = Math.ceil((martinAccumulatedLoss + baseTarget) / 5) * 5;
-                
-                // Case 1: 수익으로 청산
                 if (profit > 0) {
                     if (profit >= martinAccumulatedLoss && martinAccumulatedLoss > 0) {
-                        // Case 1-A: 전액 회복 → 마틴 성공!
                         await fetch(`${API_URL}/demo/martin/reset-full?magic=${BUYSELL_MAGIC_NUMBER}`, {
-                            method: 'POST',
-                            headers: { 'Authorization': `Bearer ${token}` }
+                            method: 'POST', headers: { 'Authorization': `Bearer ${token}` }
                         });
-
                         martinStep = 1;
                         martinAccumulatedLoss = 0;
                         martinHistory = [];
                         updateMartinUI();
                         updateTodayPL(profit);
                         showMartinSuccessPopup(profit);
-                    } else if (profit < martinAccumulatedLoss || martinAccumulatedLoss === 0) {
-                        // Case 1-B: 일부 회복 → 단계 유지, 타겟만 조정
+                    } else {
                         const remainingLoss = Math.max(0, martinAccumulatedLoss - profit);
-
                         await fetch(`${API_URL}/demo/martin/update-state?step=${martinStep}&accumulated_loss=${remainingLoss}&magic=${BUYSELL_MAGIC_NUMBER}`, {
-                            method: 'POST',
-                            headers: { 'Authorization': `Bearer ${token}` }
+                            method: 'POST', headers: { 'Authorization': `Bearer ${token}` }
                         });
-                        
                         martinAccumulatedLoss = remainingLoss;
                         updateMartinUI();
                         updateTodayPL(profit);
-                        
                         if (remainingLoss > 0) {
-                            showToast(`💰 일부 회복! +$${profit.toFixed(2)} (남은 손실: $${remainingLoss.toFixed(2)})`, 'success');
+                            showToast(`💰 일부 회복! +$${profit.toFixed(2)} (남은: $${remainingLoss.toFixed(2)})`, 'success');
                         } else {
                             showMartinSuccessPopup(profit);
                         }
                     }
-                }
-                // Case 2: 손실로 청산 (Close 버튼)
-                else if (profit < 0) {
-                    const lossAmount = Math.abs(profit);
-                    const halfTarget = currentDisplayTarget / 2;
-                    
-                    if (lossAmount >= halfTarget) {
-                        // Case 2-A: 손실 >= 50% → 다음 단계로
-                        const newStep = Math.min(martinStep + 1, martinLevel);
-                        const newAccumulatedLoss = martinAccumulatedLoss + lossAmount;
-                        
-                        if (newStep > martinLevel) {
-                            // 최대 단계 초과 → 강제 리셋
-                            await fetch(`${API_URL}/demo/martin/reset-full?magic=${BUYSELL_MAGIC_NUMBER}`, {
-                                method: 'POST',
-                                headers: { 'Authorization': `Bearer ${token}` }
-                            });
-
-                            showMaxPopup(newAccumulatedLoss);
-                            martinStep = 1;
-                            martinAccumulatedLoss = 0;
-                            martinHistory = [];
-                        } else {
-                            await fetch(`${API_URL}/demo/martin/update-state?step=${newStep}&accumulated_loss=${newAccumulatedLoss}&magic=${BUYSELL_MAGIC_NUMBER}`, {
-                                method: 'POST',
-                                headers: { 'Authorization': `Bearer ${token}` }
-                            });
-                            
-                            martinStep = newStep;
-                            martinAccumulatedLoss = newAccumulatedLoss;
-                            showToast(`📈 Step ${newStep}로 진행! 손실: -$${lossAmount.toFixed(2)}`, 'error');
-                        }
-                    } else {
-                        // Case 2-B: 손실 < 50% → 단계 유지, 타겟만 조정
-                        const newAccumulatedLoss = martinAccumulatedLoss + lossAmount;
-
-                        await fetch(`${API_URL}/demo/martin/update-state?step=${martinStep}&accumulated_loss=${newAccumulatedLoss}&magic=${BUYSELL_MAGIC_NUMBER}`, {
-                            method: 'POST',
-                            headers: { 'Authorization': `Bearer ${token}` }
-                        });
-
-                        martinAccumulatedLoss = newAccumulatedLoss;
-                        showToast(`📊 단계 유지! 손실: -$${lossAmount.toFixed(2)} (누적: $${newAccumulatedLoss.toFixed(2)})`, 'error');
-                    }
-
+                } else if (profit < 0) {
+                    // ★★★ 손실 → 팝업으로 유저 선택 ★★★
                     updateTodayPL(profit);
-                    updateMartinUI();
-                }
-                // Case 3: 손익 0 (Break-even)
-                else {
+                    showMartinPopup(profit);
+                } else {
                     showToast('청산 완료 (손익 없음)', 'success');
                 }
             } else {
