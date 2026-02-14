@@ -56,22 +56,24 @@ let _martinPendingAccLoss = 0;     // 새 누적손실 (기존 + 이번)
 let _martinPendingProfit = 0;      // 이번 청산 손익 (원본, 음수 가능)
 
 async function showMartinPopup(profit) {
-    // ★★★ 히스토리에서 실제 체결 profit 조회 (apiProfit 보정) ★★★
+    // ★★★ 3초 대기 후 magic number로 MT5 실제 profit 조회 ★★★
+    console.log(`[MartinPopup] 시작 - apiProfit=${profit}, 3초 대기 중...`);
+    await new Promise(r => setTimeout(r, 3000));
+
     try {
-        let histUrl = isDemo
-            ? `/demo/history?period=today&magic=${BUYSELL_MAGIC_NUMBER}`
-            : '/mt5/history?period=today';
-        const histResp = await apiCall(histUrl, 'GET');
-        if (histResp && histResp.trades && histResp.trades.length > 0) {
-            const lastTrade = histResp.trades[0];
-            const realProfit = lastTrade.profit;
+        const lastTradeUrl = isDemo
+            ? `/demo/last-trade?magic=${BUYSELL_MAGIC_NUMBER}`
+            : `/mt5/last-trade?magic=${BUYSELL_MAGIC_NUMBER}`;
+        const resp = await apiCall(lastTradeUrl, 'GET');
+        if (resp && resp.success && resp.trade) {
+            const realProfit = resp.trade.profit;
             if (realProfit !== undefined && realProfit !== null && realProfit < 0) {
                 console.log(`[MartinPopup] profit 보정: API=${profit} → MT5=${realProfit}`);
                 profit = realProfit;
             }
         }
     } catch (e) {
-        console.log('[MartinPopup] 히스토리 조회 실패, apiProfit 사용:', profit);
+        console.log('[MartinPopup] last-trade 조회 실패, apiProfit 사용:', profit);
     }
 
     const lossAmount = Math.abs(profit);

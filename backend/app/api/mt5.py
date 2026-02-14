@@ -2112,6 +2112,61 @@ async def close_by_profit(
     else:
         return JSONResponse({"success": False, "message": f"{type_name} 포지션 없음"})
 
+# ========== 최신 거래 1건 (magic 필터) ==========
+@router.get("/last-trade")
+async def get_last_trade(
+    magic: int = Query(0, description="Magic number 필터"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """매직넘버로 필터한 최신 거래 1건 조회 (마틴 정확한 손익용)"""
+    user_id = current_user.id
+
+    from .metaapi_service import get_user_history
+
+    if not current_user.metaapi_account_id or current_user.metaapi_status != 'deployed':
+        return {"success": False, "message": "MetaAPI not connected"}
+
+    try:
+        from datetime import datetime, timedelta
+        start_time = datetime.now() - timedelta(minutes=5)  # 최근 5분만 조회
+        history = await get_user_history(
+            user_id=user_id,
+            metaapi_account_id=current_user.metaapi_account_id,
+            start_time=start_time
+        )
+
+        if not history:
+            return {"success": False, "message": "No trades found"}
+
+        # magic number로 필터 + DEAL_ENTRY_OUT만 (청산 건)
+        if magic > 0:
+            filtered = [h for h in history if h.get('magic') == magic and h.get('entryType') != 'DEAL_ENTRY_IN']
+        else:
+            filtered = [h for h in history if h.get('entryType') != 'DEAL_ENTRY_IN']
+
+        if not filtered:
+            return {"success": False, "message": "No matching trade"}
+
+        # 최신 1건
+        last = filtered[0]
+
+        return {
+            "success": True,
+            "trade": {
+                "profit": last.get('profit', 0),
+                "symbol": last.get('symbol', ''),
+                "volume": last.get('volume', 0),
+                "time": str(last.get('time', '')),
+                "magic": last.get('magic', 0),
+                "id": last.get('id', '')
+            }
+        }
+    except Exception as e:
+        print(f"[last-trade] Error: {e}")
+        return {"success": False, "message": str(e)}
+
+
 # ========== 거래 내역 ==========
 @router.get("/history")
 async def get_history(

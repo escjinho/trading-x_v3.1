@@ -1127,6 +1127,35 @@ async def close_demo_position(
     })
 
 
+# ========== 데모 최신 거래 1건 (magic 필터) ==========
+@router.get("/last-trade")
+async def get_demo_last_trade(
+    magic: int = Query(0, description="Magic number"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """데모 최신 거래 1건 (magic 필터)"""
+    query = db.query(DemoTrade).filter(DemoTrade.user_id == current_user.id)
+    if magic > 0:
+        query = query.filter(DemoTrade.magic == magic)
+
+    trade = query.order_by(DemoTrade.id.desc()).first()
+
+    if not trade:
+        return {"success": False, "message": "No trades"}
+
+    return {
+        "success": True,
+        "trade": {
+            "profit": trade.profit,
+            "symbol": trade.symbol,
+            "volume": trade.volume,
+            "time": str(trade.created_at) if trade.created_at else "",
+            "magic": trade.magic if hasattr(trade, 'magic') else 0
+        }
+    }
+
+
 # ========== 데모 거래 내역 ==========
 @router.get("/history")
 async def get_demo_history(
