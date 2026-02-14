@@ -576,15 +576,24 @@ function connectWebSocket() {
                         } else if (data.martin_step_up) {
                             showMartinPopup(profit);
                         } else {
-                            showToast(`손절! $${profit.toFixed(2)}`, 'error');
+                            showMartinPopup(profit);
                         }
                     } else {
-                        // ★★★ Basic/NoLimit 모드 - 팝업 표시 (손익 금액 포함) ★★★
-                        if (isWin) {
-                            showToast(`목표 도달! +$${Math.abs(profit).toFixed(2)}`, 'success');
-                        } else {
-                            showToast(`손절! -$${Math.abs(profit).toFixed(2)}`, 'error');
-                        }
+                        // ★★★ Basic/NoLimit 모드 — 2단계 알림 ★★★
+                        showToast('포지션이 청산되었습니다', 'success');
+                        setTimeout(async () => {
+                            try {
+                                const histResp = await apiCall('/demo/history?limit=1');
+                                if (histResp && histResp.trades && histResp.trades.length > 0) {
+                                    const p = histResp.trades[0].profit || 0;
+                                    if (p >= 0) {
+                                        showToast(`청산 손익: +$${p.toFixed(2)}`, 'success');
+                                    } else {
+                                        showToast(`청산 손익: -$${Math.abs(p).toFixed(2)}`, 'error');
+                                    }
+                                }
+                            } catch (e) {}
+                        }, 2000);
                     }
 
                     // Today P/L 업데이트
@@ -755,22 +764,23 @@ function connectWebSocket() {
                     } else if (currentMode === 'martin' && martinEnabled) {
                         console.log('[WS Live] ⏳ 마틴 모드 — auto_closed 이벤트 대기 중');
                     } else {
-                        // ★★★ Basic/NoLimit 모드: MT5/SL/TP 자동 청산 시에만 토스트 ★★★
-                        const lastProfit = window.lastLivePosition.profit || 0;
+                        // ★★★ Basic/NoLimit 모드: 2단계 알림 ★★★
                         playSound('close');
-
-                        if (lastProfit >= 0) {
-                            showToast(`청산 완료! +$${lastProfit.toFixed(2)}`, 'success');
-                        } else {
-                            showToast(`청산 완료! -$${Math.abs(lastProfit).toFixed(2)}`, 'error');
-                        }
-
-                        if (typeof updateTodayPL === 'function') {
-                            updateTodayPL(lastProfit);
-                        }
-                        if (typeof loadHistory === 'function') {
-                            loadHistory();
-                        }
+                        showToast('포지션이 청산되었습니다', 'success');
+                        setTimeout(async () => {
+                            try {
+                                const histResp = await apiCall('/mt5/history?period=today');
+                                if (histResp && histResp.trades && histResp.trades.length > 0) {
+                                    const p = histResp.trades[0].profit || 0;
+                                    if (p >= 0) {
+                                        showToast(`청산 손익: +$${p.toFixed(2)}`, 'success');
+                                    } else {
+                                        showToast(`청산 손익: -$${Math.abs(p).toFixed(2)}`, 'error');
+                                    }
+                                }
+                                if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
+                            } catch (e) {}
+                        }, 2000);
                     }
                     window.lastLivePosition = null;
                 }
@@ -947,8 +957,21 @@ function connectWebSocket() {
                             window._martinStateUpdating = false;
                         }
                     } else {
-                        // Basic/NoLimit 모드 — 금액은 Today P/L과 히스토리에서 자동 반영
-                        if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
+                        // Basic/NoLimit 모드 — 2단계 알림 (2초 후 정확한 금액)
+                        setTimeout(async () => {
+                            try {
+                                const histResp2 = await apiCall('/mt5/history?period=today');
+                                if (histResp2 && histResp2.trades && histResp2.trades.length > 0) {
+                                    const p = histResp2.trades[0].profit || 0;
+                                    if (p >= 0) {
+                                        showToast(`청산 손익: +$${p.toFixed(2)}`, 'success');
+                                    } else {
+                                        showToast(`청산 손익: -$${Math.abs(p).toFixed(2)}`, 'error');
+                                    }
+                                }
+                                if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
+                            } catch (e) {}
+                        }, 2000);
                     }
                 } catch (e) {
                     console.error('[SL/TP] 실패:', e);
@@ -1049,12 +1072,22 @@ function connectWebSocket() {
                         }
                     }, 1500);
                 } else {
-                    // ★★★ Basic/NoLimit 모드: 간소화 (금액 토스트 없음) ★★★
+                    // ★★★ Basic/NoLimit 모드: 2단계 알림 ★★★
                     showToast('포지션이 청산되었습니다', 'success');
-                    // 2초 후 히스토리 + Today P/L 동기화
-                    setTimeout(() => {
-                        if (typeof loadHistory === 'function') loadHistory();
-                        if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
+                    setTimeout(async () => {
+                        try {
+                            const histResp3 = await apiCall('/mt5/history?period=today');
+                            if (histResp3 && histResp3.trades && histResp3.trades.length > 0) {
+                                const p = histResp3.trades[0].profit || 0;
+                                if (p >= 0) {
+                                    showToast(`청산 손익: +$${p.toFixed(2)}`, 'success');
+                                } else {
+                                    showToast(`청산 손익: -$${Math.abs(p).toFixed(2)}`, 'error');
+                                }
+                            }
+                            if (typeof loadHistory === 'function') loadHistory();
+                            if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
+                        } catch (e) {}
                     }, 2000);
                 }
 
@@ -1265,27 +1298,34 @@ async function fetchAccountData() {
             } else {
                 // 이전에 포지션이 있었는데 지금 없으면 = 청산됨!
                 if (window.lastLivePosition) {
-                    const lastProfit = window.lastLivePosition.profit || 0;
                     playSound('close');
-                    
-                    if (lastProfit >= 0) {
-                        showToast(`청산 완료! +$${lastProfit.toFixed(2)}`, 'success');
-                    } else {
-                        showToast(`청산 완료! $${lastProfit.toFixed(2)}`, 'error');
-                    }
-                    
-                    // Today P/L 업데이트 — _todayPLFixed 사용
-                    if (typeof updateTodayPL === 'function') {
-                        updateTodayPL(lastProfit);
-                    }
-                    
-                    // 거래내역 새로고침 (약간 딜레이 후)
-                    setTimeout(() => {
-                        if (typeof loadHistory === 'function') {
-                            loadHistory();
+
+                    // ★★★ Basic/NoLimit 모드 — 2단계 알림 ★★★
+                    showToast('포지션이 청산되었습니다', 'success');
+
+                    // 2초 후 실제 손익 조회
+                    setTimeout(async () => {
+                        try {
+                            const histResp = await apiCall('/mt5/history?period=today');
+                            if (histResp && histResp.trades && histResp.trades.length > 0) {
+                                const actualProfit = histResp.trades[0].profit || 0;
+                                if (actualProfit >= 0) {
+                                    showToast(`청산 손익: +$${actualProfit.toFixed(2)}`, 'success');
+                                } else {
+                                    showToast(`청산 손익: -$${Math.abs(actualProfit).toFixed(2)}`, 'error');
+                                }
+                                if (typeof updateTodayPL === 'function') {
+                                    updateTodayPL(actualProfit);
+                                }
+                            }
+                            if (typeof loadHistory === 'function') {
+                                loadHistory();
+                            }
+                        } catch (e) {
+                            console.error('[WS Live Close] History fetch error:', e);
                         }
-                    }, 500);
-                    
+                    }, 2000);
+
                     window.lastLivePosition = null;
                 }
                 updatePositionUI(false, null);
@@ -1529,15 +1569,29 @@ async function fetchDemoData() {
                         } else if (data.martin_step_up) {
                             showMartinPopup(profit);
                         } else {
-                            showToast(`손절! $${profit.toFixed(2)}`, 'error');
+                            showMartinPopup(profit);
                         }
                     } else {
-                        // ★★★ Basic/NoLimit 모드 - 팝업 표시 (손익 금액 포함) ★★★
-                        if (isWin) {
-                            showToast(`목표 도달! +$${Math.abs(profit).toFixed(2)}`, 'success');
-                        } else {
-                            showToast(`손절! -$${Math.abs(profit).toFixed(2)}`, 'error');
-                        }
+                        // ★★★ Basic/NoLimit 모드 — 2단계 알림 ★★★
+                        showToast('포지션이 청산되었습니다', 'success');
+                        setTimeout(async () => {
+                            try {
+                                const histResp = await apiCall('/demo/history?period=today');
+                                if (histResp && histResp.trades && histResp.trades.length > 0) {
+                                    const actualProfit = histResp.trades[0].profit || 0;
+                                    if (actualProfit >= 0) {
+                                        showToast(`청산 손익: +$${actualProfit.toFixed(2)}`, 'success');
+                                    } else {
+                                        showToast(`청산 손익: -$${Math.abs(actualProfit).toFixed(2)}`, 'error');
+                                    }
+                                }
+                                if (typeof loadHistory === 'function') {
+                                    loadHistory();
+                                }
+                            } catch (e) {
+                                console.error('[Demo auto_closed] History fetch error:', e);
+                            }
+                        }, 2000);
                     }
 
                     // Today P/L 업데이트

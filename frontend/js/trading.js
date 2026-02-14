@@ -767,18 +767,26 @@ async function closePosition() {
                 }, 1500);
 
             } else {
-                // Basic/NoLimit 모드
-                updateTodayPL(apiProfit);
-                if (apiProfit >= 0) {
-                    showToast(`청산 완료! +$${apiProfit.toFixed(2)}`, 'success');
-                } else {
-                    showToast(`청산 완료! -$${Math.abs(apiProfit).toFixed(2)}`, 'error');
-                }
-
-                // ★★★ 히스토리/P&L 갱신 ★★★
-                setTimeout(() => {
-                    if (typeof loadHistory === 'function') loadHistory();
-                    if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
+                // Basic/NoLimit 모드 — 2단계 알림
+                showToast('포지션이 청산되었습니다', 'success');
+                // 2초 후 MT5 실제 손익 조회 → 정확한 금액 표시
+                setTimeout(async () => {
+                    try {
+                        const histResp = await apiCall('/mt5/history?period=today');
+                        if (histResp && histResp.trades && histResp.trades.length > 0) {
+                            const actualProfit = histResp.trades[0].profit || 0;
+                            if (actualProfit >= 0) {
+                                showToast(`청산 손익: +$${actualProfit.toFixed(2)}`, 'success');
+                            } else {
+                                showToast(`청산 손익: -$${Math.abs(actualProfit).toFixed(2)}`, 'error');
+                            }
+                            updateTodayPL(actualProfit);
+                        }
+                        if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
+                        if (typeof loadHistory === 'function') loadHistory();
+                    } catch (e) {
+                        console.error('[Close] 히스토리 조회 실패:', e);
+                    }
                 }, 2000);
             }
         } else {
