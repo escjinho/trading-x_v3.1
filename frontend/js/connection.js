@@ -1479,7 +1479,7 @@ async function checkUserMode() {
             }
 
             setTimeout(() => {
-                showToast('Demo 모드로 접속했습니다\n가상 $10,000로 연습하세요', 'info');
+                showToast('Demo 모드로 접속했습니다\n가상 $10,000로 연습하세요', 'demo');
             }, 1000);
         }
     } catch (error) {
@@ -1857,7 +1857,7 @@ function switchTradingMode(mode) {
         // ★★★ 모드 전환 시 히스토리 캐시 리셋 (라이브 데이터 잔류 방지) ★★★
         window._weekHistoryData = null;
         window._todayPLFixed = null;
-        showToast('Demo 모드로 전환되었습니다', 'success');
+        showToast('Demo 모드로 전환되었습니다', 'demo');
         updateHeroCTA('demo_with_live');
 
         // ★ WebSocket 재연결 (Live → Demo URL로 변경)

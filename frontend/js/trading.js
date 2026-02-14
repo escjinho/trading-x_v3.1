@@ -422,10 +422,12 @@ async function pollOrderResult(orderId, orderType) {
         try {
             const res = await apiCall(`/mt5/bridge/orders/result/${orderId}`, 'GET');
             if (res && res.status !== 'pending') {
-                showToast(res.message || (res.success ? 'Order Success!' : 'Order Failed'), res.success ? 'success' : 'error');
                 if (res.success) {
+                    showToast('주문 성공!', orderType.toLowerCase() === 'buy' ? 'buy' : 'sell');
                     playSound(orderType.toLowerCase());
                     if (typeof fetchDemoData === 'function') fetchDemoData();
+                } else {
+                    showToast(res.message || 'Order Failed', 'error');
                 }
                 return res;
             }
@@ -500,7 +502,7 @@ async function placeBuy() {
                 try {
                     const posResult = await apiCall('/mt5/positions');
                     if (posResult?.position || (posResult?.positions && posResult.positions.length > 0)) {
-                        showToast('주문 성공!', 'success');
+                        showToast('주문 성공!', 'buy');
                         playSound('buy');
                     } else {
                         showToast('주문 실패', 'error');
@@ -611,7 +613,7 @@ async function placeSell() {
                 try {
                     const posResult = await apiCall('/mt5/positions');
                     if (posResult?.position || (posResult?.positions && posResult.positions.length > 0)) {
-                        showToast('주문 성공!', 'success');
+                        showToast('주문 성공!', 'sell');
                         playSound('sell');
                     } else {
                         showToast('주문 실패', 'error');

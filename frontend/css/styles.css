@@ -440,23 +440,25 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
 /* Toast */
 .toast {
     position: fixed;
-    top: 50%;
+    top: 38%;
     left: 50%;
     transform: translate(-50%, -50%);
     background: rgba(30, 33, 39, 0.97);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     padding: 14px 20px 14px 16px;
     border-radius: 12px;
     border: 1px solid rgba(63, 68, 81, 0.6);
     z-index: 10000;
     max-width: 88%;
-    min-width: 280px;
+    min-width: auto;
+    width: fit-content;
     display: flex;
     align-items: center;
     gap: 12px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255,255,255,0.03);
-    transition: opacity 0.35s ease;
+    transition: opacity 0.25s ease;
+    will-change: opacity;
     opacity: 0;
     font-size: 14px;
     color: #e0e0e0;
@@ -515,6 +517,27 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
     color: #00d4ff;
 }
 .toast.info {
+    border-color: rgba(0, 212, 255, 0.3);
+}
+.toast.buy .toast-icon {
+    background: rgba(0, 180, 80, 0.15);
+    color: #00b450;
+}
+.toast.buy {
+    border-color: rgba(0, 180, 80, 0.3);
+}
+.toast.sell .toast-icon {
+    background: rgba(220, 50, 70, 0.15);
+    color: #dc3246;
+}
+.toast.sell {
+    border-color: rgba(220, 50, 70, 0.3);
+}
+.toast.demo .toast-icon {
+    background: rgba(0, 212, 255, 0.15);
+    color: #00d4ff;
+}
+.toast.demo {
     border-color: rgba(0, 212, 255, 0.3);
 }
 
