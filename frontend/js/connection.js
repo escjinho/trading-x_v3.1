@@ -2171,9 +2171,7 @@ async function checkMetaAPIStatus() {
         if (!data.success) return;
 
         const status = data.metaapi_status;
-        // ★★★ MetaAPI Ready 상태 글로벌 저장 (주문 차단용) ★★★
-        window._metaapiReady = (status === 'deployed');
-        console.log(`[MetaAPI] 상태: ${status}, Ready: ${window._metaapiReady}`);
+        console.log(`[MetaAPI] 상태: ${status}`);
 
         // 성공 모달 내 상태 업데이트
         const modalStatusText = document.getElementById('metaapiStatusText');
@@ -2241,6 +2239,11 @@ async function checkMetaAPIStatus() {
                     mt5StatusEl.innerHTML = '<span style="color: var(--text-muted);">-</span>';
                 }
             }
+        }
+
+        // ★★★ 개인 MetaAPI가 없어도 공유 MetaAPI로 연결되면 Ready 표시 ★★★
+        if (status !== 'deployed' && window._metaapiConnected === true && mt5StatusEl) {
+            mt5StatusEl.innerHTML = '<span style="color: #00ff88;">Ready</span>';
         }
 
     } catch (e) {
