@@ -395,6 +395,10 @@ async function placeBuy() {
         showToast('주문 처리 중입니다. 잠시만 기다려주세요.', 'error');
         return;
     }
+    // ★★★ 새 주문 시 이전 청산 플래그 해제 ★★★
+    window._closeConfirmedAt = null;
+    window._userClosing = false;
+    window._plGaugeFrozen = false;
     window._orderCooldown = true;
     // ★★★ BUY/SELL 버튼만 비활성화 (CLOSE 버튼은 제외) ★★★
     document.querySelectorAll('.trade-btn.buy-btn, .trade-btn.sell-btn').forEach(b => { b.style.opacity = '0.5'; b.style.pointerEvents = 'none'; });
@@ -497,6 +501,10 @@ async function placeSell() {
         showToast('주문 처리 중입니다. 잠시만 기다려주세요.', 'error');
         return;
     }
+    // ★★★ 새 주문 시 이전 청산 플래그 해제 ★★★
+    window._closeConfirmedAt = null;
+    window._userClosing = false;
+    window._plGaugeFrozen = false;
     window._orderCooldown = true;
     // ★★★ BUY/SELL 버튼만 비활성화 (CLOSE 버튼은 제외) ★★★
     document.querySelectorAll('.trade-btn.buy-btn, .trade-btn.sell-btn').forEach(b => { b.style.opacity = '0.5'; b.style.pointerEvents = 'none'; });
@@ -606,6 +614,9 @@ async function closePosition() {
             playSound('close');
             const profit = result.profit || 0;  // ★ MT5 실제 P/L 사용
 
+            // ★★★ 청산 확인 타임스탬프 — WS 포지션 데이터 무시용 ★★★
+            window._closeConfirmedAt = Date.now();
+
             // ★ 포지션 UI 즉시 초기화 (WS 대기 X)
             window.lastLivePosition = null;
             updatePositionUI(false, null);
@@ -686,11 +697,13 @@ async function closePosition() {
         }
     } catch (e) { showToast('Network error', 'error'); }
 
-    // ★ 플래그 해제 (잠시 후 — WS가 한 번은 스킵하도록)
+    // ★★★ 15초 후 플래그 완전 해제 (MetaAPI 캐시 동기화 완료 대기) ★★★
     setTimeout(() => {
         window._userClosing = false;
         window._plGaugeFrozen = false;
-    }, 3000);
+        window._closeConfirmedAt = null;
+        console.log('[closePosition] 🔓 모든 청산 플래그 해제 (15초 후)');
+    }, 15000);
 }
 
 // ========== Demo 모드 주문 ==========

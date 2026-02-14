@@ -114,6 +114,7 @@ user_live_cache = {}
 user_target_cache = {}
 # ★★★ 자동청산 캐시 (프론트엔드 전달용) ★★★
 auto_closed_cache = {}
+user_close_acknowledged = {}  # ★ 유저 청산 확인: {user_id: timestamp} — WS 이중 감지 방지
 
 # ★★★ 자동청산 쿨다운 (중복 방지) ★★★
 auto_close_cooldown = {}
@@ -1567,6 +1568,8 @@ async def close_position(
                         user_live_cache[current_user.id]["today_pl"] = round(old_today_pl + profit, 2)
                         print(f"[MetaAPI Close] ★ today_pl 업데이트: ${old_today_pl:.2f} + ${profit:.2f} = ${user_live_cache[current_user.id]['today_pl']:.2f}")
 
+                # ★★★ WS 이중 감지 방지 플래그 ★★★
+                user_close_acknowledged[current_user.id] = time_module.time()
                 print(f"[MetaAPI Close] ✅ 청산 성공: positionId={position_id}, P/L=${profit:.2f}")
                 return JSONResponse({
                     "success": True,
@@ -1651,6 +1654,8 @@ async def close_position(
                 user_live_cache[current_user.id]["positions"] = [
                     p for p in cache_positions if p.get("id") != pos_id
                 ]
+            # ★★★ WS 이중 감지 방지 플래그 ★★★
+            user_close_acknowledged[current_user.id] = time_module.time()
             print(f"[MetaAPI Close] ✅ 청산 성공: {symbol} P/L=${profit:.2f}")
             return JSONResponse({
                 "success": True,
@@ -3198,36 +3203,46 @@ async def websocket_endpoint(websocket: WebSocket):
             metaapi_positions = get_metaapi_positions()
             closed_events = pop_metaapi_closed_events()
 
-            # ★★★ 유저별 MetaAPI 포지션 청산 감지 ★★★
+            # ★★★ 유저별 MetaAPI 포지션 청산 감지 (user_close_acknowledged 체크 포함) ★★★
             _user_closed_event = None
+            _user_ack_time = user_close_acknowledged.get(user_id, 0) if user_id else 0
+            _is_user_close_recent = (current_time - _user_ack_time) < 15  # 15초 이내 사용자 청산
+
             if _ws_use_user_metaapi and user_id:
                 _user_ma_positions_now = user_metaapi_cache.get(user_id, {}).get("positions", [])
-                # 유저 매직 넘버와 매칭되는 포지션만 필터
                 _user_magic_positions = [p for p in _user_ma_positions_now if p.get("magic", 0) == magic]
                 _has_position_now = len(_user_magic_positions) > 0
 
                 if _prev_user_position and not _has_position_now:
-                    _position_disappeared_count += 1
-                    # 2회 연속 확인 시 청산으로 확정 (일시적 API 오류 방지)
-                    if _position_disappeared_count >= 2:
-                        # ★ 청산 감지! 이전 포지션의 profit 사용
-                        _prev_profit = _prev_user_position.get("profit", 0)
-                        _prev_symbol = _prev_user_position.get("symbol", "")
-                        _is_win = _prev_profit >= 0
-
-                        _user_closed_event = {
-                            "profit": _prev_profit,
-                            "symbol": _prev_symbol,
-                            "is_win": _is_win,
-                            "position_id": _prev_user_position.get("id", ""),
-                        }
-                        print(f"[LIVE WS] 🔔 유저별 MetaAPI 포지션 청산 감지! User {user_id}, {_prev_symbol} P/L=${_prev_profit:.2f}")
-
+                    if _is_user_close_recent:
+                        # ★★★ 사용자가 직접 청산 → WS 자동감지 완전 스킵 ★★★
+                        print(f"[LIVE WS] ⏭️ User {user_id} 사용자 청산 후 {current_time - _user_ack_time:.1f}초 — 자동감지 스킵")
                         _prev_user_position = None
                         _position_disappeared_count = 0
+                    else:
+                        _position_disappeared_count += 1
+                        # 4회 연속 확인 시 청산으로 확정 (기존 2회 → 4회로 강화)
+                        if _position_disappeared_count >= 4:
+                            _prev_profit = _prev_user_position.get("profit", 0)
+                            _prev_symbol = _prev_user_position.get("symbol", "")
+                            _is_win = _prev_profit >= 0
+
+                            _user_closed_event = {
+                                "profit": _prev_profit,
+                                "symbol": _prev_symbol,
+                                "is_win": _is_win,
+                                "position_id": _prev_user_position.get("id", ""),
+                            }
+                            print(f"[LIVE WS] 🔔 자동 청산 감지! User {user_id}, {_prev_symbol} P/L=${_prev_profit:.2f}")
+
+                            _prev_user_position = None
+                            _position_disappeared_count = 0
                 elif _has_position_now:
-                    _prev_user_position = _user_magic_positions[0]  # 최신 포지션 저장
+                    _prev_user_position = _user_magic_positions[0]
                     _position_disappeared_count = 0
+                    # ★★★ 포지션 있으면 acknowledged 클리어 (새 포지션 진입 의미) ★★★
+                    if user_id and user_id in user_close_acknowledged:
+                        del user_close_acknowledged[user_id]
 
             # ★ 계정 정보 (유저별 MetaAPI > 공유 MetaAPI > user_cache > MT5)
             _user_ma_cache = user_metaapi_cache.get(user_id) if user_id else None
@@ -3685,10 +3700,13 @@ async def websocket_endpoint(websocket: WebSocket):
                 _last_sent_position = position_data
                 _last_position_time = current_time
             elif _last_sent_position and (current_time - _last_position_time) < POSITION_HOLD_SEC:
-                # 포지션이 사라졌지만 3초 이내 → 이전 포지션 유지 (자동청산 아닐 때만)
-                if not auto_closed:
+                # 포지션이 사라졌지만 3초 이내 → 이전 포지션 유지
+                # ★★★ 단, 사용자 청산 확인 or 자동청산이면 홀드하지 않음 ★★★
+                if not auto_closed and not _is_user_close_recent:
                     position_data = _last_sent_position
                     positions_count = max(positions_count, 1)
+                else:
+                    _last_sent_position = None
             else:
                 _last_sent_position = None
 

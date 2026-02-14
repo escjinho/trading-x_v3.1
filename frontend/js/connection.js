@@ -666,23 +666,26 @@ function connectWebSocket() {
             queueIndicatorUpdate(data.buy_count, data.sell_count, data.neutral_count);
         }
         
-        // 포지션 정보
+        // ★★★ 포지션 정보 — _closeConfirmedAt 체크로 청산 후 게이지 재출현 방지 ★★★
             if (data.position) {
-                updatePositionUI(true, data.position);
-                window.lastLivePosition = data.position;
-                
-                // ★ 프론트엔드 자동 청산 제거 — 백엔드/MT5 TP/SL에서 처리
+                // ★★★ 사용자가 청산 확인한 후 15초 이내면 WS 포지션 데이터 무시 ★★★
+                if (window._closeConfirmedAt && (Date.now() - window._closeConfirmedAt) < 15000) {
+                    console.log('[WS Live] ⏭️ 청산 확인 후 캐시 지연 데이터 무시');
+                    // 포지션 UI를 업데이트하지 않음 (이전 청산 상태 유지)
+                } else {
+                    updatePositionUI(true, data.position);
+                    window.lastLivePosition = data.position;
+                }
             } else {
                 // Live 모드에서 포지션 청산 감지
                 if (!isDemo && window.lastLivePosition) {
-                    // ★★★ 사용자 청산 시 이중 팝업 방지 ★★★
-                    if (window._userClosing) {
-                        console.log('[WS Live] ⏭️ 사용자 청산 중 — WS 토스트 스킵');
+                    // ★★★ 사용자 청산 확인 완료 시 이중 토스트 완전 차단 ★★★
+                    if (window._userClosing || window._closeConfirmedAt) {
+                        console.log('[WS Live] ⏭️ 사용자 청산 완료 — WS 청산 토스트 스킵');
                     } else if (currentMode === 'martin' && martinEnabled) {
-                        // ★★★ 마틴 모드: auto_closed 이벤트 대기 (베이직 팝업 차단) ★★★
                         console.log('[WS Live] ⏳ 마틴 모드 — auto_closed 이벤트 대기 중');
                     } else {
-                        // ★★★ Basic/NoLimit 모드: 즉시 청산 토스트 ★★★
+                        // ★★★ Basic/NoLimit 모드: MT5/SL/TP 자동 청산 시에만 토스트 ★★★
                         const lastProfit = window.lastLivePosition.profit || 0;
                         playSound('close');
 
@@ -803,8 +806,8 @@ function connectWebSocket() {
             }
         }
 
-        // ★★★ SL/TP 청산 동기화 이벤트 처리 ★★★
-        if (data.sync_event && data.sync_event.type === 'sl_tp_closed') {
+        // ★★★ SL/TP 청산 동기화 이벤트 처리 — 사용자 청산 후 이중 감지 차단 ★★★
+        if (data.sync_event && data.sync_event.type === 'sl_tp_closed' && !window._closeConfirmedAt) {
             const profit = data.sync_event.profit || 0;
             console.log('[WS Live] 🎯 SL/TP 청산 감지!', data.sync_event);
 
@@ -849,10 +852,10 @@ function connectWebSocket() {
             }, 5000);
         }
 
-        // ★★★ 라이브 자동청산 처리 (데모와 동일 구조 - Basic/NoLimit/Martin 모드별 분기) ★★★
-        if (data.auto_closed && !window._userClosing) {
-            // ★★★ WS 연결 직후 5초간은 이전 이벤트 무시 (서버 재시작 가짜 팝업 방지) ★★★
-            if (Date.now() - wsConnectionStartTime < 5000) {
+        // ★★★ 라이브 자동청산 처리 — 사용자 청산 후 이중 감지 완전 차단 ★★★
+        if (data.auto_closed && !window._userClosing && !window._closeConfirmedAt) {
+            // ★★★ WS 연결 직후 10초간은 이전 이벤트 무시 (서버 재시작/모드 전환 가짜 팝업 방지) ★★★
+            if (Date.now() - wsConnectionStartTime < 10000) {
                 console.log('[WS Live] ⏳ 연결 직후 청산 이벤트 무시 (가짜 팝업 방지)');
             } else {
             const closedAt = data.closed_at || Date.now() / 1000;
