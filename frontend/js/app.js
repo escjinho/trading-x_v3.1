@@ -79,7 +79,7 @@ function initGuestMode() {
     setInterval(fetchGuestIndicators, 5000);  // 5초마다 API 조회
     
     setTimeout(() => {
-        showToast('👋 게스트 모드로 둘러보는 중입니다', '');
+        showToast('게스트 모드로 둘러보는 중입니다', 'info');
     }, 1000);
 }
 

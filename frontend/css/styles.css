@@ -438,10 +438,84 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
 .nav-label { font-size: 10px; margin-top: -6px; }
 
 /* Toast */
-.toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #1e2127; padding: 12px 20px; border-radius: 8px; border: 1px solid var(--border-color); display: none; z-index: 1000; max-width: 90%; }
-.toast.success { border-color: var(--buy-color); }
-.toast.error { border-color: var(--sell-color); }
-.toast.show { display: block; }
+.toast {
+    position: fixed;
+    top: -80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(30, 33, 39, 0.97);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 14px 20px 14px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(63, 68, 81, 0.6);
+    z-index: 10000;
+    max-width: 88%;
+    min-width: 280px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255,255,255,0.03);
+    transition: top 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+    opacity: 0;
+    font-size: 14px;
+    color: #e0e0e0;
+    line-height: 1.4;
+}
+.toast.show {
+    top: 24px;
+    opacity: 1;
+}
+.toast .toast-icon {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+.toast .toast-content {
+    flex: 1;
+}
+.toast .toast-title {
+    font-weight: 600;
+    font-size: 13px;
+    margin-bottom: 2px;
+}
+.toast .toast-message {
+    font-size: 12px;
+    color: #9ca3af;
+}
+.toast.success .toast-icon {
+    background: rgba(0, 180, 80, 0.15);
+    color: #00b450;
+}
+.toast.success {
+    border-color: rgba(0, 180, 80, 0.3);
+}
+.toast.error .toast-icon {
+    background: rgba(220, 50, 70, 0.15);
+    color: #dc3246;
+}
+.toast.error {
+    border-color: rgba(220, 50, 70, 0.3);
+}
+.toast.warning .toast-icon {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+}
+.toast.warning {
+    border-color: rgba(245, 158, 11, 0.3);
+}
+.toast.info .toast-icon {
+    background: rgba(0, 212, 255, 0.15);
+    color: #00d4ff;
+}
+.toast.info {
+    border-color: rgba(0, 212, 255, 0.3);
+}
 
 /* Settings Modal */
 .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(4px); }

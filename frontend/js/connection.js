@@ -576,14 +576,14 @@ function connectWebSocket() {
                         } else if (data.martin_step_up) {
                             showMartinPopup(profit);
                         } else {
-                            showToast(`💔 손절! $${profit.toFixed(2)}`, 'error');
+                            showToast(`손절! $${profit.toFixed(2)}`, 'error');
                         }
                     } else {
                         // ★★★ Basic/NoLimit 모드 - 팝업 표시 (손익 금액 포함) ★★★
                         if (isWin) {
-                            showToast(`🎯 목표 도달! +$${Math.abs(profit).toFixed(2)}`, 'success');
+                            showToast(`목표 도달! +$${Math.abs(profit).toFixed(2)}`, 'success');
                         } else {
-                            showToast(`💔 손절! -$${Math.abs(profit).toFixed(2)}`, 'error');
+                            showToast(`손절! -$${Math.abs(profit).toFixed(2)}`, 'error');
                         }
                     }
 
@@ -760,9 +760,9 @@ function connectWebSocket() {
                         playSound('close');
 
                         if (lastProfit >= 0) {
-                            showToast(`🎯 청산 완료! +$${lastProfit.toFixed(2)}`, 'success');
+                            showToast(`청산 완료! +$${lastProfit.toFixed(2)}`, 'success');
                         } else {
-                            showToast(`💔 청산 완료! -$${Math.abs(lastProfit).toFixed(2)}`, 'error');
+                            showToast(`청산 완료! -$${Math.abs(lastProfit).toFixed(2)}`, 'error');
                         }
 
                         if (typeof updateTodayPL === 'function') {
@@ -905,7 +905,7 @@ function connectWebSocket() {
             }, 20000);
 
             // 3. 즉시 청산 알림
-            showToast('📊 포지션이 청산되었습니다!', 'success');
+            showToast('포지션이 청산되었습니다', 'success');
 
             // 4. 1.5초 후 히스토리에서 실제 체결 금액 조회
             setTimeout(async () => {
@@ -937,7 +937,7 @@ function connectWebSocket() {
                                 updateMartinUI();
                                 updateTodayPL(actualProfit);
                                 window._martinStateUpdating = false;
-                                showToast(`💰 일부 회복! +$${actualProfit.toFixed(2)}`, 'success');
+                                showToast(`일부 회복! +$${actualProfit.toFixed(2)}`, 'success');
                             }
                         } else if (actualProfit < 0) {
                             showMartinPopup(actualProfit);
@@ -1006,7 +1006,7 @@ function connectWebSocket() {
                 // ★★★ 라이브 마틴 모드: 1.5초 후 정확한 손익 → 팝업 ★★★
                 if (currentMode === 'martin' && martinEnabled) {
                     window._martinStateUpdating = true;
-                    showToast('📊 포지션이 청산되었습니다!', 'success');
+                    showToast('포지션이 청산되었습니다', 'success');
 
                     setTimeout(async () => {
                         try {
@@ -1034,7 +1034,7 @@ function connectWebSocket() {
                                     updateMartinUI();
                                     updateTodayPL(actualProfit);
                                     window._martinStateUpdating = false;
-                                    showToast(`💰 일부 회복! +$${actualProfit.toFixed(2)}`, 'success');
+                                    showToast(`일부 회복! +$${actualProfit.toFixed(2)}`, 'success');
                                 }
                             } else if (actualProfit < 0) {
                                 showMartinPopup(actualProfit);
@@ -1050,7 +1050,7 @@ function connectWebSocket() {
                     }, 1500);
                 } else {
                     // ★★★ Basic/NoLimit 모드: 간소화 (금액 토스트 없음) ★★★
-                    showToast('📊 포지션이 청산되었습니다!', 'success');
+                    showToast('포지션이 청산되었습니다', 'success');
                     // 2초 후 히스토리 + Today P/L 동기화
                     setTimeout(() => {
                         if (typeof loadHistory === 'function') loadHistory();
@@ -1101,7 +1101,7 @@ function connectWebSocket() {
 
                 // 마틴 모드일 때 경고 토스트
                 if (currentMode === 'martin' && martinEnabled) {
-                    showToast('⚠️ MetaAPI 연결이 불안정합니다. 주문이 제한됩니다.', 'error', 5000);
+                    showToast('MetaAPI 연결이 불안정합니다\n주문이 제한됩니다', 'warning', 5000);
 
                     // 마틴 주문 버튼 비활성화
                     document.querySelectorAll('.trade-btn').forEach(btn => {
@@ -1117,7 +1117,7 @@ function connectWebSocket() {
 
                 // 마틴 모드일 때 복구 토스트
                 if (currentMode === 'martin' && martinEnabled) {
-                    showToast('✅ MetaAPI 연결이 복구되었습니다.', 'success', 3000);
+                    showToast('MetaAPI 연결이 복구되었습니다', 'success', 3000);
 
                     // 마틴 주문 버튼 활성화
                     document.querySelectorAll('.trade-btn').forEach(btn => {
@@ -1269,9 +1269,9 @@ async function fetchAccountData() {
                     playSound('close');
                     
                     if (lastProfit >= 0) {
-                        showToast(`🎯 청산 완료! +$${lastProfit.toFixed(2)}`, 'success');
+                        showToast(`청산 완료! +$${lastProfit.toFixed(2)}`, 'success');
                     } else {
-                        showToast(`💔 청산 완료! $${lastProfit.toFixed(2)}`, 'error');
+                        showToast(`청산 완료! $${lastProfit.toFixed(2)}`, 'error');
                     }
                     
                     // Today P/L 업데이트 — _todayPLFixed 사용
@@ -1439,7 +1439,7 @@ async function checkUserMode() {
             }
 
             setTimeout(() => {
-                showToast('📊 Demo 모드로 접속했습니다', '가상 $10,000로 연습하세요!');
+                showToast('Demo 모드로 접속했습니다\n가상 $10,000로 연습하세요', 'info');
             }, 1000);
         }
     } catch (error) {
@@ -1452,7 +1452,7 @@ async function checkUserMode() {
 
         if (window._checkUserModeRetries <= 3) {
             console.log(`[checkUserMode] 재시도 ${window._checkUserModeRetries}/3 (3초 후)`);
-            showToast('서버 연결 중... 잠시만 기다려주세요', '');
+            showToast('서버에 연결하는 중입니다', 'info');
             setTimeout(() => checkUserMode(), 3000);
             return;
         }
@@ -1529,14 +1529,14 @@ async function fetchDemoData() {
                         } else if (data.martin_step_up) {
                             showMartinPopup(profit);
                         } else {
-                            showToast(`💔 손절! $${profit.toFixed(2)}`, 'error');
+                            showToast(`손절! $${profit.toFixed(2)}`, 'error');
                         }
                     } else {
                         // ★★★ Basic/NoLimit 모드 - 팝업 표시 (손익 금액 포함) ★★★
                         if (isWin) {
-                            showToast(`🎯 목표 도달! +$${Math.abs(profit).toFixed(2)}`, 'success');
+                            showToast(`목표 도달! +$${Math.abs(profit).toFixed(2)}`, 'success');
                         } else {
-                            showToast(`💔 손절! -$${Math.abs(profit).toFixed(2)}`, 'error');
+                            showToast(`손절! -$${Math.abs(profit).toFixed(2)}`, 'error');
                         }
                     }
 
@@ -1735,7 +1735,7 @@ if (!isGuest && token) {
     
     // 게스트 안내 토스트
     setTimeout(() => {
-        showToast('👋 게스트 모드로 둘러보는 중입니다', '');
+        showToast('게스트 모드로 둘러보는 중입니다', 'info');
     }, 1000);
     
     updateHeroCTA('guest');
@@ -1803,7 +1803,7 @@ function switchTradingMode(mode) {
         // ★★★ 모드 전환 시 히스토리 캐시 리셋 (라이브 데이터 잔류 방지) ★★★
         window._weekHistoryData = null;
         window._todayPLFixed = null;
-        showToast('🎮 Demo 모드로 전환되었습니다', 'success');
+        showToast('Demo 모드로 전환되었습니다', 'success');
         updateHeroCTA('demo_with_live');
 
         // ★ WebSocket 재연결 (Live → Demo URL로 변경)
@@ -1871,7 +1871,7 @@ function switchTradingMode(mode) {
                 // ★★★ 모드 전환 시 히스토리 캐시 리셋 (데모 데이터 잔류 방지) ★★★
                 window._weekHistoryData = null;
                 window._todayPLFixed = null;
-                showToast('💎 Live 모드로 전환되었습니다', 'success');
+                showToast('Live 모드로 전환되었습니다', 'success');
                 updateHeroCTA('live');
 
                 // ★ WebSocket 재연결 (Demo → Live URL로 변경)
@@ -2162,7 +2162,7 @@ async function connectMT5Account() {
             fetchAccountData();
             // ★ 폴링은 ws.onclose에서 자동 시작됨 (중복 방지)
 
-            showToast('🔄 MT5 계정 연결 중... 잠시만 기다려주세요', 'success');
+            showToast('MT5 계정 연결 중...\n잠시만 기다려주세요', 'info');
 
             // ★★★ MetaAPI 프로비저닝 상태 폴링 시작 ★★★
             startMetaAPIStatusPoll();

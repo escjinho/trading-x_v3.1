@@ -64,9 +64,9 @@ async function apiCall(endpoint, method = 'GET', body = null) {
         
         // 네트워크 오류와 세션 만료 구분
         if (error.name === 'TypeError' && error.message.includes('fetch')) {
-            showToast('⚠️ 네트워크 오류', '인터넷 연결을 확인해 주세요');
+            showToast('네트워크 연결 확인 중\n인터넷 연결을 확인해 주세요', 'warning');
         } else {
-            showToast('⚠️ 서버 오류', '잠시 후 다시 시도해 주세요');
+            showToast('잠시 연결이 불안정합니다\n곧 자동으로 복구됩니다', 'warning');
         }
         
         return { success: false, error: 'network_error', message: '서버 연결 실패' };

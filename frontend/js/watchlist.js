@@ -599,25 +599,7 @@ function zmRotateScreen() {
     showToast('준비중입니다', '');
 }
 
-// Toast 메시지 (없으면 추가)
-function showToast(message, type) {
-    // 기존 토스트 제거
-    const existingToast = document.querySelector('.zm-toast');
-    if (existingToast) {
-        existingToast.remove();
-    }
-    
-    // 새 토스트 생성
-    const toast = document.createElement('div');
-    toast.className = 'zm-toast' + (type === 'success' ? ' success' : '');
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    
-    // 3초 후 제거
-    setTimeout(() => {
-        toast.remove();
-    }, 3000);
-}
+// showToast는 utils.js에서 전역으로 정의됨
 
 // 돋보기 버튼 - 왓치리스트로 이동 (상단 아이콘용)
 function zmOpenSearch() {

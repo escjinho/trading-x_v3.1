@@ -89,7 +89,7 @@ async function martinPopupStay() {
 
     updateMartinUI();
     updateTodayPL(_martinPendingProfit);
-    showToast(`📊 Step ${martinStep} 유지! 누적손실: -$${martinAccumulatedLoss.toFixed(2)}`, 'error');
+    showToast(`Step ${martinStep} 유지\n누적손실: -$${martinAccumulatedLoss.toFixed(2)}`, 'warning');
 }
 
 async function martinPopupContinue() {
@@ -122,7 +122,7 @@ async function martinPopupContinue() {
         } else {
             await apiCall(`/mt5/martin/update-state?step=${martinStep}&accumulated_loss=${martinAccumulatedLoss}`, 'POST');
         }
-        showToast(`📈 Step ${martinStep}로 진행! (Lot: ${(lotSize * Math.pow(2, martinStep - 1)).toFixed(2)})`, 'error');
+        showToast(`Step ${martinStep}로 진행\nLot: ${(lotSize * Math.pow(2, martinStep - 1)).toFixed(2)}`, 'warning');
     }
 
     updateMartinUI();
@@ -144,7 +144,7 @@ function closeMaxPopup() {
     martinHistory = [];
     updateMartinUI();
     
-    showToast('마틴이 1단계로 초기화되었습니다', '');
+    showToast('마틴이 1단계로 초기화되었습니다', 'info');
 }
 
 // ========== 마틴 성공 팝업 ==========
@@ -172,7 +172,7 @@ function martinSuccessContinue() {
     // targetAmount은 변경하지 않음 (사용자 설정 유지)
 
     updateMartinUI();
-    showToast('🚀 1단계로 다시 시작합니다!', 'success');
+    showToast('1단계로 다시 시작합니다', 'success');
 }
 
 // ========== Today P/L ==========
@@ -452,7 +452,7 @@ async function placeBuy() {
 
     // ★★★ MetaAPI 연결 상태 체크 (공유+유저별 모두 WS에서 반영됨) ★★★
     if (window._metaapiConnected === false) {
-        showToast('⚠️ Trading API 연결 중입니다.\n잠시 후 다시 시도해주세요.', 'error', 5000);
+        showToast('Trading API 연결 중입니다\n잠시 후 다시 시도해주세요', 'warning', 5000);
         return;
     }
 
@@ -473,7 +473,7 @@ async function placeBuy() {
         document.querySelectorAll('.trade-btn.buy-btn, .trade-btn.sell-btn').forEach(b => { b.style.opacity = '1'; b.style.pointerEvents = 'auto'; });
     }, 5000);
 
-    showToast('Processing...', '');
+    showToast('처리 중...', 'info');
     try {
         let result;
         if (currentMode === 'martin' && martinEnabled) {
@@ -487,7 +487,7 @@ async function placeBuy() {
 
         // ★★★ Bridge 모드: 결과 폴링 ★★★
         if (result?.bridge_mode && result?.order_id) {
-            showToast('Order sent to MT5...', '');
+            showToast('MT5로 주문 전송 중...', 'info');
             pollOrderResult(result.order_id, 'BUY');
             return;
         }
@@ -495,7 +495,7 @@ async function placeBuy() {
         // ★★★ 연결 에러 시 포지션 재확인 ★★★
         const msg = (result?.message || '').toLowerCase();
         if (!result?.success && (msg.includes('not connected') || msg.includes('region') || msg.includes('timeout'))) {
-            showToast('주문 확인 중...', '');
+            showToast('주문 확인 중...', 'info');
             setTimeout(async () => {
                 try {
                     const posResult = await apiCall('/mt5/positions');
@@ -514,21 +514,21 @@ async function placeBuy() {
 
         // ★★★ 스프레드 거부 + TP/SL 실패 특별 처리 ★★★
         if (result?.spread_rejected) {
-            showToast('⚠️ 스프레드 비용이 너무 높습니다!\n타겟 금액을 높이거나 랏 사이즈를 줄여주세요.', 'error', 5000);
+            showToast('스프레드 비용이 너무 높습니다\n타겟 금액을 높이거나 랏 사이즈를 줄여주세요', 'warning', 5000);
             return;
         }
         if (result?.tp_sl_failed) {
-            showToast('⚠️ TP/SL 설정 실패! 안전을 위해 주문이 취소되었습니다.\n다시 시도해주세요.', 'error', 5000);
+            showToast('TP/SL 설정 실패\n안전을 위해 주문이 취소되었습니다', 'error', 5000);
             return;
         }
         // ★★★ MetaAPI 연결 끊김 처리 ★★★
         if (result?.metaapi_disconnected) {
-            showToast('⚠️ MetaAPI 연결이 불안정합니다.\n잠시 후 다시 시도해주세요.', 'error', 5000);
+            showToast('MetaAPI 연결이 불안정합니다\n잠시 후 다시 시도해주세요', 'warning', 5000);
             return;
         }
         // ★★★ 증거금 부족 처리 ★★★
         if (result?.margin_insufficient) {
-            showToast(`⚠️ 증거금이 부족합니다!\n가용마진: $${result.free_margin?.toFixed(0) || 0}, 필요마진: $${result.required_margin?.toFixed(0) || 0}`, 'error', 5000);
+            showToast(`증거금이 부족합니다\n가용마진: $${result.free_margin?.toFixed(0) || 0}, 필요마진: $${result.required_margin?.toFixed(0) || 0}`, 'warning', 5000);
             return;
         }
         showToast(result?.message || 'Error', result?.success ? 'success' : 'error');
@@ -563,7 +563,7 @@ async function placeSell() {
 
     // ★★★ MetaAPI 연결 상태 체크 (공유+유저별 모두 WS에서 반영됨) ★★★
     if (window._metaapiConnected === false) {
-        showToast('⚠️ Trading API 연결 중입니다.\n잠시 후 다시 시도해주세요.', 'error', 5000);
+        showToast('Trading API 연결 중입니다\n잠시 후 다시 시도해주세요', 'warning', 5000);
         return;
     }
 
@@ -584,7 +584,7 @@ async function placeSell() {
         document.querySelectorAll('.trade-btn.buy-btn, .trade-btn.sell-btn').forEach(b => { b.style.opacity = '1'; b.style.pointerEvents = 'auto'; });
     }, 5000);
 
-    showToast('Processing...', '');
+    showToast('처리 중...', 'info');
     try {
         let result;
         if (currentMode === 'martin' && martinEnabled) {
@@ -598,7 +598,7 @@ async function placeSell() {
 
         // ★★★ Bridge 모드: 결과 폴링 ★★★
         if (result?.bridge_mode && result?.order_id) {
-            showToast('Order sent to MT5...', '');
+            showToast('MT5로 주문 전송 중...', 'info');
             pollOrderResult(result.order_id, 'SELL');
             return;
         }
@@ -606,7 +606,7 @@ async function placeSell() {
         // ★★★ 연결 에러 시 포지션 재확인 ★★★
         const msg = (result?.message || '').toLowerCase();
         if (!result?.success && (msg.includes('not connected') || msg.includes('region') || msg.includes('timeout'))) {
-            showToast('주문 확인 중...', '');
+            showToast('주문 확인 중...', 'info');
             setTimeout(async () => {
                 try {
                     const posResult = await apiCall('/mt5/positions');
@@ -625,21 +625,21 @@ async function placeSell() {
 
         // ★★★ 스프레드 거부 + TP/SL 실패 특별 처리 ★★★
         if (result?.spread_rejected) {
-            showToast('⚠️ 스프레드 비용이 너무 높습니다!\n타겟 금액을 높이거나 랏 사이즈를 줄여주세요.', 'error', 5000);
+            showToast('스프레드 비용이 너무 높습니다\n타겟 금액을 높이거나 랏 사이즈를 줄여주세요', 'warning', 5000);
             return;
         }
         if (result?.tp_sl_failed) {
-            showToast('⚠️ TP/SL 설정 실패! 안전을 위해 주문이 취소되었습니다.\n다시 시도해주세요.', 'error', 5000);
+            showToast('TP/SL 설정 실패\n안전을 위해 주문이 취소되었습니다', 'error', 5000);
             return;
         }
         // ★★★ MetaAPI 연결 끊김 처리 ★★★
         if (result?.metaapi_disconnected) {
-            showToast('⚠️ MetaAPI 연결이 불안정합니다.\n잠시 후 다시 시도해주세요.', 'error', 5000);
+            showToast('MetaAPI 연결이 불안정합니다\n잠시 후 다시 시도해주세요', 'warning', 5000);
             return;
         }
         // ★★★ 증거금 부족 처리 ★★★
         if (result?.margin_insufficient) {
-            showToast(`⚠️ 증거금이 부족합니다!\n가용마진: $${result.free_margin?.toFixed(0) || 0}, 필요마진: $${result.required_margin?.toFixed(0) || 0}`, 'error', 5000);
+            showToast(`증거금이 부족합니다\n가용마진: $${result.free_margin?.toFixed(0) || 0}, 필요마진: $${result.required_margin?.toFixed(0) || 0}`, 'warning', 5000);
             return;
         }
         showToast(result?.message || 'Error', result?.success ? 'success' : 'error');
@@ -668,13 +668,13 @@ async function closePosition() {
     window._userClosing = true;
     window._plGaugeFrozen = true;  // 손익 게이지 애니메이션 정지
 
-    showToast('Closing...', '');
+    showToast('청산 중...', 'info');
     try {
         let result = await apiCall(`/mt5/close?symbol=${currentSymbol}&magic=${BUYSELL_MAGIC_NUMBER}`, 'POST');
 
         // ★★★ Bridge 모드: 결과 폴링 ★★★
         if (result?.bridge_mode && result?.order_id) {
-            showToast('Closing position...', '');
+            showToast('포지션 청산 중...', 'info');
             const pollResult = await pollOrderResult(result.order_id, 'CLOSE');
             if (pollResult) {
                 result = pollResult;  // MT5 실제 결과로 교체
@@ -699,7 +699,7 @@ async function closePosition() {
 
             if (currentMode === 'martin' && martinEnabled) {
                 // ★★★ 마틴 모드: 즉시 알림 → 1.5초 후 MT5 실제 손익으로 팝업/처리 ★★★
-                showToast('📊 포지션이 청산되었습니다! 손익 확인 중...', 'success');
+                showToast('포지션이 청산되었습니다\n손익 확인 중...', 'success');
 
                 setTimeout(async () => {
                     window._martinStateUpdating = true;
@@ -745,7 +745,7 @@ async function closePosition() {
                                 updateTodayPL(profit);
                                 window._martinStateUpdating = false;
                                 if (remainingLoss > 0) {
-                                    showToast(`💰 일부 회복! +$${profit.toFixed(2)} (남은 손실: $${remainingLoss.toFixed(2)})`, 'success');
+                                    showToast(`일부 회복! +$${profit.toFixed(2)}\n남은 손실: $${remainingLoss.toFixed(2)}`, 'success');
                                 } else {
                                     showMartinSuccessPopup(profit);
                                 }
@@ -770,9 +770,9 @@ async function closePosition() {
                 // Basic/NoLimit 모드
                 updateTodayPL(apiProfit);
                 if (apiProfit >= 0) {
-                    showToast(`🎯 청산 완료! +$${apiProfit.toFixed(2)}`, 'success');
+                    showToast(`청산 완료! +$${apiProfit.toFixed(2)}`, 'success');
                 } else {
-                    showToast(`💔 청산 완료! -$${Math.abs(apiProfit).toFixed(2)}`, 'error');
+                    showToast(`청산 완료! -$${Math.abs(apiProfit).toFixed(2)}`, 'error');
                 }
 
                 // ★★★ 히스토리/P&L 갱신 ★★★
@@ -819,7 +819,7 @@ async function closePosition() {
 // ========== Demo 모드 주문 ==========
 async function placeDemoOrder(orderType) {
     console.log(`[placeDemoOrder] 🔵 START - Order: ${orderType}, Symbol: ${currentSymbol}, Target: ${targetAmount}`);
-    showToast('Processing...', '');
+    showToast('처리 중...', 'info');
     try {
         let response;
 
@@ -871,7 +871,7 @@ async function placeDemoOrder(orderType) {
 
 // ========== Demo 모드 청산 ==========
 async function closeDemoPosition() {
-    showToast('Closing...', '');
+    showToast('청산 중...', 'info');
     try {
         const response = await fetch(`${API_URL}/demo/close?magic=${BUYSELL_MAGIC_NUMBER}`, {
             method: 'POST',
@@ -905,7 +905,7 @@ async function closeDemoPosition() {
                         updateMartinUI();
                         updateTodayPL(profit);
                         if (remainingLoss > 0) {
-                            showToast(`💰 일부 회복! +$${profit.toFixed(2)} (남은: $${remainingLoss.toFixed(2)})`, 'success');
+                            showToast(`일부 회복! +$${profit.toFixed(2)}\n남은 손실: $${remainingLoss.toFixed(2)}`, 'success');
                         } else {
                             showMartinSuccessPopup(profit);
                         }

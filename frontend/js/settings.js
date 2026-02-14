@@ -426,7 +426,7 @@ async function applySettings() {
     }
     
     closeSettings();
-    showToast('Settings applied!', 'success');
+    showToast('설정이 적용되었습니다', 'success');
 }
 
 function resetSettings() {
