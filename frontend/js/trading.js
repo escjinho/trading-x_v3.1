@@ -57,10 +57,11 @@ let _martinPendingProfit = 0;      // 이번 청산 손익 (원본, 음수 가�
 
 async function showMartinPopup(profit) {
     // ★★★ 히스토리에서 정확한 profit 폴링 (히스토리 탭과 동일) ★★★
-    const maxRetries = 10;
-    const interval = 500;
+    const maxRetries = 6;
+    const interval = 300;
     let found = false;
 
+    await new Promise(r => setTimeout(r, 1000));  // 1초 대기 후 폴링 시작
     for (let i = 0; i < maxRetries; i++) {
         try {
             const lastTradeUrl = isDemo
