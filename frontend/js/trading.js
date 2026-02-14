@@ -1,6 +1,23 @@
 // ========== Buy/Sell 패널 매직넘버 ==========
 const BUYSELL_MAGIC_NUMBER = 100001;
 
+// ★★★ MetaAPI 에러 메시지 → 사용자 친화적 메시지 변환 ★★★
+function friendlyError(msg) {
+    if (!msg) return '일시적 오류가 발생했습니다';
+    const m = msg.toLowerCase();
+    if (m.includes('timed out')) return '주문 처리 시간 초과\n잠시 후 다시 시도해주세요';
+    if (m.includes('not connected to broker')) return '브로커 연결 준비 중\n잠시 후 다시 시도해주세요';
+    if (m.includes('no trading permissions')) return '거래 권한이 없습니다\nMT5 계정을 확인해주세요';
+    if (m.includes('market is closed')) return '현재 시장이 닫혀있습니다';
+    if (m.includes('not enough money')) return '증거금이 부족합니다';
+    if (m.includes('invalid volume')) return '유효하지 않은 랏 사이즈입니다';
+    if (m.includes('off quotes')) return '현재 호가를 받을 수 없습니다\n잠시 후 다시 시도해주세요';
+    if (m.includes('trade not allowed')) return '거래가 허용되지 않습니다';
+    if (m.includes('position not found') || m.includes('포지션 없음')) return '포지션이 이미 청산되었습니다';
+    if (msg.length > 60) return '일시적 오류가 발생했습니다\n잠시 후 다시 시도해주세요';
+    return msg;
+}
+
 // ========== 마틴 팝업 ==========
 // ★★★ 임시 저장: 팝업 표시 중 유저 선택 대기 ★★★
 let _martinPendingLoss = 0;        // 이번 청산 손실 (양수)
@@ -16,13 +33,17 @@ async function showMartinPopup(profit) {
     try {
         let dbAccLoss = martinAccumulatedLoss;
         if (isDemo) {
-            const state = await apiCall(`/demo/martin/state?magic=${BUYSELL_MAGIC_NUMBER}`, 'GET');
+            const statePromise = apiCall(`/demo/martin/state?magic=${BUYSELL_MAGIC_NUMBER}`, 'GET');
+            const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 2000));
+            const state = await Promise.race([statePromise, timeoutPromise]);
             if (state && state.accumulated_loss !== undefined) {
                 dbAccLoss = state.accumulated_loss;
                 martinStep = state.step || martinStep;
             }
         } else {
-            const state = await apiCall('/mt5/martin/state', 'GET');
+            const statePromise = apiCall('/mt5/martin/state', 'GET');
+            const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 2000));
+            const state = await Promise.race([statePromise, timeoutPromise]);
             if (state && state.accumulated_loss !== undefined) {
                 dbAccLoss = state.accumulated_loss;
                 martinStep = state.step || martinStep;
@@ -427,7 +448,7 @@ async function pollOrderResult(orderId, orderType) {
                     playSound(orderType.toLowerCase());
                     if (typeof fetchDemoData === 'function') fetchDemoData();
                 } else {
-                    showToast(res.message || 'Order Failed', 'error');
+                    showToast(friendlyError(res.message), 'error');
                 }
                 return res;
             }
@@ -533,7 +554,7 @@ async function placeBuy() {
             showToast(`증거금이 부족합니다\n가용마진: $${result.free_margin?.toFixed(0) || 0}, 필요마진: $${result.required_margin?.toFixed(0) || 0}`, 'warning', 5000);
             return;
         }
-        showToast(result?.message || 'Error', result?.success ? 'success' : 'error');
+        showToast(result?.success ? '주문 성공!' : friendlyError(result?.message), result?.success ? 'buy' : 'error');
         if (result?.success) {
             playSound('buy');
             // ★★★ 포지션 확인 → 쿨다운 즉시 해제 ★★★
@@ -644,7 +665,7 @@ async function placeSell() {
             showToast(`증거금이 부족합니다\n가용마진: $${result.free_margin?.toFixed(0) || 0}, 필요마진: $${result.required_margin?.toFixed(0) || 0}`, 'warning', 5000);
             return;
         }
-        showToast(result?.message || 'Error', result?.success ? 'success' : 'error');
+        showToast(result?.success ? '주문 성공!' : friendlyError(result?.message), result?.success ? 'sell' : 'error');
         if (result?.success) {
             playSound('sell');
             // ★★★ 포지션 확인 → 쿨다운 즉시 해제 ★★★
@@ -812,7 +833,7 @@ async function closePosition() {
                     window._plGaugeFrozen = false;
                 }, 20000);
             } else {
-                showToast(errMsg, 'error');
+                showToast(friendlyError(errMsg), 'error');
             }
         }
     } catch (e) { showToast('Network error', 'error'); }
@@ -852,7 +873,7 @@ async function placeDemoOrder(orderType) {
         const result = await response.json();
         console.log('[placeDemoOrder] 📦 Server response:', result);
 
-        showToast(result?.message || 'Error', result?.success ? 'success' : 'error');
+        showToast(result?.success ? '주문 성공!' : friendlyError(result?.message), result?.success ? (orderType.toLowerCase() === 'buy' ? 'buy' : 'sell') : 'error');
         if (result?.success) {
             playSound(orderType.toLowerCase());
 
@@ -941,7 +962,7 @@ async function closeDemoPosition() {
                 if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
             }, 3000);
         } else {
-            showToast(result?.message || 'Error', 'error');
+            showToast(friendlyError(result?.message), 'error');
         }
     } catch (e) {
         showToast('Network error', 'error');
