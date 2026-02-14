@@ -49,8 +49,9 @@ async function softRefresh(reason = '') {
             syncTradeTodayPL();
         }
 
-        // 5. 차트 캔들 리로드
-        if (typeof loadCandles === 'function') {
+        // 5. 차트 캔들 리로드 (주문/청산 관련이면 스킵 — WS에서 실시간 업데이트 중)
+        const _skipCandles = reason.includes('order_') || reason.includes('close_') || reason.includes('demo_');
+        if (!_skipCandles && typeof loadCandles === 'function') {
             loadCandles();
         }
 
@@ -79,9 +80,9 @@ document.addEventListener('visibilitychange', function() {
         const _bgDuration = window._backgroundAt ? (Date.now() - window._backgroundAt) : 0;
         console.log(`[Visibility] 포그라운드로 복귀 (백그라운드 ${Math.round(_bgDuration/1000)}초)`);
 
-        // 30초 이상 백그라운드였으면 전체 리로드
-        if (_bgDuration > 30000) {
-            console.log('[Visibility] 🔄 30초 이상 백그라운드 — 전체 리로드');
+        // 120초 이상 백그라운드였으면 전체 리로드 (Streaming이 실시간 처리하므로 여유 확보)
+        if (_bgDuration > 120000) {
+            console.log('[Visibility] 🔄 120초 이상 백그라운드 — 전체 리로드');
             location.reload();
             return;
         }
@@ -2171,7 +2172,9 @@ async function checkMetaAPIStatus() {
         if (!data.success) return;
 
         const status = data.metaapi_status;
-        console.log(`[MetaAPI] 상태: ${status}`);
+        // ★★★ MetaAPI Ready 상태 글로벌 저장 (주문 차단용) ★★★
+        window._metaapiReady = (status === 'deployed');
+        console.log(`[MetaAPI] 상태: ${status}, Ready: ${window._metaapiReady}`);
 
         // 성공 모달 내 상태 업데이트
         const modalStatusText = document.getElementById('metaapiStatusText');

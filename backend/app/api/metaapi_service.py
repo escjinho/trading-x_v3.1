@@ -2333,13 +2333,25 @@ class UserStreamingListener:
             print(f"[UserStreaming] User {self.user_id} ❌ 포지션 청산: id={position_id} (캐시에 없음)")
 
     async def on_deal_added(self, instance_index, deal):
-        """거래 추가 (SL/TP 등 청산 거래 감지)"""
+        """거래 추가 (SL/TP 등 청산 거래 감지) — 실제 체결 손익으로 업데이트"""
         if deal.get('entryType') == 'DEAL_ENTRY_OUT':
             profit = deal.get('profit', 0)
             commission = deal.get('commission', 0)
             swap = deal.get('swap', 0)
             total_profit = round(profit + commission + swap, 2)
-            print(f"[UserStreaming] User {self.user_id} 💰 Deal OUT: {deal.get('symbol')} P/L=${total_profit:.2f}")
+            position_id = deal.get('positionId') or str(deal.get('position', ''))
+            print(f"[UserStreaming] User {self.user_id} 💰 Deal OUT: {deal.get('symbol')} P/L=${total_profit:.2f} (profit={profit}, comm={commission}, swap={swap})")
+
+            # ★★★ user_closed_events의 profit을 실제 체결 금액으로 보정 ★★★
+            if self.user_id in user_closed_events:
+                for evt in user_closed_events[self.user_id]:
+                    if evt.get('position_id') == position_id or (time.time() - evt.get('time', 0)) < 3:
+                        old_profit = evt['profit']
+                        evt['profit'] = total_profit
+                        evt['is_win'] = total_profit >= 0
+                        evt['actual'] = True  # 실제 체결 금액 플래그
+                        print(f"[UserStreaming] User {self.user_id} ✅ 손익 보정: ${old_profit:.2f} → ${total_profit:.2f}")
+                        break
 
     async def on_positions_synchronized(self, instance_index, synchronization_id):
         if not self._sync_complete:

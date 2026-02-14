@@ -1269,14 +1269,24 @@ async def place_order(
     _use_user_metaapi = bool(current_user.metaapi_account_id and current_user.metaapi_status == 'deployed')
     _user_mid = current_user.metaapi_account_id if _use_user_metaapi else None
 
-    # ★★★ MetaAPI 연결 상태 체크 (유저별 MetaAPI가 있으면 공유 연결 불필요) ★★★
-    if not _use_user_metaapi and not is_metaapi_connected():
-        print(f"[MetaAPI Order] ❌ MetaAPI 연결 끊김 - 주문 거부")
-        return JSONResponse({
-            "success": False,
-            "message": "MetaAPI 연결이 불안정합니다. 잠시 후 다시 시도해주세요.",
-            "metaapi_disconnected": True
-        })
+    # ★★★ MetaAPI 연결 상태 체크 (공유 + 유저별 모두) ★★★
+    if _use_user_metaapi:
+        # 유저별 MetaAPI: DB status가 deployed가 아니면 거부
+        if current_user.metaapi_status != 'deployed':
+            print(f"[MetaAPI Order] ❌ 유저 MetaAPI 준비 안 됨 (status={current_user.metaapi_status})")
+            return JSONResponse({
+                "success": False,
+                "message": "Trading API가 아직 준비 중입니다. 잠시 후 다시 시도해주세요.",
+                "metaapi_disconnected": True
+            })
+    else:
+        if not is_metaapi_connected():
+            print(f"[MetaAPI Order] ❌ MetaAPI 연결 끊김 - 주문 거부")
+            return JSONResponse({
+                "success": False,
+                "message": "MetaAPI 연결이 불안정합니다. 잠시 후 다시 시도해주세요.",
+                "metaapi_disconnected": True
+            })
 
     # ★★★ 마틴 모드 감지 및 랏/타겟 재계산 ★★★
     martin_state = None
@@ -3207,8 +3217,10 @@ async def websocket_endpoint(websocket: WebSocket):
                     except Exception as _sync_err:
                         print(f"[LIVE WS] User {user_id} MetaAPI sync error: {_sync_err}")
 
-            # MetaAPI 연결 상태
+            # ★★★ 유저별 MetaAPI가 deployed면 connected 처리 ★★★
             metaapi_connected = is_metaapi_connected()
+            if not metaapi_connected and _use_user_metaapi:
+                metaapi_connected = True  # 유저 전용 MetaAPI deployed = connected
             mt5_connected = mt5_initialize_safe()
             bridge_connected = metaapi_connected
 
