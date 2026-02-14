@@ -811,15 +811,17 @@
         // ========== 앱 시작 (데모) ==========
         // ========== 로그인 페이지로 ==========
         function goToLogin() {
+            localStorage.setItem('intro_shown', 'true');
             sessionStorage.setItem('intro_shown', 'true');
-            window.location.href = 'login.html';            
+            window.location.href = 'login.html';
         }
 
         // ========== 게스트 모드로 앱 시작 ==========
         function guestMode() {
+            localStorage.setItem('intro_shown', 'true');
             sessionStorage.setItem('intro_shown', 'true');
             sessionStorage.setItem('guest_mode', 'true');
-            window.location.href = 'index.html?v=20260213a';
+            window.location.href = 'index.html?from_intro=1&v=20260213a';
         }
 
         // ========== 앱 시작 (기존 호환) ==========

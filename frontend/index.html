@@ -18,10 +18,24 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <script>
-        // 인트로 체크 - 인트로를 안 봤으면 intro.html로 리다이렉트
-        if (!sessionStorage.getItem('intro_shown')) {
+        // ★★★ 인트로 체크 — localStorage + 무한루프 방지 ★★★
+        (function() {
+            // 1. 인트로 이미 본 경우 스킵 (localStorage = 영구 저장)
+            if (localStorage.getItem('intro_shown')) return;
+            // 2. sessionStorage 호환 (기존 방식도 체크)
+            if (sessionStorage.getItem('intro_shown')) return;
+            // 3. intro에서 돌아온 경우 스킵
+            if (location.search.includes('from_intro=1')) {
+                localStorage.setItem('intro_shown', 'true');
+                return;
+            }
+            // 4. 무한루프 방지 (3초 내 재진입 차단)
+            var lastRedirect = sessionStorage.getItem('intro_redirect_ts');
+            if (lastRedirect && (Date.now() - parseInt(lastRedirect)) < 3000) return;
+            sessionStorage.setItem('intro_redirect_ts', Date.now().toString());
+            // 인트로로 이동
             window.location.replace('intro.html');
-        }
+        })();
     </script>
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
