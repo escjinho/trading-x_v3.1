@@ -61,7 +61,8 @@ async function showMartinPopup(profit) {
     const interval = 300;
     let found = false;
 
-    await new Promise(r => setTimeout(r, 1000));  // 1초 대기 후 폴링 시작
+    showToast('마틴 단계 계산 중...', 'info');
+    await new Promise(r => setTimeout(r, 500));  // 0.5초 대기 후 폴링 시작
     for (let i = 0; i < maxRetries; i++) {
         try {
             const lastTradeUrl = isDemo
@@ -129,7 +130,9 @@ async function showMartinPopup(profit) {
     document.getElementById('popupNextLot').textContent = `${nextLot.toFixed(2)} lot`;
     document.getElementById('popupRecoveryTarget').textContent = `+${recoveryTarget.toFixed(0)}`;
 
-    // 팝업 표시
+    // 토스트 제거 + 팝업 표시
+    const existingToast = document.querySelector('.toast');
+    if (existingToast) existingToast.remove();
     document.getElementById('martinPopup').style.display = 'flex';
 }
 
@@ -780,8 +783,8 @@ async function closePosition() {
             updatePositionUI(false, null);
 
             if (currentMode === 'martin' && martinEnabled) {
-                // ★★★ 마틴 모드: 즉시 알림 → 팝업 내부에서 2초 대기 ★★★
-                showToast('포지션이 청산되었습니다', 'success');
+                // ★★★ 마틴 모드: 즉시 알림 → 팝업 내부에서 폴링 ★★★
+                showToast('포지션 청산 완료! 마틴 단계 계산 중...', 'info');
 
                 setTimeout(async () => {
                     window._martinStateUpdating = true;
