@@ -73,7 +73,8 @@
       "Bash(psql:*)",
       "Bash(ssh root@158.247.251.146 \"git pull origin main && systemctl restart trading-x\")",
       "Bash(git revert:*)",
-      "Bash(bash:*)"
+      "Bash(bash:*)",
+      "Bash(crontab:*)"
     ]
   }
 }

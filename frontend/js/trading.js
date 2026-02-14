@@ -62,7 +62,7 @@ async function showMartinPopup(profit, excludeId = '') {
     let found = false;
 
     showToast('마틴 단계 계산 중...', 'info');
-    await new Promise(r => setTimeout(r, 2000));  // 2초 대기 (MetaAPI 히스토리 등록)
+    await new Promise(r => setTimeout(r, 500));  // 0.5초 대기
     for (let i = 0; i < maxRetries; i++) {
         try {
             const excludeParam = excludeId ? `&exclude_id=${excludeId}` : '';
