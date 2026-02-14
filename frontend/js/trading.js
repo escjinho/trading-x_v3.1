@@ -902,7 +902,6 @@ async function placeDemoOrder(orderType) {
 
 // ========== Demo 모드 청산 ==========
 async function closeDemoPosition() {
-    showToast('청산 중...', 'info');
     try {
         const response = await fetch(`${API_URL}/demo/close?magic=${BUYSELL_MAGIC_NUMBER}`, {
             method: 'POST',
@@ -951,7 +950,11 @@ async function closeDemoPosition() {
             } else {
                 // Basic/NoLimit 모드
                 updateTodayPL(profit);
-                showToast(result?.message || 'Closed!', 'success');
+                if (profit >= 0) {
+                    showToast(`청산 손익: +$${profit.toFixed(2)}`, 'success');
+                } else {
+                    showToast(`청산 손익: -$${Math.abs(profit).toFixed(2)}`, 'error');
+                }
             }
             
             updatePositionUI(false, null);
