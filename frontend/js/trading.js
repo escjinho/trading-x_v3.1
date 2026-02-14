@@ -56,24 +56,23 @@ let _martinPendingAccLoss = 0;     // 새 누적손실 (기존 + 이번)
 let _martinPendingProfit = 0;      // 이번 청산 손익 (원본, 음수 가능)
 
 async function showMartinPopup(profit) {
-    // ★★★ 3초 대기 후 magic number로 MT5 실제 profit 조회 ★★★
-    console.log(`[MartinPopup] 시작 - apiProfit=${profit}, 3초 대기 중...`);
-    await new Promise(r => setTimeout(r, 3000));
+    // ★★★ 2초 대기 후 magic number로 정확한 profit 조회 (수수료 미포함, 히스토리 탭과 동일) ★★★
+    await new Promise(r => setTimeout(r, 2000));
 
     try {
         const lastTradeUrl = isDemo
             ? `/demo/last-trade?magic=${BUYSELL_MAGIC_NUMBER}`
             : `/mt5/last-trade?magic=${BUYSELL_MAGIC_NUMBER}`;
         const resp = await apiCall(lastTradeUrl, 'GET');
-        if (resp && resp.success && resp.trade) {
+        if (resp && resp.success && resp.trade && resp.trade.profit !== undefined) {
             const realProfit = resp.trade.profit;
-            if (realProfit !== undefined && realProfit !== null && realProfit < 0) {
-                console.log(`[MartinPopup] profit 보정: API=${profit} → MT5=${realProfit}`);
+            if (realProfit < 0) {
+                console.log(`[MartinPopup] profit 보정: API=${profit} → lastTrade=${realProfit}`);
                 profit = realProfit;
             }
         }
     } catch (e) {
-        console.log('[MartinPopup] last-trade 조회 실패, apiProfit 사용:', profit);
+        console.log('[MartinPopup] last-trade 실패, apiProfit 사용');
     }
 
     const lossAmount = Math.abs(profit);
@@ -772,15 +771,14 @@ async function closePosition() {
             updatePositionUI(false, null);
 
             if (currentMode === 'martin' && martinEnabled) {
-                // ★★★ 마틴 모드: 즉시 알림 → 1.5초 후 MT5 실제 손익으로 팝업/처리 ★★★
-                showToast('포지션이 청산되었습니다\n손익 확인 중...', 'success');
+                // ★★★ 마틴 모드: 즉시 알림 → 팝업 내부에서 2초 대기 ★★★
+                showToast('포지션이 청산되었습니다', 'success');
 
                 setTimeout(async () => {
                     window._martinStateUpdating = true;
                     try {
-                        // ★★★ close API 반환값 사용 (히스토리는 잘못된 trade 참조 가능) ★★★
                         const profit = apiProfit;
-                        console.log(`[Martin Close] 사용 손익: ${profit}`);
+                        console.log(`[Martin Close] apiProfit: ${profit}`);
 
                         if (typeof loadHistory === 'function') loadHistory();
                         if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
@@ -821,9 +819,8 @@ async function closePosition() {
                                 }
                             }
                         } else if (profit < 0) {
-                            // ★★★ 손실 → 팝업으로 유저 선택 (DB 업데이트는 팝업 버튼에서) ★★★
+                            // ★★★ 손실 → 팝업으로 유저 선택 (팝업 내부에서 2초 대기 + last-trade 조회) ★★★
                             showMartinPopup(profit);
-                            // _martinStateUpdating은 팝업 닫힐 때 해제됨
                         } else {
                             updateTodayPL(0);
                             window._martinStateUpdating = false;
@@ -834,7 +831,7 @@ async function closePosition() {
                         updateTodayPL(apiProfit);
                         window._martinStateUpdating = false;
                     }
-                }, 1500);
+                }, 0);
 
             } else {
                 // Basic/NoLimit 모드 — close API profit 바로 사용

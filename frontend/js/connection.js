@@ -1026,18 +1026,14 @@ function connectWebSocket() {
 
                 const isWin = data.is_win !== false && profit >= 0;
 
-                // ★★★ 라이브 마틴 모드: 1.5초 후 정확한 손익 → 팝업 ★★★
+                // ★★★ 라이브 마틴 모드: 팝업 내부에서 2초 대기 + last-trade 조회 ★★★
                 if (currentMode === 'martin' && martinEnabled) {
                     window._martinStateUpdating = true;
                     showToast('포지션이 청산되었습니다', 'success');
 
                     setTimeout(async () => {
                         try {
-                            let actualProfit = profit;
-                            const histResp = await apiCall('/mt5/history?period=today');
-                            if (histResp && histResp.trades && histResp.trades.length > 0) {
-                                actualProfit = histResp.trades[0].profit || profit;
-                            }
+                            const actualProfit = profit;
                             if (typeof loadHistory === 'function') loadHistory();
 
                             if (actualProfit > 0) {
@@ -1070,7 +1066,7 @@ function connectWebSocket() {
                             updateTodayPL(profit);
                             window._martinStateUpdating = false;
                         }
-                    }, 1500);
+                    }, 0);
                 } else {
                     // ★★★ Basic/NoLimit 모드: 2단계 알림 ★★★
                     showToast('포지션이 청산되었습니다', 'success');
