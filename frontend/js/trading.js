@@ -727,13 +727,9 @@ async function closePosition() {
                 setTimeout(async () => {
                     window._martinStateUpdating = true;
                     try {
-                        // MT5 히스토리에서 정확한 체결 금액 조회
-                        let profit = apiProfit;
-                        const histResp = await apiCall('/mt5/history?period=today');
-                        if (histResp && histResp.trades && histResp.trades.length > 0) {
-                            profit = histResp.trades[0].profit || apiProfit;
-                            console.log(`[Martin Close] MT5 실제 손익: ${profit} (API: ${apiProfit})`);
-                        }
+                        // ★★★ close API 반환값 사용 (히스토리는 잘못된 trade 참조 가능) ★★★
+                        const profit = apiProfit;
+                        console.log(`[Martin Close] 사용 손익: ${profit}`);
 
                         if (typeof loadHistory === 'function') loadHistory();
                         if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
@@ -790,27 +786,17 @@ async function closePosition() {
                 }, 1500);
 
             } else {
-                // Basic/NoLimit 모드 — 2단계 알림
-                showToast('포지션이 청산되었습니다', 'success');
-                // 2초 후 MT5 실제 손익 조회 → 정확한 금액 표시
-                setTimeout(async () => {
-                    try {
-                        const histResp = await apiCall('/mt5/history?period=today');
-                        if (histResp && histResp.trades && histResp.trades.length > 0) {
-                            const actualProfit = histResp.trades[0].profit || 0;
-                            if (actualProfit >= 0) {
-                                showToast(`청산 손익: +$${actualProfit.toFixed(2)}`, 'success');
-                            } else {
-                                showToast(`청산 손익: -$${Math.abs(actualProfit).toFixed(2)}`, 'error');
-                            }
-                            updateTodayPL(actualProfit);
-                        }
-                        if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
-                        if (typeof loadHistory === 'function') loadHistory();
-                    } catch (e) {
-                        console.error('[Close] 히스토리 조회 실패:', e);
-                    }
-                }, 2000);
+                // Basic/NoLimit 모드 — close API profit 바로 사용
+                if (apiProfit >= 0) {
+                    showToast(`청산 손익: +$${apiProfit.toFixed(2)}`, 'success');
+                } else {
+                    showToast(`청산 손익: -$${Math.abs(apiProfit).toFixed(2)}`, 'error');
+                }
+                updateTodayPL(apiProfit);
+                setTimeout(() => {
+                    if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
+                    if (typeof loadHistory === 'function') loadHistory();
+                }, 1000);
             }
         } else {
             const errMsg = result?.message || 'Error';

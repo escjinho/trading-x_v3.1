@@ -390,27 +390,8 @@ async def get_demo_account(
                 print(f"[MARTIN-DEBUG] Martin state BEFORE: enabled={martin_state.enabled}, step={martin_state.step}, acc_loss={martin_state.accumulated_loss}")
 
                 if martin_state.enabled and martin_state.step >= 1:
-                    if is_win:
-                        martin_state.step = 1
-                        martin_state.accumulated_loss = 0.0
-                        martin_reset = True
-                        print(f"[MARTIN-DEBUG] WIN -> RESET to step 1")
-                    else:
-                        max_steps = martin_state.max_steps or 5
-                        current_step = martin_state.step or 1
-                        accumulated = martin_state.accumulated_loss or 0.0
-                        new_accumulated = accumulated + abs(profit)
-                        new_step = current_step + 1
-                        if new_step > max_steps:
-                            martin_state.step = 1
-                            martin_state.accumulated_loss = 0.0
-                            martin_reset = True
-                            print(f"[MARTIN-DEBUG] MAX STEP REACHED -> RESET to step 1")
-                        else:
-                            martin_state.step = new_step
-                            martin_state.accumulated_loss = new_accumulated
-                            martin_step_up = True
-                            print(f"[MARTIN-DEBUG] STEP UP: {current_step} -> {new_step}, acc_loss: {accumulated:.2f} -> {new_accumulated:.2f}")
+                    # ★★★ DB 변경 안 함! 프론트 팝업에서 유저 선택 후 API로 처리 ★★★
+                    print(f"[MARTIN-DEBUG] 마틴 상태 읽기만: step={martin_state.step}, acc_loss={martin_state.accumulated_loss}")
 
                 print(f"[MARTIN-DEBUG] Martin state AFTER: step={martin_state.step}, acc_loss={martin_state.accumulated_loss}")
 
@@ -564,32 +545,8 @@ async def get_demo_account(
 
                     martin_state = get_or_create_martin_state(db, current_user.id, position.magic)
                     if martin_state.enabled and martin_state.step >= 1:
-                        if is_win:
-                            # 마틴 모드에서 이익으로 청산 = 성공! 리셋!
-                            martin_state.step = 1
-                            martin_state.accumulated_loss = 0.0
-                            martin_reset = True
-                            print(f"[DEBUG] Martin SUCCESS! Reset to Step 1")
-                        else:
-                            # 마틴 모드에서 손실로 청산 = 다음 단계로!
-                            max_steps = martin_state.max_steps or 5
-                            current_step = martin_state.step or 1
-                            accumulated = martin_state.accumulated_loss or 0.0
-
-                            new_accumulated = accumulated + abs(profit)
-                            new_step = current_step + 1
-
-                            if new_step > max_steps:
-                                # 최대 단계 초과: 강제 리셋
-                                martin_state.step = 1
-                                martin_state.accumulated_loss = 0.0
-                                martin_reset = True
-                                print(f"[DEBUG] Martin MAX STEP! Force Reset")
-                            else:
-                                martin_state.step = new_step
-                                martin_state.accumulated_loss = new_accumulated
-                                martin_step_up = True
-                                print(f"[DEBUG] Martin STEP UP! Step {current_step} -> {new_step}, AccLoss: {new_accumulated}")
+                        # ★★★ DB 변경 안 함! 프론트 팝업에서 유저 선택 후 API로 처리 ★★★
+                        print(f"[DEBUG] 마틴 상태 읽기만: step={martin_state.step}, acc_loss={martin_state.accumulated_loss}")
                     
                     # 거래 내역 저장
                     trade = DemoTrade(
@@ -1144,7 +1101,7 @@ async def close_demo_position(
     current_user.demo_equity = current_user.demo_balance
     current_user.demo_today_profit = (current_user.demo_today_profit or 0.0) + profit
 
-    # ★★★ 수동 청산 마틴 상태 업데이트 (DemoMartinState 테이블) ★★★
+    # ★★★ 마틴 상태는 프론트 팝업에서 처리 — 여기서는 읽기만 ★★★
     martin_reset = False
     martin_step = 1
     martin_accumulated_loss = 0.0
@@ -1153,28 +1110,7 @@ async def close_demo_position(
     if martin_state.enabled:
         martin_step = martin_state.step
         martin_accumulated_loss = martin_state.accumulated_loss
-
-        if profit > 0:
-            # 수익: 누적손실에서 수익만큼 차감
-            new_accumulated = martin_state.accumulated_loss - profit
-            if new_accumulated <= 0:
-                # 누적손실 완전 회복 → 리셋
-                martin_state.step = 1
-                martin_state.accumulated_loss = 0.0
-                martin_reset = True
-                print(f"[DEMO CLOSE] Martin RESET! Profit {profit} recovered all loss")
-            else:
-                # 일부 회복 → 단계 유지, 누적손실만 감소
-                martin_state.accumulated_loss = new_accumulated
-                print(f"[DEMO CLOSE] Martin partial recovery: {profit}, remaining loss: {new_accumulated}")
-        elif profit < 0:
-            # 손실: 누적손실에 추가 (단계 올리지 않음)
-            new_accumulated = martin_state.accumulated_loss + abs(profit)
-            martin_state.accumulated_loss = new_accumulated
-            print(f"[DEMO CLOSE] Martin loss added: {abs(profit)}, total loss: {new_accumulated}")
-
-        martin_step = martin_state.step
-        martin_accumulated_loss = martin_state.accumulated_loss
+        print(f"[DEMO CLOSE] 마틴 상태 읽기만: step={martin_step}, acc_loss={martin_accumulated_loss}")
 
     # 포지션 삭제
     db.delete(position)
@@ -2120,28 +2056,8 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                                         martin_step_up = False
 
                                         if martin_state.enabled:
-                                            if is_win:
-                                                martin_state.step = 1
-                                                martin_state.accumulated_loss = 0.0
-                                                martin_reset = True
-                                                print(f"[MARTIN-DEBUG] WIN -> RESET to step 1")
-                                            else:
-                                                new_accumulated = martin_state.accumulated_loss + abs(profit)
-                                                if martin_state.step >= martin_state.max_steps:
-                                                    martin_state.step = 1
-                                                    martin_state.accumulated_loss = 0.0
-                                                    martin_reset = True
-                                                    print(f"[MARTIN-DEBUG] MAX STEP REACHED -> RESET to step 1")
-                                                else:
-                                                    old_step = martin_state.step
-                                                    new_step = martin_state.step + 1
-                                                    martin_state.step = new_step
-                                                    martin_state.accumulated_loss = new_accumulated
-                                                    martin_step_up = True
-                                                    print(f"[MARTIN-DEBUG] STEP UP: {old_step} -> {new_step}, acc_loss: {new_accumulated:.2f}")
-
-                                            martin_step = martin_state.step
-                                            martin_accumulated_loss = martin_state.accumulated_loss
+                                            # ★★★ DB 변경 안 함! 프론트 팝업에서 유저 선택 후 API로 처리 ★★★
+                                            print(f"[DEMO WS] 마틴 상태 읽기만: step={martin_state.step}, acc_loss={martin_state.accumulated_loss}")
 
                                         # 거래 내역 저장
                                         trade = DemoTrade(
