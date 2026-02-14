@@ -57,12 +57,12 @@ let _martinPendingProfit = 0;      // 이번 청산 손익 (원본, 음수 가�
 
 async function showMartinPopup(profit, excludeId = '') {
     // ★★★ last-trade 폴링으로 정확한 profit 조회 (이전 trade 제외) ★★★
-    const maxRetries = 6;
-    const interval = 300;
+    const maxRetries = 5;
+    const interval = 500;
     let found = false;
 
     showToast('마틴 단계 계산 중...', 'info');
-    await new Promise(r => setTimeout(r, 500));  // 0.5초 대기 후 폴링 시작
+    await new Promise(r => setTimeout(r, 2000));  // 2초 대기 (MetaAPI 히스토리 등록)
     for (let i = 0; i < maxRetries; i++) {
         try {
             const excludeParam = excludeId ? `&exclude_id=${excludeId}` : '';
