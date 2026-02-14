@@ -32,7 +32,7 @@
         .input-value { width: 80px; height: 28px; background: #25282f; border: 1px solid #3f4451; border-radius: 4px; color: white; text-align: center; font-size: 13px; font-weight: 600; }
         .settings-divider { border-top: 1px solid var(--border-color); margin: 12px 0; }
         .martin-row { display: flex; align-items: center; gap: 8px; }
-        .martin-checkbox { width: 16px; height: 16px; cursor: pointer; }
+        .martin-checkbox { width: 22px; height: 22px; cursor: pointer; min-width: 22px; min-height: 22px; -webkit-tap-highlight-color: transparent; }
         .martin-info { font-size: 11px; color: var(--text-muted); margin-top: 8px; }
         .martin-max { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-muted); margin-top: 8px; }
         .martin-max-btn { padding: 2px 8px; background: var(--bg-secondary); border: 1px solid var(--accent-cyan); border-radius: 4px; color: var(--accent-cyan); font-size: 11px; font-weight: bold; cursor: pointer; }

@@ -622,87 +622,109 @@ async function closePosition() {
 
         if (result?.success) {
             playSound('close');
-            const profit = result.profit || 0;  // ★ MT5 실제 P/L 사용
+            const apiProfit = result.profit || 0;
 
             // ★★★ 청산 확인 타임스탬프 — WS 포지션 데이터 무시용 ★★★
             window._closeConfirmedAt = Date.now();
 
-            // ★ 포지션 UI 즉시 초기화 (WS 대기 X)
+            // ★ 포지션 UI 즉시 초기화
             window.lastLivePosition = null;
             updatePositionUI(false, null);
 
-            // 마틴 모드 처리
             if (currentMode === 'martin' && martinEnabled) {
-                const baseTarget = targetAmount;
-                const currentDisplayTarget = Math.ceil((martinAccumulatedLoss + baseTarget) / 5) * 5;
-                
-                if (profit > 0) {
-                    if (profit >= martinAccumulatedLoss && martinAccumulatedLoss > 0) {
-                        await apiCall('/mt5/martin/reset-full', 'POST');
-                        martinStep = 1;
-                        martinAccumulatedLoss = 0;
-                        martinHistory = [];
-                        updateMartinUI();
-                        updateTodayPL(profit);
-                        showMartinSuccessPopup(profit);
-                    } else if (profit < martinAccumulatedLoss || martinAccumulatedLoss === 0) {
-                        const remainingLoss = Math.max(0, martinAccumulatedLoss - profit);
-                        await apiCall(`/mt5/martin/update-state?step=${martinStep}&accumulated_loss=${remainingLoss}`, 'POST');
-                        martinAccumulatedLoss = remainingLoss;
-                        updateMartinUI();
-                        updateTodayPL(profit);
-                        if (remainingLoss > 0) {
-                            showToast(`💰 일부 회복! +$${profit.toFixed(2)} (남은 손실: $${remainingLoss.toFixed(2)})`, 'success');
-                        } else {
-                            showMartinSuccessPopup(profit);
+                // ★★★ 마틴 모드: 즉시 알림 → 1.5초 후 MT5 실제 손익으로 상태 업데이트 ★★★
+                showToast('📊 포지션이 청산되었습니다! 손익 확인 중...', 'success');
+
+                setTimeout(async () => {
+                    try {
+                        // MT5 히스토리에서 정확한 체결 금액 조회
+                        let profit = apiProfit;
+                        const histResp = await apiCall('/mt5/history?period=today');
+                        if (histResp && histResp.trades && histResp.trades.length > 0) {
+                            const lastTrade = histResp.trades[0];
+                            profit = lastTrade.profit || apiProfit;
+                            console.log(`[Martin Close] MT5 실제 손익: ${profit} (API 반환: ${apiProfit})`);
                         }
-                    }
-                } else if (profit < 0) {
-                    const lossAmount = Math.abs(profit);
-                    const halfTarget = currentDisplayTarget / 2;
-                    
-                    if (lossAmount >= halfTarget) {
-                        const newStep = Math.min(martinStep + 1, martinLevel);
-                        const newAccumulatedLoss = martinAccumulatedLoss + lossAmount;
-                        
-                        if (newStep > martinLevel) {
-                            await apiCall('/mt5/martin/reset-full', 'POST');
-                            showMaxPopup(newAccumulatedLoss);
-                            martinStep = 1;
-                            martinAccumulatedLoss = 0;
-                            martinHistory = [];
+
+                        const baseTarget = targetAmount;
+                        const currentDisplayTarget = Math.ceil((martinAccumulatedLoss + baseTarget) / 5) * 5;
+
+                        if (profit > 0) {
+                            if (profit >= martinAccumulatedLoss && martinAccumulatedLoss > 0) {
+                                await apiCall('/mt5/martin/reset-full', 'POST');
+                                martinStep = 1;
+                                martinAccumulatedLoss = 0;
+                                martinHistory = [];
+                                updateMartinUI();
+                                updateTodayPL(profit);
+                                showMartinSuccessPopup(profit);
+                            } else if (profit < martinAccumulatedLoss || martinAccumulatedLoss === 0) {
+                                const remainingLoss = Math.max(0, martinAccumulatedLoss - profit);
+                                await apiCall(`/mt5/martin/update-state?step=${martinStep}&accumulated_loss=${remainingLoss}`, 'POST');
+                                martinAccumulatedLoss = remainingLoss;
+                                updateMartinUI();
+                                updateTodayPL(profit);
+                                if (remainingLoss > 0) {
+                                    showToast(`💰 일부 회복! +$${profit.toFixed(2)} (남은 손실: $${remainingLoss.toFixed(2)})`, 'success');
+                                } else {
+                                    showMartinSuccessPopup(profit);
+                                }
+                            }
+                        } else if (profit < 0) {
+                            const lossAmount = Math.abs(profit);
+                            const halfTarget = currentDisplayTarget / 2;
+
+                            if (lossAmount >= halfTarget) {
+                                const newStep = Math.min(martinStep + 1, martinLevel);
+                                const newAccumulatedLoss = martinAccumulatedLoss + lossAmount;
+
+                                if (newStep > martinLevel) {
+                                    await apiCall('/mt5/martin/reset-full', 'POST');
+                                    showMaxPopup(newAccumulatedLoss);
+                                    martinStep = 1;
+                                    martinAccumulatedLoss = 0;
+                                    martinHistory = [];
+                                } else {
+                                    await apiCall(`/mt5/martin/update-state?step=${newStep}&accumulated_loss=${newAccumulatedLoss}`, 'POST');
+                                    martinStep = newStep;
+                                    martinAccumulatedLoss = newAccumulatedLoss;
+                                    showToast(`📈 Step ${newStep}로 진행! 손실: -$${lossAmount.toFixed(2)}`, 'error');
+                                }
+                            } else {
+                                const newAccumulatedLoss = martinAccumulatedLoss + lossAmount;
+                                await apiCall(`/mt5/martin/update-state?step=${martinStep}&accumulated_loss=${newAccumulatedLoss}`, 'POST');
+                                martinAccumulatedLoss = newAccumulatedLoss;
+                                showToast(`📊 단계 유지! 손실: -$${lossAmount.toFixed(2)} (누적: $${newAccumulatedLoss.toFixed(2)})`, 'error');
+                            }
+                            updateTodayPL(profit);
+                            updateMartinUI();
                         } else {
-                            await apiCall(`/mt5/martin/update-state?step=${newStep}&accumulated_loss=${newAccumulatedLoss}`, 'POST');
-                            martinStep = newStep;
-                            martinAccumulatedLoss = newAccumulatedLoss;
-                            showToast(`📈 Step ${newStep}로 진행! 손실: -$${lossAmount.toFixed(2)}`, 'error');
+                            showToast('청산 완료 (손익 없음)', 'success');
                         }
-                    } else {
-                        const newAccumulatedLoss = martinAccumulatedLoss + lossAmount;
-                        await apiCall(`/mt5/martin/update-state?step=${martinStep}&accumulated_loss=${newAccumulatedLoss}`, 'POST');
-                        martinAccumulatedLoss = newAccumulatedLoss;
-                        showToast(`📊 단계 유지! 손실: -$${lossAmount.toFixed(2)} (누적: $${newAccumulatedLoss.toFixed(2)})`, 'error');
+
+                        if (typeof loadHistory === 'function') loadHistory();
+                        if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
+                    } catch (e) {
+                        console.error('[Martin Close] 히스토리 조회 실패:', e);
+                        updateTodayPL(apiProfit);
                     }
-                    updateTodayPL(profit);
-                    updateMartinUI();
-                } else {
-                    showToast('청산 완료 (손익 없음)', 'success');
-                }
+                }, 1500);
+
             } else {
                 // Basic/NoLimit 모드
-                updateTodayPL(profit);
-                if (profit >= 0) {
-                    showToast(`🎯 청산 완료! +$${profit.toFixed(2)}`, 'success');
+                updateTodayPL(apiProfit);
+                if (apiProfit >= 0) {
+                    showToast(`🎯 청산 완료! +$${apiProfit.toFixed(2)}`, 'success');
                 } else {
-                    showToast(`💔 청산 완료! -$${Math.abs(profit).toFixed(2)}`, 'error');
+                    showToast(`💔 청산 완료! -$${Math.abs(apiProfit).toFixed(2)}`, 'error');
                 }
+
+                // ★★★ 히스토리/P&L 갱신 ★★★
+                setTimeout(() => {
+                    if (typeof loadHistory === 'function') loadHistory();
+                    if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
+                }, 2000);
             }
-            
-            // ★★★ 청산 성공 후 히스토리/P&L만 갱신 ★★★
-            setTimeout(() => {
-                if (typeof loadHistory === 'function') loadHistory();
-                if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
-            }, 3000);
         } else {
             const errMsg = result?.message || 'Error';
             // ★★★ "포지션 없음" 응답 시 UI 강제 초기화 (MT5에서 이미 청산된 경우) ★★★
