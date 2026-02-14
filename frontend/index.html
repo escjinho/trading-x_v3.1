@@ -18,22 +18,41 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <script>
-        // ★★★ 인트로 체크 — localStorage + 무한루프 방지 ★★★
+        // ★★★ 인트로/스플래시 분기 — 토큰 유무 + 30분 비활동 체크 ★★★
         (function() {
-            // 1. 인트로 이미 본 경우 스킵 (localStorage = 영구 저장)
-            if (localStorage.getItem('intro_shown')) return;
-            // 2. sessionStorage 호환 (기존 방식도 체크)
-            if (sessionStorage.getItem('intro_shown')) return;
-            // 3. intro에서 돌아온 경우 스킵
-            if (location.search.includes('from_intro=1')) {
+            // 0. welcome/intro에서 돌아온 경우 스킵 + 활동시간 갱신
+            if (location.search.includes('from_welcome=1') || location.search.includes('from_intro=1')) {
                 localStorage.setItem('intro_shown', 'true');
+                localStorage.setItem('last_active_ts', Date.now().toString());
                 return;
             }
-            // 4. 무한루프 방지 (3초 내 재진입 차단)
+            // 1. 무한루프 방지 (3초 내 재진입 차단)
             var lastRedirect = sessionStorage.getItem('intro_redirect_ts');
             if (lastRedirect && (Date.now() - parseInt(lastRedirect)) < 3000) return;
+
+            var token = localStorage.getItem('access_token');
+
+            // 2. 로그인 유저 → 30분 비활동 시 welcome.html
+            if (token) {
+                var lastActive = parseInt(localStorage.getItem('last_active_ts') || '0');
+                var thirtyMin = 30 * 60 * 1000;
+                if (lastActive > 0 && (Date.now() - lastActive) < thirtyMin) {
+                    // 30분 이내 → 스킵, 활동시간만 갱신
+                    localStorage.setItem('last_active_ts', Date.now().toString());
+                    return;
+                }
+                // 30분 이상 또는 첫 접속 → welcome 스플래시
+                sessionStorage.setItem('intro_redirect_ts', Date.now().toString());
+                window.location.replace('welcome.html');
+                return;
+            }
+
+            // 3. 비로그인 유저 → 인트로 이미 봤으면 스킵
+            if (localStorage.getItem('intro_shown')) return;
+            if (sessionStorage.getItem('intro_shown')) return;
+
+            // 4. 인트로 안 봤으면 → intro.html
             sessionStorage.setItem('intro_redirect_ts', Date.now().toString());
-            // 인트로로 이동
             window.location.replace('intro.html');
         })();
     </script>
