@@ -280,6 +280,13 @@ function updateConnectionStatus(status, delay = 0) {
 
 // 재연결 시도 함수
 function attemptReconnect() {
+    // ★ 30초간 재연결 실패 시 페이지 리로드
+    if (window._wsDisconnectedAt && (Date.now() - window._wsDisconnectedAt > 30000)) {
+        console.log('[WS] ⚠️ 30초간 재연결 실패 — 페이지 리로드');
+        location.reload();
+        return;
+    }
+
     console.log(`[WS] 연결 시도 (attempt ${reconnectAttempt + 1})`);
 
     try {
@@ -338,6 +345,7 @@ function connectWebSocket() {
     ws.onopen = function() {
         console.log('WebSocket connected');
         window.wsConnected = true;  // ★ WS 연결 플래그 (폴링 깜빡임 방지)
+        window._wsDisconnectedAt = null;  // ★ 재연결 성공 시 타이머 리셋
         document.getElementById('statusDot').classList.remove('disconnected');
         document.getElementById('headerStatus').textContent = 'Connected';
         wsRetryCount = 0;
@@ -1112,6 +1120,7 @@ function connectWebSocket() {
     ws.onclose = function(event) {
         console.log('[WS] WebSocket disconnected, code:', event.code, 'reason:', event.reason);
         window.wsConnected = false;
+        window._wsDisconnectedAt = window._wsDisconnectedAt || Date.now();  // ★ 끊긴 시간 기록
         stopHeartbeatMonitor();  // ★ 하트비트 중지
 
         // ★ 의도적 종료면 재연결하지 않음 (모드 전환 시)
