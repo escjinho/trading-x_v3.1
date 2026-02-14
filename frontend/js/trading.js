@@ -494,7 +494,7 @@ async function placeBuy() {
     setTimeout(() => {
         window._orderCooldown = false;
         document.querySelectorAll('.trade-btn.buy-btn, .trade-btn.sell-btn').forEach(b => { b.style.opacity = '1'; b.style.pointerEvents = 'auto'; });
-    }, 5000);
+    }, 3000);
 
     showToast('처리 중...', 'info');
     try {
@@ -605,7 +605,7 @@ async function placeSell() {
     setTimeout(() => {
         window._orderCooldown = false;
         document.querySelectorAll('.trade-btn.buy-btn, .trade-btn.sell-btn').forEach(b => { b.style.opacity = '1'; b.style.pointerEvents = 'auto'; });
-    }, 5000);
+    }, 3000);
 
     showToast('처리 중...', 'info');
     try {

@@ -1392,9 +1392,9 @@ async def place_order(
                 spread_ratio = (spread_cost / target) if target > 0 else 0
                 print(f"[MetaAPI Order] 스프레드 체크: spread={spread_raw}, cost=${spread_cost:.2f}, target=${target}, ratio={spread_ratio:.1%}")
                 
-                # ★★★ 스프레드가 타겟의 30% 초과 시 주문 거부 ★★★
-                if spread_ratio > 0.30:
-                    print(f"[MetaAPI Order] ❌ 스프레드 거부: {spread_ratio:.1%} > 30%")
+                # ★★★ 스프레드가 타겟의 35% 초과 시 주문 거부 ★★★
+                if spread_ratio > 0.35:
+                    print(f"[MetaAPI Order] ❌ 스프레드 거부: {spread_ratio:.1%} > 35%")
                     return JSONResponse({
                         "success": False, 
                         "message": f"스프레드 비용(${spread_cost:.1f})이 타겟(${target})의 {spread_ratio:.0%}입니다. 타겟 금액을 높이거나 랏 사이즈를 줄여주세요.",
