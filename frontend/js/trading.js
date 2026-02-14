@@ -702,8 +702,8 @@ async function closePosition() {
         window._userClosing = false;
         window._plGaugeFrozen = false;
         window._closeConfirmedAt = null;
-        console.log('[closePosition] 🔓 모든 청산 플래그 해제 (15초 후)');
-    }, 15000);
+        console.log('[closePosition] 🔓 모든 청산 플래그 해제 (20초 후)');
+    }, 20000);
 }
 
 // ========== Demo 모드 주문 ==========

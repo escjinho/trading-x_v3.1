@@ -669,7 +669,7 @@ function connectWebSocket() {
         // ★★★ 포지션 정보 — _closeConfirmedAt 체크로 청산 후 게이지 재출현 방지 ★★★
             if (data.position) {
                 // ★★★ 사용자가 청산 확인한 후 15초 이내면 WS 포지션 데이터 무시 ★★★
-                if (window._closeConfirmedAt && (Date.now() - window._closeConfirmedAt) < 15000) {
+                if (window._closeConfirmedAt && (Date.now() - window._closeConfirmedAt) < 20000) {
                     console.log('[WS Live] ⏭️ 청산 확인 후 캐시 지연 데이터 무시');
                     // 포지션 UI를 업데이트하지 않음 (이전 청산 상태 유지)
                 } else {
@@ -828,6 +828,12 @@ function connectWebSocket() {
             }
             window.lastLivePosition = null;
 
+            // ★★★ SL/TP 청산 후에도 _closeConfirmedAt 설정 ★★★
+            window._closeConfirmedAt = Date.now();
+            setTimeout(() => {
+                window._closeConfirmedAt = null;
+            }, 20000);
+
             // 3. 토스트 알림
             if (profit >= 0) {
                 showToast(`🎯 MT5 청산! +$${profit.toFixed(2)}`, 'success');
@@ -880,6 +886,13 @@ function connectWebSocket() {
                     updatePositionUI(false, null);
                 }
                 window.lastLivePosition = null;
+
+                // ★★★ 자동 청산 후에도 _closeConfirmedAt 설정 (WS 포지션 재출현 방지) ★★★
+                window._closeConfirmedAt = Date.now();
+                setTimeout(() => {
+                    window._closeConfirmedAt = null;
+                    console.log('[WS Auto] 🔓 자동청산 _closeConfirmedAt 해제 (20초 후)');
+                }, 20000);
 
                 const isWin = data.is_win !== false && profit >= 0;
 

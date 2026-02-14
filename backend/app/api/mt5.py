@@ -1568,6 +1568,14 @@ async def close_position(
                         user_live_cache[current_user.id]["today_pl"] = round(old_today_pl + profit, 2)
                         print(f"[MetaAPI Close] ★ today_pl 업데이트: ${old_today_pl:.2f} + ${profit:.2f} = ${user_live_cache[current_user.id]['today_pl']:.2f}")
 
+                # ★★★ user_metaapi_cache에서도 해당 포지션 제거 (재출현 방지) ★★★
+                if current_user.id in user_metaapi_cache and "positions" in user_metaapi_cache.get(current_user.id, {}):
+                    user_metaapi_cache[current_user.id]["positions"] = [
+                        p for p in user_metaapi_cache[current_user.id]["positions"]
+                        if p.get("id") != position_id
+                    ]
+                    print(f"[MetaAPI Close] 🧹 user_metaapi_cache 포지션 제거: {position_id}")
+
                 # ★★★ WS 이중 감지 방지 플래그 ★★★
                 user_close_acknowledged[current_user.id] = time_module.time()
                 print(f"[MetaAPI Close] ✅ 청산 성공: positionId={position_id}, P/L=${profit:.2f}")
@@ -1654,6 +1662,13 @@ async def close_position(
                 user_live_cache[current_user.id]["positions"] = [
                     p for p in cache_positions if p.get("id") != pos_id
                 ]
+            # ★★★ user_metaapi_cache에서도 해당 포지션 제거 (재출현 방지) ★★★
+            if current_user.id in user_metaapi_cache and "positions" in user_metaapi_cache.get(current_user.id, {}):
+                user_metaapi_cache[current_user.id]["positions"] = [
+                    p for p in user_metaapi_cache[current_user.id]["positions"]
+                    if p.get("id") != pos_id
+                ]
+                print(f"[MetaAPI Close] 🧹 user_metaapi_cache 포지션 제거: {pos_id}")
             # ★★★ WS 이중 감지 방지 플래그 ★★★
             user_close_acknowledged[current_user.id] = time_module.time()
             print(f"[MetaAPI Close] ✅ 청산 성공: {symbol} P/L=${profit:.2f}")
@@ -3206,7 +3221,7 @@ async def websocket_endpoint(websocket: WebSocket):
             # ★★★ 유저별 MetaAPI 포지션 청산 감지 (user_close_acknowledged 체크 포함) ★★★
             _user_closed_event = None
             _user_ack_time = user_close_acknowledged.get(user_id, 0) if user_id else 0
-            _is_user_close_recent = (current_time - _user_ack_time) < 15  # 15초 이내 사용자 청산
+            _is_user_close_recent = (current_time - _user_ack_time) < 20  # 20초 이내 사용자 청산
 
             if _ws_use_user_metaapi and user_id:
                 _user_ma_positions_now = user_metaapi_cache.get(user_id, {}).get("positions", [])
@@ -3215,10 +3230,13 @@ async def websocket_endpoint(websocket: WebSocket):
 
                 if _prev_user_position and not _has_position_now:
                     if _is_user_close_recent:
-                        # ★★★ 사용자가 직접 청산 → WS 자동감지 완전 스킵 ★★★
+                        # ★★★ 사용자가 직접 청산 → WS 자동감지 완전 스킵 + 캐시 강제 정리 ★★★
                         print(f"[LIVE WS] ⏭️ User {user_id} 사용자 청산 후 {current_time - _user_ack_time:.1f}초 — 자동감지 스킵")
                         _prev_user_position = None
                         _position_disappeared_count = 0
+                        # ★ 캐시에 남아있는 포지션도 강제 제거
+                        if user_id in user_live_cache:
+                            user_live_cache[user_id]["positions"] = []
                     else:
                         _position_disappeared_count += 1
                         # 4회 연속 확인 시 청산으로 확정 (기존 2회 → 4회로 강화)
@@ -3341,7 +3359,8 @@ async def websocket_endpoint(websocket: WebSocket):
 
                 # ★★★ MetaAPI 동기화 지연 보완: user_live_cache fallback ★★★
                 # MetaAPI에 포지션 없지만 user_live_cache에 있으면 (주문 직후 3~10초)
-                if not position_data and user_cache and user_cache.get("positions"):
+                # ★ 단, 사용자 청산 확인 후에는 fallback 하지 않음 (포지션 재출현 방지)
+                if not position_data and user_cache and user_cache.get("positions") and not _is_user_close_recent:
                     for pos in user_cache["positions"]:
                         if pos.get("magic") == magic:
                             pos_symbol = pos.get("symbol", "")
@@ -3574,6 +3593,15 @@ async def websocket_endpoint(websocket: WebSocket):
 
                 print(f"[WS] 📢 유저별 MetaAPI 청산: {_user_closed_event['symbol']} P/L=${closed_profit:.2f}")
 
+                # ★★★ 캐시 즉시 정리 (포지션 재출현 방지) ★★★
+                _closed_pos_id = _user_closed_event.get("position_id", "")
+                if user_id and user_id in user_metaapi_cache and "positions" in user_metaapi_cache.get(user_id, {}):
+                    user_metaapi_cache[user_id]["positions"] = [
+                        p for p in user_metaapi_cache[user_id]["positions"]
+                        if p.get("id") != _closed_pos_id
+                    ]
+                    print(f"[WS] 🧹 user_metaapi_cache 포지션 제거: {_closed_pos_id}")
+
                 # ★★★ 라이브 마틴 상태 업데이트 (DB 기반) ★★★
                 if user_id:
                     try:
@@ -3708,6 +3736,12 @@ async def websocket_endpoint(websocket: WebSocket):
                 else:
                     _last_sent_position = None
             else:
+                _last_sent_position = None
+
+            # ★★★ 사용자 청산 확인 후 20초간 포지션 데이터 전송 차단 ★★★
+            if _is_user_close_recent and position_data and not auto_closed:
+                print(f"[LIVE WS] ⏭️ User {user_id} 청산 확인 후 — position_data 제거 (캐시 지연 방지)")
+                position_data = None
                 _last_sent_position = None
 
             data = {
