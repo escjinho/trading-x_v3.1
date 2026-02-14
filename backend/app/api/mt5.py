@@ -3015,7 +3015,8 @@ async def websocket_endpoint(websocket: WebSocket):
         get_metaapi_last_update, get_metaapi_indicators, get_realtime_data,
         quote_price_cache, quote_last_update,
         get_metaapi_positions, get_metaapi_account, pop_metaapi_closed_events,
-        get_user_account_info, get_user_positions, user_metaapi_cache
+        get_user_account_info, get_user_positions, user_metaapi_cache,
+        user_trade_connections  # ★ Streaming 연결 체크용
     )
 
     # ★ Query parameter에서 토큰/magic으로 유저 식별
