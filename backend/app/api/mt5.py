@@ -3168,9 +3168,10 @@ async def websocket_endpoint(websocket: WebSocket):
                 print(f"[LIVE WS] User {user_id} 빠른 동기화 예약 수신: {len(_user_sync_soon_at)}건")
 
             # ★★★ 유저별 MetaAPI 데이터 동기화 (적응형 주기) ★★★
-            # 포지션 보유: 15초 | 대기: 60초 | 주문 직후: 즉시
+            # ★★★ Streaming 연결 시 RPC는 백업용 (30초), 없으면 기존 주기 ★★★
             if _ws_use_user_metaapi and user_id:
-                _sync_interval = 15 if _user_has_position else 60
+                _has_streaming = user_id in user_trade_connections and user_trade_connections[user_id].get("streaming") is not None
+                _sync_interval = 30 if _has_streaming else (5 if _user_has_position else 30)
                 _should_sync = (current_time - last_user_metaapi_sync) > _sync_interval
 
                 # ★ 주문 직후 빠른 동기화 (예약된 시간 도달 시)
@@ -3563,6 +3564,15 @@ async def websocket_endpoint(websocket: WebSocket):
                 else:
                     del auto_closed_cache[user_id]
 
+            # ★★★ 유저 Streaming 청산 이벤트 체크 (실시간 감지!) ★★★
+            _user_streaming_closed = None
+            if user_id:
+                from .metaapi_service import pop_user_closed_events
+                _streaming_events = pop_user_closed_events(user_id, magic)
+                if _streaming_events:
+                    _user_streaming_closed = _streaming_events[0]  # 첫 번째 이벤트
+                    print(f"[WS] 📢 Streaming 청산 감지! User {user_id}, {_user_streaming_closed['symbol']} P/L=${_user_streaming_closed['profit']:.2f}")
+
             # ★★★ MetaAPI 청산 이벤트 처리 ★★★
             auto_closed = False
             closed_profit = 0
@@ -3574,7 +3584,7 @@ async def websocket_endpoint(websocket: WebSocket):
             martin_step = 1
             martin_accumulated_loss = 0
 
-            # 우선순위: WS 자동청산 캐시 > MetaAPI 청산 이벤트
+            # 우선순위: WS 자동청산 캐시 > Streaming 청산 > MetaAPI 포지션 감지 > 공유 MetaAPI
             if ws_auto_closed_info:
                 auto_closed = True
                 closed_profit = ws_auto_closed_info.get("closed_profit", 0)
@@ -3585,8 +3595,62 @@ async def websocket_endpoint(websocket: WebSocket):
                 martin_step_up = ws_auto_closed_info.get("martin_step_up", False)
                 martin_step = ws_auto_closed_info.get("martin_step", 1)
                 martin_accumulated_loss = ws_auto_closed_info.get("martin_accumulated_loss", 0)
+            elif _user_streaming_closed:
+                # ★★★ Streaming 실시간 청산 감지 (가장 빠른 감지!) ★★★
+                auto_closed = True
+                closed_profit = _user_streaming_closed["profit"]
+                is_win = _user_streaming_closed["is_win"]
+                closed_message = f"{'이익' if is_win else '손실'} 청산: ${closed_profit:.2f}"
+                closed_at = current_time
+
+                print(f"[WS] 📢 Streaming 청산: {_user_streaming_closed['symbol']} P/L=${closed_profit:.2f}")
+
+                # ★★★ 라이브 마틴 상태 업데이트 (DB 기반) ★★★
+                if user_id:
+                    try:
+                        ws_db = next(get_db())
+                        live_martin = ws_db.query(LiveMartinState).filter_by(user_id=user_id, magic=magic).first()
+                        if live_martin and live_martin.enabled:
+                            if is_win:
+                                live_martin.step = 1
+                                live_martin.accumulated_loss = 0.0
+                                ws_db.commit()
+                                martin_reset = True
+                                martin_step_up = False
+                                martin_step = 1
+                                martin_accumulated_loss = 0
+                                print(f"[WS MARTIN] User {user_id} WIN! +${closed_profit:.2f} → Step 1 리셋")
+                            else:
+                                new_accumulated = live_martin.accumulated_loss + abs(closed_profit)
+                                new_step = live_martin.step + 1
+                                if new_step > live_martin.max_steps:
+                                    live_martin.step = 1
+                                    live_martin.accumulated_loss = 0.0
+                                    ws_db.commit()
+                                    martin_reset = True
+                                    martin_step_up = False
+                                    martin_step = 1
+                                    martin_accumulated_loss = new_accumulated
+                                else:
+                                    live_martin.step = new_step
+                                    live_martin.accumulated_loss = new_accumulated
+                                    ws_db.commit()
+                                    martin_reset = False
+                                    martin_step_up = True
+                                    martin_step = new_step
+                                    martin_accumulated_loss = new_accumulated
+                        ws_db.close()
+                    except Exception as martin_err:
+                        print(f"[WS MARTIN] DB 업데이트 오류: {martin_err}")
+
+                # 캐시 정리
+                if user_id and user_id in user_live_cache:
+                    user_live_cache[user_id]["positions"] = []
+                    user_live_cache[user_id]["updated_at"] = time_module.time()
+                if user_id in user_target_cache:
+                    del user_target_cache[user_id]
             elif _user_closed_event:
-                # ★★★ 유저별 MetaAPI 포지션 청산 ★★★
+                # ★★★ 유저별 MetaAPI 포지션 청산 (RPC 폴링 fallback) ★★★
                 auto_closed = True
                 closed_profit = _user_closed_event["profit"]
                 is_win = _user_closed_event["is_win"]

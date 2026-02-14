@@ -2072,6 +2072,10 @@ user_trade_connections: Dict[int, Dict] = {}
 user_metaapi_cache: Dict[int, Dict] = {}
 # 구조: {user_id: {"account_info": {...}, "positions": [...], "last_sync": timestamp}}
 
+# 유저별 청산 이벤트 큐 (Streaming에서 감지)
+user_closed_events: Dict[int, List[Dict]] = {}
+# 구조: {user_id: [{"profit": float, "symbol": str, "magic": int, ...}]}
+
 
 async def provision_user_metaapi(user_id: int, login: str, password: str, server: str, name: str = "") -> Dict:
     """
@@ -2173,12 +2177,17 @@ async def undeploy_user_metaapi(metaapi_account_id: str) -> Dict:
         for uid, conn_data in list(user_trade_connections.items()):
             if conn_data.get("metaapi_account_id") == metaapi_account_id:
                 try:
+                    if conn_data.get("streaming"):
+                        await conn_data["streaming"].close()
+                except:
+                    pass
+                try:
                     if conn_data.get("rpc"):
                         await conn_data["rpc"].close()
                 except:
                     pass
                 del user_trade_connections[uid]
-                print(f"[MetaAPI Undeploy] User {uid} 연결 풀 정리")
+                print(f"[MetaAPI Undeploy] User {uid} 연결 풀 정리 (RPC + Streaming)")
                 break
 
         await account.undeploy()
@@ -2190,10 +2199,221 @@ async def undeploy_user_metaapi(metaapi_account_id: str) -> Dict:
         return {"success": False, "error": str(e)}
 
 
+class UserStreamingListener:
+    """
+    유저별 MetaAPI Streaming 리스너
+    - on_position_updated → user_metaapi_cache 실시간 업데이트
+    - on_position_removed → 즉시 청산 감지 + user_closed_events에 추가
+    - on_account_information_updated → 잔고/자산 실시간 업데이트
+    """
+
+    def __init__(self, user_id: int):
+        self.user_id = user_id
+        self._sync_complete = False
+        self._start_time = time.time()
+
+    def _ensure_cache(self):
+        if self.user_id not in user_metaapi_cache:
+            user_metaapi_cache[self.user_id] = {"positions": [], "account_info": None, "last_sync": 0}
+
+    async def on_connected(self, instance_index, replicas):
+        print(f"[UserStreaming] 🟢 User {self.user_id} Streaming 연결됨")
+
+    async def on_disconnected(self, instance_index):
+        print(f"[UserStreaming] 🔴 User {self.user_id} Streaming 연결 해제")
+
+    async def on_account_information_updated(self, instance_index, account_information):
+        """계정 정보 실시간 업데이트"""
+        self._ensure_cache()
+        user_metaapi_cache[self.user_id]["account_info"] = {
+            "broker": account_information.get("broker", ""),
+            "balance": account_information.get("balance", 0),
+            "equity": account_information.get("equity", 0),
+            "margin": account_information.get("margin", 0),
+            "freeMargin": account_information.get("freeMargin", 0) or account_information.get("free_margin", 0),
+            "leverage": account_information.get("leverage", 0),
+            "currency": account_information.get("currency", "USD"),
+            "login": account_information.get("login", 0)
+        }
+        user_metaapi_cache[self.user_id]["last_sync"] = time.time()
+
+    async def on_positions_replaced(self, instance_index, positions):
+        """전체 포지션 교체 (초기 동기화)"""
+        self._ensure_cache()
+        pos_list = []
+        for pos in positions:
+            pos_list.append({
+                'id': pos.get('id'),
+                'symbol': pos.get('symbol'),
+                'type': pos.get('type'),
+                'volume': pos.get('volume', 0),
+                'openPrice': pos.get('openPrice', 0),
+                'currentPrice': pos.get('currentPrice', 0),
+                'profit': pos.get('profit', 0),
+                'stopLoss': pos.get('stopLoss', 0),
+                'takeProfit': pos.get('takeProfit', 0),
+                'magic': pos.get('magic', 0),
+                'comment': pos.get('comment', ''),
+                'time': pos.get('time')
+            })
+        user_metaapi_cache[self.user_id]["positions"] = pos_list
+        user_metaapi_cache[self.user_id]["last_sync"] = time.time()
+        print(f"[UserStreaming] User {self.user_id} 포지션 동기화: {len(pos_list)}개")
+
+    async def on_position_updated(self, instance_index, position):
+        """포지션 업데이트/추가 (실시간)"""
+        self._ensure_cache()
+        pos_id = position.get('id')
+        pos_data = {
+            'id': pos_id,
+            'symbol': position.get('symbol'),
+            'type': position.get('type'),
+            'volume': position.get('volume', 0),
+            'openPrice': position.get('openPrice', 0),
+            'currentPrice': position.get('currentPrice', 0),
+            'profit': position.get('profit', 0),
+            'stopLoss': position.get('stopLoss', 0),
+            'takeProfit': position.get('takeProfit', 0),
+            'magic': position.get('magic', 0),
+            'comment': position.get('comment', ''),
+            'time': position.get('time')
+        }
+
+        positions = user_metaapi_cache[self.user_id].get("positions", [])
+        found = False
+        for i, existing in enumerate(positions):
+            if existing.get('id') == pos_id:
+                positions[i] = pos_data
+                found = True
+                break
+        if not found:
+            positions.append(pos_data)
+            print(f"[UserStreaming] User {self.user_id} ➕ 새 포지션: {pos_data['symbol']} {pos_data['type']}")
+
+        user_metaapi_cache[self.user_id]["positions"] = positions
+        user_metaapi_cache[self.user_id]["last_sync"] = time.time()
+
+    async def on_position_removed(self, instance_index, position_id):
+        """포지션 청산 (실시간 감지!)"""
+        self._ensure_cache()
+
+        # 시작 후 10초 이내 이벤트 무시 (초기 동기화 가짜 이벤트 방지)
+        if time.time() - self._start_time < 10:
+            print(f"[UserStreaming] User {self.user_id} 초기화 중 — 청산 이벤트 무시: {position_id}")
+            return
+
+        positions = user_metaapi_cache[self.user_id].get("positions", [])
+        removed_pos = None
+        for i, pos in enumerate(positions):
+            if pos.get('id') == position_id:
+                removed_pos = positions.pop(i)
+                break
+
+        user_metaapi_cache[self.user_id]["positions"] = positions
+        user_metaapi_cache[self.user_id]["last_sync"] = time.time()
+
+        if removed_pos:
+            profit = removed_pos.get('profit', 0)
+            symbol = removed_pos.get('symbol', '')
+            magic = removed_pos.get('magic', 0)
+
+            # 청산 이벤트 큐에 추가
+            if self.user_id not in user_closed_events:
+                user_closed_events[self.user_id] = []
+            user_closed_events[self.user_id].append({
+                "position_id": position_id,
+                "profit": profit,
+                "symbol": symbol,
+                "magic": magic,
+                "is_win": profit >= 0,
+                "time": time.time()
+            })
+            print(f"[UserStreaming] User {self.user_id} ❌ 포지션 청산: {symbol} P/L=${profit:.2f} (magic={magic})")
+        else:
+            print(f"[UserStreaming] User {self.user_id} ❌ 포지션 청산: id={position_id} (캐시에 없음)")
+
+    async def on_deal_added(self, instance_index, deal):
+        """거래 추가 (SL/TP 등 청산 거래 감지)"""
+        if deal.get('entryType') == 'DEAL_ENTRY_OUT':
+            profit = deal.get('profit', 0)
+            commission = deal.get('commission', 0)
+            swap = deal.get('swap', 0)
+            total_profit = round(profit + commission + swap, 2)
+            print(f"[UserStreaming] User {self.user_id} 💰 Deal OUT: {deal.get('symbol')} P/L=${total_profit:.2f}")
+
+    async def on_positions_synchronized(self, instance_index, synchronization_id):
+        if not self._sync_complete:
+            self._sync_complete = True
+            print(f"[UserStreaming] User {self.user_id} ✅ 포지션 동기화 완료")
+
+    # 필수 빈 메서드들 (SynchronizationListener 인터페이스)
+    async def on_synchronization_started(self, instance_index, specifications_hash, positions_hash, orders_hash, synchronization_id):
+        pass
+    async def on_broker_connection_status_changed(self, instance_index, connected):
+        pass
+    async def on_pending_orders_replaced(self, instance_index, orders):
+        pass
+    async def on_pending_orders_synchronized(self, instance_index, synchronization_id):
+        pass
+    async def on_order_updated(self, instance_index, order):
+        pass
+    async def on_order_completed(self, instance_index, order_id):
+        pass
+    async def on_orders_replaced(self, instance_index, orders):
+        pass
+    async def on_orders_synchronized(self, instance_index, synchronization_id):
+        pass
+    async def on_history_order_added(self, instance_index, history_order):
+        pass
+    async def on_deal_synchronization_finished(self, instance_index, synchronization_id):
+        pass
+    async def on_order_synchronization_finished(self, instance_index, synchronization_id):
+        pass
+    async def on_symbol_specifications_updated(self, instance_index, specifications, removed_symbols):
+        pass
+    async def on_symbol_specification_updated(self, instance_index, specification):
+        pass
+    async def on_symbol_prices_updated(self, instance_index, prices, equity, margin, free_margin, margin_level, account_currency_exchange_rate):
+        pass
+    async def on_health_status(self, instance_index, status):
+        pass
+    async def on_symbol_price_updated(self, instance_index, price):
+        pass
+    async def on_history_orders_synchronized(self, instance_index, synchronization_id):
+        pass
+    async def on_deals_synchronized(self, instance_index, synchronization_id):
+        pass
+    async def on_positions_updated(self, instance_index, updated_positions, removed_position_ids):
+        """벌크 포지션 업데이트"""
+        if updated_positions:
+            for pos in updated_positions:
+                await self.on_position_updated(instance_index, pos)
+        if removed_position_ids:
+            for pos_id in removed_position_ids:
+                await self.on_position_removed(instance_index, pos_id)
+
+
+def pop_user_closed_events(user_id: int, magic: int = None) -> List[Dict]:
+    """유저의 청산 이벤트 큐에서 꺼내기 (한 번만 소비)"""
+    if user_id not in user_closed_events or not user_closed_events[user_id]:
+        return []
+
+    events = user_closed_events[user_id]
+    if magic is not None:
+        # magic 필터링
+        matched = [e for e in events if e.get("magic") == magic]
+        user_closed_events[user_id] = [e for e in events if e.get("magic") != magic]
+        return matched
+    else:
+        user_closed_events[user_id] = []
+        return events
+
+
 async def get_user_trade_connection(user_id: int, metaapi_account_id: str):
     """
-    유저별 Trade RPC 연결 가져오기 (없으면 생성)
-    - Connection Pool 역할
+    유저별 Trade RPC + Streaming 연결 가져오기 (없으면 생성)
+    - RPC: 주문/청산 실행용
+    - Streaming: 실시간 포지션/계정 동기화용 (추가 비용 없음)
     """
     import time as time_module
 
@@ -2221,25 +2441,42 @@ async def get_user_trade_connection(user_id: int, metaapi_account_id: str):
             await account.deploy()
             await account.wait_connected()
 
-        # RPC 연결
+        # 1) RPC 연결 (주문/청산용)
         rpc = account.get_rpc_connection()
         await rpc.connect()
         await rpc.wait_synchronized()
+        print(f"[MetaAPI Pool] ✅ User {user_id} RPC 연결 완료")
+
+        # 2) Streaming 연결 (실시간 동기화용 — 추가 비용 없음!)
+        streaming = None
+        listener = None
+        try:
+            streaming = account.get_streaming_connection()
+            listener = UserStreamingListener(user_id)
+            streaming.add_synchronization_listener(listener)
+            await streaming.connect()
+            await streaming.wait_synchronized()
+            print(f"[MetaAPI Pool] ✅ User {user_id} Streaming 연결 완료 (실시간 동기화 활성화)")
+        except Exception as stream_err:
+            print(f"[MetaAPI Pool] ⚠️ User {user_id} Streaming 연결 실패 (RPC로 fallback): {stream_err}")
+            streaming = None
 
         # 풀에 저장
         user_trade_connections[user_id] = {
             "rpc": rpc,
+            "streaming": streaming,
+            "listener": listener,
             "account": account,
             "metaapi_account_id": metaapi_account_id,
             "last_active": time_module.time(),
             "connected_at": time_module.time()
         }
 
-        print(f"[MetaAPI Pool] ✅ User {user_id} RPC 연결 완료")
+        print(f"[MetaAPI Pool] ✅ User {user_id} 연결 완료 (RPC + {'Streaming' if streaming else 'Streaming 없음'})")
         return rpc
 
     except Exception as e:
-        print(f"[MetaAPI Pool] ❌ User {user_id} RPC 연결 실패: {e}")
+        print(f"[MetaAPI Pool] ❌ User {user_id} 연결 실패: {e}")
         return None
 
 
