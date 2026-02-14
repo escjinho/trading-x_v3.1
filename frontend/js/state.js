@@ -16,6 +16,7 @@ let martinLevel = 3;
 let martinEnabled = false;
 let martinStep = 1;
 let martinAccumulatedLoss = 0;
+let martinBaseTarget = 0;
 let hasPosition = false;
 let positionData = null;
 let positionStartTime = null;

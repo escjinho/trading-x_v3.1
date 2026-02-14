@@ -7,7 +7,7 @@ function showMartinPopup(currentLoss) {
     const nextStep = martinStep + 1;
     const nextLot = lotSize * Math.pow(2, martinStep);
     const accumulated = martinAccumulatedLoss + pendingLoss;
-    const recoveryTarget = Math.ceil((accumulated + targetAmount) / 5) * 5;
+    const recoveryTarget = Math.ceil((accumulated + (martinBaseTarget || targetAmount)) / 5) * 5;
     
     document.getElementById('popupCurrentStep').textContent = martinStep;
     document.getElementById('popupCurrentStepKr').textContent = martinStep;
@@ -636,6 +636,7 @@ async function closePosition() {
                 showToast('📊 포지션이 청산되었습니다! 손익 확인 중...', 'success');
 
                 setTimeout(async () => {
+                    window._martinStateUpdating = true;
                     try {
                         // MT5 히스토리에서 정확한 체결 금액 조회
                         let profit = apiProfit;
@@ -646,7 +647,7 @@ async function closePosition() {
                             console.log(`[Martin Close] MT5 실제 손익: ${profit} (API 반환: ${apiProfit})`);
                         }
 
-                        const baseTarget = targetAmount;
+                        const baseTarget = martinBaseTarget || targetAmount;
                         const currentDisplayTarget = Math.ceil((martinAccumulatedLoss + baseTarget) / 5) * 5;
 
                         if (profit > 0) {
@@ -704,9 +705,11 @@ async function closePosition() {
 
                         if (typeof loadHistory === 'function') loadHistory();
                         if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
+                        setTimeout(() => { window._martinStateUpdating = false; }, 3000);
                     } catch (e) {
                         console.error('[Martin Close] 히스토리 조회 실패:', e);
                         updateTodayPL(apiProfit);
+                        window._martinStateUpdating = false;
                     }
                 }, 1500);
 
@@ -829,7 +832,7 @@ async function closeDemoPosition() {
             
             // 마틴 모드 처리
             if (currentMode === 'martin' && martinEnabled) {
-                const baseTarget = targetAmount;
+                const baseTarget = martinBaseTarget || targetAmount;
                 const currentDisplayTarget = Math.ceil((martinAccumulatedLoss + baseTarget) / 5) * 5;
                 
                 // Case 1: 수익으로 청산

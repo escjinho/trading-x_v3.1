@@ -390,6 +390,7 @@ async function applySettings() {
     martinEnabled = settingsMartinEnabled;
 
     if (currentMode === 'martin' && martinEnabled) {
+        martinBaseTarget = targetAmount;
         if (isDemo) {
             await apiCall(`/demo/martin/enable?base_lot=${lotSize}&max_steps=${martinLevel}&base_target=${targetAmount}&magic=100001`, 'POST');
         } else {
@@ -510,10 +511,8 @@ function updateMainPanelForMode() {
 }
 
 function updateMartinUI() {
-    // ★★★ 마틴 타겟 계산: ceil((누적손실 + 기본타겟) / 5) * 5 ★★★
-    // 백엔드 공식과 동일: 타겟 = ceil((accumulated_loss + base_target) / 5) * 5
-    // martinStep에 따라 랏만 2배, 타겟은 누적손실 기반 계산
-    let displayTarget = Math.ceil((martinAccumulatedLoss + targetAmount) / 5) * 5;
+    const baseT = martinBaseTarget || targetAmount;
+    let displayTarget = Math.ceil((martinAccumulatedLoss + baseT) / 5) * 5;
 
     document.getElementById('martinTargetDisplay').textContent = '$' + displayTarget;
     document.getElementById('martinTargetInfo').textContent = displayTarget;
@@ -525,7 +524,6 @@ function updateMartinUI() {
     }
     document.getElementById('martinLotDisplay').innerHTML = lotText;
 
-    // Step 정보 - 현재 스텝을 cyan으로 강조
     const stepInfoEl = document.getElementById('martinCurrentStep');
     if (stepInfoEl) {
         stepInfoEl.innerHTML = '<span style="color: #00d4ff; font-weight: bold;">' + martinStep + '</span>';
@@ -533,7 +531,7 @@ function updateMartinUI() {
     document.getElementById('martinMaxStepsDisplay').textContent = martinLevel;
 
     const badge = document.getElementById('martinStepBadge');
-    if (martinStep > 1) {
+    if (martinStep > 1 || martinAccumulatedLoss > 0) {
         badge.style.display = 'inline';
         badge.innerHTML = '<span style="color: #ffffff;">Step ' + martinStep + ' / 누적손실:</span> <span style="color: #00d4ff; font-weight: bold;">-$' + martinAccumulatedLoss.toFixed(0) + '</span>';
     } else {

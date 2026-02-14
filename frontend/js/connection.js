@@ -1035,26 +1035,25 @@ function connectWebSocket() {
 
         // ★★★ Live Martin state (DB 기반) ★★★
         if (data.martin) {
-            martinEnabled = data.martin.enabled;
-            martinLevel = data.martin.max_steps;
-            martinStep = data.martin.step;
-            martinAccumulatedLoss = data.martin.accumulated_loss;
+            if (window._martinStateUpdating) {
+                console.log('[WS Martin] ⏳ 마틴 상태 업데이트 중 — WS 무시');
+            } else {
+                martinEnabled = data.martin.enabled;
+                martinLevel = data.martin.max_steps;
+                martinStep = data.martin.step;
+                martinAccumulatedLoss = data.martin.accumulated_loss;
 
-            if (currentMode === 'martin' && martinEnabled) {
-                // base_target 사용 (백엔드 DB 필드명)
-                const baseTarget = data.martin.base_target || targetAmount;
-                if (martinAccumulatedLoss > 0) {
-                    targetAmount = Math.ceil((martinAccumulatedLoss + baseTarget) / 5) * 5;
-                } else {
-                    targetAmount = baseTarget;
+                if (data.martin.base_target) {
+                    martinBaseTarget = data.martin.base_target;
                 }
 
-                // current_lot 표시
-                if (data.martin.current_lot) {
-                    const tradeLotSize = document.getElementById('tradeLotSize');
-                    if (tradeLotSize) tradeLotSize.textContent = data.martin.current_lot.toFixed(2);
+                if (currentMode === 'martin' && martinEnabled) {
+                    if (data.martin.current_lot) {
+                        const tradeLotSize = document.getElementById('tradeLotSize');
+                        if (tradeLotSize) tradeLotSize.textContent = data.martin.current_lot.toFixed(2);
+                    }
+                    updateMartinUI();
                 }
-                updateMartinUI();
             }
         }
 
