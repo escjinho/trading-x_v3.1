@@ -1120,6 +1120,7 @@ async def close_demo_position(
         "success": True,
         "message": f"[DEMO] 청산 완료! P/L: ${profit:+,.2f}",
         "profit": profit,
+        "raw_profit": profit,  # 데모는 수수료 없음
         "new_balance": current_user.demo_balance,
         "martin_step": martin_step,
         "martin_accumulated_loss": martin_accumulated_loss,

@@ -1598,6 +1598,7 @@ async def close_position(
                     "success": True,
                     "message": f"청산 성공! P/L: ${profit:,.2f}",
                     "profit": profit,
+                    "raw_profit": actual_profit if actual_profit is not None else profit,
                     "positionId": position_id,
                     "metaapi_mode": True,
                     "actual": actual_profit is not None
@@ -1692,6 +1693,7 @@ async def close_position(
                 "success": True,
                 "message": f"청산 성공! P/L: ${profit:,.2f}",
                 "profit": profit,
+                "raw_profit": actual_profit if actual_profit is not None else profit,
                 "positionId": pos_id,
                 "metaapi_mode": True,
                 "actual": actual_profit is not None

@@ -56,73 +56,86 @@ let _martinPendingAccLoss = 0;     // 새 누적손실 (기존 + 이번)
 let _martinPendingProfit = 0;      // 이번 청산 손익 (원본, 음수 가능)
 
 async function showMartinPopup(profit) {
-    // ★★★ 2초 대기 후 magic number로 정확한 profit 조회 (수수료 미포함, 히스토리 탭과 동일) ★★★
-    await new Promise(r => setTimeout(r, 2000));
-
-    try {
-        const lastTradeUrl = isDemo
-            ? `/demo/last-trade?magic=${BUYSELL_MAGIC_NUMBER}`
-            : `/mt5/last-trade?magic=${BUYSELL_MAGIC_NUMBER}`;
-        const resp = await apiCall(lastTradeUrl, 'GET');
-        if (resp && resp.success && resp.trade && resp.trade.profit !== undefined) {
-            const realProfit = resp.trade.profit;
-            if (realProfit < 0) {
-                console.log(`[MartinPopup] profit 보정: API=${profit} → lastTrade=${realProfit}`);
-                profit = realProfit;
-            }
-        }
-    } catch (e) {
-        console.log('[MartinPopup] last-trade 실패, apiProfit 사용');
-    }
-
     const lossAmount = Math.abs(profit);
-    _martinPendingLoss = lossAmount;
-    _martinPendingProfit = profit;
 
-    // ★★★ DB에서 최신 마틴 상태 조회 (백엔드가 이미 업데이트한 값 사용) ★★★
+    // ★★★ DB에서 현재 마틴 상태 조회 ★★★
+    let dbAccLoss = martinAccumulatedLoss;
     try {
-        let dbAccLoss = martinAccumulatedLoss;
-        if (isDemo) {
-            const statePromise = apiCall(`/demo/martin/state?magic=${BUYSELL_MAGIC_NUMBER}`, 'GET');
-            const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 2000));
-            const state = await Promise.race([statePromise, timeoutPromise]);
-            if (state && state.accumulated_loss !== undefined) {
-                dbAccLoss = state.accumulated_loss;
+        const stateUrl = isDemo
+            ? `/demo/martin/state?magic=${BUYSELL_MAGIC_NUMBER}`
+            : `/mt5/martin/state`;
+        const stateResp = await apiCall(stateUrl, 'GET');
+        if (stateResp && stateResp.success !== false) {
+            const state = stateResp.state || stateResp;
+            if (state.step !== undefined) {
                 martinStep = state.step || martinStep;
             }
-        } else {
-            const statePromise = apiCall('/mt5/martin/state', 'GET');
-            const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 2000));
-            const state = await Promise.race([statePromise, timeoutPromise]);
-            if (state && state.accumulated_loss !== undefined) {
-                dbAccLoss = state.accumulated_loss;
-                martinStep = state.step || martinStep;
+            if (state.accumulated_loss !== undefined) {
+                dbAccLoss = state.accumulated_loss || 0;
             }
         }
-        // ★★★ DB에는 이번 손실이 아직 미반영 → 수동으로 더해야 함 ★★★
-        _martinPendingAccLoss = dbAccLoss + lossAmount;
-        martinAccumulatedLoss = dbAccLoss;  // 현재 DB 값 (이번 손실 미포함)
-        console.log(`[Martin Popup] DB 누적손실: ${dbAccLoss}, 이번 손실: ${lossAmount}, 새 누적: ${_martinPendingAccLoss}`);
     } catch (e) {
-        console.error('[Martin Popup] DB 조회 실패:', e);
-        _martinPendingAccLoss = martinAccumulatedLoss;
+        console.log('[MartinPopup] DB 조회 실패, 현재 값 사용');
     }
 
-    const baseT = martinBaseTarget || targetAmount;
+    martinAccumulatedLoss = dbAccLoss;
+
+    // ★★★ 현재 손실 + DB 누적 = 새 누적손실 ★★★
+    const newAccLoss = dbAccLoss + lossAmount;
+    _martinPendingAccLoss = newAccLoss;
+
     const nextStep = martinStep + 1;
     const nextLot = lotSize * Math.pow(2, martinStep);
-    const recoveryTarget = Math.ceil((_martinPendingAccLoss + baseT) / 5) * 5;
+    const martinTarget = martinBaseTarget || targetAmount;
+    const recoveryTarget = newAccLoss + martinTarget;
 
+    // ★★★ 팝업 DOM 업데이트 ★★★
     document.getElementById('popupCurrentStep').textContent = martinStep;
     document.getElementById('popupCurrentStepKr').textContent = martinStep;
-    document.getElementById('popupCurrentLoss').textContent = '-$' + lossAmount.toFixed(2);
-    document.getElementById('popupAccumulatedLoss').textContent = '-$' + _martinPendingAccLoss.toFixed(2);
-    document.getElementById('popupNextLot').textContent = nextLot.toFixed(2) + ' lot';
-    document.getElementById('popupRecoveryTarget').textContent = '+$' + recoveryTarget;
     document.getElementById('popupNextStep').textContent = nextStep;
     document.getElementById('popupNextStepKr').textContent = nextStep;
+    document.getElementById('popupCurrentLoss').textContent = `-${lossAmount.toFixed(2)}`;
+    document.getElementById('popupAccumulatedLoss').textContent = `-${newAccLoss.toFixed(2)}`;
+    document.getElementById('popupNextLot').textContent = `${nextLot.toFixed(2)} lot`;
+    document.getElementById('popupRecoveryTarget').textContent = `+${recoveryTarget.toFixed(0)}`;
 
+    // 팝업 표시
     document.getElementById('martinPopup').style.display = 'flex';
+
+    // ★★★ 3초 후 last-trade로 정확한 값 조회 + 팝업 업데이트 ★★★
+    setTimeout(async () => {
+        try {
+            const lastTradeUrl = isDemo
+                ? `/demo/last-trade?magic=${BUYSELL_MAGIC_NUMBER}`
+                : `/mt5/last-trade?magic=${BUYSELL_MAGIC_NUMBER}`;
+            const resp = await apiCall(lastTradeUrl, 'GET');
+            if (resp && resp.success && resp.trade && resp.trade.profit !== undefined) {
+                const realProfit = resp.trade.profit;
+                if (realProfit < 0) {
+                    const realLoss = Math.abs(realProfit);
+                    const realAccLoss = dbAccLoss + realLoss;
+                    const realRecovery = realAccLoss + martinTarget;
+
+                    if (Math.abs(realLoss - lossAmount) > 0.01) {
+                        console.log(`[MartinPopup] 보정: ${lossAmount.toFixed(2)} → ${realLoss.toFixed(2)}`);
+
+                        // DOM 업데이트 (팝업이 아직 열려있으면)
+                        const lossEl = document.getElementById('popupCurrentLoss');
+                        const accEl = document.getElementById('popupAccumulatedLoss');
+                        const recEl = document.getElementById('popupRecoveryTarget');
+                        if (lossEl) lossEl.textContent = `-${realLoss.toFixed(2)}`;
+                        if (accEl) accEl.textContent = `-${realAccLoss.toFixed(2)}`;
+                        if (recEl) recEl.textContent = `+${realRecovery.toFixed(0)}`;
+
+                        // 내부 값도 업데이트
+                        _martinPendingAccLoss = realAccLoss;
+                    }
+                }
+            }
+        } catch (e) {
+            console.log('[MartinPopup] 백그라운드 보정 실패 (무시)');
+        }
+    }, 3000);
 }
 
 function hideMartinPopup() {
@@ -762,6 +775,7 @@ async function closePosition() {
         if (result?.success) {
             playSound('close');
             const apiProfit = result.profit || 0;
+            const rawProfit = result.raw_profit !== undefined ? result.raw_profit : apiProfit;
 
             // ★★★ 청산 확인 타임스탬프 — WS 포지션 데이터 무시용 ★★★
             window._closeConfirmedAt = Date.now();
@@ -778,7 +792,8 @@ async function closePosition() {
                     window._martinStateUpdating = true;
                     try {
                         const profit = apiProfit;
-                        console.log(`[Martin Close] apiProfit: ${profit}`);
+                        const martinProfit = rawProfit;  // ★ raw_profit: 수수료 미포함
+                        console.log(`[Martin Close] apiProfit: ${profit}, rawProfit: ${martinProfit}`);
 
                         if (typeof loadHistory === 'function') loadHistory();
                         if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
@@ -819,8 +834,8 @@ async function closePosition() {
                                 }
                             }
                         } else if (profit < 0) {
-                            // ★★★ 손실 → 팝업으로 유저 선택 (팝업 내부에서 2초 대기 + last-trade 조회) ★★★
-                            showMartinPopup(profit);
+                            // ★★★ 손실 → 팝업으로 유저 선택 (raw_profit: 수수료 미포함) ★★★
+                            showMartinPopup(martinProfit);
                         } else {
                             updateTodayPL(0);
                             window._martinStateUpdating = false;
@@ -946,7 +961,8 @@ async function closeDemoPosition() {
         if (result?.success) {
             playSound('close');
             const profit = result.profit || 0;
-            
+            const rawProfit = result.raw_profit !== undefined ? result.raw_profit : profit;
+
             // 마틴 모드 처리
             if (currentMode === 'martin' && martinEnabled) {
                 if (profit > 0) {
@@ -975,9 +991,9 @@ async function closeDemoPosition() {
                         }
                     }
                 } else if (profit < 0) {
-                    // ★★★ 손실 → 팝업으로 유저 선택 ★★★
+                    // ★★★ 손실 → 팝업으로 유저 선택 (raw_profit: 수수료 미포함) ★★★
                     updateTodayPL(profit);
-                    showMartinPopup(profit);
+                    showMartinPopup(rawProfit);
                 } else {
                     showToast('청산 완료 (손익 없음)', 'success');
                 }
