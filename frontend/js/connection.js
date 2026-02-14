@@ -15,23 +15,54 @@ document.addEventListener('visibilitychange', function() {
     if (document.hidden) {
         // 백그라운드로 갔을 때 - WS 유지, 재연결 안 함
         isPageVisible = false;
+        window._backgroundAt = Date.now();
         console.log('[Visibility] 백그라운드로 전환');
     } else {
         // 포그라운드로 돌아왔을 때
         isPageVisible = true;
-        console.log('[Visibility] 포그라운드로 복귀');
+        const _bgDuration = window._backgroundAt ? (Date.now() - window._backgroundAt) : 0;
+        console.log(`[Visibility] 포그라운드로 복귀 (백그라운드 ${Math.round(_bgDuration/1000)}초)`);
 
-        // WS가 끊어져 있으면 재연결 (CONNECTING 상태면 진행 중이므로 스킵)
+        // WS가 끊어져 있으면 재연결
         if (!ws || (ws.readyState !== WebSocket.OPEN && ws.readyState !== WebSocket.CONNECTING)) {
             console.log('[Visibility] WS 재연결 필요');
-            reconnectAttempt = 0;  // 재연결 카운터 리셋
+            reconnectAttempt = 0;
             if (reconnectTimer) {
                 clearTimeout(reconnectTimer);
                 reconnectTimer = null;
             }
             connectWebSocket();
-        } else {
-            console.log('[Visibility] WS 이미 연결됨 또는 연결 중');
+        } else if (ws && ws.readyState === WebSocket.OPEN) {
+            // ★★★ WS 연결 유지 중이라도 — 페이지 상태 새로고침 ★★★
+            console.log('[Visibility] WS 연결됨 — 페이지 데이터 새로고침');
+
+            // 30초 이상 백그라운드였으면 전체 리로드
+            if (_bgDuration > 30000) {
+                console.log('[Visibility] 🔄 30초 이상 백그라운드 — 전체 리로드');
+                location.reload();
+                return;
+            }
+
+            // 계정 데이터 새로고침
+            const isDemo = document.getElementById('modeSwitch')?.dataset?.mode === 'demo' ||
+                           localStorage.getItem('tradingMode') === 'demo';
+            if (isDemo) {
+                if (typeof fetchDemoData === 'function') fetchDemoData();
+            } else {
+                // ★★★ 라이브 모드: 계정 정보 + MT5 상태 새로고침 ★★★
+                if (typeof fetchAccountData === 'function') fetchAccountData();
+                if (typeof checkMetaAPIStatus === 'function') {
+                    setTimeout(() => checkMetaAPIStatus(), 500);
+                }
+                // 라이브 포지션 정보도 새로고침
+                if (typeof updateLiveUI === 'function') {
+                    setTimeout(() => updateLiveUI(), 300);
+                }
+            }
+            // 차트 리로드
+            if (typeof loadCandles === 'function') {
+                setTimeout(() => loadCandles(), 500);
+            }
         }
     }
 });
@@ -274,6 +305,9 @@ function connectWebSocket() {
         document.getElementById('statusDot').classList.remove('disconnected');
         document.getElementById('headerStatus').textContent = 'Connected';
         wsRetryCount = 0;
+
+        // ★★★ reconnectAttempt 저장 후 리셋 (순서 중요!) ★★★
+        const _prevReconnectAttempt = reconnectAttempt;
         reconnectAttempt = 0; // 백오프 카운터 리셋
         if (reconnectTimer) {
             clearTimeout(reconnectTimer);
@@ -288,14 +322,14 @@ function connectWebSocket() {
 
         // ★★★ 재연결 감지 시 — 서버 다운 복구면 페이지 리로드, 아니면 데이터만 새로고침 ★★★
         if (_wsHasConnectedBefore) {
-            // 서버 다운 후 복구 감지 (3회 이상 재연결 시도 = 서버 다운이었음)
-            if (reconnectAttempt >= 3 || window._serverWasDown) {
-                console.log('[WS] 🔄 서버 복구 감지! 페이지 전체 리로드...');
+            // 서버 다운 후 복구 감지 (2회 이상 재연결 시도 = 서버 다운이었음)
+            if (_prevReconnectAttempt >= 2 || window._serverWasDown) {
+                console.log(`[WS] 🔄 서버 복구 감지! (시도 ${_prevReconnectAttempt}회) 페이지 전체 리로드...`);
                 window._serverWasDown = false;
                 location.reload();
                 return;
             }
-            console.log('[WS] 🔄 재연결 감지! 전체 데이터 새로고침...');
+            console.log(`[WS] 🔄 재연결 감지! (시도 ${_prevReconnectAttempt}회) 전체 데이터 새로고침...`);
             setTimeout(() => {
                 if (typeof loadCandles === 'function') {
                     loadCandles();
@@ -306,10 +340,18 @@ function connectWebSocket() {
                 if (typeof fetchDemoData === 'function') fetchDemoData();
             } else {
                 if (typeof fetchAccountData === 'function') fetchAccountData();
+                // ★★★ 라이브 모드: 홈화면 MT5 계정 정보도 새로고침 ★★★
+                if (typeof updateHomeUI === 'function') {
+                    setTimeout(() => updateHomeUI(), 500);
+                }
             }
             if (!isDemo && typeof checkMetaAPIStatus === 'function') {
                 setTimeout(() => checkMetaAPIStatus(), 1000);
             }
+            // ★★★ 라이브 포지션 플래그 초기화 (재연결 후 깨끗한 상태) ★★★
+            window._closeConfirmedAt = null;
+            window._userClosing = false;
+            window._plGaugeFrozen = false;
             window.lastIndicatorUpdate = 0;
         }
         _wsHasConnectedBefore = true;
