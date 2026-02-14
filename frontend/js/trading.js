@@ -56,6 +56,40 @@ let _martinPendingAccLoss = 0;     // 새 누적손실 (기존 + 이번)
 let _martinPendingProfit = 0;      // 이번 청산 손익 (원본, 음수 가능)
 
 async function showMartinPopup(profit) {
+    // ★★★ 히스토리에서 정확한 profit 폴링 (히스토리 탭과 동일) ★★★
+    const maxRetries = 10;
+    const interval = 500;
+    let found = false;
+
+    for (let i = 0; i < maxRetries; i++) {
+        try {
+            const histUrl = isDemo
+                ? `/demo/history?period=today`
+                : `/mt5/history?period=today`;
+            const histResp = await apiCall(histUrl, 'GET');
+            if (histResp && histResp.trades && histResp.trades.length > 0) {
+                const lastTrade = histResp.trades[0];
+                if (lastTrade.profit !== undefined && lastTrade.profit !== null) {
+                    const histProfit = lastTrade.profit;
+                    if (histProfit < 0 && Math.abs(Math.abs(histProfit) - Math.abs(profit)) < Math.abs(profit) * 0.5) {
+                        // 히스토리의 최신 trade가 방금 청산한 것과 유사하면 채택
+                        console.log(`[MartinPopup] 히스토리 profit 확인 (${i+1}회): ${histProfit}`);
+                        profit = histProfit;
+                        found = true;
+                        break;
+                    }
+                }
+            }
+        } catch (e) {
+            console.log(`[MartinPopup] 히스토리 폴링 ${i+1}회 실패`);
+        }
+        await new Promise(r => setTimeout(r, interval));
+    }
+
+    if (!found) {
+        console.log('[MartinPopup] 히스토리 폴링 실패, raw_profit 사용:', profit);
+    }
+
     const lossAmount = Math.abs(profit);
 
     // ★★★ DB에서 현재 마틴 상태 조회 ★★★
@@ -79,8 +113,6 @@ async function showMartinPopup(profit) {
     }
 
     martinAccumulatedLoss = dbAccLoss;
-
-    // ★★★ 현재 손실 + DB 누적 = 새 누적손실 ★★★
     const newAccLoss = dbAccLoss + lossAmount;
     _martinPendingAccLoss = newAccLoss;
 
@@ -101,41 +133,6 @@ async function showMartinPopup(profit) {
 
     // 팝업 표시
     document.getElementById('martinPopup').style.display = 'flex';
-
-    // ★★★ 3초 후 last-trade로 정확한 값 조회 + 팝업 업데이트 ★★★
-    setTimeout(async () => {
-        try {
-            const lastTradeUrl = isDemo
-                ? `/demo/last-trade?magic=${BUYSELL_MAGIC_NUMBER}`
-                : `/mt5/last-trade?magic=${BUYSELL_MAGIC_NUMBER}`;
-            const resp = await apiCall(lastTradeUrl, 'GET');
-            if (resp && resp.success && resp.trade && resp.trade.profit !== undefined) {
-                const realProfit = resp.trade.profit;
-                if (realProfit < 0) {
-                    const realLoss = Math.abs(realProfit);
-                    const realAccLoss = dbAccLoss + realLoss;
-                    const realRecovery = realAccLoss + martinTarget;
-
-                    if (Math.abs(realLoss - lossAmount) > 0.01) {
-                        console.log(`[MartinPopup] 보정: ${lossAmount.toFixed(2)} → ${realLoss.toFixed(2)}`);
-
-                        // DOM 업데이트 (팝업이 아직 열려있으면)
-                        const lossEl = document.getElementById('popupCurrentLoss');
-                        const accEl = document.getElementById('popupAccumulatedLoss');
-                        const recEl = document.getElementById('popupRecoveryTarget');
-                        if (lossEl) lossEl.textContent = `-${realLoss.toFixed(2)}`;
-                        if (accEl) accEl.textContent = `-${realAccLoss.toFixed(2)}`;
-                        if (recEl) recEl.textContent = `+${realRecovery.toFixed(0)}`;
-
-                        // 내부 값도 업데이트
-                        _martinPendingAccLoss = realAccLoss;
-                    }
-                }
-            }
-        } catch (e) {
-            console.log('[MartinPopup] 백그라운드 보정 실패 (무시)');
-        }
-    }, 3000);
 }
 
 function hideMartinPopup() {
