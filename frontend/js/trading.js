@@ -63,21 +63,18 @@ async function showMartinPopup(profit) {
 
     for (let i = 0; i < maxRetries; i++) {
         try {
-            const histUrl = isDemo
-                ? `/demo/history?period=today`
-                : `/mt5/history?period=today`;
-            const histResp = await apiCall(histUrl, 'GET');
-            if (histResp && histResp.trades && histResp.trades.length > 0) {
-                const lastTrade = histResp.trades[0];
-                if (lastTrade.profit !== undefined && lastTrade.profit !== null) {
-                    const histProfit = lastTrade.profit;
-                    if (histProfit < 0 && Math.abs(Math.abs(histProfit) - Math.abs(profit)) < Math.abs(profit) * 0.5) {
-                        // 히스토리의 최신 trade가 방금 청산한 것과 유사하면 채택
-                        console.log(`[MartinPopup] 히스토리 profit 확인 (${i+1}회): ${histProfit}`);
-                        profit = histProfit;
-                        found = true;
-                        break;
-                    }
+            const lastTradeUrl = isDemo
+                ? `/demo/last-trade?magic=${BUYSELL_MAGIC_NUMBER}`
+                : `/mt5/last-trade?magic=${BUYSELL_MAGIC_NUMBER}`;
+            const resp = await apiCall(lastTradeUrl, 'GET');
+            if (resp && resp.success && resp.trade) {
+                const tradeProfit = resp.trade.profit;
+                const tradeTime = resp.trade.time;
+                if (tradeProfit !== undefined && tradeProfit < 0) {
+                    console.log(`[MartinPopup] last-trade profit (${i+1}회): ${tradeProfit}, time: ${tradeTime}`);
+                    profit = tradeProfit;
+                    found = true;
+                    break;
                 }
             }
         } catch (e) {
