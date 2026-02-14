@@ -109,7 +109,7 @@ function scheduleIndicatorUpdate() {
 // ========== WebSocket 자동 재연결 (지수 백오프, 무제한 재시도) ==========
 // 재연결 간격: 3초 → 6초 → 12초 → 24초 → 30초 (최대)
 const WS_RECONNECT_BASE = 3000;  // 3초 시작
-const WS_RECONNECT_MAX = 30000;  // 최대 30초
+const WS_RECONNECT_MAX = 10000;  // 최대 10초 (서버 복구 시 빠른 재연결)
 let reconnectAttempt = 0;
 let reconnectTimer = null;
 
@@ -286,8 +286,15 @@ function connectWebSocket() {
             console.log('[WS] Polling stopped - WebSocket connected');
         }
 
-        // ★★★ 재연결 감지 시 전체 데이터 새로고침 ★★★
+        // ★★★ 재연결 감지 시 — 서버 다운 복구면 페이지 리로드, 아니면 데이터만 새로고침 ★★★
         if (_wsHasConnectedBefore) {
+            // 서버 다운 후 복구 감지 (3회 이상 재연결 시도 = 서버 다운이었음)
+            if (reconnectAttempt >= 3 || window._serverWasDown) {
+                console.log('[WS] 🔄 서버 복구 감지! 페이지 전체 리로드...');
+                window._serverWasDown = false;
+                location.reload();
+                return;
+            }
             console.log('[WS] 🔄 재연결 감지! 전체 데이터 새로고침...');
             setTimeout(() => {
                 if (typeof loadCandles === 'function') {
@@ -1311,8 +1318,9 @@ async function checkUserMode() {
             return;
         }
 
-        // 3회 실패 → 데모 모드 fallback
+        // 3회 실패 → 데모 모드 fallback + 서버 다운 플래그
         console.warn('[checkUserMode] 3회 재시도 실패 → 데모 모드 전환');
+        window._serverWasDown = true;
         isDemo = true;
         fetchDemoData();
     }
