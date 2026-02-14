@@ -38,6 +38,11 @@ def root():
 def health_check():
     return {"status": "healthy"}
 
+@app.get("/api/health")
+def api_health_check():
+    from datetime import datetime
+    return {"status": "ok", "timestamp": datetime.utcnow().isoformat()}
+
 @app.on_event("startup")
 async def startup_event():
     """서버 시작 시 MetaAPI 초기화"""
