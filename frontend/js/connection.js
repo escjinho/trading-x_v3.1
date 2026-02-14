@@ -1854,9 +1854,10 @@ function switchTradingMode(mode) {
         if (demoControl) demoControl.style.display = 'block';
         
         isDemo = true;
-        // ★★★ 모드 전환 시 히스토리 캐시 리셋 (라이브 데이터 잔류 방지) ★★★
+        // ★★★ 모드 전환 시 히스토리 캐시 + 패널 리셋 ★★★
         window._weekHistoryData = null;
         window._todayPLFixed = null;
+        if (typeof resetTradingPanel === 'function') resetTradingPanel();
         showToast('Demo 모드로 전환되었습니다', 'demo');
         updateHeroCTA('demo_with_live');
 
@@ -1922,9 +1923,10 @@ function switchTradingMode(mode) {
                 if (demoControl) demoControl.style.display = 'none';
                 
                 isDemo = false;
-                // ★★★ 모드 전환 시 히스토리 캐시 리셋 (데모 데이터 잔류 방지) ★★★
+                // ★★★ 모드 전환 시 히스토리 캐시 + 패널 리셋 ★★★
                 window._weekHistoryData = null;
                 window._todayPLFixed = null;
+                if (typeof resetTradingPanel === 'function') resetTradingPanel();
                 showToast('Live 모드로 전환되었습니다', 'success');
                 updateHeroCTA('live');
 
@@ -2161,7 +2163,8 @@ async function connectMT5Account() {
             
             // Live 모드로 전환
             isDemo = false;
-            
+            if (typeof resetTradingPanel === 'function') resetTradingPanel();
+
             // 배지 업데이트
             const modeBadge = document.getElementById('modeBadge');
             if (modeBadge) {

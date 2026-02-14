@@ -18,6 +18,37 @@ function friendlyError(msg) {
     return msg;
 }
 
+// ★★★ 모드 전환 시 패널 완전 초기화 ★★★
+function resetTradingPanel() {
+    console.log('[resetTradingPanel] 패널 초기화');
+    // 마틴 상태 초기화
+    martinStep = 1;
+    martinAccumulatedLoss = 0;
+    martinBaseTarget = 0;
+    martinHistory = [];
+    // 포지션 UI 초기화
+    if (typeof updatePositionUI === 'function') updatePositionUI(false, null);
+    if (typeof updateMartinUI === 'function') updateMartinUI();
+    // 플래그 초기화
+    window._closeConfirmedAt = null;
+    window._userClosing = false;
+    window._plGaugeFrozen = false;
+    window._orderCooldown = false;
+    window._martinStateUpdating = false;
+    // 버튼 복원
+    document.querySelectorAll('.trade-btn.buy-btn, .trade-btn.sell-btn').forEach(b => {
+        b.style.opacity = '1';
+        b.style.pointerEvents = 'auto';
+    });
+    // P/L 게이지 초기화
+    const plBar = document.getElementById('plBar');
+    const plText = document.getElementById('plText');
+    const plPercent = document.getElementById('plPercent');
+    if (plBar) plBar.style.width = '50%';
+    if (plText) plText.textContent = '$0.00';
+    if (plPercent) plPercent.textContent = '0%';
+}
+
 // ========== 마틴 팝업 ==========
 // ★★★ 임시 저장: 팝업 표시 중 유저 선택 대기 ★★★
 let _martinPendingLoss = 0;        // 이번 청산 손실 (양수)
