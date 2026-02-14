@@ -259,10 +259,13 @@ function connectWebSocket() {
     let wsUrl = typeof getWsUrl === 'function' ? getWsUrl(wsPath) : `ws://localhost:8000${wsPath}`;
     console.log(`[WS] Connecting to: ${wsUrl} (isDemo: ${isDemo})`);
     console.log(`[WS] getWsUrl defined: ${typeof getWsUrl === 'function'}`);
-    // ★ Demo, Live 모두 토큰 추가 (Live WS에서도 유저 식별 필요)
+    // ★ Demo, Live 모두 토큰 + magic 추가
     if (token) {
         wsUrl += (wsUrl.includes("?") ? "&" : "?") + "token=" + token;
     }
+    // ★★★ 현재 패널의 magic 넘버 전달 ★★★
+    const currentMagic = typeof BUYSELL_MAGIC_NUMBER !== 'undefined' ? BUYSELL_MAGIC_NUMBER : 100001;
+    wsUrl += (wsUrl.includes("?") ? "&" : "?") + "magic=" + currentMagic;
     ws = new WebSocket(wsUrl);
     
     ws.onopen = function() {

@@ -1874,8 +1874,9 @@ async def demo_websocket_endpoint(websocket: WebSocket):
     """Demo 모드 실시간 데이터 WebSocket"""
     await websocket.accept()
 
-    # Query parameter에서 토큰 가져오기
+    # Query parameter에서 토큰 + magic 가져오기
     token = websocket.query_params.get("token")
+    magic = int(websocket.query_params.get("magic", 100001))
     user_id = None
 
     if token:
@@ -2216,8 +2217,8 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                                 }
                                 positions_data.append(pos_data)
 
-                                # 첫 번째 포지션을 position으로 설정 (하위 호환성)
-                                if demo_position is None:
+                                # ★★★ magic 일치 포지션만 패널에 표시 ★★★
+                                if demo_position is None and pos.magic == magic:
                                     demo_position = pos_data
 
                             # Equity 업데이트
