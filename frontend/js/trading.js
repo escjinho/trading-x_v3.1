@@ -7,11 +7,35 @@ let _martinPendingLoss = 0;        // 이번 청산 손실 (양수)
 let _martinPendingAccLoss = 0;     // 새 누적손실 (기존 + 이번)
 let _martinPendingProfit = 0;      // 이번 청산 손익 (원본, 음수 가능)
 
-function showMartinPopup(profit) {
+async function showMartinPopup(profit) {
     const lossAmount = Math.abs(profit);
     _martinPendingLoss = lossAmount;
     _martinPendingProfit = profit;
-    _martinPendingAccLoss = martinAccumulatedLoss + lossAmount;
+
+    // ★★★ DB에서 최신 마틴 상태 조회 (백엔드가 이미 업데이트한 값 사용) ★★★
+    try {
+        let dbAccLoss = martinAccumulatedLoss;
+        if (isDemo) {
+            const state = await apiCall(`/demo/martin/state?magic=${BUYSELL_MAGIC_NUMBER}`, 'GET');
+            if (state && state.accumulated_loss !== undefined) {
+                dbAccLoss = state.accumulated_loss;
+                martinStep = state.step || martinStep;
+            }
+        } else {
+            const state = await apiCall('/mt5/martin/state', 'GET');
+            if (state && state.accumulated_loss !== undefined) {
+                dbAccLoss = state.accumulated_loss;
+                martinStep = state.step || martinStep;
+            }
+        }
+        // DB에 이미 이번 손실이 포함되었는지 체크
+        martinAccumulatedLoss = dbAccLoss;
+        _martinPendingAccLoss = dbAccLoss;
+        console.log(`[Martin Popup] DB 누적손실: ${dbAccLoss}, 이번 손실: ${lossAmount}`);
+    } catch (e) {
+        console.error('[Martin Popup] DB 조회 실패:', e);
+        _martinPendingAccLoss = martinAccumulatedLoss;
+    }
 
     const baseT = martinBaseTarget || targetAmount;
     const nextStep = martinStep + 1;
@@ -690,6 +714,15 @@ async function closePosition() {
 
                         if (typeof loadHistory === 'function') loadHistory();
                         if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
+
+                        // ★ DB에서 최신 accumulated_loss 조회
+                        try {
+                            const mState = await apiCall('/mt5/martin/state', 'GET');
+                            if (mState && mState.accumulated_loss !== undefined) {
+                                martinAccumulatedLoss = mState.accumulated_loss;
+                                martinStep = mState.step || martinStep;
+                            }
+                        } catch (e) {}
 
                         if (profit > 0) {
                             // 수익 청산
