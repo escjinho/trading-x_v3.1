@@ -471,9 +471,10 @@ async function placeBuy() {
             // ★★★ 포지션 확인 → 쿨다운 즉시 해제 ★★★
             window._orderCooldown = false;
             document.querySelectorAll('.trade-btn.buy-btn, .trade-btn.sell-btn').forEach(b => { b.style.opacity = '1'; b.style.pointerEvents = 'auto'; });
-            // ★★★ 주문 성공 후 softRefresh (2초 지연) ★★★
+            // ★★★ 주문 성공 후 히스토리/P&L만 갱신 (WS가 실시간 처리하므로 softRefresh 불필요) ★★★
             setTimeout(() => {
-                if (typeof softRefresh === 'function') softRefresh('order_buy_success');
+                if (typeof loadHistory === 'function') loadHistory();
+                if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
             }, 2000);
         }
     } catch (e) { showToast('Network error', 'error'); }
@@ -581,9 +582,10 @@ async function placeSell() {
             // ★★★ 포지션 확인 → 쿨다운 즉시 해제 ★★★
             window._orderCooldown = false;
             document.querySelectorAll('.trade-btn.buy-btn, .trade-btn.sell-btn').forEach(b => { b.style.opacity = '1'; b.style.pointerEvents = 'auto'; });
-            // ★★★ 주문 성공 후 softRefresh (2초 지연) ★★★
+            // ★★★ 주문 성공 후 히스토리/P&L만 갱신 ★★★
             setTimeout(() => {
-                if (typeof softRefresh === 'function') softRefresh('order_sell_success');
+                if (typeof loadHistory === 'function') loadHistory();
+                if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
             }, 2000);
         }
     } catch (e) { showToast('Network error', 'error'); }
@@ -696,9 +698,10 @@ async function closePosition() {
                 }
             }
             
-            // ★★★ 청산 성공 후 softRefresh (3초 지연) ★★★
+            // ★★★ 청산 성공 후 히스토리/P&L만 갱신 ★★★
             setTimeout(() => {
-                if (typeof softRefresh === 'function') softRefresh('close_success');
+                if (typeof loadHistory === 'function') loadHistory();
+                if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
             }, 3000);
         } else {
             const errMsg = result?.message || 'Error';
@@ -709,9 +712,10 @@ async function closePosition() {
                 window._closeConfirmedAt = Date.now();
                 updatePositionUI(false, null);
                 showToast('포지션이 이미 청산되었습니다', 'success');
-                // ★★★ softRefresh (3초 지연) ★★★
+                // ★★★ 히스토리/P&L만 갱신 ★★★
                 setTimeout(() => {
-                    if (typeof softRefresh === 'function') softRefresh('close_force_sync');
+                    if (typeof loadHistory === 'function') loadHistory();
+                    if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
                 }, 3000);
                 // 20초 후 플래그 해제
                 setTimeout(() => {
@@ -772,9 +776,10 @@ async function placeDemoOrder(orderType) {
 
             console.log('[placeDemoOrder] ✅ Order success - calling fetchDemoData()');
             fetchDemoData();
-            // ★★★ 주문 성공 후 softRefresh (2초 지연) ★★★
+            // ★★★ 주문 성공 후 히스토리/P&L만 갱신 ★★★
             setTimeout(() => {
-                if (typeof softRefresh === 'function') softRefresh('demo_order_success');
+                if (typeof loadHistory === 'function') loadHistory();
+                if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
             }, 2000);
         } else {
             console.error('[placeDemoOrder] ❌ Order failed:', result?.message);
@@ -899,9 +904,10 @@ async function closeDemoPosition() {
             
             updatePositionUI(false, null);
             fetchDemoData();
-            // ★★★ 청산 성공 후 softRefresh (3초 지연) ★★★
+            // ★★★ 청산 성공 후 히스토리/P&L만 갱신 ★★★
             setTimeout(() => {
-                if (typeof softRefresh === 'function') softRefresh('demo_close_success');
+                if (typeof loadHistory === 'function') loadHistory();
+                if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
             }, 3000);
         } else {
             showToast(result?.message || 'Error', 'error');
