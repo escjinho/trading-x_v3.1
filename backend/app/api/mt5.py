@@ -3622,30 +3622,20 @@ async def websocket_endpoint(websocket: WebSocket):
 
                 print(f"[WS] 📢 Streaming 청산: {_user_streaming_closed['symbol']} P/L=${closed_profit:.2f}")
 
-                # ★★★ 라이브 마틴 상태 업데이트 (DB 기반) — 손실 누적만, step 변경은 프론트 팝업에서 ★★★
+                # ★★★ 라이브 마틴: DB 안 건드림! 현재 값만 읽어서 프론트에 전달 ★★★
                 if user_id:
                     try:
                         ws_db = next(get_db())
                         live_martin = ws_db.query(LiveMartinState).filter_by(user_id=user_id, magic=magic).first()
                         if live_martin and live_martin.enabled:
-                            martin_step = live_martin.step  # 현재 step 유지
-                            if is_win:
-                                # 수익 청산 → step/acc 변경하지 않음 (프론트에서 처리)
-                                martin_accumulated_loss = live_martin.accumulated_loss
-                                print(f"[WS MARTIN] User {user_id} WIN! +${closed_profit:.2f} (프론트 팝업 대기)")
-                            else:
-                                # 손실 청산 → accumulated_loss만 업데이트, step은 건드리지 않음
-                                new_accumulated = live_martin.accumulated_loss + abs(closed_profit)
-                                live_martin.accumulated_loss = new_accumulated
-                                ws_db.commit()
-                                martin_accumulated_loss = new_accumulated
-                                print(f"[WS MARTIN] User {user_id} LOSS -${abs(closed_profit):.2f} → 누적손실 ${new_accumulated:.2f} (프론트 팝업 대기)")
-                            # step_up/reset 신호는 보내지 않음 — 프론트 팝업에서 유저가 선택
+                            martin_step = live_martin.step
+                            martin_accumulated_loss = live_martin.accumulated_loss
                             martin_reset = False
                             martin_step_up = False
+                            print(f"[WS MARTIN] User {user_id} P/L=${closed_profit:.2f} (DB 미변경, 프론트 팝업 대기)")
                         ws_db.close()
                     except Exception as martin_err:
-                        print(f"[WS MARTIN] DB 업데이트 오류: {martin_err}")
+                        print(f"[WS MARTIN] DB 조회 오류: {martin_err}")
 
                 # 캐시 정리
                 if user_id and user_id in user_live_cache:
@@ -3672,47 +3662,20 @@ async def websocket_endpoint(websocket: WebSocket):
                     ]
                     print(f"[WS] 🧹 user_metaapi_cache 포지션 제거: {_closed_pos_id}")
 
-                # ★★★ 라이브 마틴 상태 업데이트 (DB 기반) ★★★
+                # ★★★ 라이브 마틴: DB 안 건드림! 현재 값만 읽어서 프론트에 전달 ★★★
                 if user_id:
                     try:
                         ws_db = next(get_db())
                         live_martin = ws_db.query(LiveMartinState).filter_by(user_id=user_id, magic=magic).first()
                         if live_martin and live_martin.enabled:
-                            if is_win:
-                                live_martin.step = 1
-                                live_martin.accumulated_loss = 0.0
-                                ws_db.commit()
-                                martin_reset = True
-                                martin_step_up = False
-                                martin_step = 1
-                                martin_accumulated_loss = 0
-                                print(f"[WS MARTIN] User {user_id} WIN! +${closed_profit:.2f} → Step 1 리셋")
-                            else:
-                                new_accumulated = live_martin.accumulated_loss + abs(closed_profit)
-                                new_step = live_martin.step + 1
-
-                                if new_step > live_martin.max_steps:
-                                    live_martin.step = 1
-                                    live_martin.accumulated_loss = 0.0
-                                    ws_db.commit()
-                                    martin_reset = True
-                                    martin_step_up = False
-                                    martin_step = 1
-                                    martin_accumulated_loss = new_accumulated
-                                    print(f"[WS MARTIN] User {user_id} MAX STEP! 총손실=${new_accumulated:.2f} → 강제 리셋")
-                                else:
-                                    live_martin.step = new_step
-                                    live_martin.accumulated_loss = new_accumulated
-                                    ws_db.commit()
-                                    martin_reset = False
-                                    martin_step_up = True
-                                    martin_step = new_step
-                                    martin_accumulated_loss = new_accumulated
-                                    next_lot = live_martin.base_lot * (2 ** (new_step - 1))
-                                    print(f"[WS MARTIN] User {user_id} LOSE! -${abs(closed_profit):.2f} → Step {new_step}, NextLot {next_lot:.2f}")
+                            martin_step = live_martin.step
+                            martin_accumulated_loss = live_martin.accumulated_loss
+                            martin_reset = False
+                            martin_step_up = False
+                            print(f"[WS MARTIN RPC] User {user_id} P/L=${closed_profit:.2f} (DB 미변경, 프론트 팝업 대기)")
                         ws_db.close()
                     except Exception as martin_err:
-                        print(f"[WS MARTIN] DB 업데이트 오류: {martin_err}")
+                        print(f"[WS MARTIN RPC] DB 조회 오류: {martin_err}")
 
                 # user_live_cache 포지션 정리
                 if user_id and user_id in user_live_cache:
@@ -3737,50 +3700,20 @@ async def websocket_endpoint(websocket: WebSocket):
                 sync_event["metaapi_closed"] = closed_events
                 print(f"[WS] 📢 MetaAPI 청산 이벤트: {len(closed_events)}건, P/L=${closed_profit:.2f}")
 
-                # ★★★ 라이브 마틴 상태 업데이트 (DB 기반) ★★★
+                # ★★★ 라이브 마틴: DB 안 건드림! 현재 값만 읽어서 프론트에 전달 ★★★
                 if user_id:
                     try:
                         ws_db = next(get_db())
                         live_martin = ws_db.query(LiveMartinState).filter_by(user_id=user_id, magic=magic).first()
                         if live_martin and live_martin.enabled:
-                            if is_win:
-                                # WIN: 마틴 리셋
-                                live_martin.step = 1
-                                live_martin.accumulated_loss = 0.0
-                                ws_db.commit()
-                                martin_reset = True
-                                martin_step_up = False
-                                martin_step = 1
-                                martin_accumulated_loss = 0
-                                print(f"[WS MARTIN] User {user_id} WIN! +${closed_profit:.2f} → Step 1 리셋")
-                            else:
-                                # LOSE: 다음 단계로
-                                new_accumulated = live_martin.accumulated_loss + abs(closed_profit)
-                                new_step = live_martin.step + 1
-
-                                if new_step > live_martin.max_steps:
-                                    # 최대 단계 초과: 강제 리셋
-                                    live_martin.step = 1
-                                    live_martin.accumulated_loss = 0.0
-                                    ws_db.commit()
-                                    martin_reset = True
-                                    martin_step_up = False
-                                    martin_step = 1
-                                    martin_accumulated_loss = 0
-                                    print(f"[WS MARTIN] User {user_id} MAX STEP! 총손실=${new_accumulated:.2f} → 강제 리셋")
-                                else:
-                                    live_martin.step = new_step
-                                    live_martin.accumulated_loss = new_accumulated
-                                    ws_db.commit()
-                                    martin_reset = False
-                                    martin_step_up = True
-                                    martin_step = new_step
-                                    martin_accumulated_loss = new_accumulated
-                                    next_lot = live_martin.base_lot * (2 ** (new_step - 1))
-                                    print(f"[WS MARTIN] User {user_id} LOSE! -${abs(closed_profit):.2f} → Step {new_step}, NextLot {next_lot:.2f}")
+                            martin_step = live_martin.step
+                            martin_accumulated_loss = live_martin.accumulated_loss
+                            martin_reset = False
+                            martin_step_up = False
+                            print(f"[WS MARTIN Events] User {user_id} P/L=${closed_profit:.2f} (DB 미변경, 프론트 팝업 대기)")
                         ws_db.close()
                     except Exception as martin_err:
-                        print(f"[WS MARTIN] DB 업데이트 오류: {martin_err}")
+                        print(f"[WS MARTIN Events] DB 조회 오류: {martin_err}")
 
                 # ★★★ user_live_cache 포지션도 정리 (MT5 TP/SL 청산 동기화) ★★★
                 if user_id and user_id in user_live_cache:

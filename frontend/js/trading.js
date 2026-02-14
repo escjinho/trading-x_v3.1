@@ -28,10 +28,10 @@ async function showMartinPopup(profit) {
                 martinStep = state.step || martinStep;
             }
         }
-        // DB에 이미 이번 손실이 포함되었는지 체크
-        martinAccumulatedLoss = dbAccLoss;
-        _martinPendingAccLoss = dbAccLoss;
-        console.log(`[Martin Popup] DB 누적손실: ${dbAccLoss}, 이번 손실: ${lossAmount}`);
+        // ★★★ DB에는 이번 손실이 아직 미반영 → 수동으로 더해야 함 ★★★
+        _martinPendingAccLoss = dbAccLoss + lossAmount;
+        martinAccumulatedLoss = dbAccLoss;  // 현재 DB 값 (이번 손실 미포함)
+        console.log(`[Martin Popup] DB 누적손실: ${dbAccLoss}, 이번 손실: ${lossAmount}, 새 누적: ${_martinPendingAccLoss}`);
     } catch (e) {
         console.error('[Martin Popup] DB 조회 실패:', e);
         _martinPendingAccLoss = martinAccumulatedLoss;
