@@ -9,6 +9,62 @@ let lastWsMessageTime = 0;  // ★ 마지막 WS 메시지 수신 시간
 let heartbeatTimer = null;  // ★ 하트비트 모니터 타이머
 let wsConnectionStartTime = 0;  // ★ WS 연결 시작 시간 (가짜 이벤트 방지)
 let _wsHasConnectedBefore = false;  // ★ 재연결 감지용 (최초 연결 vs 재연결 구분)
+let _lastSoftRefreshAt = 0;  // ★★★ softRefresh 쿨다운용 타임스탬프 ★★★
+
+// ★★★ softRefresh() — 화면 전환/이벤트 시 페이지 리로드 없이 데이터만 갱신 ★★★
+async function softRefresh(reason = '') {
+    // 3초 쿨다운 (스팸 방지)
+    const now = Date.now();
+    if (now - _lastSoftRefreshAt < 3000) {
+        console.log(`[softRefresh] ⏳ 쿨다운 중 (${Math.round((3000 - (now - _lastSoftRefreshAt)) / 1000)}초 남음)`);
+        return;
+    }
+    _lastSoftRefreshAt = now;
+    console.log(`[softRefresh] 🔄 실행 - reason: ${reason || 'manual'}`);
+
+    try {
+        // 1. 계정 데이터 새로고침
+        if (isDemo) {
+            if (typeof fetchDemoData === 'function') {
+                await fetchDemoData();
+            }
+        } else {
+            if (typeof fetchAccountData === 'function') {
+                await fetchAccountData();
+            }
+        }
+
+        // 2. MetaAPI 상태 확인 (라이브 모드만)
+        if (!isDemo && typeof checkMetaAPIStatus === 'function') {
+            checkMetaAPIStatus();
+        }
+
+        // 3. 거래 내역 새로고침
+        if (typeof loadHistory === 'function') {
+            loadHistory();
+        }
+
+        // 4. Today P/L 동기화
+        if (typeof syncTradeTodayPL === 'function') {
+            syncTradeTodayPL();
+        }
+
+        // 5. 차트 캔들 리로드
+        if (typeof loadCandles === 'function') {
+            loadCandles();
+        }
+
+        // 6. 인디케이터 강제 업데이트 (다음 WS 메시지에서 즉시 반영되도록)
+        window.lastIndicatorUpdate = 0;
+
+        console.log(`[softRefresh] ✅ 완료`);
+    } catch (e) {
+        console.error('[softRefresh] ❌ 에러:', e);
+    }
+}
+
+// 전역 접근 가능하도록
+window.softRefresh = softRefresh;
 
 // ★★★ 페이지 가시성 변경 핸들러 (모바일 앱 전환 대응) ★★★
 document.addEventListener('visibilitychange', function() {
@@ -23,6 +79,13 @@ document.addEventListener('visibilitychange', function() {
         const _bgDuration = window._backgroundAt ? (Date.now() - window._backgroundAt) : 0;
         console.log(`[Visibility] 포그라운드로 복귀 (백그라운드 ${Math.round(_bgDuration/1000)}초)`);
 
+        // 30초 이상 백그라운드였으면 전체 리로드
+        if (_bgDuration > 30000) {
+            console.log('[Visibility] 🔄 30초 이상 백그라운드 — 전체 리로드');
+            location.reload();
+            return;
+        }
+
         // WS가 끊어져 있으면 재연결
         if (!ws || (ws.readyState !== WebSocket.OPEN && ws.readyState !== WebSocket.CONNECTING)) {
             console.log('[Visibility] WS 재연결 필요');
@@ -33,36 +96,9 @@ document.addEventListener('visibilitychange', function() {
             }
             connectWebSocket();
         } else if (ws && ws.readyState === WebSocket.OPEN) {
-            // ★★★ WS 연결 유지 중이라도 — 페이지 상태 새로고침 ★★★
-            console.log('[Visibility] WS 연결됨 — 페이지 데이터 새로고침');
-
-            // 30초 이상 백그라운드였으면 전체 리로드
-            if (_bgDuration > 30000) {
-                console.log('[Visibility] 🔄 30초 이상 백그라운드 — 전체 리로드');
-                location.reload();
-                return;
-            }
-
-            // 계정 데이터 새로고침
-            const isDemo = document.getElementById('modeSwitch')?.dataset?.mode === 'demo' ||
-                           localStorage.getItem('tradingMode') === 'demo';
-            if (isDemo) {
-                if (typeof fetchDemoData === 'function') fetchDemoData();
-            } else {
-                // ★★★ 라이브 모드: 계정 정보 + MT5 상태 새로고침 ★★★
-                if (typeof fetchAccountData === 'function') fetchAccountData();
-                if (typeof checkMetaAPIStatus === 'function') {
-                    setTimeout(() => checkMetaAPIStatus(), 500);
-                }
-                // 라이브 포지션 정보도 새로고침
-                if (typeof updateLiveUI === 'function') {
-                    setTimeout(() => updateLiveUI(), 300);
-                }
-            }
-            // 차트 리로드
-            if (typeof loadCandles === 'function') {
-                setTimeout(() => loadCandles(), 500);
-            }
+            // ★★★ WS 연결 유지 중이라도 — softRefresh로 데이터 갱신 ★★★
+            console.log('[Visibility] WS 연결됨 — softRefresh 실행');
+            softRefresh('visibility_foreground');
         }
     }
 });
@@ -320,7 +356,7 @@ function connectWebSocket() {
             console.log('[WS] Polling stopped - WebSocket connected');
         }
 
-        // ★★★ 재연결 감지 시 — 서버 다운 복구면 페이지 리로드, 아니면 데이터만 새로고침 ★★★
+        // ★★★ 재연결 감지 시 — 서버 다운 복구면 페이지 리로드, 아니면 softRefresh ★★★
         if (_wsHasConnectedBefore) {
             // 서버 다운 후 복구 감지 (2회 이상 재연결 시도 = 서버 다운이었음)
             if (_prevReconnectAttempt >= 2 || window._serverWasDown) {
@@ -329,30 +365,14 @@ function connectWebSocket() {
                 location.reload();
                 return;
             }
-            console.log(`[WS] 🔄 재연결 감지! (시도 ${_prevReconnectAttempt}회) 전체 데이터 새로고침...`);
-            setTimeout(() => {
-                if (typeof loadCandles === 'function') {
-                    loadCandles();
-                    console.log('[WS] 📊 차트 캔들 리로드 완료');
-                }
-            }, 500);
-            if (isDemo) {
-                if (typeof fetchDemoData === 'function') fetchDemoData();
-            } else {
-                if (typeof fetchAccountData === 'function') fetchAccountData();
-                // ★★★ 라이브 모드: 홈화면 MT5 계정 정보도 새로고침 ★★★
-                if (typeof updateHomeUI === 'function') {
-                    setTimeout(() => updateHomeUI(), 500);
-                }
-            }
-            if (!isDemo && typeof checkMetaAPIStatus === 'function') {
-                setTimeout(() => checkMetaAPIStatus(), 1000);
-            }
+            console.log(`[WS] 🔄 재연결 감지! (시도 ${_prevReconnectAttempt}회) softRefresh 실행...`);
             // ★★★ 라이브 포지션 플래그 초기화 (재연결 후 깨끗한 상태) ★★★
             window._closeConfirmedAt = null;
             window._userClosing = false;
             window._plGaugeFrozen = false;
-            window.lastIndicatorUpdate = 0;
+            // softRefresh로 통합 (쿨다운 리셋하여 즉시 실행)
+            _lastSoftRefreshAt = 0;
+            setTimeout(() => softRefresh('ws_reconnect'), 300);
         }
         _wsHasConnectedBefore = true;
 
@@ -1739,14 +1759,14 @@ function switchTradingMode(mode) {
         console.log("[WS] Switching to Demo WebSocket...");
         setTimeout(() => {
             connectWebSocket();
-            fetchDemoData();
+            // ★★★ softRefresh로 통합 (쿨다운 리셋) ★★★
+            _lastSoftRefreshAt = 0;
+            softRefresh('mode_switch_demo');
         }, 100);
 
-        // 패널 동기화
+        // V5 패널 업데이트
         setTimeout(() => {
-            if (typeof loadHistory === 'function') loadHistory();
             if (typeof updateMultiOrderPanelV5 === 'function') updateMultiOrderPanelV5();
-            if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
         }, 500);
         
     } else if (mode === 'live') {
@@ -1807,14 +1827,14 @@ function switchTradingMode(mode) {
                 console.log("[WS] Switching to Live WebSocket...");
                 setTimeout(() => {
                     connectWebSocket();
-                    fetchAccountData();
+                    // ★★★ softRefresh로 통합 (쿨다운 리셋) ★★★
+                    _lastSoftRefreshAt = 0;
+                    softRefresh('mode_switch_live');
                 }, 100);
 
-                // 패널 동기화
+                // V5 패널 업데이트
                 setTimeout(() => {
-                    if (typeof loadHistory === 'function') loadHistory();
                     if (typeof updateMultiOrderPanelV5 === 'function') updateMultiOrderPanelV5();
-                    if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
                 }, 500);
                 
             } else {

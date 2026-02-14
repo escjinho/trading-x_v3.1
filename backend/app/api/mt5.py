@@ -1263,7 +1263,7 @@ async def place_order(
 ):
     """일반 주문 실행 (BUY/SELL) - MetaAPI 버전 + 마틴 모드 지원"""
     import time as time_module
-    from .metaapi_service import metaapi_service, quote_price_cache, metaapi_positions_cache, is_metaapi_connected, get_metaapi_account, place_order_for_user
+    from .metaapi_service import metaapi_service, quote_price_cache, metaapi_positions_cache, is_metaapi_connected, get_metaapi_account, place_order_for_user, user_metaapi_cache
 
     # ★★★ 유저별 MetaAPI 판단 ★★★
     _use_user_metaapi = bool(current_user.metaapi_account_id and current_user.metaapi_status == 'deployed')
@@ -1344,10 +1344,14 @@ async def place_order(
                 "martin_lot": volume
             })
 
-    # ★★★ 중복 주문 방지: 같은 매직넘버 포지션 확인 ★★★
-    existing = [p for p in metaapi_positions_cache if p.get('magic') == magic]
+    # ★★★ 중복 주문 방지: 같은 매직넘버 포지션 확인 (유저별 캐시 사용) ★★★
+    if _use_user_metaapi:
+        _user_positions = user_metaapi_cache.get(current_user.id, {}).get("positions", [])
+    else:
+        _user_positions = user_live_cache.get(current_user.id, {}).get("positions", [])
+    existing = [p for p in _user_positions if p.get('magic') == magic]
     if existing:
-        print(f"[MetaAPI Order] 중복 주문 차단: magic={magic}, 기존 포지션={len(existing)}개")
+        print(f"[MetaAPI Order] 중복 주문 차단: user={current_user.id}, magic={magic}, 기존 포지션={len(existing)}개")
         return JSONResponse({"success": False, "message": "이미 같은 매직넘버 포지션이 있습니다"})
 
     # ★★★ MetaAPI를 통한 주문 실행 ★★★
@@ -1525,7 +1529,7 @@ async def close_position(
 ):
     """포지션 청산 (magic 필터 옵션) - MetaAPI 버전"""
     import time as time_module
-    from .metaapi_service import metaapi_service, remove_position_from_cache, close_position_for_user, get_user_positions
+    from .metaapi_service import metaapi_service, remove_position_from_cache, close_position_for_user, get_user_positions, user_metaapi_cache
 
     # ★★★ 유저별 MetaAPI 판단 ★★★
     _use_user_metaapi = bool(current_user.metaapi_account_id and current_user.metaapi_status == 'deployed')
