@@ -1294,33 +1294,37 @@ async function fetchAccountData() {
             } else {
                 // 이전에 포지션이 있었는데 지금 없으면 = 청산됨!
                 if (window.lastLivePosition) {
-                    playSound('close');
+                    // ★★★ 유저가 직접 청산한 경우만 알림 (WS 재연결 허위 알림 방지) ★★★
+                    // ★★★ 유저가 직접 청산한 경우만 알림 + 손익 조회 ★★★
+                    if (window._userClosing || window._closeConfirmedAt) {
+                        playSound('close');
+                        showToast('포지션이 청산되었습니다', 'success');
 
-                    // ★★★ Basic/NoLimit 모드 — 2단계 알림 ★★★
-                    showToast('포지션이 청산되었습니다', 'success');
-
-                    // 2초 후 실제 손익 조회
-                    setTimeout(async () => {
-                        try {
-                            const histResp = await apiCall('/mt5/history?period=today');
-                            if (histResp && histResp.trades && histResp.trades.length > 0) {
-                                const actualProfit = histResp.trades[0].profit || 0;
-                                if (actualProfit >= 0) {
-                                    showToast(`청산 손익: +$${actualProfit.toFixed(2)}`, 'success');
-                                } else {
-                                    showToast(`청산 손익: -$${Math.abs(actualProfit).toFixed(2)}`, 'error');
+                        // 2초 후 실제 손익 조회
+                        setTimeout(async () => {
+                            try {
+                                const histResp = await apiCall('/mt5/history?period=today');
+                                if (histResp && histResp.trades && histResp.trades.length > 0) {
+                                    const actualProfit = histResp.trades[0].profit || 0;
+                                    if (actualProfit >= 0) {
+                                        showToast(`청산 손익: +$${actualProfit.toFixed(2)}`, 'success');
+                                    } else {
+                                        showToast(`청산 손익: -$${Math.abs(actualProfit).toFixed(2)}`, 'error');
+                                    }
+                                    if (typeof updateTodayPL === 'function') {
+                                        updateTodayPL(actualProfit);
+                                    }
                                 }
-                                if (typeof updateTodayPL === 'function') {
-                                    updateTodayPL(actualProfit);
+                                if (typeof loadHistory === 'function') {
+                                    loadHistory();
                                 }
+                            } catch (e) {
+                                console.error('[WS Live Close] History fetch error:', e);
                             }
-                            if (typeof loadHistory === 'function') {
-                                loadHistory();
-                            }
-                        } catch (e) {
-                            console.error('[WS Live Close] History fetch error:', e);
-                        }
-                    }, 2000);
+                        }, 2000);
+                    } else {
+                        console.log('[WS] 포지션 사라짐 감지 (알림 생략 - 유저 청산 아님)');
+                    }
 
                     window.lastLivePosition = null;
                 }

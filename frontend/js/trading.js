@@ -55,8 +55,8 @@ let _martinPendingLoss = 0;        // 이번 청산 손실 (양수)
 let _martinPendingAccLoss = 0;     // 새 누적손실 (기존 + 이번)
 let _martinPendingProfit = 0;      // 이번 청산 손익 (원본, 음수 가능)
 
-async function showMartinPopup(profit) {
-    // ★★★ 히스토리에서 정확한 profit 폴링 (히스토리 탭과 동일) ★★★
+async function showMartinPopup(profit, excludeId = '') {
+    // ★★★ last-trade 폴링으로 정확한 profit 조회 (이전 trade 제외) ★★★
     const maxRetries = 6;
     const interval = 300;
     let found = false;
@@ -65,9 +65,10 @@ async function showMartinPopup(profit) {
     await new Promise(r => setTimeout(r, 500));  // 0.5초 대기 후 폴링 시작
     for (let i = 0; i < maxRetries; i++) {
         try {
+            const excludeParam = excludeId ? `&exclude_id=${excludeId}` : '';
             const lastTradeUrl = isDemo
-                ? `/demo/last-trade?magic=${BUYSELL_MAGIC_NUMBER}`
-                : `/mt5/last-trade?magic=${BUYSELL_MAGIC_NUMBER}`;
+                ? `/demo/last-trade?magic=${BUYSELL_MAGIC_NUMBER}${excludeParam}`
+                : `/mt5/last-trade?magic=${BUYSELL_MAGIC_NUMBER}${excludeParam}`;
             const resp = await apiCall(lastTradeUrl, 'GET');
             if (resp && resp.success && resp.trade) {
                 const tradeProfit = resp.trade.profit;
@@ -752,6 +753,15 @@ async function closePosition() {
     window._userClosing = true;
     window._plGaugeFrozen = true;  // 손익 게이지 애니메이션 정지
 
+    // ★★★ 청산 전 마지막 trade ID 저장 (이전 trade 필터용) ★★★
+    let _lastTradeIdBeforeClose = '';
+    try {
+        const preResp = await apiCall(`/mt5/last-trade?magic=${BUYSELL_MAGIC_NUMBER}`, 'GET');
+        if (preResp && preResp.success && preResp.trade) {
+            _lastTradeIdBeforeClose = preResp.trade.id || '';
+        }
+    } catch(e) {}
+
     showToast('청산 중...', 'info');
     try {
         let result = await apiCall(`/mt5/close?symbol=${currentSymbol}&magic=${BUYSELL_MAGIC_NUMBER}`, 'POST');
@@ -832,8 +842,8 @@ async function closePosition() {
                                 }
                             }
                         } else if (profit < 0) {
-                            // ★★★ 손실 → 팝업으로 유저 선택 (raw_profit: 수수료 미포함) ★★★
-                            showMartinPopup(martinProfit);
+                            // ★★★ 손실 → 팝업으로 유저 선택 (raw_profit: 수수료 미포함, 이전 trade 제외) ★★★
+                            showMartinPopup(martinProfit, _lastTradeIdBeforeClose);
                         } else {
                             updateTodayPL(0);
                             window._martinStateUpdating = false;
@@ -949,6 +959,15 @@ async function placeDemoOrder(orderType) {
 
 // ========== Demo 모드 청산 ==========
 async function closeDemoPosition() {
+    // ★★★ 청산 전 마지막 trade ID 저장 (이전 trade 필터용) ★★★
+    let _lastDemoTradeId = '';
+    try {
+        const preResp = await apiCall(`/demo/last-trade?magic=${BUYSELL_MAGIC_NUMBER}`, 'GET');
+        if (preResp && preResp.success && preResp.trade) {
+            _lastDemoTradeId = String(preResp.trade.id || '');
+        }
+    } catch(e) {}
+
     try {
         const response = await fetch(`${API_URL}/demo/close?magic=${BUYSELL_MAGIC_NUMBER}`, {
             method: 'POST',
@@ -989,9 +1008,9 @@ async function closeDemoPosition() {
                         }
                     }
                 } else if (profit < 0) {
-                    // ★★★ 손실 → 팝업으로 유저 선택 (raw_profit: 수수료 미포함) ★★★
+                    // ★★★ 손실 → 팝업으로 유저 선택 (raw_profit: 수수료 미포함, 이전 trade 제외) ★★★
                     updateTodayPL(profit);
-                    showMartinPopup(rawProfit);
+                    showMartinPopup(rawProfit, _lastDemoTradeId);
                 } else {
                     showToast('청산 완료 (손익 없음)', 'success');
                 }

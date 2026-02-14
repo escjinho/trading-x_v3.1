@@ -2118,6 +2118,7 @@ async def close_by_profit(
 @router.get("/last-trade")
 async def get_last_trade(
     magic: int = Query(0, description="Magic number 필터"),
+    exclude_id: str = Query("", description="제외할 trade ID (이전 trade 필터)"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -2149,6 +2150,12 @@ async def get_last_trade(
 
         if not filtered:
             return {"success": False, "message": "No matching trade"}
+
+        # exclude_id가 있으면 해당 trade 제외
+        if exclude_id:
+            filtered = [h for h in filtered if str(h.get('id', '')) != exclude_id]
+            if not filtered:
+                return {"success": False, "message": "No new trade yet"}
 
         # 최신 1건
         last = filtered[0]

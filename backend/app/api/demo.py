@@ -1132,6 +1132,7 @@ async def close_demo_position(
 @router.get("/last-trade")
 async def get_demo_last_trade(
     magic: int = Query(0, description="Magic number"),
+    exclude_id: str = Query("", description="제외할 trade ID (이전 trade 필터)"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -1139,6 +1140,8 @@ async def get_demo_last_trade(
     query = db.query(DemoTrade).filter(DemoTrade.user_id == current_user.id)
     if magic > 0:
         query = query.filter(DemoTrade.magic == magic)
+    if exclude_id and exclude_id.isdigit():
+        query = query.filter(DemoTrade.id != int(exclude_id))
 
     trade = query.order_by(DemoTrade.id.desc()).first()
 
@@ -1148,6 +1151,7 @@ async def get_demo_last_trade(
     return {
         "success": True,
         "trade": {
+            "id": trade.id,
             "profit": trade.profit,
             "symbol": trade.symbol,
             "volume": trade.volume,
