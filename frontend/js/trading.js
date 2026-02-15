@@ -56,6 +56,13 @@ let _martinPendingAccLoss = 0;     // 새 누적손실 (기존 + 이번)
 let _martinPendingProfit = 0;      // 이번 청산 손익 (원본, 음수 가능)
 
 async function showMartinPopup(profit, excludeId = '') {
+    // ★★★ 유저 청산이 아니면 팝업 차단 ★★★
+    if (!window._userClosing && (Date.now() - (window._lastOrderTime || 0) > 60000)) {
+        console.log('[MartinPopup] ⛔ 차단 — 유저 청산 아님, 최근 주문 없음');
+        window._martinStateUpdating = false;
+        return;
+    }
+
     // ★★★ last-trade 폴링으로 정확한 profit 조회 (이전 trade 제외) ★★★
     const maxRetries = 5;
     const interval = 500;
