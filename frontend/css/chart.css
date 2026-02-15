@@ -1785,6 +1785,7 @@
     align-items: center;
     gap: 8px;
     padding: 5px 16px;
+    margin-top: -3px;
     background: #000000;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
     /* ★ 네비바 위에 항상 고정 */
@@ -2597,6 +2598,7 @@ body.chart-mode #chart-wrapper.panels-3 #chart-container {
 
 body.chart-mode .chart-symbol-row {
     margin: 0 !important;
+    margin-top: 3px !important;
     padding: 2px 12px !important;
 }
 /* ★ 차트 영역 배경 검정 통일 */
