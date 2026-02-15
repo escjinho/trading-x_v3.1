@@ -597,9 +597,9 @@ async function placeBuy() {
             return;
         }
 
-        // ★★★ 스프레드 거부 + TP/SL 실패 특별 처리 ★★★
+        // ★★★ 스프레드 거부 처리 ★★★
         if (result?.spread_rejected) {
-            showToast('스프레드 비용이 너무 높습니다\n타겟 금액을 높이거나 랏 사이즈를 줄여주세요', 'warning', 5000);
+            showToast('스프레드가 너무 넓습니다\n잠시 후 다시 시도해주세요', 'warning', 5000);
             return;
         }
         if (result?.tp_sl_failed) {
@@ -708,9 +708,9 @@ async function placeSell() {
             return;
         }
 
-        // ★★★ 스프레드 거부 + TP/SL 실패 특별 처리 ★★★
+        // ★★★ 스프레드 거부 처리 ★★★
         if (result?.spread_rejected) {
-            showToast('스프레드 비용이 너무 높습니다\n타겟 금액을 높이거나 랏 사이즈를 줄여주세요', 'warning', 5000);
+            showToast('스프레드가 너무 넓습니다\n잠시 후 다시 시도해주세요', 'warning', 5000);
             return;
         }
         if (result?.tp_sl_failed) {
