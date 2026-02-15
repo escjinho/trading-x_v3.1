@@ -1271,9 +1271,7 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    min-height: 400px;
-    max-height: 720px;
-    transition: all 0.3s ease;
+    overflow: hidden;
 }
 
 /* 메인 차트 - 패널 지표 개수에 따라 높이 조절 */
@@ -1790,9 +1788,17 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 16px;
+    padding: 8px 16px;
     background: #000000;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
+    /* ★ 네비바 위에 항상 고정 */
+    position: fixed;
+    bottom: 52px;
+    left: 0;
+    right: 0;
+    max-width: 480px;
+    margin: 0 auto;
+    z-index: 101;
 }
 
 .zm-more-btn,
@@ -2585,91 +2591,15 @@
     color: #666666;
 }
 
-/* ★★★ 차트 모드: 고정 레이아웃 (PC + 모바일 공통) ★★★
- * 구조: 헤더(fixed) → 차트영역(fixed) → 버튼바(fixed) → 네비바(fixed)
- * 핵심: 버튼바가 항상 네비바 위에 고정. 차트는 남은 공간을 채움.
- * 보조지표 추가 시 캔들 영역이 줄어들지, 절대 밖으로 넘치지 않음.
- */
-
-/* 버튼바: 네비바 바로 위에 고정 (절대 움직이지 않음) */
-body.chart-mode .zm-bottom-bar {
-    position: fixed !important;
-    bottom: var(--tx-nav-h, 52px);
-    left: 0;
-    right: 0;
-    max-width: 480px;
-    margin: 0 auto;
-    z-index: 99;
-    background: #000000;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    padding: 8px 16px;
-}
-
-/* 차트 컨테이너: 헤더 ~ 버튼바 사이의 모든 공간 차지 */
-body.chart-mode #chartDetailContainer.active {
-    position: fixed !important;
-    top: var(--tx-header-h, 45px);
-    left: 0;
-    right: 0;
-    bottom: calc(var(--tx-nav-h, 52px) + var(--tx-btnbar-h, 56px));
-    max-width: 480px;
-    margin: 0 auto;
-    display: flex !important;
-    flex-direction: column;
-    overflow: visible;
-    z-index: 10;
-    background: #000000;
-}
-
-/* 차트 글로우 박스: 남은 공간 전부 차지 (스크롤 없음) */
-body.chart-mode .chart-glow-box {
-    flex: 1 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    overflow: hidden !important;
-    margin: 0 !important;
-    padding: 0 !important;
-}
-
-/* 심볼 행: 고정 높이 */
-body.chart-mode .chart-symbol-row {
-    flex-shrink: 0 !important;
-    margin: 0 !important;
-    padding: 2px 12px !important;
-}
-
-/* 차트 래퍼: 남은 공간 전부 차지 (보조지표 포함) */
-body.chart-mode #chart-wrapper {
-    flex: 1 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    overflow: hidden !important;
-    min-height: 0 !important;
-    max-height: none !important;
-    position: relative;
-}
-
-/* 캔들 차트: 보조지표 뺀 나머지 공간 차지 (핵심!) */
-body.chart-mode #chart-container {
-    flex: 1 !important;
-    min-height: 200px !important;
-    max-height: none !important;
-    height: auto !important;
-    width: 100%;
-}
-
-/* panels-X 하드코딩 높이 무력화 — CSS flex가 자동으로 처리 */
+/* ★ 차트 모드: panels-X 하드코딩 높이 무력화 (JS가 직접 설정) */
 body.chart-mode #chart-wrapper.panels-0 #chart-container,
 body.chart-mode #chart-wrapper.panels-1 #chart-container,
 body.chart-mode #chart-wrapper.panels-2 #chart-container,
 body.chart-mode #chart-wrapper.panels-3 #chart-container {
     height: auto !important;
-    flex: 1 !important;
-    min-height: 200px !important;
 }
 
-/* 보조지표 패널: 고정 높이, 절대 넘치지 않음 */
-body.chart-mode #indicator-panels {
-    flex-shrink: 0 !important;
-    overflow: hidden;
+body.chart-mode .chart-symbol-row {
+    margin: 0 !important;
+    padding: 2px 12px !important;
 }

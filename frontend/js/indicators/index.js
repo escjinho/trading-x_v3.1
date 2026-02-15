@@ -271,29 +271,26 @@ const IndicatorManager = {
      * 메인 차트 높이를 원래 크기로 복원
      */
     restoreMainChartHeight() {
-        // ★ 동적 가용 높이 사용
         let targetHeight;
         if (typeof ChartPanel !== 'undefined' && ChartPanel._availableHeight > 100) {
             targetHeight = ChartPanel._availableHeight;
         } else {
             targetHeight = window.innerWidth <= 768 ? 500 : 720;
         }
-
         console.log('[IndicatorManager] Restoring main chart height to ' + targetHeight + 'px');
 
-        // 1. 명시적 높이 설정
         const container = document.getElementById('chart-container');
         if (container) {
             container.style.height = targetHeight + 'px';
         }
 
-        // 2. chart-wrapper 클래스 초기화
         const wrapper = document.getElementById('chart-wrapper');
         if (wrapper) {
             wrapper.className = '';
+            wrapper.style.height = targetHeight + 'px';
+            wrapper.style.overflow = 'hidden';
         }
 
-        // 3. 메인 차트 리사이즈
         if (this.mainChart && container) {
             const containerWidth = container.clientWidth;
 
@@ -1042,11 +1039,9 @@ const IndicatorManager = {
             totalHeight - totalPanelHeight
         );
 
-        // 메인 차트 리사이즈 및 시간축 관리
         if (this.mainChart) {
             const container = document.getElementById('chart-container');
             if (container) {
-                // ★ 명시적 높이 설정 (LightweightCharts는 pixel 값 필요)
                 container.style.height = mainChartHeight + 'px';
                 this.mainChart.applyOptions({
                     height: mainChartHeight,
@@ -1056,6 +1051,12 @@ const IndicatorManager = {
                     }
                 });
                 this.mainChart.resize(container.clientWidth, mainChartHeight);
+            }
+            // chart-wrapper 높이 고정 (넘침 방지)
+            const wrapper = document.getElementById('chart-wrapper');
+            if (wrapper) {
+                wrapper.style.height = totalHeight + 'px';
+                wrapper.style.overflow = 'hidden';
             }
         }
 

@@ -158,12 +158,17 @@ const ChartPanel = {
             return;
         }
 
-    // ★ 레이아웃 변수 설정 + 가용 높이 계산
+    // ★ 가용 높이 계산
     this._setLayoutVars();
     const containerWidth = container.clientWidth || 800;
     const containerHeight = this._availableHeight || (window.innerWidth <= 480 ? 530 : 720);
-    // 컨테이너 높이를 명시적으로 설정 (LightweightCharts는 CSS flex를 인식 못함)
+    // 명시적 높이 설정
     container.style.height = containerHeight + 'px';
+    const wrapper = document.getElementById('chart-wrapper');
+    if (wrapper) {
+        wrapper.style.height = containerHeight + 'px';
+        wrapper.style.overflow = 'hidden';
+    }
 
         console.log('[ChartPanel] Init chart - width:', containerWidth, 'height:', containerHeight);
 
@@ -295,22 +300,19 @@ const ChartPanel = {
             lastValueVisible: false
         });
 
-        // ★ 화면 크기 변경 시 차트 높이 재계산
-        this._resizeHandler = () => {
+        // 반응형 리사이즈
+        window.addEventListener('resize', () => {
+            if (!chart) return;
             this._setLayoutVars();
-            const newHeight = this._availableHeight || containerHeight;
-            container.style.height = newHeight + 'px';
-            if (chart) {
-                chart.resize(container.clientWidth, newHeight);
-            }
-            // 보조지표 레이아웃도 갱신
+            const newH = this._availableHeight || containerHeight;
+            const wr = document.getElementById('chart-wrapper');
+            if (wr) { wr.style.height = newH + 'px'; wr.style.overflow = 'hidden'; }
+            container.style.height = newH + 'px';
+            chart.resize(container.clientWidth, newH);
             if (typeof IndicatorManager !== 'undefined' && IndicatorManager.updateLayout) {
                 setTimeout(() => IndicatorManager.updateLayout(), 50);
             }
-        };
-
-        // 반응형 리사이즈
-        window.addEventListener('resize', this._resizeHandler);
+        });
 
         // IndicatorManager 초기화
         if (typeof IndicatorManager !== 'undefined') {
@@ -663,12 +665,8 @@ setIndicators(settings) {
         const symbolRow = document.querySelector('.chart-symbol-row');
         const headerH = header ? header.offsetHeight : 45;
         const navH = nav ? nav.offsetHeight : 52;
-        const btnBarH = btnBar ? btnBar.offsetHeight : 56;
+        const btnBarH = btnBar ? btnBar.offsetHeight : 48;
         const symbolH = symbolRow ? symbolRow.offsetHeight : 40;
-        document.documentElement.style.setProperty('--tx-header-h', headerH + 'px');
-        document.documentElement.style.setProperty('--tx-nav-h', navH + 'px');
-        document.documentElement.style.setProperty('--tx-btnbar-h', btnBarH + 'px');
-        // 차트 가용 높이 저장 (다른 모듈에서도 사용)
         this._availableHeight = window.innerHeight - headerH - symbolH - btnBarH - navH;
         if (this._availableHeight < 300) this._availableHeight = 300;
     },
