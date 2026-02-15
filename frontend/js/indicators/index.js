@@ -213,25 +213,6 @@ const IndicatorManager = {
     addIndicator(indicatorId) {
         // ID 정규화
         const normalizedId = IndicatorConfig.normalizeId(indicatorId);
-
-        // ★ BB/LWMA는 ChartPanel 내장 시리즈로 관리 (중복 시리즈 방지)
-        if (normalizedId === 'bb' || normalizedId === 'lwma') {
-            console.log(`[IndicatorManager] ${normalizedId} → ChartPanel 내장 시리즈 사용, IM 추가 건너뜀`);
-            // ChartPanel 내장 시리즈 활성화 + 서버 데이터 리로드
-            if (typeof ChartPanel !== 'undefined' && ChartPanel.setIndicators) {
-                const current = {
-                    bb: normalizedId === 'bb' ? true : (typeof bbUpperSeries !== 'undefined' && bbUpperSeries && bbUpperSeries.options && bbUpperSeries.options().visible !== false),
-                    lwma: normalizedId === 'lwma' ? true : (typeof lwmaSeries !== 'undefined' && lwmaSeries && lwmaSeries.options && lwmaSeries.options().visible !== false),
-                    ema: false, sma: false
-                };
-                ChartPanel.setIndicators(current);
-                if (typeof ChartPanel.loadIndicatorsOnly === 'function') {
-                    ChartPanel.loadIndicatorsOnly();
-                }
-            }
-            return;
-        }
-
         const config = IndicatorConfig.get(normalizedId);
         if (!config) {
             console.warn(`[IndicatorManager] Unknown indicator: ${indicatorId}`);
@@ -256,13 +237,6 @@ const IndicatorManager = {
     removeIndicator(indicatorId) {
         // ID 정규화
         const normalizedId = IndicatorConfig.normalizeId(indicatorId);
-
-        // ★ BB/LWMA는 ChartPanel 내장 시리즈 — IM에서 제거하지 않음
-        if (normalizedId === 'bb' || normalizedId === 'lwma') {
-            console.log(`[IndicatorManager] ${normalizedId} → ChartPanel 관리, IM 제거 건너뜀`);
-            return;
-        }
-
         const indicator = this.activeIndicators[normalizedId];
         if (!indicator) return;
 
