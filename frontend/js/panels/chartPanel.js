@@ -158,9 +158,10 @@ const ChartPanel = {
             return;
         }
 
-    // ★ 컨테이너 크기 체크 - 0이면 기본값 사용
+    // ★ 동적 높이 계산 — CSS 레이아웃 변수 설정 + 차트 높이 자동 계산
+    this._setLayoutVars();
     const containerWidth = container.clientWidth || 800;
-        const containerHeight = window.innerWidth <= 480 ? 530 : 720;
+    const containerHeight = this._calcChartHeight();
 
         console.log('[ChartPanel] Init chart - width:', containerWidth, 'height:', containerHeight);
 
@@ -292,10 +293,19 @@ const ChartPanel = {
             lastValueVisible: false
         });
 
-        // 반응형 리사이즈
+        // 반응형 리사이즈 (가로+세로 모두)
         window.addEventListener('resize', () => {
             if (chart) {
-                chart.applyOptions({ width: container.clientWidth });
+                this._setLayoutVars();
+                const newHeight = this._calcChartHeight();
+                chart.applyOptions({
+                    width: container.clientWidth,
+                    height: newHeight
+                });
+                // 보조지표 레이아웃도 갱신
+                if (typeof IndicatorManager !== 'undefined' && IndicatorManager.updateLayout) {
+                    IndicatorManager.updateLayout();
+                }
             }
         });
 
@@ -641,6 +651,40 @@ setIndicators(settings) {
             return ChartTypeManager.getType();
         }
         return 'candlestick';
+    },
+
+    /**
+     * ★ CSS 레이아웃 변수 설정 (헤더, 네비바 높이 측정)
+     */
+    _setLayoutVars() {
+        const header = document.querySelector('.header');
+        const nav = document.querySelector('.bottom-nav');
+        const headerH = header ? header.offsetHeight : 45;
+        const navH = nav ? nav.offsetHeight : 52;
+        document.documentElement.style.setProperty('--tx-header-h', headerH + 'px');
+        document.documentElement.style.setProperty('--tx-nav-h', navH + 'px');
+    },
+
+    /**
+     * ★ 차트 가용 높이 동적 계산
+     */
+    _calcChartHeight() {
+        const wrapper = document.getElementById('chart-wrapper');
+        // CSS flex 레이아웃이 적용된 후 wrapper의 실제 높이 사용
+        if (wrapper && wrapper.clientHeight > 100) {
+            return wrapper.clientHeight;
+        }
+        // Fallback: 뷰포트에서 직접 계산
+        const header = document.querySelector('.header');
+        const nav = document.querySelector('.bottom-nav');
+        const symbolRow = document.querySelector('.chart-symbol-row');
+        const bottomBar = document.querySelector('.zm-bottom-bar');
+        const headerH = header ? header.offsetHeight : 45;
+        const navH = nav ? nav.offsetHeight : 52;
+        const symbolH = symbolRow ? symbolRow.offsetHeight : 40;
+        const bottomBarH = bottomBar ? bottomBar.offsetHeight : 56;
+        const available = window.innerHeight - headerH - navH - symbolH - bottomBarH;
+        return Math.max(available, 300);
     },
 
 /**

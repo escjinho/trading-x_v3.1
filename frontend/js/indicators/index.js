@@ -271,8 +271,11 @@ const IndicatorManager = {
      * 메인 차트 높이를 원래 크기로 복원
      */
     restoreMainChartHeight() {
-        const isMobile = window.innerWidth <= 768;
-        const targetHeight = isMobile ? 500 : 720;
+        // ★ 동적 높이: chart-wrapper의 실제 크기 사용
+        const wrapper = document.getElementById('chart-wrapper');
+        const targetHeight = wrapper && wrapper.clientHeight > 100
+            ? wrapper.clientHeight
+            : (window.innerWidth <= 768 ? 500 : 720);
 
         console.log(`[IndicatorManager] Restoring main chart height to ${targetHeight}px`);
 
@@ -1009,10 +1012,11 @@ const IndicatorManager = {
      * 레이아웃 업데이트 (차트 높이 조정 + 시간축 관리)
      */
     updateLayout() {
-        const isMobile = window.innerWidth <= 768;
-        const totalHeight = isMobile ?
-            IndicatorConfig.layout.totalHeight :
-            IndicatorConfig.layout.totalHeightDesktop;
+        // ★ 동적 높이: chart-wrapper의 실제 크기 사용
+        const wrapper = document.getElementById('chart-wrapper');
+        const totalHeight = wrapper && wrapper.clientHeight > 100
+            ? wrapper.clientHeight
+            : (window.innerWidth <= 768 ? IndicatorConfig.layout.totalHeight : IndicatorConfig.layout.totalHeightDesktop);
 
         const panelCount = IndicatorConfig.getEnabledPanelCount();
 

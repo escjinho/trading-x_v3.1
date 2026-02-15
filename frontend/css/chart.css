@@ -2237,45 +2237,6 @@
     background: #000000;
 }
 
-@media screen and (max-width: 480px) {
-    #page-chart.zm-mode #chartDetailContainer {
-        position: fixed;
-        top: 50px;
-        left: 0;
-        right: 0;
-        bottom: 60px;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-    }
-
-    #page-chart.zm-mode .chart-glow-box {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-        padding: 0;
-    }
-
-    #page-chart.zm-mode .chart-symbol-row {
-        flex-shrink: 0;
-        padding: 6px 10px;
-        margin: 0;
-    }
-
-    #page-chart.zm-mode #chart-container {
-        height: 280px !important;
-        min-height: 280px !important;
-        max-height: 280px !important;
-        flex-shrink: 0;
-    }
-
-    #page-chart.zm-mode .zm-bottom-bar {
-        flex-shrink: 0;
-        padding: 8px 12px;
-    }
-}
-
 #page-chart.zm-mode .chart-glow-box {
     flex: 1;
     display: flex;
@@ -2297,16 +2258,17 @@
 
 #page-chart.zm-mode #chart-container {
     width: 100%;
-    height: 100% !important;
+    height: auto !important;
     min-height: 0 !important;
     max-height: none !important;
+    flex: 1;
 }
 
 #page-chart.zm-mode .zm-bottom-bar {
     flex-shrink: 0;
     margin: 0;
     border-radius: 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    position: relative;
 }
 
 /* ========== 더보기 바텀시트 (제로마켓 스타일 v2) ========== */
@@ -2667,50 +2629,56 @@
     color: #666666;
 }
 
-/* ★ 모바일에서만 하단 버튼 고정 + 차트 최대화 */
-@media screen and (max-width: 480px) {
-    .zm-bottom-bar {
-        position: fixed;
-        bottom: 52px;
-        left: 0;
-        right: 0;
-        max-width: 480px;
-        margin: 0 auto;
-        z-index: 99;
-        padding: 8px 12px;
-        background: #000000;
-    }
+/* ★★★ 차트 모드: 전체 화면 레이아웃 (PC + 모바일 공통) ★★★ */
+body.chart-mode #chartDetailContainer.active {
+    position: fixed;
+    top: var(--tx-header-h, 45px);
+    left: 0;
+    right: 0;
+    bottom: var(--tx-nav-h, 52px);
+    max-width: 480px;
+    margin: 0 auto;
+    display: flex !important;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 10;
+}
 
-    body.chart-mode .content {
-        padding-bottom: 120px !important;
-    }
+body.chart-mode .chart-glow-box {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
 
-    body.chart-mode #page-chart {
-        display: flex;
-        flex-direction: column;
-        min-height: calc(100vh - 45px - 52px - 60px);
-    }
+body.chart-mode .chart-symbol-row {
+    flex-shrink: 0;
+    margin: 0 !important;
+    padding: 2px 12px !important;
+}
 
-    body.chart-mode #chartDetailContainer.active {
-        display: flex;
-        flex-direction: column;
-        flex: 1;
-    }
+body.chart-mode #chart-wrapper {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    position: relative;
+}
 
-    body.chart-mode .chart-glow-box {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-    }
+body.chart-mode #chart-container {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+}
 
-    body.chart-mode #chart-wrapper {
-        flex: 1;
-        position: relative;
-    }
+body.chart-mode #indicator-panels {
+    flex-shrink: 0;
+}
 
-    body.chart-mode #chart-container {
-        width: 100%;
-        height: 100% !important;
-        min-height: 350px;
-    }
+body.chart-mode .zm-bottom-bar {
+    flex-shrink: 0;
+    position: relative !important;
+    margin: 0;
 }
