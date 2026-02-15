@@ -417,14 +417,22 @@ const ChartPanel = {
 
                 // 보이는 범위 설정 (최근 150개 캔들) + 오른쪽 여백 유지
                 const visibleBars = 150;
+                // ★ 장 마감 여부 확인
+                const _marketClosed = typeof MarketSchedule !== 'undefined' && MarketSchedule.isMarketOpen
+                    ? !MarketSchedule.isMarketOpen(chartSymbol)
+                    : false;
+
                 if (data.candles.length <= 20) {
                     // ★ 캔들 적음 (BTC 1D/1W 등) — 전체 표시
                     chart.timeScale().fitContent();
+                } else if (_marketClosed) {
+                    // ★ 장 마감 — 마지막 캔들까지만 표시 (빈 영역 방지)
+                    chart.timeScale().fitContent();
                 } else if (data.candles.length > visibleBars) {
-                    // ★ 캔들 많음 — 최근 캔들 기준 스크롤
+                    // ★ 장 열림 + 캔들 많음 — 실시간 스크롤
                     chart.timeScale().scrollToRealTime();
                 } else {
-                    // ★ 20~150개 — 최근 캔들 기준 스크롤
+                    // ★ 장 열림 + 20~150개
                     chart.timeScale().scrollToRealTime();
                 }
 
