@@ -277,8 +277,14 @@ const IndicatorManager = {
     restoreMainChartHeight() {
         const _h = document.querySelector('.header');
         const _s = document.querySelector('.chart-symbol-row');
-        const targetHeight = Math.max(window.innerHeight - (_h?_h.offsetHeight:45) - (_s?_s.offsetHeight:40) - 127, 300);
-        console.log('[IndicatorManager] Restoring main chart height to ' + targetHeight + 'px');
+        const totalHeight = Math.max(window.innerHeight - (_h?_h.offsetHeight:45) - (_s?_s.offsetHeight:40) - 127, 300);
+
+        // ★ 패널 높이를 빼서 메인 차트 높이 계산
+        const panelsEl = document.getElementById('indicator-panels');
+        const panelHeight = panelsEl ? panelsEl.offsetHeight : 0;
+        const targetHeight = totalHeight - panelHeight;
+
+        console.log('[IndicatorManager] Restoring main chart height to ' + targetHeight + 'px (total:' + totalHeight + ' panels:' + panelHeight + ')');
 
         const container = document.getElementById('chart-container');
         if (container) {
@@ -287,7 +293,7 @@ const IndicatorManager = {
         const wrapper = document.getElementById('chart-wrapper');
         if (wrapper) {
             wrapper.className = '';
-            wrapper.style.height = targetHeight + 'px';
+            wrapper.style.height = totalHeight + 'px';
         }
 
         if (this.mainChart && container) {
