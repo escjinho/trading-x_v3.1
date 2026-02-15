@@ -387,6 +387,12 @@ const ChartPanel = {
             console.log(`[ChartPanel.loadCandles] ${chartSymbol} ${currentTimeframe} → ${data?.candles?.length || 0}개 캔들`);
 
             if (data && data.candles && data.candles.length > 0) {
+                // ★ chart/series가 없으면 재생성
+                if (typeof ChartTypeManager !== 'undefined' && (!ChartTypeManager.chart || !ChartTypeManager.series)) {
+                    console.warn('[ChartPanel] Chart/series null — reinitializing');
+                    this.initChart();
+                }
+
                 // ChartTypeManager를 통해 데이터 설정
                 if (typeof ChartTypeManager !== 'undefined') {
                     ChartTypeManager.setData(data.candles);
