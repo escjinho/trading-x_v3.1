@@ -271,52 +271,48 @@ const IndicatorManager = {
      * 메인 차트 높이를 원래 크기로 복원
      */
     restoreMainChartHeight() {
-        // ★ 동적 높이: chart-wrapper의 실제 크기 사용
-        const wrapper = document.getElementById('chart-wrapper');
-        const targetHeight = wrapper && wrapper.clientHeight > 100
-            ? wrapper.clientHeight
-            : (window.innerWidth <= 768 ? 500 : 720);
+        console.log('[IndicatorManager] Restoring main chart height');
 
-        console.log(`[IndicatorManager] Restoring main chart height to ${targetHeight}px`);
-
-        // 1. DOM 높이 강제 설정
+        // 1. inline height 제거 → CSS flex가 높이 결정
         const container = document.getElementById('chart-container');
         if (container) {
-            container.style.height = `${targetHeight}px`;
+            container.style.height = '';
         }
 
         // 2. chart-wrapper 클래스 초기화 (panels-X 클래스 제거)
         const wrapper = document.getElementById('chart-wrapper');
         if (wrapper) {
-            wrapper.className = '';  // 모든 클래스 제거
+            wrapper.className = '';
         }
 
-        // 3. 메인 차트 리사이즈
+        // 3. 메인 차트 리사이즈 (flex 레이아웃 적용 후)
         if (this.mainChart && container) {
-            const containerWidth = container.clientWidth;
+            requestAnimationFrame(() => {
+                const actualH = container.clientHeight;
+                const containerWidth = container.clientWidth;
+                const targetHeight = actualH > 100 ? actualH : (window.innerWidth <= 768 ? 500 : 720);
 
-            // applyOptions로 높이 설정
-            this.mainChart.applyOptions({
-                height: targetHeight,
-                width: containerWidth,
-                timeScale: {
-                    visible: true,
-                    borderVisible: false
-                }
-            });
+                this.mainChart.applyOptions({
+                    height: targetHeight,
+                    width: containerWidth,
+                    timeScale: {
+                        visible: true,
+                        borderVisible: false
+                    }
+                });
 
-            // resize() 강제 호출
-            this.mainChart.resize(containerWidth, targetHeight);
+                // resize() 강제 호출
+                this.mainChart.resize(containerWidth, targetHeight);
 
-            console.log(`[IndicatorManager] Chart resized to ${containerWidth}x${targetHeight}`);
+                console.log(`[IndicatorManager] Chart resized to ${containerWidth}x${targetHeight}`);
 
-            // 4. 약간의 딜레이 후 한번 더 resize (DOM 반영 보장)
-            setTimeout(() => {
-                if (this.mainChart && container) {
-                    this.mainChart.resize(container.clientWidth, targetHeight);
-                    this.mainChart.timeScale().scrollToRealTime();
-                    console.log('[IndicatorManager] Chart resize confirmed');
-                }
+                // 4. 약간의 딜레이 후 한번 더 resize (DOM 반영 보장)
+                setTimeout(() => {
+                    if (this.mainChart && container) {
+                        this.mainChart.resize(container.clientWidth, targetHeight);
+                        this.mainChart.timeScale().scrollToRealTime();
+                        console.log('[IndicatorManager] Chart resize confirmed');
+                    }
             }, 50);
         }
 
@@ -1012,11 +1008,15 @@ const IndicatorManager = {
      * 레이아웃 업데이트 (차트 높이 조정 + 시간축 관리)
      */
     updateLayout() {
-        // ★ 동적 높이: chart-wrapper의 실제 크기 사용
+        // ★ 동적 높이: chart-wrapper의 실제 CSS flex 크기 사용
         const wrapper = document.getElementById('chart-wrapper');
-        const totalHeight = wrapper && wrapper.clientHeight > 100
-            ? wrapper.clientHeight
-            : (window.innerWidth <= 768 ? IndicatorConfig.layout.totalHeight : IndicatorConfig.layout.totalHeightDesktop);
+        let totalHeight;
+        if (wrapper && wrapper.clientHeight > 100) {
+            totalHeight = wrapper.clientHeight;
+        } else {
+            const isMobile = window.innerWidth <= 768;
+            totalHeight = isMobile ? IndicatorConfig.layout.totalHeight : IndicatorConfig.layout.totalHeightDesktop;
+        }
 
         const panelCount = IndicatorConfig.getEnabledPanelCount();
 
@@ -1042,12 +1042,21 @@ const IndicatorManager = {
         if (this.mainChart) {
             const container = document.getElementById('chart-container');
             if (container) {
-                container.style.height = `${mainChartHeight}px`;
+                // ★ inline height 제거 → CSS flex가 높이 결정
+                container.style.height = '';
+                // 시간축 옵션만 설정 (높이는 ResizeObserver가 처리)
                 this.mainChart.applyOptions({
-                    height: mainChartHeight,
                     timeScale: {
-                        visible: panelCount === 0, // 패널이 없을 때만 시간축 표시
+                        visible: panelCount === 0,
                         borderVisible: false
+                    }
+                });
+                // flex 레이아웃 적용 후 차트 리사이즈
+                requestAnimationFrame(() => {
+                    const actualH = container.clientHeight;
+                    if (actualH > 0) {
+                        this.mainChart.applyOptions({ height: actualH });
+                        this.mainChart.resize(container.clientWidth, actualH);
                     }
                 });
             }
