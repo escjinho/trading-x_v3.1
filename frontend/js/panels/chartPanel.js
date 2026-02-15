@@ -201,7 +201,7 @@ const ChartPanel = {
     const _sym = document.querySelector('.chart-symbol-row');
     const _headerH = _hdr ? _hdr.offsetHeight : 45;
     const _symbolH = _sym ? _sym.offsetHeight : 40;
-    const _fixedBottom = 135; // 네비바(52) + 버튼바(48) — position:fixed라 상수 처리
+    const _fixedBottom = 127; // 네비바(52) + 버튼바(48) — position:fixed라 상수 처리
     const containerHeight = Math.max(window.innerHeight - _headerH - _symbolH - _fixedBottom, 300);
     // wrapper 높이만 설정 (container는 CSS flex:1이 자동 결정)
     const _wrapper = document.getElementById('chart-wrapper');
@@ -344,7 +344,7 @@ const ChartPanel = {
             const _sym = document.querySelector('.chart-symbol-row');
             const _headerH = _hdr ? _hdr.offsetHeight : 45;
             const _symbolH = _sym ? _sym.offsetHeight : 40;
-            const _fixedBottom = 135;
+            const _fixedBottom = 127;
             const newH = Math.max(window.innerHeight - _headerH - _symbolH - _fixedBottom, 300);
             const wr = document.getElementById('chart-wrapper');
             if (wr) { wr.style.height = newH + 'px'; }
