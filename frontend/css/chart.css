@@ -2595,3 +2595,7 @@ body.chart-mode .chart-symbol-row {
     margin: 0 !important;
     padding: 2px 12px !important;
 }
+/* ★ 차트 영역 배경 검정 통일 */
+#page-chart, .chart-glow-box, #chart-wrapper, .chart-detail-container {
+    background: #000000 !important;
+}

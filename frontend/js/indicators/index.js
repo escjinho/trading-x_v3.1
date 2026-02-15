@@ -273,7 +273,7 @@ const IndicatorManager = {
     restoreMainChartHeight() {
         const _h = document.querySelector('.header');
         const _s = document.querySelector('.chart-symbol-row');
-        const targetHeight = Math.max(window.innerHeight - (_h?_h.offsetHeight:45) - (_s?_s.offsetHeight:40) - 115, 300);
+        const targetHeight = Math.max(window.innerHeight - (_h?_h.offsetHeight:45) - (_s?_s.offsetHeight:40) - 135, 300);
         console.log('[IndicatorManager] Restoring main chart height to ' + targetHeight + 'px');
 
         const container = document.getElementById('chart-container');
@@ -1011,7 +1011,7 @@ const IndicatorManager = {
     updateLayout() {
         const _h2 = document.querySelector('.header');
         const _s2 = document.querySelector('.chart-symbol-row');
-        const totalHeight = Math.max(window.innerHeight - (_h2?_h2.offsetHeight:45) - (_s2?_s2.offsetHeight:40) - 115, 300);
+        const totalHeight = Math.max(window.innerHeight - (_h2?_h2.offsetHeight:45) - (_s2?_s2.offsetHeight:40) - 135, 300);
 
         const panelCount = IndicatorConfig.getEnabledPanelCount();
 
@@ -1084,6 +1084,21 @@ const IndicatorManager = {
 
         // 차트 강제 리사이즈 (초기화 후 즉시 반영)
         this.forceChartResize();
+
+        // ★ 메인 차트 즉시 리사이즈 (보조지표 추가 시 갭 방지)
+        setTimeout(() => {
+            const _ct = document.getElementById('chart-container');
+            if (this.mainChart && _ct) {
+                const _h = parseInt(_ct.style.height) || mainChartHeight;
+                this.mainChart.resize(_ct.clientWidth, _h);
+            }
+            // 패널 차트도 강제 리사이즈
+            Object.keys(this.panelCharts).forEach(id => {
+                const pc = this.panelCharts[id];
+                const pe = document.getElementById('panel-chart-' + id);
+                if (pc && pe) pc.resize(pe.clientWidth, pe.clientHeight);
+            });
+        }, 100);
 
         console.log(`[IndicatorManager] Layout updated - Main: ${mainChartHeight}px, Panels: ${panelCount}`);
     },
