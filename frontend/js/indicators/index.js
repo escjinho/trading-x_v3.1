@@ -1040,6 +1040,7 @@ const IndicatorManager = {
         if (this.mainChart) {
             const container = document.getElementById('chart-container');
             if (container) {
+                // container height는 CSS flex:1이 자동 계산 - 명시적으로도 설정
                 container.style.height = mainChartHeight + 'px';
                 this.mainChart.applyOptions({
                     height: mainChartHeight,
@@ -1048,13 +1049,16 @@ const IndicatorManager = {
                         borderVisible: false
                     }
                 });
-                this.mainChart.resize(container.clientWidth, mainChartHeight);
+                // 50ms 후 실제 렌더링된 높이로 resize (flex 반영 대기)
+                setTimeout(() => {
+                    const actualH = container.clientHeight || mainChartHeight;
+                    this.mainChart.resize(container.clientWidth, actualH);
+                }, 50);
             }
-            // chart-wrapper 높이 고정 (넘침 방지)
+            // chart-wrapper 높이 고정
             const wrapper = document.getElementById('chart-wrapper');
             if (wrapper) {
                 wrapper.style.height = totalHeight + 'px';
-                wrapper.style.overflow = 'hidden';
             }
         }
 
@@ -1083,7 +1087,6 @@ const IndicatorManager = {
         if (wrapper) {
             wrapper.className = `panels-${panelCount}`;
             wrapper.style.height = totalHeight + 'px';
-            wrapper.style.overflow = 'hidden';
         }
 
         // 차트 강제 리사이즈 (초기화 후 즉시 반영)
@@ -1105,32 +1108,6 @@ const IndicatorManager = {
         }, 100);
 
         console.log(`[IndicatorManager] Layout updated - Main: ${mainChartHeight}px, Panels: ${panelCount}`);
-
-        // ★ 디버그: 실제 크기 확인
-        setTimeout(() => {
-            const _dbgWr = document.getElementById('chart-wrapper');
-            const _dbgCt = document.getElementById('chart-container');
-            const _dbgPn = document.getElementById('indicator-panels');
-            const _dbgCanvas = _dbgCt ? _dbgCt.querySelector('canvas') : null;
-            console.log('[DEBUG-LAYOUT]', JSON.stringify({
-                viewportH: window.innerHeight,
-                wrapperH: _dbgWr ? _dbgWr.offsetHeight : 'N/A',
-                wrapperStyleH: _dbgWr ? _dbgWr.style.height : 'N/A',
-                wrapperScrollH: _dbgWr ? _dbgWr.scrollHeight : 'N/A',
-                containerH: _dbgCt ? _dbgCt.offsetHeight : 'N/A',
-                containerStyleH: _dbgCt ? _dbgCt.style.height : 'N/A',
-                canvasH: _dbgCanvas ? _dbgCanvas.height : 'N/A',
-                panelsH: _dbgPn ? _dbgPn.offsetHeight : 'N/A',
-                panelCount: _dbgPn ? _dbgPn.children.length : 0,
-                pageScrollable: document.body.scrollHeight > window.innerHeight,
-                contentScrollH: document.querySelector('.content') ? document.querySelector('.content').scrollHeight : 'N/A',
-                contentH: document.querySelector('.content') ? document.querySelector('.content').offsetHeight : 'N/A',
-            }, null, 2));
-            // 시각적 디버그 - 빨간 테두리
-            if (_dbgWr) _dbgWr.style.border = '2px solid red';
-            if (_dbgCt) _dbgCt.style.border = '2px solid blue';
-            if (_dbgPn) _dbgPn.style.border = '2px solid green';
-        }, 300);
     },
 
     /**
@@ -1141,8 +1118,8 @@ const IndicatorManager = {
         if (this.mainChart) {
             const container = document.getElementById('chart-container');
             if (container) {
-                const h = parseInt(container.style.height) || container.clientHeight;
                 const w = container.clientWidth;
+                const h = container.clientHeight || parseInt(container.style.height) || 400;
                 this.mainChart.resize(w, h);
 
                 // 저장된 시간 범위가 있으면 복원, 없으면 현재 위치 유지

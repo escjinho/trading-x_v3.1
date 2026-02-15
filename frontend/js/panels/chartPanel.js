@@ -306,7 +306,7 @@ const ChartPanel = {
             this._setLayoutVars();
             const newH = this._availableHeight || containerHeight;
             const wr = document.getElementById('chart-wrapper');
-            if (wr) { wr.style.height = newH + 'px'; wr.style.overflow = 'hidden'; }
+            if (wr) { wr.style.height = newH + 'px'; }
             container.style.height = newH + 'px';
             chart.resize(container.clientWidth, newH);
             if (typeof IndicatorManager !== 'undefined' && IndicatorManager.updateLayout) {
