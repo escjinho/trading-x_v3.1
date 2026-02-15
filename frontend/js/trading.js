@@ -521,28 +521,37 @@ async function pollOrderResult(orderId, orderType) {
 }
 
 async function placeBuy() {
-    if (!checkGuestAction('trade')) return;
+    console.log('[placeBuy] 진입! cooldown:', window._orderCooldown, 'lastLivePosition:', !!window.lastLivePosition, 'metaapiConnected:', window._metaapiConnected);
+
+    if (!checkGuestAction('trade')) {
+        console.log('[placeBuy] ⛔ guest 체크 실패');
+        return;
+    }
 
     // Demo 모드면 Demo API 사용
     if (isDemo) {
+        console.log('[placeBuy] → Demo 모드');
         placeDemoOrder('BUY');
         return;
     }
 
     // ★★★ 중복 주문 방지 ★★★
     if (!isDemo && window.lastLivePosition) {
+        console.log('[placeBuy] ⛔ 이미 포지션 있음:', window.lastLivePosition);
         showToast('이미 포지션이 있습니다', 'error');
         return;
     }
 
     // ★★★ MetaAPI 연결 상태 체크 (공유+유저별 모두 WS에서 반영됨) ★★★
     if (window._metaapiConnected === false) {
+        console.log('[placeBuy] ⛔ MetaAPI 미연결');
         showToast('Trading API 연결 중입니다\n잠시 후 다시 시도해주세요', 'warning', 5000);
         return;
     }
 
     // ★★★ 버튼 쿨다운 (이중 클릭 방지 - 5초) ★★★
     if (window._orderCooldown) {
+        console.log('[placeBuy] ⛔ 쿨다운 중');
         showToast('주문 처리 중입니다. 잠시만 기다려주세요.', 'error');
         return;
     }
@@ -634,28 +643,37 @@ async function placeBuy() {
 }
 
 async function placeSell() {
-    if (!checkGuestAction('trade')) return;
+    console.log('[placeSell] 진입! cooldown:', window._orderCooldown, 'lastLivePosition:', !!window.lastLivePosition, 'metaapiConnected:', window._metaapiConnected);
+
+    if (!checkGuestAction('trade')) {
+        console.log('[placeSell] ⛔ guest 체크 실패');
+        return;
+    }
 
     // Demo 모드면 Demo API 사용
     if (isDemo) {
+        console.log('[placeSell] → Demo 모드');
         placeDemoOrder('SELL');
         return;
     }
 
     // ★★★ 중복 주문 방지 ★★★
     if (!isDemo && window.lastLivePosition) {
+        console.log('[placeSell] ⛔ 이미 포지션 있음:', window.lastLivePosition);
         showToast('이미 포지션이 있습니다', 'error');
         return;
     }
 
     // ★★★ MetaAPI 연결 상태 체크 (공유+유저별 모두 WS에서 반영됨) ★★★
     if (window._metaapiConnected === false) {
+        console.log('[placeSell] ⛔ MetaAPI 미연결');
         showToast('Trading API 연결 중입니다\n잠시 후 다시 시도해주세요', 'warning', 5000);
         return;
     }
 
     // ★★★ 버튼 쿨다운 (이중 클릭 방지 - 5초) ★★★
     if (window._orderCooldown) {
+        console.log('[placeSell] ⛔ 쿨다운 중');
         showToast('주문 처리 중입니다. 잠시만 기다려주세요.', 'error');
         return;
     }
