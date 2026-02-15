@@ -591,8 +591,10 @@ const ChartPanel = {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
+                window._isChangingTimeframe = true;
                 currentTimeframe = btn.dataset.tf;
                 this.loadCandles();
+                setTimeout(() => { window._isChangingTimeframe = false; }, 2000);
             });
         });
     

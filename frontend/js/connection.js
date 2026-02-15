@@ -65,8 +65,8 @@ async function softRefresh(reason = '') {
             syncTradeTodayPL();
         }
 
-        // 5. 차트 캔들 리로드
-        if (typeof loadCandles === 'function') {
+        // 5. 차트 캔들 리로드 (★ 타임프레임 변경 중이 아닐 때만)
+        if (typeof loadCandles === 'function' && !window._isChangingTimeframe) {
             loadCandles();
         }
 
