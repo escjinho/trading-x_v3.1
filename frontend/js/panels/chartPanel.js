@@ -158,22 +158,19 @@ const ChartPanel = {
             return;
         }
 
-    // ★ 가용 높이 동적 계산 (헤더, 심볼행, 버튼바, 네비바 제외)
+    // ★ 가용 높이 동적 계산 (fixed 요소는 상수 사용)
     const containerWidth = container.clientWidth || 800;
-    const _header = document.querySelector('.header');
-    const _nav = document.querySelector('.bottom-nav');
-    const _btnBar = document.querySelector('.zm-bottom-bar');
-    const _symRow = document.querySelector('.chart-symbol-row');
-    const _hH = _header ? _header.offsetHeight : 45;
-    const _nH = _nav ? _nav.offsetHeight : 52;
-    const _bH = _btnBar ? _btnBar.offsetHeight : 48;
-    const _sH = _symRow ? _symRow.offsetHeight : 40;
-    const containerHeight = Math.max(window.innerHeight - _hH - _nH - _bH - _sH, 300);
-    // wrapper 높이도 동일하게 설정 (보조지표 넘침 방지)
-    const _wr = document.getElementById('chart-wrapper');
-    if (_wr) { _wr.style.height = containerHeight + 'px'; _wr.style.overflow = 'hidden'; }
-
-        console.log('[ChartPanel] Init chart - width:', containerWidth, 'height:', containerHeight);
+    const _hdr = document.querySelector('.header');
+    const _sym = document.querySelector('.chart-symbol-row');
+    const _headerH = _hdr ? _hdr.offsetHeight : 45;
+    const _symbolH = _sym ? _sym.offsetHeight : 40;
+    const _fixedBottom = 100; // 네비바(52) + 버튼바(48) — position:fixed라 상수 처리
+    const containerHeight = Math.max(window.innerHeight - _headerH - _symbolH - _fixedBottom, 300);
+    // wrapper와 container에 명시적 높이 설정
+    const _wrapper = document.getElementById('chart-wrapper');
+    if (_wrapper) { _wrapper.style.height = containerHeight + 'px'; }
+    container.style.height = containerHeight + 'px';
+    console.log('[ChartPanel] Dynamic height:', containerHeight, '(vh:', window.innerHeight, 'hdr:', _headerH, 'sym:', _symbolH, 'fixedBottom:', _fixedBottom, ')');
 
         const decimals = typeof getDecimalsForSymbol === 'function' ? getDecimalsForSymbol(chartSymbol) : 2;
 

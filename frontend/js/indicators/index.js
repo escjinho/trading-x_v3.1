@@ -272,16 +272,16 @@ const IndicatorManager = {
      */
     restoreMainChartHeight() {
         const _h = document.querySelector('.header');
-        const _n = document.querySelector('.bottom-nav');
-        const _b = document.querySelector('.zm-bottom-bar');
         const _s = document.querySelector('.chart-symbol-row');
-        const targetHeight = Math.max(window.innerHeight - (_h?_h.offsetHeight:45) - (_n?_n.offsetHeight:52) - (_b?_b.offsetHeight:48) - (_s?_s.offsetHeight:40), 300);
+        const targetHeight = Math.max(window.innerHeight - (_h?_h.offsetHeight:45) - (_s?_s.offsetHeight:40) - 100, 300);
         console.log('[IndicatorManager] Restoring main chart height to ' + targetHeight + 'px');
 
         const container = document.getElementById('chart-container');
         if (container) {
             container.style.height = targetHeight + 'px';
         }
+        const _wr = document.getElementById('chart-wrapper');
+        if (_wr) { _wr.style.height = targetHeight + 'px'; }
 
         const wrapper = document.getElementById('chart-wrapper');
         if (wrapper) {
@@ -1010,10 +1010,8 @@ const IndicatorManager = {
      */
     updateLayout() {
         const _h2 = document.querySelector('.header');
-        const _n2 = document.querySelector('.bottom-nav');
-        const _b2 = document.querySelector('.zm-bottom-bar');
         const _s2 = document.querySelector('.chart-symbol-row');
-        const totalHeight = Math.max(window.innerHeight - (_h2?_h2.offsetHeight:45) - (_n2?_n2.offsetHeight:52) - (_b2?_b2.offsetHeight:48) - (_s2?_s2.offsetHeight:40), 300);
+        const totalHeight = Math.max(window.innerHeight - (_h2?_h2.offsetHeight:45) - (_s2?_s2.offsetHeight:40) - 100, 300);
 
         const panelCount = IndicatorConfig.getEnabledPanelCount();
 
