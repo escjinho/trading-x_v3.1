@@ -1276,8 +1276,8 @@
 /* 메인 차트 - 패널 지표 개수에 따라 높이 조절 */
 #chart-wrapper #chart-container {
     flex: 1;
-    min-height: 250px;
-    height: auto !important;
+    
+    
     transition: all 0.3s ease;
 }
 
@@ -1773,9 +1773,6 @@
 }
 
 #page-chart.zm-mode #chart-container {
-    height: 450px !important;
-    min-height: 450px !important;
-    max-height: 450px !important;
 }
 
 /* ========== 제로마켓 하단 바 ========== */
@@ -2591,7 +2588,7 @@ body.chart-mode #chart-wrapper.panels-0 #chart-container,
 body.chart-mode #chart-wrapper.panels-1 #chart-container,
 body.chart-mode #chart-wrapper.panels-2 #chart-container,
 body.chart-mode #chart-wrapper.panels-3 #chart-container {
-    height: auto !important;
+    
 }
 
 body.chart-mode .chart-symbol-row {
