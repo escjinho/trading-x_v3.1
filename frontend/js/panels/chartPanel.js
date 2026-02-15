@@ -38,16 +38,18 @@ const ChartPanel = {
             return false;
         }
 
-        // ★ 장 마감 시 차트 업데이트 중단 (UTC 기준 — 확실한 주말/장외시간 감지)
+        // ★ 장 마감 시 차트 업데이트 중단 (MarketSchedule 우선 — 공휴일 포함)
         const _si = typeof getSymbolInfo === 'function' ? getSymbolInfo(chartSymbol) : null;
         const _isCrypto = _si && _si.category === 'Crypto Currency';
         if (!_isCrypto) {
-            const _now = new Date();
-            const _day = _now.getUTCDay();
-            const _hour = _now.getUTCHours();
-            if (_day === 6) return false;                    // 토요일
-            if (_day === 0 && _hour < 22) return false;      // 일요일 22시 전
-            if (_day === 5 && _hour >= 22) return false;     // 금요일 22시 이후
+            if (typeof MarketSchedule !== 'undefined' && MarketSchedule.isMarketOpen) {
+                if (!MarketSchedule.isMarketOpen(chartSymbol)) return false;
+            } else {
+                const _now = new Date();
+                const _day = _now.getUTCDay();
+                const _hour = _now.getUTCHours();
+                if (_day === 0 || _day === 6 || (_day === 5 && _hour >= 22)) return false;
+            }
         }
 
         // time이 없으면 lastCandleTime 사용 (WS에서 {close: bid}만 전달하는 경우)

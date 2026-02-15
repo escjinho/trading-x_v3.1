@@ -11,19 +11,20 @@ let wsConnectionStartTime = 0;  // ★ WS 연결 시작 시간 (가짜 이벤트
 let _wsHasConnectedBefore = false;  // ★ 재연결 감지용 (최초 연결 vs 재연결 구분)
 let _lastSoftRefreshAt = 0;  // ★★★ softRefresh 쿨다운용 타임스탬프 ★★★
 
-// ★ 장 마감 체크 헬퍼 (UTC 기준 — 확실한 주말/장외시간 감지)
+// ★ 장 마감 체크 헬퍼 (MarketSchedule 우선 — 공휴일 포함)
 function isCurrentMarketClosed() {
     const _si = typeof getSymbolInfo === 'function' ? getSymbolInfo(chartSymbol) : null;
     const _isCrypto = _si && _si.category === 'Crypto Currency';
     if (_isCrypto) return false;
+    // MarketSchedule 모듈 우선 (공휴일, 정확한 브로커 스케줄)
+    if (typeof MarketSchedule !== 'undefined' && MarketSchedule.isMarketOpen) {
+        return !MarketSchedule.isMarketOpen(chartSymbol);
+    }
+    // 폴백: 단순 주말 체크
     const _now = new Date();
     const _day = _now.getUTCDay();
     const _hour = _now.getUTCHours();
-    // 토요일 전체, 일요일 22시 전, 금요일 22시 이후 = 장 마감
-    if (_day === 6) return true;                    // 토요일
-    if (_day === 0 && _hour < 22) return true;      // 일요일 22시 전
-    if (_day === 5 && _hour >= 22) return true;     // 금요일 22시 이후
-    return false;
+    return _day === 0 || _day === 6 || (_day === 5 && _hour >= 22);
 }
 
 // ★★★ softRefresh() — 화면 전환/이벤트 시 페이지 리로드 없이 데이터만 갱신 ★★★
