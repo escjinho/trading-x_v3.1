@@ -80,7 +80,8 @@
       "Bash(echo ============================================ echo 'A. 차트 높이에 영향을 주는 모든 JS 파일 검색' echo ============================================ grep -rn \"chart-container\\\\|chart-wrapper\\\\|chartDetailContainer\\\\|chart-glow\\\\|indicator-panels\" frontend/js/ --include=*.js)",
       "Bash(echo 'B. 차트 높이에 영향을 주는 모든 CSS 파일 검색' grep -rn \"chart-container\\\\|chart-wrapper\" frontend/css/ --include=*.css)",
       "Bash(head -20 __NEW_LINE_b973b97948aa5d60__ echo \"\" echo \"F. chart.css 1295~1320행 \\(indicator-panels\\)\" sed -n '1295,1320p' frontend/css/chart.css)",
-      "Bash(supervisorctl restart:*)"
+      "Bash(supervisorctl restart:*)",
+      "Bash(pm2 logs:*)"
     ]
   }
 }

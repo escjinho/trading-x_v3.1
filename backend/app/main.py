@@ -45,15 +45,15 @@ def api_health_check():
 
 @app.on_event("startup")
 async def startup_event():
-    """서버 시작 시 MetaAPI 초기화 (타임아웃 30초)"""
+    """서버 시작 시 MetaAPI 초기화 (타임아웃 60초)"""
     import asyncio
     try:
         from .api.metaapi_service import startup_metaapi
-        # ★ 30초 타임아웃 (무한 대기 방지)
-        await asyncio.wait_for(startup_metaapi(), timeout=30.0)
+        # ★ 60초 타임아웃 (Quote 연결 대기 충분히)
+        await asyncio.wait_for(startup_metaapi(), timeout=60.0)
         print("[Main] MetaAPI 초기화 완료")
     except asyncio.TimeoutError:
-        print("[Main] MetaAPI 초기화 타임아웃 (30초) - 서버는 계속 실행")
+        print("[Main] MetaAPI 초기화 타임아웃 (60초) - 서버는 계속 실행")
     except Exception as e:
         print(f"[Main] MetaAPI 초기화 실패 (서버는 계속 실행): {e}")
 

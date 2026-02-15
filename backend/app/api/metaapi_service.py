@@ -1968,19 +1968,23 @@ async def startup_metaapi():
             print("[MetaAPI Startup] 초기화 실패")
             return False
 
-        # 2. Trade 계정 연결 (시세 조회용)
-        if not await metaapi_service.connect_trade_account():
-            print("[MetaAPI Startup] Trade 계정 연결 실패")
-            return False
-
-        # 2.5. Quote 스트리밍 연결 (실시간 틱 수신용)
+        # 2. Quote 계정 먼저 연결 (시세 수신이 더 중요)
         try:
             if await metaapi_service.connect_quote_account():
-                print("[MetaAPI Startup] Quote 스트리밍 연결 완료")
+                print("[MetaAPI Startup] ✅ Quote 스트리밍 연결 완료")
             else:
                 print("[MetaAPI Startup] ⚠️ Quote 스트리밍 연결 실패 (폴링으로 대체)")
         except Exception as e:
             print(f"[MetaAPI Startup] ⚠️ Quote 스트리밍 오류: {e}")
+
+        # 3. Trade 계정 연결 (실패해도 계속 진행)
+        try:
+            if await metaapi_service.connect_trade_account():
+                print("[MetaAPI Startup] ✅ Trade 계정 연결 완료")
+            else:
+                print("[MetaAPI Startup] ⚠️ Trade 계정 연결 실패 (유저별 연결로 대체)")
+        except Exception as e:
+            print(f"[MetaAPI Startup] ⚠️ Trade 계정 연결 오류: {e}")
 
         # 3. 초기 시세 조회
         prices = await metaapi_service.get_all_prices()
