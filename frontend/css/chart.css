@@ -418,7 +418,7 @@
 .chart-symbol-info { display: flex; align-items: center; gap: 8px; }
 .chart-symbol-info .material-icons-round { display: flex; align-items: center; }
 .chart-symbol-icon { font-size: 20px; }
-.chart-symbol-name { font-size: 22px; font-weight: 700; }
+.chart-symbol-name { font-size: 25px; font-weight: 700; }
 .chart-symbol-id { display: none; }  /* 심볼 ID 숨김 - 한 줄로 단순화 */
 .chart-symbol-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: var(--bg-secondary); border: 1px solid var(--accent-cyan); border-radius: 8px; margin-top: 5px; z-index: 50; max-height: 300px; overflow-y: auto; display: none; }
 .chart-symbol-option { display: flex; align-items: center; gap: 10px; padding: 12px 15px; cursor: pointer; border-bottom: 1px solid var(--border-color); }
@@ -1789,7 +1789,7 @@
     border-top: 1px solid rgba(255, 255, 255, 0.08);
     /* ★ 네비바 위에 항상 고정 */
     position: fixed;
-    bottom: 52px;
+    bottom: 58px;
     left: 0;
     right: 0;
     max-width: 480px;
@@ -2605,8 +2605,9 @@ body.chart-mode .chart-symbol-row {
 }
 
 /* ★ 시간축 폰트 살짝 확대 */
-#chart-wrapper .tv-lightweight-charts {
-    font-size: 12px !important;
+#chart-wrapper .tv-lightweight-charts,
+#indicator-panels .tv-lightweight-charts {
+    font-size: 13px !important;
 }
 
 /* ★ 차트~버튼 사이 배경 검정 */
