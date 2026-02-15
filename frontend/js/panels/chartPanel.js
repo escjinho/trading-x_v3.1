@@ -158,17 +158,20 @@ const ChartPanel = {
             return;
         }
 
-    // ★ 가용 높이 계산
-    this._setLayoutVars();
+    // ★ 가용 높이 동적 계산 (헤더, 심볼행, 버튼바, 네비바 제외)
     const containerWidth = container.clientWidth || 800;
-    const containerHeight = this._availableHeight || (window.innerWidth <= 480 ? 530 : 720);
-    // 명시적 높이 설정
-    container.style.height = containerHeight + 'px';
-    const wrapper = document.getElementById('chart-wrapper');
-    if (wrapper) {
-        wrapper.style.height = containerHeight + 'px';
-        wrapper.style.overflow = 'hidden';
-    }
+    const _header = document.querySelector('.header');
+    const _nav = document.querySelector('.bottom-nav');
+    const _btnBar = document.querySelector('.zm-bottom-bar');
+    const _symRow = document.querySelector('.chart-symbol-row');
+    const _hH = _header ? _header.offsetHeight : 45;
+    const _nH = _nav ? _nav.offsetHeight : 52;
+    const _bH = _btnBar ? _btnBar.offsetHeight : 48;
+    const _sH = _symRow ? _symRow.offsetHeight : 40;
+    const containerHeight = Math.max(window.innerHeight - _hH - _nH - _bH - _sH, 300);
+    // wrapper 높이도 동일하게 설정 (보조지표 넘침 방지)
+    const _wr = document.getElementById('chart-wrapper');
+    if (_wr) { _wr.style.height = containerHeight + 'px'; _wr.style.overflow = 'hidden'; }
 
         console.log('[ChartPanel] Init chart - width:', containerWidth, 'height:', containerHeight);
 

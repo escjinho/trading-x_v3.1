@@ -271,12 +271,11 @@ const IndicatorManager = {
      * 메인 차트 높이를 원래 크기로 복원
      */
     restoreMainChartHeight() {
-        let targetHeight;
-        if (typeof ChartPanel !== 'undefined' && ChartPanel._availableHeight > 100) {
-            targetHeight = ChartPanel._availableHeight;
-        } else {
-            targetHeight = window.innerWidth <= 768 ? 500 : 720;
-        }
+        const _h = document.querySelector('.header');
+        const _n = document.querySelector('.bottom-nav');
+        const _b = document.querySelector('.zm-bottom-bar');
+        const _s = document.querySelector('.chart-symbol-row');
+        const targetHeight = Math.max(window.innerHeight - (_h?_h.offsetHeight:45) - (_n?_n.offsetHeight:52) - (_b?_b.offsetHeight:48) - (_s?_s.offsetHeight:40), 300);
         console.log('[IndicatorManager] Restoring main chart height to ' + targetHeight + 'px');
 
         const container = document.getElementById('chart-container');
@@ -1010,14 +1009,11 @@ const IndicatorManager = {
      * 레이아웃 업데이트 (차트 높이 조정 + 시간축 관리)
      */
     updateLayout() {
-        // ★ 동적 높이: ChartPanel에서 계산한 가용 높이 사용
-        let totalHeight;
-        if (typeof ChartPanel !== 'undefined' && ChartPanel._availableHeight > 100) {
-            totalHeight = ChartPanel._availableHeight;
-        } else {
-            const isMobile = window.innerWidth <= 768;
-            totalHeight = isMobile ? IndicatorConfig.layout.totalHeight : IndicatorConfig.layout.totalHeightDesktop;
-        }
+        const _h2 = document.querySelector('.header');
+        const _n2 = document.querySelector('.bottom-nav');
+        const _b2 = document.querySelector('.zm-bottom-bar');
+        const _s2 = document.querySelector('.chart-symbol-row');
+        const totalHeight = Math.max(window.innerHeight - (_h2?_h2.offsetHeight:45) - (_n2?_n2.offsetHeight:52) - (_b2?_b2.offsetHeight:48) - (_s2?_s2.offsetHeight:40), 300);
 
         const panelCount = IndicatorConfig.getEnabledPanelCount();
 
@@ -1080,10 +1076,12 @@ const IndicatorManager = {
             }
         });
 
-        // chart-wrapper 클래스 업데이트
+        // chart-wrapper 클래스 업데이트 + 높이 고정
         const wrapper = document.getElementById('chart-wrapper');
         if (wrapper) {
             wrapper.className = `panels-${panelCount}`;
+            wrapper.style.height = totalHeight + 'px';
+            wrapper.style.overflow = 'hidden';
         }
 
         // 차트 강제 리사이즈 (초기화 후 즉시 반영)
