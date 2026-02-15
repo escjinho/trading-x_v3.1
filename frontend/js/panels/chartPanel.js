@@ -164,7 +164,7 @@ const ChartPanel = {
     const _sym = document.querySelector('.chart-symbol-row');
     const _headerH = _hdr ? _hdr.offsetHeight : 45;
     const _symbolH = _sym ? _sym.offsetHeight : 40;
-    const _fixedBottom = 100; // 네비바(52) + 버튼바(48) — position:fixed라 상수 처리
+    const _fixedBottom = 115; // 네비바(52) + 버튼바(48) — position:fixed라 상수 처리
     const containerHeight = Math.max(window.innerHeight - _headerH - _symbolH - _fixedBottom, 300);
     // wrapper와 container에 명시적 높이 설정
     const _wrapper = document.getElementById('chart-wrapper');
