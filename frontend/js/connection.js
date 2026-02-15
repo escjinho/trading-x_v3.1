@@ -11,6 +11,17 @@ let wsConnectionStartTime = 0;  // ★ WS 연결 시작 시간 (가짜 이벤트
 let _wsHasConnectedBefore = false;  // ★ 재연결 감지용 (최초 연결 vs 재연결 구분)
 let _lastSoftRefreshAt = 0;  // ★★★ softRefresh 쿨다운용 타임스탬프 ★★★
 
+// ★ 장 마감 체크 헬퍼
+function isCurrentMarketClosed() {
+    const _si = typeof getSymbolInfo === 'function' ? getSymbolInfo(chartSymbol) : null;
+    const _isCrypto = _si && _si.category === 'Crypto Currency';
+    if (_isCrypto) return false;
+    const _now = new Date();
+    const _day = _now.getUTCDay();
+    const _hour = _now.getUTCHours();
+    return _day === 0 || _day === 6 || (_day === 5 && _hour >= 22);
+}
+
 // ★★★ softRefresh() — 화면 전환/이벤트 시 페이지 리로드 없이 데이터만 갱신 ★★★
 async function softRefresh(reason = '') {
     // 3초 쿨다운 (스팸 방지)
@@ -444,17 +455,16 @@ function connectWebSocket() {
                 window.allPrices = data.all_prices;
             }
             
-            // Chart prices만 업데이트 (★ 마켓 오픈 시에만 차트 피드)
-            const _demoMarketOpen = typeof MarketSchedule !== 'undefined' ? MarketSchedule.isMarketOpen(chartSymbol) : true;
-            if (_demoMarketOpen && data.all_prices && data.all_prices[chartSymbol]) {
+            // Chart prices만 업데이트 (★ 장 마감 시 업데이트 차단)
+            if (!isCurrentMarketClosed() && data.all_prices && data.all_prices[chartSymbol]) {
                 const symbolPrice = data.all_prices[chartSymbol];
                 if (typeof ChartPanel !== 'undefined' && ChartPanel.updateChartPrice) {
                     ChartPanel.updateChartPrice(symbolPrice.bid);
                 }
             }
 
-            // Realtime candle update
-            if (_demoMarketOpen && data.all_prices && data.all_prices[chartSymbol]) {
+            // Realtime candle update (★ 장 마감 시 업데이트 차단)
+            if (!isCurrentMarketClosed() && data.all_prices && data.all_prices[chartSymbol]) {
                 var bid = data.all_prices[chartSymbol].bid;
                 if (bid && typeof ChartPanel !== 'undefined' && ChartPanel.safeUpdateCandle) {
                     ChartPanel.safeUpdateCandle({close: bid});
@@ -723,17 +733,16 @@ function connectWebSocket() {
             window.allPrices = data.all_prices;
         }
         
-        // Chart prices — ★ 마켓 오픈 시에만 차트 피드
-        const _liveMarketOpen = typeof MarketSchedule !== 'undefined' ? MarketSchedule.isMarketOpen(chartSymbol) : true;
-        if (_liveMarketOpen && data.all_prices && data.all_prices[chartSymbol]) {
+        // Chart prices — ★ 장 마감 시 업데이트 차단
+        if (!isCurrentMarketClosed() && data.all_prices && data.all_prices[chartSymbol]) {
             const symbolPrice = data.all_prices[chartSymbol];
             if (typeof ChartPanel !== 'undefined' && ChartPanel.updateChartPrice) {
                 ChartPanel.updateChartPrice(symbolPrice.bid);
             }
         }
 
-        // Realtime candle update
-        if (_liveMarketOpen && data.all_prices && data.all_prices[chartSymbol]) {
+        // Realtime candle update (★ 장 마감 시 업데이트 차단)
+        if (!isCurrentMarketClosed() && data.all_prices && data.all_prices[chartSymbol]) {
             var bid = data.all_prices[chartSymbol].bid;
             if (bid && typeof ChartPanel !== 'undefined' && ChartPanel.safeUpdateCandle) {
                 ChartPanel.safeUpdateCandle({close: bid});
