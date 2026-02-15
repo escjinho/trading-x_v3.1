@@ -75,7 +75,8 @@
       "Bash(git revert:*)",
       "Bash(bash:*)",
       "Bash(crontab:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(echo '16. 다른 JS에서 차트 높이를 건드리는 코드' grep -rn chart-container frontend/js/*.js)"
     ]
   }
 }
