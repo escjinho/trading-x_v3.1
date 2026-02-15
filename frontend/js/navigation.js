@@ -447,7 +447,7 @@ function navLongPressAction(tab) {
         if (defaultView) {
             selectSubmenuItem(defaultView);
             if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
-            showToast('🚀 ' + (defaultView === 'watchlist' ? '종목 목록' : '차트') + '으로 이동!', 'success');
+            showToast('📊 ' + (defaultView === 'watchlist' ? '종목 목록' : '차트') + '으로 이동!', 'success');
         } else {
             openChartSubmenu();
             showToast('💡 화면을 길게 눌러 기본 화면으로 등록하세요', '');
@@ -458,7 +458,7 @@ function navLongPressAction(tab) {
         if (defaultView) {
             selectTradeSubmenuItem(defaultView);
             if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
-            showToast('🚀 ' + (defaultView === 'buysell' ? 'Buy/Sell 패널' : 'Quick & Easy 패널') + '으로 이동!', 'success');
+            showToast('⇄ ' + (defaultView === 'buysell' ? 'Buy/Sell 패널' : 'Quick & Easy 패널') + '으로 이동!', 'success');
         } else {
             openTradeSubmenu();
             showToast('💡 화면을 길게 눌러 기본 화면으로 등록하세요', '');
