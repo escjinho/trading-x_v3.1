@@ -897,7 +897,7 @@ function connectWebSocket() {
         }
 
         // ★★★ SL/TP 청산 동기화 이벤트 처리 — 사용자 청산 후 이중 감지 차단 ★★★
-        if (data.sync_event && data.sync_event.type === 'sl_tp_closed' && !window._closeConfirmedAt && !window._userClosing) {
+        if (data.sync_event && data.sync_event.type === 'sl_tp_closed' && !window._closeConfirmedAt && !window._userClosing && window.lastLivePosition) {
             const profit = data.sync_event.profit || 0;
             console.log('[WS Live] 🎯 SL/TP 청산 감지!', data.sync_event);
 
@@ -1003,7 +1003,7 @@ function connectWebSocket() {
         }
 
         // ★★★ 라이브 자동청산 처리 ★★★
-        if (data.auto_closed && !window._userClosing) {
+        if (data.auto_closed && !window._userClosing && window.lastLivePosition) {
             // ★★★ WS 연결 직후 10초간은 이전 이벤트 무시 (서버 재시작/모드 전환 가짜 팝업 방지) ★★★
             if (Date.now() - wsConnectionStartTime < 10000) {
                 console.log('[WS Live] ⏳ 연결 직후 청산 이벤트 무시 (가짜 팝업 방지)');

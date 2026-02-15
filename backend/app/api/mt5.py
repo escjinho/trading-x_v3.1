@@ -3305,6 +3305,11 @@ async def websocket_endpoint(websocket: WebSocket):
             import time as _t
             closed_events = [e for e in pop_metaapi_closed_events() if _t.time() - e.get('timestamp', 0) < 60]  # 60초 이내만
 
+            # ★ 유저의 실제 포지션이 없으면 이벤트 무시
+            if closed_events and not (user_id and user_live_cache.get(user_id, {}).get('positions')):
+                print(f"[WS] ⚠️ 청산 이벤트 {len(closed_events)}건 무시 (유저 포지션 없음)")
+                closed_events = []
+
             # ★★★ 유저별 MetaAPI 포지션 청산 감지 (user_close_acknowledged 체크 포함) ★★★
             _user_closed_event = None
             _user_ack_time = user_close_acknowledged.get(user_id, 0) if user_id else 0
