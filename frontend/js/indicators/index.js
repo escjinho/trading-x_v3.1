@@ -1105,6 +1105,32 @@ const IndicatorManager = {
         }, 100);
 
         console.log(`[IndicatorManager] Layout updated - Main: ${mainChartHeight}px, Panels: ${panelCount}`);
+
+        // ★ 디버그: 실제 크기 확인
+        setTimeout(() => {
+            const _dbgWr = document.getElementById('chart-wrapper');
+            const _dbgCt = document.getElementById('chart-container');
+            const _dbgPn = document.getElementById('indicator-panels');
+            const _dbgCanvas = _dbgCt ? _dbgCt.querySelector('canvas') : null;
+            console.log('[DEBUG-LAYOUT]', JSON.stringify({
+                viewportH: window.innerHeight,
+                wrapperH: _dbgWr ? _dbgWr.offsetHeight : 'N/A',
+                wrapperStyleH: _dbgWr ? _dbgWr.style.height : 'N/A',
+                wrapperScrollH: _dbgWr ? _dbgWr.scrollHeight : 'N/A',
+                containerH: _dbgCt ? _dbgCt.offsetHeight : 'N/A',
+                containerStyleH: _dbgCt ? _dbgCt.style.height : 'N/A',
+                canvasH: _dbgCanvas ? _dbgCanvas.height : 'N/A',
+                panelsH: _dbgPn ? _dbgPn.offsetHeight : 'N/A',
+                panelCount: _dbgPn ? _dbgPn.children.length : 0,
+                pageScrollable: document.body.scrollHeight > window.innerHeight,
+                contentScrollH: document.querySelector('.content') ? document.querySelector('.content').scrollHeight : 'N/A',
+                contentH: document.querySelector('.content') ? document.querySelector('.content').offsetHeight : 'N/A',
+            }, null, 2));
+            // 시각적 디버그 - 빨간 테두리
+            if (_dbgWr) _dbgWr.style.border = '2px solid red';
+            if (_dbgCt) _dbgCt.style.border = '2px solid blue';
+            if (_dbgPn) _dbgPn.style.border = '2px solid green';
+        }, 300);
     },
 
     /**
