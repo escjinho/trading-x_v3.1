@@ -372,7 +372,6 @@
 /* ========== 차트 컨테이너 ========== */
 #chart-container {
     width: 100%;
-    height: clamp(400px, 90vw, 720px);
     background: #000000;
     border: none;
     border-radius: 0;
@@ -1284,22 +1283,18 @@
 
 /* 패널 지표가 없을 때 */
 #chart-wrapper.panels-0 #chart-container {
-    height: clamp(400px, 90vw, 720px) !important;
 }
 
 /* 패널 지표 1개 */
 #chart-wrapper.panels-1 #chart-container {
-    height: clamp(320px, 65vw, 520px) !important;
 }
 
 /* 패널 지표 2개 */
 #chart-wrapper.panels-2 #chart-container {
-    height: clamp(280px, 52vw, 420px) !important;
 }
 
 /* 패널 지표 3개 */
 #chart-wrapper.panels-3 #chart-container {
-    height: clamp(220px, 40vw, 320px) !important;
 }
 
 /* ========== 패널 지표 영역 ========== */
