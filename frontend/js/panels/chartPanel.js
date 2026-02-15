@@ -158,11 +158,12 @@ const ChartPanel = {
             return;
         }
 
-    // ★ CSS 레이아웃 변수 설정 (헤더, 네비바, 버튼바 높이 측정)
+    // ★ 레이아웃 변수 설정 + 가용 높이 계산
     this._setLayoutVars();
     const containerWidth = container.clientWidth || 800;
-    // CSS flex 레이아웃이 높이를 결정 → 읽어서 사용
-    const containerHeight = container.clientHeight > 100 ? container.clientHeight : (window.innerWidth <= 480 ? 530 : 720);
+    const containerHeight = this._availableHeight || (window.innerWidth <= 480 ? 530 : 720);
+    // 컨테이너 높이를 명시적으로 설정 (LightweightCharts는 CSS flex를 인식 못함)
+    container.style.height = containerHeight + 'px';
 
         console.log('[ChartPanel] Init chart - width:', containerWidth, 'height:', containerHeight);
 
@@ -294,23 +295,22 @@ const ChartPanel = {
             lastValueVisible: false
         });
 
-        // 반응형 리사이즈 (화면 크기 변경 시 레이아웃 변수 갱신)
-        window.addEventListener('resize', () => {
+        // ★ 화면 크기 변경 시 차트 높이 재계산
+        this._resizeHandler = () => {
             this._setLayoutVars();
-            // 실제 차트 리사이즈는 ResizeObserver가 처리
-        });
+            const newHeight = this._availableHeight || containerHeight;
+            container.style.height = newHeight + 'px';
+            if (chart) {
+                chart.resize(container.clientWidth, newHeight);
+            }
+            // 보조지표 레이아웃도 갱신
+            if (typeof IndicatorManager !== 'undefined' && IndicatorManager.updateLayout) {
+                setTimeout(() => IndicatorManager.updateLayout(), 50);
+            }
+        };
 
-        // ★ ResizeObserver: CSS flex가 컨테이너 크기를 바꾸면 차트도 자동 리사이즈
-        if (typeof ResizeObserver !== 'undefined') {
-            this._resizeObserver = new ResizeObserver((entries) => {
-                for (const entry of entries) {
-                    if (chart && entry.contentRect.height > 100) {
-                        chart.resize(entry.contentRect.width, entry.contentRect.height);
-                    }
-                }
-            });
-            this._resizeObserver.observe(container);
-        }
+        // 반응형 리사이즈
+        window.addEventListener('resize', this._resizeHandler);
 
         // IndicatorManager 초기화
         if (typeof IndicatorManager !== 'undefined') {
@@ -656,19 +656,21 @@ setIndicators(settings) {
         return 'candlestick';
     },
 
-    /**
-     * ★ CSS 레이아웃 변수 설정 (실제 DOM 높이 측정 → CSS 변수에 반영)
-     */
     _setLayoutVars() {
         const header = document.querySelector('.header');
         const nav = document.querySelector('.bottom-nav');
         const btnBar = document.querySelector('.zm-bottom-bar');
+        const symbolRow = document.querySelector('.chart-symbol-row');
         const headerH = header ? header.offsetHeight : 45;
         const navH = nav ? nav.offsetHeight : 52;
         const btnBarH = btnBar ? btnBar.offsetHeight : 56;
+        const symbolH = symbolRow ? symbolRow.offsetHeight : 40;
         document.documentElement.style.setProperty('--tx-header-h', headerH + 'px');
         document.documentElement.style.setProperty('--tx-nav-h', navH + 'px');
         document.documentElement.style.setProperty('--tx-btnbar-h', btnBarH + 'px');
+        // 차트 가용 높이 저장 (다른 모듈에서도 사용)
+        this._availableHeight = window.innerHeight - headerH - symbolH - btnBarH - navH;
+        if (this._availableHeight < 300) this._availableHeight = 300;
     },
 
 /**
