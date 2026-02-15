@@ -75,7 +75,7 @@ body {
 .timeframe-buttons { display: flex; gap: 5px; }
 .tf-btn { background: #1e2127; border: 1px solid var(--border-color); color: var(--text-muted); padding: 5px 10px; border-radius: 5px; font-size: 12px; cursor: pointer; }
 .tf-btn.active { background: var(--accent-cyan); color: #0d1421; border-color: var(--accent-cyan); }
-#chart-container { width: 100%; height: 720px; background: var(--bg-primary); }
+#chart-container { width: 100%; background: var(--bg-primary); }
 .price-bar { display: flex; padding: 10px 15px; gap: 10px; }
 
 /* Chart Symbol Selector - 상세 스타일은 chart.css에서 관리 */
