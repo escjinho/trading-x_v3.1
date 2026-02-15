@@ -1045,7 +1045,11 @@ const IndicatorManager = {
                         borderVisible: false
                     }
                 });
-                this.mainChart.resize(container.clientWidth, mainChartHeight);
+                // flex 레이아웃 계산 후 실제 높이로 resize
+                requestAnimationFrame(() => {
+                    const actualH = container.clientHeight || mainChartHeight;
+                    this.mainChart.resize(container.clientWidth, actualH);
+                });
             }
             // chart-wrapper 높이 고정
             const wrapper = document.getElementById('chart-wrapper');
@@ -1110,9 +1114,11 @@ const IndicatorManager = {
         if (this.mainChart) {
             const container = document.getElementById('chart-container');
             if (container) {
-                const w = container.clientWidth;
-                const h = container.clientHeight || 400;
-                this.mainChart.resize(w, h);
+                requestAnimationFrame(() => {
+                    const h = container.clientHeight || 400;
+                    const w = container.clientWidth;
+                    this.mainChart.resize(w, h);
+                });
 
                 // 저장된 시간 범위가 있으면 복원, 없으면 현재 위치 유지
                 if (this.savedVisibleRange) {
