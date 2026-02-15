@@ -2599,3 +2599,13 @@ body.chart-mode .chart-symbol-row {
 #page-chart, .chart-glow-box, #chart-wrapper, .chart-detail-container {
     background: #000000 !important;
 }
+
+/* ★ 시간축 폰트 살짝 확대 */
+#chart-wrapper .tv-lightweight-charts {
+    font-size: 12px !important;
+}
+
+/* ★ 차트~버튼 사이 배경 검정 */
+.content, #page-chart, .chart-detail-container, .chart-glow-box, #chart-wrapper, #indicator-panels {
+    background-color: #000000 !important;
+}

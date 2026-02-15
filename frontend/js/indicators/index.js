@@ -1107,13 +1107,13 @@ const IndicatorManager = {
      * 차트 강제 리사이즈 (크기 즉시 반영)
      */
     forceChartResize() {
-        // 메인 차트 리사이즈
+        // 메인 차트 리사이즈 (width + height 모두)
         if (this.mainChart) {
             const container = document.getElementById('chart-container');
             if (container) {
-                this.mainChart.applyOptions({
-                    width: container.clientWidth
-                });
+                const h = parseInt(container.style.height) || container.clientHeight;
+                const w = container.clientWidth;
+                this.mainChart.resize(w, h);
 
                 // 저장된 시간 범위가 있으면 복원, 없으면 현재 위치 유지
                 if (this.savedVisibleRange) {
@@ -1122,20 +1122,17 @@ const IndicatorManager = {
                     } catch (e) {
                         this.mainChart.timeScale().scrollToRealTime();
                     }
-                    this.savedVisibleRange = null; // 사용 후 초기화
+                    this.savedVisibleRange = null;
                 }
-                // fitContent() 제거 - 시간 범위 유지
             }
         }
 
-        // 패널 차트 리사이즈
+        // 패널 차트 리사이즈 (width + height 모두)
         Object.keys(this.panelCharts).forEach(id => {
             const chart = this.panelCharts[id];
             const container = document.getElementById(`panel-chart-${id}`);
             if (container && chart) {
-                chart.applyOptions({
-                    width: container.clientWidth
-                });
+                chart.resize(container.clientWidth, container.clientHeight || 80);
             }
         });
 
