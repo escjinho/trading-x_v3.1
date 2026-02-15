@@ -388,12 +388,22 @@ const ChartPanel = {
                     }
                 }
 
-                // 보이는 범위 설정 (최근 150개 캔들) + 오른쪽 여백 유지
+                // 보이는 범위 설정 + 장 마감 시 스크롤 방지
+                const _marketClosed = typeof isCurrentMarketClosed === 'function' && isCurrentMarketClosed();
                 const visibleBars = 150;
-                if (data.candles.length > visibleBars) {
-                    const from = data.candles[data.candles.length - visibleBars].time;
-                    // setVisibleRange 대신 scrollToRealTime 사용 (rightOffset 유지)
-                    chart.timeScale().scrollToRealTime();
+                if (data.candles.length <= 20) {
+                    // ★ 캔들이 적으면 (BTC 1D/1W 등) fitContent로 전체 표시
+                    chart.timeScale().fitContent();
+                } else if (data.candles.length > visibleBars) {
+                    if (_marketClosed) {
+                        // ★ 장 마감 시: 마지막 캔들 기준으로 범위 고정 (빈 영역 방지)
+                        chart.timeScale().fitContent();
+                    } else {
+                        chart.timeScale().scrollToRealTime();
+                    }
+                } else {
+                    // 20~150개: fitContent
+                    chart.timeScale().fitContent();
                 }
 
                 // 마지막 가격 업데이트
