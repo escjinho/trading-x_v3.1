@@ -34,9 +34,14 @@ const ChartPanel = {
      * ★ 부드러운 보간 적용
      */
     safeUpdateCandle(candleData) {
-        if (!candleData || !chart || !candleSeries || !candleData.time || !candleData.close) {
+        if (!candleData || !chart || !candleSeries || !candleData.close) {
             return false;
         }
+        // time이 없으면 lastCandleTime 사용 (WS에서 {close: bid}만 전달하는 경우)
+        if (!candleData.time && this.lastCandleTime > 0) {
+            candleData.time = this.lastCandleTime;
+        }
+        if (!candleData.time) return false;
 
         try {
             const newClose = candleData.close;

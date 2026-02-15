@@ -36,19 +36,6 @@ body {
     transition: padding 0.15s ease;
 }
 
-/* 차트 모드에서 헤더 축소 */
-body.chart-mode .header {
-    padding: 3px 15px;
-}
-
-body.chart-mode .header-title {
-    font-size: 20px !important;
-}
-
-body.chart-mode .header-title svg {
-    width: 28px;
-    height: 20px;
-}
 .header-title { font-family: 'Rajdhani', sans-serif; font-size: 23px; font-weight: 700; color: #ffffff; display: flex; align-items: center; letter-spacing: 0.5px; }
 .header-status { display: flex; align-items: center; gap: 6px; font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600; color: #ffffff; letter-spacing: 0.3px; }
 #modeBadge { font-family: 'Rajdhani', sans-serif !important; font-weight: 700 !important; letter-spacing: 0.5px !important; }

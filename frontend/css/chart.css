@@ -1790,9 +1790,16 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 12px 16px;
+    padding: 10px 16px;
     background: #000000;
-    border-top: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    position: fixed;
+    bottom: 57px;
+    left: 0;
+    right: 0;
+    max-width: 480px;
+    margin: 0 auto;
+    z-index: 99;
 }
 
 .zm-more-btn,
@@ -2272,7 +2279,6 @@
 
     #page-chart.zm-mode .zm-bottom-bar {
         flex-shrink: 0;
-        position: relative;
         padding: 8px 12px;
     }
 }
@@ -2307,6 +2313,7 @@
     flex-shrink: 0;
     margin: 0;
     border-radius: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 /* ========== 더보기 바텀시트 (제로마켓 스타일 v2) ========== */
@@ -2665,4 +2672,51 @@
 .ct-item-sub {
     font-size: 11px;
     color: #666666;
+}
+
+/* ★ 차트 모드: 전체 화면 최대화 */
+body.chart-mode .content {
+    padding-bottom: 125px !important; /* 네비바 57px + 버튼바 68px */
+    overflow-y: auto;
+}
+
+body.chart-mode #page-chart {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 45px - 57px - 68px); /* 헤더 - 네비 - 버튼바 */
+}
+
+body.chart-mode #chartDetailContainer.active {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+body.chart-mode .chart-glow-box {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+body.chart-mode #chart-wrapper {
+    flex: 1;
+    position: relative;
+}
+
+body.chart-mode #chart-container {
+    width: 100%;
+    height: 100% !important;
+    min-height: 400px;
+}
+
+/* ★ 모바일 반응형 zm-bottom-bar 480px 이하에서도 고정 */
+@media screen and (max-width: 480px) {
+    .zm-bottom-bar {
+        padding: 8px 12px;
+        bottom: 52px; /* 모바일 네비바 높이 */
+    }
+
+    body.chart-mode .content {
+        padding-bottom: 115px !important;
+    }
 }
