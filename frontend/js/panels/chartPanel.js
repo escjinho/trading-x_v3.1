@@ -478,13 +478,11 @@ const ChartPanel = {
             overlayCategory.textContent = symbolInfo.category || 'Currency';
         }
 
-        // 장 운영 상태 (CSS 클래스로 처리)
+        // 장 운영 상태 (★ MarketSchedule 모듈 — 정확한 브로커 스케줄 기반)
         if (overlayMarketStatus) {
-            const now = new Date();
-            const hour = now.getUTCHours();
-            // Crypto는 24시간, 나머지는 대략적인 시장 시간
-            const isCrypto = symbolInfo && symbolInfo.category === 'Crypto Currency';
-            const isMarketOpen = isCrypto || (hour >= 0 && hour < 22); // 대략적인 FX 시간
+            const isMarketOpen = typeof MarketSchedule !== 'undefined'
+                ? MarketSchedule.isMarketOpen(chartSymbol)
+                : true;
             overlayMarketStatus.classList.toggle('closed', !isMarketOpen);
         }
 

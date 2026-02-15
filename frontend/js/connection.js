@@ -278,6 +278,36 @@ function updateConnectionStatus(status, delay = 0) {
     }
 }
 
+// ★ 마켓 상태 반영 헤더 업데이트
+function updateHeaderForConnected() {
+    const statusDot = document.getElementById('statusDot');
+    const headerStatus = document.getElementById('headerStatus');
+    if (!statusDot || !headerStatus) return;
+
+    const marketOpen = typeof MarketSchedule !== 'undefined'
+        ? MarketSchedule.isMarketOpen(chartSymbol)
+        : true;
+
+    if (marketOpen) {
+        statusDot.classList.remove('disconnected');
+        headerStatus.textContent = '';
+    } else {
+        statusDot.classList.add('disconnected');
+        headerStatus.textContent = 'Market Closed';
+    }
+}
+
+let _marketStatusInterval = null;
+function startMarketStatusChecker() {
+    if (_marketStatusInterval) return;
+    _marketStatusInterval = setInterval(() => {
+        if (window.wsConnected) {
+            updateHeaderForConnected();
+        }
+    }, 60000);
+}
+startMarketStatusChecker();
+
 // 재연결 시도 함수
 function attemptReconnect() {
     // ★ 30초간 재연결 실패 시 페이지 리로드
@@ -346,8 +376,7 @@ function connectWebSocket() {
         console.log('WebSocket connected');
         window.wsConnected = true;  // ★ WS 연결 플래그 (폴링 깜빡임 방지)
         window._wsDisconnectedAt = null;  // ★ 재연결 성공 시 타이머 리셋
-        document.getElementById('statusDot').classList.remove('disconnected');
-        document.getElementById('headerStatus').textContent = 'Connected';
+        updateHeaderForConnected();
         wsRetryCount = 0;
 
         // ★★★ reconnectAttempt 저장 후 리셋 (순서 중요!) ★★★
@@ -426,8 +455,7 @@ function connectWebSocket() {
             document.getElementById('headerStatus').textContent = 'Disconnected';
             // ★ return 제거 - 가격 데이터는 계속 업데이트
         } else if (data.mt5_connected === true) {
-            document.getElementById('statusDot').classList.remove('disconnected');
-            document.getElementById('headerStatus').textContent = 'Connected';
+            updateHeaderForConnected();
         }
 
         // 마지막 WebSocket 데이터 저장 (navigation.js에서 사용)
@@ -444,17 +472,17 @@ function connectWebSocket() {
                 window.allPrices = data.all_prices;
             }
             
-            // Chart prices만 업데이트
-            if (data.all_prices && data.all_prices[chartSymbol]) {
+            // Chart prices만 업데이트 (★ 마켓 오픈 시에만 차트 피드)
+            const _demoMarketOpen = typeof MarketSchedule !== 'undefined' ? MarketSchedule.isMarketOpen(chartSymbol) : true;
+            if (_demoMarketOpen && data.all_prices && data.all_prices[chartSymbol]) {
                 const symbolPrice = data.all_prices[chartSymbol];
-                // ChartPanel.updateChartPrice()로 오버레이 업데이트 (천 단위 콤마 포함)
                 if (typeof ChartPanel !== 'undefined' && ChartPanel.updateChartPrice) {
                     ChartPanel.updateChartPrice(symbolPrice.bid);
                 }
             }
 
-            // Realtime candle update (모든 타임프레임 지원 - 현재가로 캔들 업데이트)
-            if (data.all_prices && data.all_prices[chartSymbol]) {
+            // Realtime candle update
+            if (_demoMarketOpen && data.all_prices && data.all_prices[chartSymbol]) {
                 var bid = data.all_prices[chartSymbol].bid;
                 if (bid && typeof ChartPanel !== 'undefined' && ChartPanel.safeUpdateCandle) {
                     ChartPanel.safeUpdateCandle({close: bid});
@@ -723,16 +751,17 @@ function connectWebSocket() {
             window.allPrices = data.all_prices;
         }
         
-        // Chart prices - ChartPanel.updateChartPrice()로 오버레이 업데이트
-        if (data.all_prices && data.all_prices[chartSymbol]) {
+        // Chart prices — ★ 마켓 오픈 시에만 차트 피드
+        const _liveMarketOpen = typeof MarketSchedule !== 'undefined' ? MarketSchedule.isMarketOpen(chartSymbol) : true;
+        if (_liveMarketOpen && data.all_prices && data.all_prices[chartSymbol]) {
             const symbolPrice = data.all_prices[chartSymbol];
             if (typeof ChartPanel !== 'undefined' && ChartPanel.updateChartPrice) {
                 ChartPanel.updateChartPrice(symbolPrice.bid);
             }
         }
 
-        // Realtime candle update (모든 타임프레임 지원 - 현재가로 캔들 업데이트)
-        if (data.all_prices && data.all_prices[chartSymbol]) {
+        // Realtime candle update
+        if (_liveMarketOpen && data.all_prices && data.all_prices[chartSymbol]) {
             var bid = data.all_prices[chartSymbol].bid;
             if (bid && typeof ChartPanel !== 'undefined' && ChartPanel.safeUpdateCandle) {
                 ChartPanel.safeUpdateCandle({close: bid});
@@ -1351,8 +1380,7 @@ async function fetchAccountData() {
                 updatePositionUI(false, null);
             }
             
-            document.getElementById('statusDot').classList.remove('disconnected');
-            document.getElementById('headerStatus').textContent = 'Connected';
+            updateHeaderForConnected();
         }
     } catch (error) {
         console.error("[checkUserMode] Error:", error);
@@ -1379,10 +1407,9 @@ async function checkUserMode() {
             // MT5 계정 연결됨 → Live 모드
             isDemo = false;
             window._checkUserModeRetries = 0;  // ★ 재시도 카운터 리셋
-            document.getElementById('headerStatus').textContent = 'Connected';
+            updateHeaderForConnected();
             document.getElementById('statusDot').style.background = '#00ff88';
-            document.getElementById('statusDot').classList.remove('disconnected');
-            
+
             // Live 배지 표시
             const badge = document.getElementById('modeBadge');
             badge.textContent = 'LIVE';
@@ -1444,9 +1471,9 @@ async function checkUserMode() {
             // MT5 없음 → Demo 모드
             isDemo = true;
             window._checkUserModeRetries = 0;  // ★ 재시도 카운터 리셋
-            document.getElementById('headerStatus').textContent = 'Connected';
+            updateHeaderForConnected();
             document.getElementById('statusDot').style.background = '#00d4ff';
-            
+
             // ★ Trading Mode UI를 Demo로 설정
             const liveBtn = document.getElementById('modeLiveBtn');
             const demoBtn = document.getElementById('modeDemoBtn');
