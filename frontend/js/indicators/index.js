@@ -172,15 +172,20 @@ const IndicatorManager = {
         // 설정 저장
         IndicatorConfig.save();
 
-        // 레이아웃 업데이트 (DOM 렌더링 후 실행되도록 지연)
-        requestAnimationFrame(() => {
+        // ★ 레이아웃 강제 갱신 (다단계 — DOM 완전 반영 보장)
+        setTimeout(() => { this.updateLayout(); }, 100);
+        setTimeout(() => {
             this.updateLayout();
-            // DOM 완전 반영 후 한번 더 리사이즈 + resize 이벤트
-            setTimeout(() => {
-                this.updateLayout();
-                window.dispatchEvent(new Event('resize'));
-            }, 150);
-        });
+            window.dispatchEvent(new Event('resize'));
+            // 차트 라이브러리에 직접 resize 명령
+            if (this.mainChart) {
+                const cc = document.getElementById('chart-container');
+                if (cc) this.mainChart.resize(cc.clientWidth, cc.clientHeight);
+            }
+        }, 300);
+        setTimeout(() => {
+            window.dispatchEvent(new Event('resize'));
+        }, 600);
 
         // 패널 카운트 업데이트
         if (typeof updatePanelCount === 'function') {
@@ -233,11 +238,20 @@ const IndicatorManager = {
             this.addPanelIndicator(normalizedId, config);
         }
 
-        // ★ 레이아웃 강제 갱신 (DOM 반영 후)
+        // ★ 레이아웃 강제 갱신 (다단계 — DOM 완전 반영 보장)
+        setTimeout(() => { this.updateLayout(); }, 100);
         setTimeout(() => {
             this.updateLayout();
             window.dispatchEvent(new Event('resize'));
-        }, 200);
+            // 차트 라이브러리에 직접 resize 명령
+            if (this.mainChart) {
+                const cc = document.getElementById('chart-container');
+                if (cc) this.mainChart.resize(cc.clientWidth, cc.clientHeight);
+            }
+        }, 300);
+        setTimeout(() => {
+            window.dispatchEvent(new Event('resize'));
+        }, 600);
     },
 
     /**
@@ -261,11 +275,20 @@ const IndicatorManager = {
 
         delete this.activeIndicators[normalizedId];
 
-        // ★ 레이아웃 강제 갱신 (DOM 반영 후)
+        // ★ 레이아웃 강제 갱신 (다단계 — DOM 완전 반영 보장)
+        setTimeout(() => { this.updateLayout(); }, 100);
         setTimeout(() => {
             this.updateLayout();
             window.dispatchEvent(new Event('resize'));
-        }, 200);
+            // 차트 라이브러리에 직접 resize 명령
+            if (this.mainChart) {
+                const cc = document.getElementById('chart-container');
+                if (cc) this.mainChart.resize(cc.clientWidth, cc.clientHeight);
+            }
+        }, 300);
+        setTimeout(() => {
+            window.dispatchEvent(new Event('resize'));
+        }, 600);
     },
 
     /**
