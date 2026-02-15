@@ -2229,13 +2229,32 @@
                 // 모든 지표 비활성화 후 선택된 것만 활성화
                 IndicatorManager.removeAll();
 
+                // ★ BB/LWMA는 ChartPanel 내장 시리즈 사용 (중복 방지)
                 selectedOverlay.forEach(id => {
-                    IndicatorManager.addIndicator(id, 'overlay');
+                    if (id !== 'bb' && id !== 'lwma') {
+                        IndicatorManager.addIndicator(id, 'overlay');
+                    }
                 });
 
                 selectedPanel.forEach(id => {
                     IndicatorManager.addIndicator(id, 'panel');
                 });
+
+                // ★ ChartPanel 내장 BB/LWMA 시리즈 동기화 (체크 해제 시 차트에서 제거)
+                if (typeof ChartPanel !== 'undefined' && ChartPanel.setIndicators) {
+                    ChartPanel.setIndicators({
+                        bb: selectedOverlay.includes('bb'),
+                        lwma: selectedOverlay.includes('lwma'),
+                        ema: selectedOverlay.includes('ema'),
+                        sma: selectedOverlay.includes('sma')
+                    });
+                    // BB/LWMA 활성화 시 서버 데이터 리로드
+                    if (selectedOverlay.includes('bb') || selectedOverlay.includes('lwma')) {
+                        if (typeof ChartPanel.loadIndicatorsOnly === 'function') {
+                            ChartPanel.loadIndicatorsOnly();
+                        }
+                    }
+                }
 
                 console.log('[applyIndicators] IndicatorManager로 지표 적용 완료');
             }
