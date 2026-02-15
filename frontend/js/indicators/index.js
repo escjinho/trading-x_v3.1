@@ -282,16 +282,12 @@ const IndicatorManager = {
 
         const container = document.getElementById('chart-container');
         if (container) {
-            container.style.height = targetHeight + 'px';
+            container.style.removeProperty('height');
         }
-        const _wr = document.getElementById('chart-wrapper');
-        if (_wr) { _wr.style.height = targetHeight + 'px'; }
-
         const wrapper = document.getElementById('chart-wrapper');
         if (wrapper) {
             wrapper.className = '';
             wrapper.style.height = targetHeight + 'px';
-            wrapper.style.overflow = 'hidden';
         }
 
         if (this.mainChart && container) {
@@ -1040,7 +1036,8 @@ const IndicatorManager = {
         if (this.mainChart) {
             const container = document.getElementById('chart-container');
             if (container) {
-                container.style.height = mainChartHeight + 'px';
+                // container height는 CSS flex:1이 자동 결정 — inline style 설정하지 않음
+                container.style.removeProperty('height');
                 this.mainChart.applyOptions({
                     height: mainChartHeight,
                     timeScale: {
@@ -1114,7 +1111,7 @@ const IndicatorManager = {
             const container = document.getElementById('chart-container');
             if (container) {
                 const w = container.clientWidth;
-                const h = container.clientHeight || parseInt(container.style.height) || 400;
+                const h = container.clientHeight || 400;
                 this.mainChart.resize(w, h);
 
                 // 저장된 시간 범위가 있으면 복원, 없으면 현재 위치 유지

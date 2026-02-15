@@ -166,10 +166,9 @@ const ChartPanel = {
     const _symbolH = _sym ? _sym.offsetHeight : 40;
     const _fixedBottom = 135; // 네비바(52) + 버튼바(48) — position:fixed라 상수 처리
     const containerHeight = Math.max(window.innerHeight - _headerH - _symbolH - _fixedBottom, 300);
-    // wrapper와 container에 명시적 높이 설정
+    // wrapper 높이만 설정 (container는 CSS flex:1이 자동 결정)
     const _wrapper = document.getElementById('chart-wrapper');
     if (_wrapper) { _wrapper.style.height = containerHeight + 'px'; }
-    container.style.height = containerHeight + 'px';
     console.log('[ChartPanel] Dynamic height:', containerHeight, '(vh:', window.innerHeight, 'hdr:', _headerH, 'sym:', _symbolH, 'fixedBottom:', _fixedBottom, ')');
 
         const decimals = typeof getDecimalsForSymbol === 'function' ? getDecimalsForSymbol(chartSymbol) : 2;
@@ -316,8 +315,7 @@ const ChartPanel = {
             if (typeof IndicatorManager !== 'undefined' && IndicatorManager.updateLayout && typeof IndicatorConfig !== 'undefined' && IndicatorConfig.getEnabledPanelCount() > 0) {
                 IndicatorManager.updateLayout();
             } else {
-                // 보조지표 없으면 container가 전체 높이 사용
-                container.style.height = newH + 'px';
+                // 보조지표 없으면 container가 전체 높이 사용 (CSS flex:1이 높이 결정)
                 chart.resize(container.clientWidth, newH);
             }
         });

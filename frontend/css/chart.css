@@ -1276,8 +1276,9 @@
 
 /* 메인 차트 - 패널 지표 개수에 따라 높이 조절 */
 #chart-wrapper #chart-container {
-    flex: none;
+    flex: 1;
     min-height: 200px;
+    overflow: hidden;
 }
 
 #chart-wrapper #indicator-panels {
