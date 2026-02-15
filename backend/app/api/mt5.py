@@ -3302,7 +3302,8 @@ async def websocket_endpoint(websocket: WebSocket):
             # ★★★ MetaAPI 캐시 조회 ★★★
             metaapi_account = get_metaapi_account()
             metaapi_positions = get_metaapi_positions()
-            closed_events = pop_metaapi_closed_events()
+            import time as _t
+            closed_events = [e for e in pop_metaapi_closed_events() if _t.time() - e.get('timestamp', 0) < 60]  # 60초 이내만
 
             # ★★★ 유저별 MetaAPI 포지션 청산 감지 (user_close_acknowledged 체크 포함) ★★★
             _user_closed_event = None

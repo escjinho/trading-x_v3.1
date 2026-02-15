@@ -897,7 +897,7 @@ function connectWebSocket() {
         }
 
         // ★★★ SL/TP 청산 동기화 이벤트 처리 — 사용자 청산 후 이중 감지 차단 ★★★
-        if (data.sync_event && data.sync_event.type === 'sl_tp_closed' && !window._closeConfirmedAt) {
+        if (data.sync_event && data.sync_event.type === 'sl_tp_closed' && !window._closeConfirmedAt && !window._userClosing) {
             const profit = data.sync_event.profit || 0;
             console.log('[WS Live] 🎯 SL/TP 청산 감지!', data.sync_event);
 
