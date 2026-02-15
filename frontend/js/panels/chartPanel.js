@@ -427,17 +427,11 @@ const ChartPanel = {
                     // ★ 캔들 적음 (BTC 1D/1W 등) — 전체 표시
                     chart.timeScale().fitContent();
                 } else if (data.candles.length > visibleBars) {
-                    // ★ 캔들 많음 — setVisibleRange로 최근 150개만 표시
-                    const from = data.candles[data.candles.length - visibleBars].time;
-                    const to = data.candles[data.candles.length - 1].time;
-                    try {
-                        chart.timeScale().setVisibleRange({ from, to });
-                    } catch(e) {
-                        chart.timeScale().scrollToRealTime();
-                    }
+                    // ★ 캔들 많음 — 최근 캔들 기준 스크롤
+                    chart.timeScale().scrollToRealTime();
                 } else {
-                    // ★ 20~150개 — 전체 표시
-                    chart.timeScale().fitContent();
+                    // ★ 20~150개 — 최근 캔들 기준 스크롤
+                    chart.timeScale().scrollToRealTime();
                 }
 
                 // 마지막 가격 업데이트
