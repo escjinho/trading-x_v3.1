@@ -1040,7 +1040,6 @@ const IndicatorManager = {
         if (this.mainChart) {
             const container = document.getElementById('chart-container');
             if (container) {
-                // container height는 CSS flex:1이 자동 계산 - 명시적으로도 설정
                 container.style.height = mainChartHeight + 'px';
                 this.mainChart.applyOptions({
                     height: mainChartHeight,
@@ -1049,11 +1048,7 @@ const IndicatorManager = {
                         borderVisible: false
                     }
                 });
-                // 50ms 후 실제 렌더링된 높이로 resize (flex 반영 대기)
-                setTimeout(() => {
-                    const actualH = container.clientHeight || mainChartHeight;
-                    this.mainChart.resize(container.clientWidth, actualH);
-                }, 50);
+                this.mainChart.resize(container.clientWidth, mainChartHeight);
             }
             // chart-wrapper 높이 고정
             const wrapper = document.getElementById('chart-wrapper');

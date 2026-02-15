@@ -303,14 +303,22 @@ const ChartPanel = {
         // 반응형 리사이즈
         window.addEventListener('resize', () => {
             if (!chart) return;
-            this._setLayoutVars();
-            const newH = this._availableHeight || containerHeight;
+            // 가용 높이 재계산
+            const _hdr = document.querySelector('.header');
+            const _sym = document.querySelector('.chart-symbol-row');
+            const _headerH = _hdr ? _hdr.offsetHeight : 45;
+            const _symbolH = _sym ? _sym.offsetHeight : 40;
+            const _fixedBottom = 135;
+            const newH = Math.max(window.innerHeight - _headerH - _symbolH - _fixedBottom, 300);
             const wr = document.getElementById('chart-wrapper');
             if (wr) { wr.style.height = newH + 'px'; }
-            container.style.height = newH + 'px';
-            chart.resize(container.clientWidth, newH);
-            if (typeof IndicatorManager !== 'undefined' && IndicatorManager.updateLayout) {
-                setTimeout(() => IndicatorManager.updateLayout(), 50);
+            // 보조지표가 있으면 IndicatorManager에게 레이아웃 위임
+            if (typeof IndicatorManager !== 'undefined' && IndicatorManager.updateLayout && typeof IndicatorConfig !== 'undefined' && IndicatorConfig.getEnabledPanelCount() > 0) {
+                IndicatorManager.updateLayout();
+            } else {
+                // 보조지표 없으면 container가 전체 높이 사용
+                container.style.height = newH + 'px';
+                chart.resize(container.clientWidth, newH);
             }
         });
 
