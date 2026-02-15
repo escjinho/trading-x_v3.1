@@ -58,6 +58,30 @@ const ChartPanel = {
         }
         if (!candleData.time) return false;
 
+        // ★ 타임프레임별 새 캔들 감지 (all_candles의 time으로 판단)
+        if (candleData.time && this.lastCandleTime > 0) {
+            const _tfSec = {M1:60,M5:300,M15:900,M30:1800,H1:3600,H4:14400};
+            const _sec = _tfSec[typeof currentTimeframe !== 'undefined' ? currentTimeframe : 'M1'];
+            if (_sec) {
+                const _expected = Math.floor(candleData.time / _sec) * _sec;
+                if (_expected > this.lastCandleTime) {
+                    this.lastCandleTime = _expected;
+                    const _price = candleData.close;
+                    this.lastCandleData = { time: _expected, open: _price, high: _price, low: _price, close: _price };
+                    this._animCurrent = _price;
+                    this._animTarget = _price;
+                    try {
+                        if (typeof ChartTypeManager !== 'undefined') {
+                            ChartTypeManager.updateLastCandle(this.lastCandleData);
+                        } else {
+                            candleSeries.update(this.lastCandleData);
+                        }
+                    } catch(e) {}
+                    return true;
+                }
+            }
+        }
+
         try {
             const newClose = candleData.close;
 
@@ -391,7 +415,7 @@ const ChartPanel = {
                 // 보이는 범위 설정 (최근 150개 캔들) + 오른쪽 여백 유지
                 const visibleBars = 150;
                 if (data.candles.length <= 20) {
-                    // ★ 캔들이 적으면 (BTC 1D/1W 등) fitContent로 전체 표시
+                    // ★ 캔들 적음 (BTC 1D/1W 등) — fitContent로 전체 표시
                     chart.timeScale().fitContent();
                 } else if (data.candles.length > visibleBars) {
                     const from = data.candles[data.candles.length - visibleBars].time;

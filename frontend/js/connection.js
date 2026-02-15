@@ -463,11 +463,27 @@ function connectWebSocket() {
                 }
             }
 
-            // Realtime candle update (★ 장 마감 시 업데이트 차단)
-            if (!isCurrentMarketClosed() && data.all_prices && data.all_prices[chartSymbol]) {
-                var bid = data.all_prices[chartSymbol].bid;
-                if (bid && typeof ChartPanel !== 'undefined' && ChartPanel.safeUpdateCandle) {
-                    ChartPanel.safeUpdateCandle({close: bid});
+            // Realtime candle update (★ all_candles 사용 — 새 캔들 감지 가능)
+            if (!isCurrentMarketClosed()) {
+                if (data.all_candles && data.all_candles[chartSymbol]) {
+                    if (typeof ChartPanel !== 'undefined' && ChartPanel.safeUpdateCandle) {
+                        ChartPanel.safeUpdateCandle(data.all_candles[chartSymbol]);
+                    }
+                } else if (data.all_prices && data.all_prices[chartSymbol]) {
+                    var bid = data.all_prices[chartSymbol].bid;
+                    if (bid && typeof ChartPanel !== 'undefined' && ChartPanel.safeUpdateCandle) {
+                        ChartPanel.safeUpdateCandle({close: bid});
+                    }
+                }
+            }
+
+            // ★ 30초마다 인디케이터 갱신 (보조지표 실시간 반영)
+            if (!isCurrentMarketClosed()) {
+                if (!window._lastCandleRefresh || Date.now() - window._lastCandleRefresh > 30000) {
+                    window._lastCandleRefresh = Date.now();
+                    if (typeof ChartPanel !== 'undefined' && ChartPanel.loadIndicatorsOnly) {
+                        ChartPanel.loadIndicatorsOnly();
+                    }
                 }
             }
 
@@ -741,11 +757,27 @@ function connectWebSocket() {
             }
         }
 
-        // Realtime candle update (★ 장 마감 시 업데이트 차단)
-        if (!isCurrentMarketClosed() && data.all_prices && data.all_prices[chartSymbol]) {
-            var bid = data.all_prices[chartSymbol].bid;
-            if (bid && typeof ChartPanel !== 'undefined' && ChartPanel.safeUpdateCandle) {
-                ChartPanel.safeUpdateCandle({close: bid});
+        // Realtime candle update (★ all_candles 사용 — 새 캔들 감지 가능)
+        if (!isCurrentMarketClosed()) {
+            if (data.all_candles && data.all_candles[chartSymbol]) {
+                if (typeof ChartPanel !== 'undefined' && ChartPanel.safeUpdateCandle) {
+                    ChartPanel.safeUpdateCandle(data.all_candles[chartSymbol]);
+                }
+            } else if (data.all_prices && data.all_prices[chartSymbol]) {
+                var bid = data.all_prices[chartSymbol].bid;
+                if (bid && typeof ChartPanel !== 'undefined' && ChartPanel.safeUpdateCandle) {
+                    ChartPanel.safeUpdateCandle({close: bid});
+                }
+            }
+        }
+
+        // ★ 30초마다 인디케이터 갱신
+        if (!isCurrentMarketClosed()) {
+            if (!window._lastCandleRefresh || Date.now() - window._lastCandleRefresh > 30000) {
+                window._lastCandleRefresh = Date.now();
+                if (typeof ChartPanel !== 'undefined' && ChartPanel.loadIndicatorsOnly) {
+                    ChartPanel.loadIndicatorsOnly();
+                }
             }
         }
 
