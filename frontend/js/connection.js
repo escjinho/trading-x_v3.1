@@ -11,11 +11,16 @@ let wsConnectionStartTime = 0;  // ★ WS 연결 시작 시간 (가짜 이벤트
 let _wsHasConnectedBefore = false;  // ★ 재연결 감지용 (최초 연결 vs 재연결 구분)
 let _lastSoftRefreshAt = 0;  // ★★★ softRefresh 쿨다운용 타임스탬프 ★★★
 
-// ★ 장 마감 체크 헬퍼
+// ★ 장 마감 체크 헬퍼 (MarketSchedule 우선 — 공휴일 포함)
 function isCurrentMarketClosed() {
     const _si = typeof getSymbolInfo === 'function' ? getSymbolInfo(chartSymbol) : null;
     const _isCrypto = _si && _si.category === 'Crypto Currency';
     if (_isCrypto) return false;
+    // MarketSchedule 모듈 우선 (공휴일, 정확한 브로커 스케줄)
+    if (typeof MarketSchedule !== 'undefined' && MarketSchedule.isMarketOpen) {
+        return !MarketSchedule.isMarketOpen(chartSymbol);
+    }
+    // 폴백: 단순 주말 체크
     const _now = new Date();
     const _day = _now.getUTCDay();
     const _hour = _now.getUTCHours();

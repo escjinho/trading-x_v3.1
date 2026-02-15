@@ -38,17 +38,17 @@ const ChartPanel = {
             return false;
         }
 
-        // ★ 장 마감 시 차트 업데이트 중단 (크립토는 24시간 운영)
+        // ★ 장 마감 시 차트 업데이트 중단 (MarketSchedule 우선 — 공휴일 포함)
         const _si = typeof getSymbolInfo === 'function' ? getSymbolInfo(chartSymbol) : null;
         const _isCrypto = _si && _si.category === 'Crypto Currency';
         if (!_isCrypto) {
-            const _now = new Date();
-            const _day = _now.getUTCDay(); // 0=일, 6=토
-            const _hour = _now.getUTCHours();
-            const _isWeekend = _day === 0 || _day === 6;
-            const _isFridayClose = _day === 5 && _hour >= 22;
-            if (_isWeekend || _isFridayClose) {
-                return false;
+            if (typeof MarketSchedule !== 'undefined' && MarketSchedule.isMarketOpen) {
+                if (!MarketSchedule.isMarketOpen(chartSymbol)) return false;
+            } else {
+                const _now = new Date();
+                const _day = _now.getUTCDay();
+                const _hour = _now.getUTCHours();
+                if (_day === 0 || _day === 6 || (_day === 5 && _hour >= 22)) return false;
             }
         }
 
@@ -370,11 +370,13 @@ const ChartPanel = {
      * 캔들 데이터 로드
      */
     async loadCandles() {
-        // ★ 보간 상태 초기화 (종목/타임프레임 변경 시 늘어남 방지)
+        // ★ 보간 상태 + 캔들 상태 초기화 (종목/타임프레임 변경 시 늘어남+번쩍임 방지)
         this._animTarget = null;
         this._animCurrent = null;
         this._bidTarget = null;
         this._bidCurrent = null;
+        this.lastCandleTime = 0;
+        this.lastCandleData = null;
         if (this._animFrameId) cancelAnimationFrame(this._animFrameId);
         if (this._bidAnimFrameId) cancelAnimationFrame(this._bidAnimFrameId);
         this._animFrameId = null;
@@ -415,11 +417,13 @@ const ChartPanel = {
                 // 보이는 범위 설정 (최근 150개 캔들) + 오른쪽 여백 유지
                 const visibleBars = 150;
                 if (data.candles.length <= 20) {
-                    // ★ 캔들 적음 (BTC 1D/1W 등) — fitContent로 전체 표시
+                    // ★ 캔들 적음 (BTC 1D/1W 등) — 전체 표시
                     chart.timeScale().fitContent();
                 } else if (data.candles.length > visibleBars) {
-                    const from = data.candles[data.candles.length - visibleBars].time;
-                    // setVisibleRange 대신 scrollToRealTime 사용 (rightOffset 유지)
+                    // ★ 캔들 많음 — 최근 캔들 기준 스크롤
+                    chart.timeScale().scrollToRealTime();
+                } else {
+                    // ★ 20~150개 — 최근 캔들 기준 스크롤
                     chart.timeScale().scrollToRealTime();
                 }
 

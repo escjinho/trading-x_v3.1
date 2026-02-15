@@ -9,11 +9,14 @@ let wsRetryCount = 0;
 const maxRetries = 5;
 let balance = 0;
 
-// ★ 장 마감 체크 헬퍼
+// ★ 장 마감 체크 헬퍼 (MarketSchedule 우선 — 공휴일 포함)
 function isCurrentMarketClosed() {
     const _si = typeof getSymbolInfo === 'function' ? getSymbolInfo(chartSymbol) : null;
     const _isCrypto = _si && _si.category === 'Crypto Currency';
     if (_isCrypto) return false;
+    if (typeof MarketSchedule !== 'undefined' && MarketSchedule.isMarketOpen) {
+        return !MarketSchedule.isMarketOpen(chartSymbol);
+    }
     const _now = new Date();
     const _day = _now.getUTCDay();
     const _hour = _now.getUTCHours();
