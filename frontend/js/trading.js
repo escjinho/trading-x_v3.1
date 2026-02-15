@@ -616,9 +616,11 @@ async function placeBuy() {
             showToast(`증거금이 부족합니다\n가용마진: $${result.free_margin?.toFixed(0) || 0}, 필요마진: $${result.required_margin?.toFixed(0) || 0}`, 'warning', 5000);
             return;
         }
+        console.log('[placeBuy] result:', JSON.stringify(result));
         showToast(result?.success ? '주문 성공!' : friendlyError(result?.message), result?.success ? 'buy' : 'error');
         if (result?.success) {
             playSound('buy');
+            window._lastOrderTime = Date.now();  // ★ 마틴 팝업 유효성 체크용
             // ★★★ 포지션 확인 → 쿨다운 즉시 해제 ★★★
             window._orderCooldown = false;
             document.querySelectorAll('.trade-btn.buy-btn, .trade-btn.sell-btn').forEach(b => { b.style.opacity = '1'; b.style.pointerEvents = 'auto'; });
@@ -727,9 +729,11 @@ async function placeSell() {
             showToast(`증거금이 부족합니다\n가용마진: $${result.free_margin?.toFixed(0) || 0}, 필요마진: $${result.required_margin?.toFixed(0) || 0}`, 'warning', 5000);
             return;
         }
+        console.log('[placeSell] result:', JSON.stringify(result));
         showToast(result?.success ? '주문 성공!' : friendlyError(result?.message), result?.success ? 'sell' : 'error');
         if (result?.success) {
             playSound('sell');
+            window._lastOrderTime = Date.now();  // ★ 마틴 팝업 유효성 체크용
             // ★★★ 포지션 확인 → 쿨다운 즉시 해제 ★★★
             window._orderCooldown = false;
             document.querySelectorAll('.trade-btn.buy-btn, .trade-btn.sell-btn').forEach(b => { b.style.opacity = '1'; b.style.pointerEvents = 'auto'; });

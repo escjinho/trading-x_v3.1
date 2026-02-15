@@ -574,9 +574,18 @@ function connectWebSocket() {
                             updateMartinUI();
                             showMaxPopup(totalLoss);
                         } else if (data.martin_step_up) {
-                            showMartinPopup(profit);
+                            // ★★★ 유저 청산 or 최근 주문만 팝업 ★★★
+                            if (window._userClosing || (Date.now() - (window._lastOrderTime || 0) < 60000)) {
+                                showMartinPopup(profit);
+                            } else {
+                                console.log('[WS Demo] 마틴 팝업 무시 — 유저 청산 아님');
+                            }
                         } else {
-                            showMartinPopup(profit);
+                            if (window._userClosing || (Date.now() - (window._lastOrderTime || 0) < 60000)) {
+                                showMartinPopup(profit);
+                            } else {
+                                console.log('[WS Demo] 마틴 팝업 무시 — 유저 청산 아님');
+                            }
                         }
                     } else {
                         // ★★★ Basic/NoLimit 모드 — 2단계 알림 ★★★
@@ -950,8 +959,13 @@ function connectWebSocket() {
                                 showToast(`일부 회복! +$${actualProfit.toFixed(2)}`, 'success');
                             }
                         } else if (actualProfit < 0) {
-                            showMartinPopup(actualProfit);
-                            // _martinStateUpdating은 팝업 닫힐 때 해제
+                            // ★★★ 유저 청산 or 최근 주문만 팝업 ★★★
+                            if (window._userClosing || (Date.now() - (window._lastOrderTime || 0) < 60000)) {
+                                showMartinPopup(actualProfit);
+                            } else {
+                                console.log('[WS Live SL/TP] 마틴 팝업 무시 — 유저 청산 아님');
+                                window._martinStateUpdating = false;
+                            }
                         } else {
                             updateTodayPL(0);
                             window._martinStateUpdating = false;
@@ -1056,7 +1070,13 @@ function connectWebSocket() {
                                     showToast(`일부 회복! +$${actualProfit.toFixed(2)}`, 'success');
                                 }
                             } else if (actualProfit < 0) {
-                                showMartinPopup(actualProfit);
+                                // ★★★ 유저 청산 or 최근 주문만 팝업 ★★★
+                                if (window._userClosing || (Date.now() - (window._lastOrderTime || 0) < 60000)) {
+                                    showMartinPopup(actualProfit);
+                                } else {
+                                    console.log('[WS Live auto_closed] 마틴 팝업 무시 — 유저 청산 아님');
+                                    window._martinStateUpdating = false;
+                                }
                             } else {
                                 updateTodayPL(0);
                                 window._martinStateUpdating = false;
@@ -1567,9 +1587,18 @@ async function fetchDemoData() {
                             updateMartinUI();
                             showMaxPopup(totalLoss);
                         } else if (data.martin_step_up) {
-                            showMartinPopup(profit);
+                            // ★★★ 유저 청산 or 최근 주문만 팝업 ★★★
+                            if (window._userClosing || (Date.now() - (window._lastOrderTime || 0) < 60000)) {
+                                showMartinPopup(profit);
+                            } else {
+                                console.log('[WS Demo sync] 마틴 팝업 무시 — 유저 청산 아님');
+                            }
                         } else {
-                            showMartinPopup(profit);
+                            if (window._userClosing || (Date.now() - (window._lastOrderTime || 0) < 60000)) {
+                                showMartinPopup(profit);
+                            } else {
+                                console.log('[WS Demo sync] 마틴 팝업 무시 — 유저 청산 아님');
+                            }
                         }
                     } else {
                         // ★★★ Basic/NoLimit 모드 — 2단계 알림 ★★★
