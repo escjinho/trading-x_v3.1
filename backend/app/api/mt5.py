@@ -762,16 +762,17 @@ async def get_candles(
         lows = [c['low'] for c in candles]
 
     if not candles:
-        # MT5도 없고 브릿지 캐시도 없으면 → Binance API fallback
-        try:
-            candles = await fetch_binance_candles(symbol, timeframe, count)
-            if candles:
-                closes = [c['close'] for c in candles]
-                highs = [c['high'] for c in candles]
-                lows = [c['low'] for c in candles]
-                print(f"[Candles] {symbol}/{timeframe} - Binance API에서 {len(candles)}개 로드")
-        except Exception as e:
-            print(f"[Candles] Binance API fallback error: {e}")
+        # Binance fallback 비활성화 — MetaAPI/브릿지 데이터만 사용
+        # try:
+        #     candles = await fetch_binance_candles(symbol, timeframe, count)
+        #     if candles:
+        #         closes = [c['close'] for c in candles]
+        #         highs = [c['high'] for c in candles]
+        #         lows = [c['low'] for c in candles]
+        #         print(f"[Candles] {symbol}/{timeframe} - Binance API에서 {len(candles)}개 로드")
+        # except Exception as e:
+        #     print(f"[Candles] Binance API fallback error: {e}")
+        pass
 
     if not candles:
         return {"candles": [], "indicators": {}, "source": "no_data", "timeframe": timeframe}

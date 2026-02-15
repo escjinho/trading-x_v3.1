@@ -37,6 +37,21 @@ const ChartPanel = {
         if (!candleData || !chart || !candleSeries || !candleData.close) {
             return false;
         }
+
+        // ★ 장 마감 시 차트 업데이트 중단 (크립토는 24시간 운영)
+        const _si = typeof getSymbolInfo === 'function' ? getSymbolInfo(chartSymbol) : null;
+        const _isCrypto = _si && _si.category === 'Crypto Currency';
+        if (!_isCrypto) {
+            const _now = new Date();
+            const _day = _now.getUTCDay(); // 0=일, 6=토
+            const _hour = _now.getUTCHours();
+            const _isWeekend = _day === 0 || _day === 6;
+            const _isFridayClose = _day === 5 && _hour >= 22;
+            if (_isWeekend || _isFridayClose) {
+                return false;
+            }
+        }
+
         // time이 없으면 lastCandleTime 사용 (WS에서 {close: bid}만 전달하는 경우)
         if (!candleData.time && this.lastCandleTime > 0) {
             candleData.time = this.lastCandleTime;

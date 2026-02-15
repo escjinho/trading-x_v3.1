@@ -68,7 +68,16 @@ function connectWebSocket() {
 
                 if (!window.lastIndicatorUpdate || Date.now() - window.lastIndicatorUpdate > 30000) {
                     window.lastIndicatorUpdate = Date.now();
-                    loadCandles();
+                    // ★ 장 마감 시 캔들 리로드 중단
+                    const _si2 = typeof getSymbolInfo === 'function' ? getSymbolInfo(chartSymbol) : null;
+                    const _isCrypto2 = _si2 && _si2.category === 'Crypto Currency';
+                    const _now2 = new Date();
+                    const _day2 = _now2.getUTCDay();
+                    const _hour2 = _now2.getUTCHours();
+                    const _marketClosed2 = !_isCrypto2 && (_day2 === 0 || _day2 === 6 || (_day2 === 5 && _hour2 >= 22));
+                    if (!_marketClosed2) {
+                        loadCandles();
+                    }
                 }
             }
 
@@ -149,10 +158,19 @@ function connectWebSocket() {
 
             if (!window.lastIndicatorUpdate || Date.now() - window.lastIndicatorUpdate > 30000) {
                 window.lastIndicatorUpdate = Date.now();
-                loadCandles();
+                // ★ 장 마감 시 캔들 리로드 중단
+                const _si3 = typeof getSymbolInfo === 'function' ? getSymbolInfo(chartSymbol) : null;
+                const _isCrypto3 = _si3 && _si3.category === 'Crypto Currency';
+                const _now3 = new Date();
+                const _day3 = _now3.getUTCDay();
+                const _hour3 = _now3.getUTCHours();
+                const _marketClosed3 = !_isCrypto3 && (_day3 === 0 || _day3 === 6 || (_day3 === 5 && _hour3 >= 22));
+                if (!_marketClosed3) {
+                    loadCandles();
+                }
             }
         }
-        
+
         // Trade tab
         document.getElementById('tradeBalance').textContent = '$' + Math.round(data.balance).toLocaleString();
 
