@@ -3,20 +3,8 @@ function showToast(message, type, duration) {
     const toast = document.getElementById('toast');
     if (!toast) return;
 
-    // 타입별 아이콘 (SVG 아이콘)
-    const icons = {
-        success: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13.5 4.5L6.5 11.5L2.5 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-        error: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M12 4L4 12M4 4l8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
-        warning: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 5v4M8 11h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M3.5 14h9L8 2 3.5 14z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/></svg>',
-        info: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 7v4M8 5h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
-        buy: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 12V4M8 4l3.5 3.5M8 4L4.5 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-        sell: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 4v8M8 12l3.5-3.5M8 12L4.5 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-        demo: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/><path d="M6 8l1.5 1.5L10 6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
-    };
-
     // 타입 정규화
     const t = type === '' || !type ? 'info' : type;
-    const icon = icons[t] || icons.info;
     const dur = duration || (t === 'error' ? 4000 : 3000);
 
     // 멀티라인 지원: \n → 두 줄 (title + message)
@@ -29,7 +17,7 @@ function showToast(message, type, duration) {
     }
 
     toast.className = 'toast ' + t;
-    toast.innerHTML = `<div class="toast-icon">${icon}</div>${contentHtml}`;
+    toast.innerHTML = contentHtml;
 
     // 애니메이션: 약간의 딜레이 후 show 추가
     requestAnimationFrame(() => {

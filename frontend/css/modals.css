@@ -1,6 +1,6 @@
 /* Modal Styles */
 
-        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #1e2127; padding: 12px 20px; border-radius: 8px; border: 1px solid var(--border-color); display: none; z-index: 1000; max-width: 90%; }
+        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #1e2127; padding: 12px 24px; border-radius: 8px; border: 1px solid var(--border-color); display: none; z-index: 1000; min-width: 320px; max-width: 80vw; white-space: nowrap; text-align: center; }
         .toast.success { border-color: var(--buy-color); }
         .toast.error { border-color: var(--sell-color); }
         .toast.show { display: block; }
