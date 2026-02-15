@@ -2598,7 +2598,8 @@ body.chart-mode #chart-wrapper.panels-3 #chart-container {
 
 body.chart-mode .chart-symbol-row {
     margin: 0 !important;
-    padding: 0 12px !important;
+    margin-top: 3px !important;
+    padding: 2px 12px !important;
 }
 /* ★ 차트 영역 배경 검정 통일 */
 #page-chart, .chart-glow-box, #chart-wrapper, .chart-detail-container {
