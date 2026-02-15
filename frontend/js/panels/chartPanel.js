@@ -484,6 +484,10 @@ const ChartPanel = {
                 ? MarketSchedule.isMarketOpen(chartSymbol)
                 : true;
             overlayMarketStatus.classList.toggle('closed', !isMarketOpen);
+            const statusText = document.getElementById('overlayMarketStatusText');
+            if (statusText) {
+                statusText.style.display = isMarketOpen ? 'none' : 'inline';
+            }
         }
 
         // 1줄: 현재가 (천 단위 콤마)
