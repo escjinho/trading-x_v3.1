@@ -282,7 +282,7 @@ const IndicatorManager = {
 
         const container = document.getElementById('chart-container');
         if (container) {
-            container.style.removeProperty('height');
+            container.style.height = targetHeight + 'px';
         }
         const wrapper = document.getElementById('chart-wrapper');
         if (wrapper) {
@@ -1036,8 +1036,8 @@ const IndicatorManager = {
         if (this.mainChart) {
             const container = document.getElementById('chart-container');
             if (container) {
-                // container height는 CSS flex:1이 자동 결정 — inline style 설정하지 않음
-                container.style.removeProperty('height');
+                // ★ container 높이를 차트 높이와 동일하게 명시 (공백 방지)
+                container.style.height = mainChartHeight + 'px';
                 this.mainChart.applyOptions({
                     height: mainChartHeight,
                     timeScale: {
