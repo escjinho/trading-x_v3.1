@@ -56,9 +56,10 @@ let _martinPendingAccLoss = 0;     // 새 누적손실 (기존 + 이번)
 let _martinPendingProfit = 0;      // 이번 청산 손익 (원본, 음수 가능)
 
 async function showMartinPopup(profit, excludeId = '') {
-    // ★★★ 유저 청산이 아니면 팝업 차단 ★★★
-    if (!window._userClosing && (Date.now() - (window._lastOrderTime || 0) > 60000)) {
-        console.log('[MartinPopup] ⛔ 차단 — 유저 청산 아님, 최근 주문 없음');
+    // ★★★ 마틴 모드가 아니면 팝업 불필요 (SL/TP 청산도 허용) ★★★
+    const isMartinActive = (currentMode === 'martin' && martinEnabled);
+    if (!isMartinActive && !window._userClosing) {
+        console.log('[MartinPopup] ⛔ 차단 — 마틴 모드 비활성');
         window._martinStateUpdating = false;
         return;
     }
@@ -656,7 +657,10 @@ async function placeBuy() {
                 if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
             }, 2000);
         }
-    } catch (e) { showToast('Network error', 'error'); }
+    } catch (e) {
+        showToast('Network error', 'error');
+        restoreButtons();  // ★ 네트워크 에러시에도 버튼 복원
+    }
 }
 
 async function placeSell() {
@@ -788,7 +792,10 @@ async function placeSell() {
                 if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
             }, 2000);
         }
-    } catch (e) { showToast('Network error', 'error'); }
+    } catch (e) {
+        showToast('Network error', 'error');
+        restoreButtons();  // ★ 네트워크 에러시에도 버튼 복원
+    }
 }
 
 async function closePosition() {
