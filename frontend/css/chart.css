@@ -1267,6 +1267,7 @@
 
 /* 차트 래퍼 (메인 차트 + 패널 지표 포함) */
 #chart-wrapper {
+    position: relative;
     display: flex;
     flex-direction: column;
     width: 100%;
