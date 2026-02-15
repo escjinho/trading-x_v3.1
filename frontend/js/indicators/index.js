@@ -175,8 +175,11 @@ const IndicatorManager = {
         // 레이아웃 업데이트 (DOM 렌더링 후 실행되도록 지연)
         requestAnimationFrame(() => {
             this.updateLayout();
-            // DOM 완전 반영 후 한번 더 리사이즈
-            setTimeout(() => this.updateLayout(), 150);
+            // DOM 완전 반영 후 한번 더 리사이즈 + resize 이벤트
+            setTimeout(() => {
+                this.updateLayout();
+                window.dispatchEvent(new Event('resize'));
+            }, 150);
         });
 
         // 패널 카운트 업데이트
@@ -229,6 +232,12 @@ const IndicatorManager = {
         } else if (config.type === 'panel') {
             this.addPanelIndicator(normalizedId, config);
         }
+
+        // ★ 레이아웃 강제 갱신 (DOM 반영 후)
+        setTimeout(() => {
+            this.updateLayout();
+            window.dispatchEvent(new Event('resize'));
+        }, 200);
     },
 
     /**
@@ -251,6 +260,12 @@ const IndicatorManager = {
         }
 
         delete this.activeIndicators[normalizedId];
+
+        // ★ 레이아웃 강제 갱신 (DOM 반영 후)
+        setTimeout(() => {
+            this.updateLayout();
+            window.dispatchEvent(new Event('resize'));
+        }, 200);
     },
 
     /**
