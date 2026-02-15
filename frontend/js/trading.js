@@ -606,23 +606,33 @@ async function placeBuy() {
             return;
         }
 
+        // ★★★ 에러 시 버튼 즉시 복원 ★★★
+        const restoreButtons = () => {
+            window._orderCooldown = false;
+            document.querySelectorAll('.trade-btn.buy-btn, .trade-btn.sell-btn').forEach(b => { b.style.opacity = '1'; b.style.pointerEvents = 'auto'; });
+        };
+
         // ★★★ 스프레드 거부 처리 ★★★
         if (result?.spread_rejected) {
             showToast('스프레드가 너무 넓습니다\n잠시 후 다시 시도해주세요', 'error', 5000);
+            restoreButtons();
             return;
         }
         if (result?.tp_sl_failed) {
             showToast('TP/SL 설정 실패\n안전을 위해 주문이 취소되었습니다', 'error', 5000);
+            restoreButtons();
             return;
         }
         // ★★★ MetaAPI 연결 끊김 처리 ★★★
         if (result?.metaapi_disconnected) {
             showToast('MetaAPI 연결이 불안정합니다\n잠시 후 다시 시도해주세요', 'warning', 5000);
+            restoreButtons();
             return;
         }
         // ★★★ 증거금 부족 처리 ★★★
         if (result?.margin_insufficient) {
             showToast(`증거금이 부족합니다\n가용마진: $${result.free_margin?.toFixed(0) || 0}, 필요마진: $${result.required_margin?.toFixed(0) || 0}`, 'warning', 5000);
+            restoreButtons();
             return;
         }
         console.log('[placeBuy] result:', JSON.stringify(result));
@@ -728,23 +738,33 @@ async function placeSell() {
             return;
         }
 
+        // ★★★ 에러 시 버튼 즉시 복원 ★★★
+        const restoreButtons = () => {
+            window._orderCooldown = false;
+            document.querySelectorAll('.trade-btn.buy-btn, .trade-btn.sell-btn').forEach(b => { b.style.opacity = '1'; b.style.pointerEvents = 'auto'; });
+        };
+
         // ★★★ 스프레드 거부 처리 ★★★
         if (result?.spread_rejected) {
             showToast('스프레드가 너무 넓습니다\n잠시 후 다시 시도해주세요', 'error', 5000);
+            restoreButtons();
             return;
         }
         if (result?.tp_sl_failed) {
             showToast('TP/SL 설정 실패\n안전을 위해 주문이 취소되었습니다', 'error', 5000);
+            restoreButtons();
             return;
         }
         // ★★★ MetaAPI 연결 끊김 처리 ★★★
         if (result?.metaapi_disconnected) {
             showToast('MetaAPI 연결이 불안정합니다\n잠시 후 다시 시도해주세요', 'warning', 5000);
+            restoreButtons();
             return;
         }
         // ★★★ 증거금 부족 처리 ★★★
         if (result?.margin_insufficient) {
             showToast(`증거금이 부족합니다\n가용마진: $${result.free_margin?.toFixed(0) || 0}, 필요마진: $${result.required_margin?.toFixed(0) || 0}`, 'warning', 5000);
+            restoreButtons();
             return;
         }
         console.log('[placeSell] result:', JSON.stringify(result));
