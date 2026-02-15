@@ -172,8 +172,12 @@ const IndicatorManager = {
         // 설정 저장
         IndicatorConfig.save();
 
-        // 레이아웃 업데이트
-        this.updateLayout();
+        // 레이아웃 업데이트 (DOM 렌더링 후 실행되도록 지연)
+        requestAnimationFrame(() => {
+            this.updateLayout();
+            // DOM 완전 반영 후 한번 더 리사이즈
+            setTimeout(() => this.updateLayout(), 150);
+        });
 
         // 패널 카운트 업데이트
         if (typeof updatePanelCount === 'function') {
