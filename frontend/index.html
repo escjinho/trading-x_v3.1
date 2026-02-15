@@ -59,7 +59,7 @@
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css?v=20260216v29">
+    <link rel="stylesheet" href="css/styles.css?v=20260216v31">
     <link rel="stylesheet" href="css/chart.css?v=20260216v28">
 </head>
 <body>
@@ -1913,7 +1913,7 @@
     <!-- Chart Type System -->
     <script src="js/chartTypes/index.js?v=20260213b"></script>
 
-    <script src="js/panels/chartPanel.js?v=20260216v27"></script>
+    <script src="js/panels/chartPanel.js?v=20260216v31"></script>
     <script src="js/panels/symbolSelectorPanel.js?v=20260213a"></script>
     <script src="js/panels/randomWalkPanel.js?v=20260213a"></script>
     <script src="js/panels/multiOrderPanelV5.js?v=20260213a"></script>
@@ -2145,6 +2145,15 @@
             cb.classList.remove('checked');
         });
 
+        // 기본 지표만 활성화: BB, LWMA
+        ['bb', 'lwma'].forEach(indId => {
+            const item = document.querySelector(`.ind-item[data-ind="${indId}"]`);
+            if (item) {
+                const checkbox = item.querySelector('.ind-checkbox');
+                if (checkbox) checkbox.classList.add('checked');
+            }
+        });
+
         // IndicatorConfig 설정 초기화
         if (typeof IndicatorConfig !== 'undefined') {
             Object.values(IndicatorConfig.overlay).forEach(ind => ind.enabled = false);
@@ -2154,6 +2163,11 @@
         // 모든 지표 제거
         if (typeof IndicatorManager !== 'undefined') {
             IndicatorManager.removeAll();
+        }
+
+        // 오버레이 지표 기본 설정 적용
+        if (typeof ChartPanel !== 'undefined' && ChartPanel.setIndicators) {
+            ChartPanel.setIndicators({ bb: true, lwma: true, ema: false, sma: false });
         }
 
         // 차트 다시 로드
@@ -2167,7 +2181,7 @@
         }
 
         closeIndPopup();
-        showToast('초기화 완료', 'info');
+        showToast('기본 지표로 초기화 완료', 'info');
     }
     
     function applyIndicators() {

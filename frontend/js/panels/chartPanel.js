@@ -602,17 +602,31 @@ const ChartPanel = {
  */
 setIndicators(settings) {
     console.log('[ChartPanel] Indicator settings:', settings);
-    
-    // 볼린저 밴드 표시/숨김
+
+    // 볼린저 밴드 표시/숨김 + 데이터 제거
     if (bbUpperSeries) {
-        bbUpperSeries.applyOptions({ visible: settings.bb });
-        bbMiddleSeries.applyOptions({ visible: settings.bb });
-        bbLowerSeries.applyOptions({ visible: settings.bb });
+        if (settings.bb) {
+            bbUpperSeries.applyOptions({ visible: true });
+            bbMiddleSeries.applyOptions({ visible: true });
+            bbLowerSeries.applyOptions({ visible: true });
+        } else {
+            bbUpperSeries.setData([]);
+            bbMiddleSeries.setData([]);
+            bbLowerSeries.setData([]);
+            bbUpperSeries.applyOptions({ visible: false });
+            bbMiddleSeries.applyOptions({ visible: false });
+            bbLowerSeries.applyOptions({ visible: false });
+        }
     }
-    
-    // LWMA 표시/숨김
+
+    // LWMA 표시/숨김 + 데이터 제거
     if (lwmaSeries) {
-        lwmaSeries.applyOptions({ visible: settings.lwma });
+        if (settings.lwma) {
+            lwmaSeries.applyOptions({ visible: true });
+        } else {
+            lwmaSeries.setData([]);
+            lwmaSeries.applyOptions({ visible: false });
+        }
     }
     
     // EMA (새로 추가 필요 시)
