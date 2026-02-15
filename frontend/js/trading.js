@@ -599,7 +599,7 @@ async function placeBuy() {
 
         // ★★★ 스프레드 거부 처리 ★★★
         if (result?.spread_rejected) {
-            showToast('스프레드가 너무 넓습니다\n잠시 후 다시 시도해주세요', 'warning', 5000);
+            showToast('스프레드가 너무 넓습니다\n잠시 후 다시 시도해주세요', 'error', 5000);
             return;
         }
         if (result?.tp_sl_failed) {
@@ -710,7 +710,7 @@ async function placeSell() {
 
         // ★★★ 스프레드 거부 처리 ★★★
         if (result?.spread_rejected) {
-            showToast('스프레드가 너무 넓습니다\n잠시 후 다시 시도해주세요', 'warning', 5000);
+            showToast('스프레드가 너무 넓습니다\n잠시 후 다시 시도해주세요', 'error', 5000);
             return;
         }
         if (result?.tp_sl_failed) {
