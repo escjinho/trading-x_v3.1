@@ -56,15 +56,7 @@ const QuickEasyPanel = {
         if (sellBtn) sellBtn.addEventListener('click', () => this.placeSell());
         if (buyBtn) buyBtn.addEventListener('click', () => this.placeBuy());
 
-        const targetMinus = document.getElementById('qeTargetMinus');
-        const targetPlus = document.getElementById('qeTargetPlus');
-        if (targetMinus) targetMinus.addEventListener('click', () => this.adjustTarget(-1));
-        if (targetPlus) targetPlus.addEventListener('click', () => this.adjustTarget(1));
-
-        const lotMinus = document.getElementById('qeLotMinus');
-        const lotPlus = document.getElementById('qeLotPlus');
-        if (lotMinus) lotMinus.addEventListener('click', () => this.adjustLot(-1));
-        if (lotPlus) lotPlus.addEventListener('click', () => this.adjustLot(1));
+        // -/+ 버튼은 setupLongPress에서 탭+롱프레스 모두 처리
 
         this.setupLongPress('qeTargetMinus', () => this.adjustTarget(-1));
         this.setupLongPress('qeTargetPlus', () => this.adjustTarget(1));
@@ -83,10 +75,15 @@ const QuickEasyPanel = {
     setupLongPress(elementId, callback) {
         const el = document.getElementById(elementId);
         if (!el) return;
-        let interval = null, timeout = null;
+        let interval = null, timeout = null, didLongPress = false;
         const start = (e) => {
             e.preventDefault();
-            timeout = setTimeout(() => { interval = setInterval(callback, 100); }, 400);
+            didLongPress = false;
+            callback(); // 즉시 1회 실행 (탭)
+            timeout = setTimeout(() => {
+                didLongPress = true;
+                interval = setInterval(callback, 100);
+            }, 400);
         };
         const stop = () => {
             if (timeout) { clearTimeout(timeout); timeout = null; }
