@@ -2,12 +2,20 @@
 
 #quickPanel {
     position: relative;
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 58px);
+    overflow: hidden;
 }
 
 .qe-content {
-    padding: 16px;
-    padding-top: 8px;
-    padding-bottom: 160px;
+    padding: 0;
+    padding-bottom: 0;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
 }
 
 /* ========== 어카운트 섹션 (상단 고정, 3칸) ========== */
@@ -318,4 +326,101 @@
     font-weight: 600;
     color: rgba(255, 255, 255, 0.6);
     flex-shrink: 0;
+}
+
+
+/* ========== 호가 영역 ========== */
+.qe-quote-bar {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 8px 10px 2px 10px;
+}
+
+.qe-quote-left {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+
+.qe-quote-price {
+    font-size: 22px;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: 0.5px;
+    font-variant-numeric: tabular-nums;
+}
+
+.qe-quote-change {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.qe-change-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: #00d4a4;
+}
+
+.qe-change-pct {
+    font-size: 13px;
+    font-weight: 600;
+    color: #00d4a4;
+}
+
+.qe-change-value.negative,
+.qe-change-pct.negative {
+    color: #ff4d5a;
+}
+
+/* 종목 정보 바 */
+.qe-quote-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 10px 6px 10px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.qe-info-symbol {
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.qe-info-dot {
+    color: rgba(255, 255, 255, 0.2);
+}
+
+.qe-info-category {
+    font-weight: 500;
+}
+
+.qe-info-status {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #00d4a4;
+    margin-left: 2px;
+    box-shadow: 0 0 4px rgba(0, 212, 164, 0.5);
+}
+
+/* ========== 틱차트 영역 ========== */
+.qe-chart-wrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    margin: 0;
+    min-height: 0;
+}
+
+.qe-chart-container {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
 }
