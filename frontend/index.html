@@ -60,7 +60,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css?v=1771264446">
-        <link rel="stylesheet" href="css/quickeasy.css?v=1771264446">
+        <link rel="stylesheet" href="css/quickeasy.css?v=1771265441">
     <link rel="stylesheet" href="css/chart.css?v=1771264446">
 </head>
 <body>
@@ -1065,9 +1065,31 @@
                 <!-- Quick & Easy 패널 -->
                 <div id="quickPanel" style="display: none;">
                     <div class="qe-content">
-                        <!-- Quick & Easy 컨텐츠 영역 (추후 개발) -->
+                        <!-- 주문 섹션 -->
+                        <div class="qe-order-section">
+                            <!-- Target 카드 -->
+                            <div class="qe-order-card">
+                                <div class="qe-order-label">Target</div>
+                                <div class="qe-order-control">
+                                    <button class="qe-ctrl-btn minus" id="qeTargetMinus">−</button>
+                                    <div class="qe-order-value" id="qeTargetValue">$100</div>
+                                    <button class="qe-ctrl-btn plus" id="qeTargetPlus">+</button>
+                                </div>
+                                <div class="qe-order-step">$5 단위</div>
+                            </div>
+                            <!-- Lot Size 카드 -->
+                            <div class="qe-order-card">
+                                <div class="qe-order-label">Lot Size</div>
+                                <div class="qe-order-control">
+                                    <button class="qe-ctrl-btn minus" id="qeLotMinus">−</button>
+                                    <div class="qe-order-value" id="qeLotValue">0.50</div>
+                                    <button class="qe-ctrl-btn plus" id="qeLotPlus">+</button>
+                                </div>
+                                <div class="qe-order-step">0.10 단위</div>
+                            </div>
+                        </div>
                     </div>
-                    
+
                     <!-- ★ 하단 고정 SELL/BUY 버튼 -->
                     <div class="qe-bottom-bar" id="qeBottomBar">
                         <div class="qe-trade-buttons">
