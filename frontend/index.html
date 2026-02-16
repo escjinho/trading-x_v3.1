@@ -59,9 +59,9 @@
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css?v=1771268936">
-        <link rel="stylesheet" href="css/quickeasy.css?v=1771268936">
-    <link rel="stylesheet" href="css/chart.css?v=1771268936">
+    <link rel="stylesheet" href="css/styles.css?v=1771269668">
+        <link rel="stylesheet" href="css/quickeasy.css?v=1771269668">
+    <link rel="stylesheet" href="css/chart.css?v=1771269668">
 </head>
 <body>
     <div class="app">
@@ -1099,24 +1099,24 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- SELL / BUY 버튼 (Option A: 글래스모피즘) -->
+                        <!-- SELL / BUY 버튼 (Option A: 글래스모피즘 + 1줄) -->
                         <div class="qe-trade-buttons">
                             <button class="qe-sell-btn" id="qeSellBtn">
-                                <svg class="qe-btn-arrow" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M12 5v14M5 12l7 7 7-7"/>
+                                <svg class="qe-btn-arrow" viewBox="0 0 24 28" width="26" height="26">
+                                    <path d="M7 4l-4 4h3v8h2V8h3L7 4z" fill="white" opacity="0.25"/>
+                                    <path d="M17 16v-8h3l-4-4-4 4h3v8h2z" fill="white" opacity="0.25"/>
+                                    <path d="M17 12v8h-3l4 4 4-4h-3v-8h-2z" fill="white" opacity="0.9"/>
                                 </svg>
-                                <div class="qe-btn-info">
-                                    <div class="qe-btn-title">SELL</div>
-                                    <div class="qe-btn-payout" id="qeSellPayout">95%</div>
-                                </div>
+                                <span class="qe-btn-title">SELL</span>
+                                <span class="qe-btn-payout" id="qeSellPayout">--%</span>
                             </button>
                             <button class="qe-buy-btn" id="qeBuyBtn">
-                                <div class="qe-btn-info">
-                                    <div class="qe-btn-title">BUY</div>
-                                    <div class="qe-btn-payout" id="qeBuyPayout">95%</div>
-                                </div>
-                                <svg class="qe-btn-arrow" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M12 19V5M5 12l7-7 7 7"/>
+                                <span class="qe-btn-payout" id="qeBuyPayout">--%</span>
+                                <span class="qe-btn-title">BUY</span>
+                                <svg class="qe-btn-arrow" viewBox="0 0 24 28" width="26" height="26">
+                                    <path d="M17 24l4-4h-3V12h-2v8h-3l4 4z" fill="white" opacity="0.25"/>
+                                    <path d="M7 16v8h3l-4 4-4-4h3v-8h2z" fill="white" opacity="0.25"/>
+                                    <path d="M7 12V4h3L6 0 2 4h3v8h2z" fill="white" opacity="0.9"/>
                                 </svg>
                             </button>
                         </div>
@@ -1955,34 +1955,34 @@
     </div>
 </div>
 
-    <script src="js/config.js?v=1771268936"></script>
-    <script src="js/state.js?v=1771268936"></script>
-    <script src="js/auth.js?v=1771268936"></script>
-    <script src="js/api.js?v=1771268936"></script>
-    <script src="js/utils.js?v=1771268936"></script>
-    <script src="js/watchlist.js?v=1771268936"></script>
-    <script src="js/navigation.js?v=1771268936"></script>
+    <script src="js/config.js?v=1771269668"></script>
+    <script src="js/state.js?v=1771269668"></script>
+    <script src="js/auth.js?v=1771269668"></script>
+    <script src="js/api.js?v=1771269668"></script>
+    <script src="js/utils.js?v=1771269668"></script>
+    <script src="js/watchlist.js?v=1771269668"></script>
+    <script src="js/navigation.js?v=1771269668"></script>
 
     <!-- Chart Panels (모듈화) -->
-    <script src="js/panels/gaugePanel.js?v=1771268936"></script>
-    <script src="js/panels/chartGaugePanel.js?v=1771268936"></script>
+    <script src="js/panels/gaugePanel.js?v=1771269668"></script>
+    <script src="js/panels/chartGaugePanel.js?v=1771269668"></script>
 
     <!-- Indicator System -->
-    <script src="js/indicators/config.js?v=1771268936"></script>
-    <script src="js/indicators/calculator.js?v=1771268936"></script>
-    <script src="js/indicators/index.js?v=1771268936"></script>
+    <script src="js/indicators/config.js?v=1771269668"></script>
+    <script src="js/indicators/calculator.js?v=1771269668"></script>
+    <script src="js/indicators/index.js?v=1771269668"></script>
 
     <!-- Chart Type System -->
-    <script src="js/chartTypes/index.js?v=1771268936"></script>
+    <script src="js/chartTypes/index.js?v=1771269668"></script>
 
-    <script src="js/panels/chartPanel.js?v=1771268936"></script>
-    <script src="js/panels/symbolSelectorPanel.js?v=1771268936"></script>
-    <script src="js/panels/randomWalkPanel.js?v=1771268936"></script>
-    <script src="js/panels/multiOrderPanelV5.js?v=1771268936"></script>
-        <script src="js/panels/quickEasyPanel.js?v=1771268936"></script>
+    <script src="js/panels/chartPanel.js?v=1771269668"></script>
+    <script src="js/panels/symbolSelectorPanel.js?v=1771269668"></script>
+    <script src="js/panels/randomWalkPanel.js?v=1771269668"></script>
+    <script src="js/panels/multiOrderPanelV5.js?v=1771269668"></script>
+        <script src="js/panels/quickEasyPanel.js?v=1771269668"></script>
 
-    <script src="js/chart.js?v=1771268936"></script>
-    <script src="js/settings.js?v=1771268936"></script>
+    <script src="js/chart.js?v=1771269668"></script>
+    <script src="js/settings.js?v=1771269668"></script>
     <script>
         // ========== 타임프레임 드롭다운 함수 ==========
         function toggleTimeframeDropdown() {
@@ -3400,10 +3400,10 @@
         </div>
     </div>
 
-    <script src="js/market-schedule.js?v=1771268936"></script>
-    <script src="js/account.js?v=1771268936"></script>
-    <script src="js/trading.js?v=1771268936"></script>
-    <script src="js/connection.js?v=1771268936"></script>
-    <script src="js/init.js?v=1771268936"></script>
+    <script src="js/market-schedule.js?v=1771269668"></script>
+    <script src="js/account.js?v=1771269668"></script>
+    <script src="js/trading.js?v=1771269668"></script>
+    <script src="js/connection.js?v=1771269668"></script>
+    <script src="js/init.js?v=1771269668"></script>
 </body>
 </html>

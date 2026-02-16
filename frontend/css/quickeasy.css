@@ -6,7 +6,7 @@
 
 .qe-content {
     padding: 16px;
-    padding-bottom: 190px;
+    padding-bottom: 170px;
 }
 
 /* 하단 고정 바 */
@@ -105,7 +105,7 @@
     letter-spacing: 0.3px;
 }
 
-/* ========== SELL / BUY 버튼 (Option A: 글래스모피즘) ========== */
+/* ========== SELL / BUY 버튼 (1줄 + 글래스모피즘) ========== */
 .qe-trade-buttons {
     display: flex;
     gap: 10px;
@@ -117,9 +117,9 @@
     flex: 1;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    height: 64px;
-    padding: 0 16px;
+    gap: 8px;
+    height: 46px;
+    padding: 0 14px;
     border: none;
     border-radius: 12px;
     cursor: pointer;
@@ -129,7 +129,6 @@
     overflow: hidden;
 }
 
-/* 글래스 오버레이 */
 .qe-sell-btn::before,
 .qe-buy-btn::before {
     content: '';
@@ -142,49 +141,42 @@
 .qe-sell-btn {
     background: linear-gradient(135deg, rgba(220,53,69,0.85) 0%, rgba(200,35,51,0.95) 100%);
     box-shadow: 0 4px 20px rgba(220,53,69,0.3), inset 0 1px 0 rgba(255,255,255,0.12);
+    justify-content: flex-start;
 }
 
 .qe-buy-btn {
     background: linear-gradient(135deg, rgba(0,212,164,0.85) 0%, rgba(0,163,131,0.95) 100%);
     box-shadow: 0 4px 20px rgba(0,184,148,0.3), inset 0 1px 0 rgba(255,255,255,0.12);
+    justify-content: flex-end;
 }
 
-.qe-sell-btn:active {
-    transform: scale(0.97);
-    box-shadow: 0 2px 10px rgba(220,53,69,0.4);
-}
-
+.qe-sell-btn:active,
 .qe-buy-btn:active {
     transform: scale(0.97);
-    box-shadow: 0 2px 10px rgba(0,184,148,0.4);
 }
 
-/* 화살표 SVG */
+/* 쌍화살표 SVG */
 .qe-btn-arrow {
-    width: 32px;
-    height: 32px;
-    opacity: 0.35;
     flex-shrink: 0;
 }
 
-/* 텍스트 그룹 */
-.qe-btn-info {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    flex: 1;
-}
-
+/* SELL/BUY 텍스트 */
 .qe-btn-title {
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 800;
     letter-spacing: 1.5px;
     color: #ffffff;
 }
 
+/* Payout % */
 .qe-btn-payout {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.7);
-    margin-top: 1px;
+    color: rgba(255, 255, 255, 0.65);
 }
+
+/* SELL: 화살표-SELL-payout 왼쪽정렬 */
+.qe-sell-btn .qe-btn-title { margin-right: auto; }
+
+/* BUY: payout-BUY-화살표 오른쪽정렬 */
+.qe-buy-btn .qe-btn-title { margin-left: auto; }
