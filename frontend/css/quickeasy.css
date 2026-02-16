@@ -130,7 +130,7 @@
 .qe-symbol-option {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     padding: 11px 16px;
     color: #ffffff;
     font-size: 14px;
@@ -160,6 +160,8 @@
     color: rgba(255, 255, 255, 0.3);
     letter-spacing: 0.3px;
     margin-left: auto;
+    padding-left: 8px;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* ========== 하단 고정 바 ========== */
