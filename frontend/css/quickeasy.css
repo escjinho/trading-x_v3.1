@@ -118,7 +118,7 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
     padding: 6px 0;
-    min-width: 210px;
+    min-width: 170px;
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
     z-index: 100;
 }
@@ -131,9 +131,9 @@
     display: flex;
     align-items: center;
     gap: 5px;
-    padding: 11px 16px;
+    padding: 10px 12px;
     color: #ffffff;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     transition: background 0.12s;
