@@ -114,11 +114,12 @@
 }
 
 .qe-symbol-arrow {
-    font-size: 22px;
-    color: #00d4ff;
-    margin-left: 8px;
+    font-size: 26px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-left: 10px;
     transition: transform 0.2s;
     line-height: 1;
+    font-weight: 300;
 }
 
 .qe-symbol-arrow.open {
@@ -171,16 +172,31 @@
     flex: 1;
 }
 
-/* ========== Win/Lose 셀 (토글 내장) ========== */
+/* ========== Win/Lose 셀 — 가로 배치 (화살표 + 텍스트) ========== */
 .qe-winlose-cell {
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 6px !important;
+    justify-content: center !important;
 }
 
-.qe-toggle-icon {
-    font-size: 22px;
-    color: #00d4ff;
+.qe-toggle-arrow {
+    font-size: 26px;
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.6);
     line-height: 1;
+    flex-shrink: 0;
+    transition: all 0.2s;
+}
+
+.qe-winlose-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
 }
 
 /* ========== 하단 고정 바 ========== */
