@@ -14,7 +14,7 @@
 .qe-account-bar {
     display: flex;
     align-items: center;
-    padding: 10px 8px 10px 4px;
+    padding: 10px 12px;
     background: #0a0a0f;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     position: sticky;
@@ -22,30 +22,8 @@
     z-index: 10;
 }
 
-/* 토글 버튼 */
-.qe-account-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    background: transparent;
-    border: none;
-    color: rgba(255, 255, 255, 0.35);
-    cursor: pointer;
-    transition: all 0.2s;
-    flex-shrink: 0;
-    padding: 0;
-    -webkit-tap-highlight-color: transparent;
-}
-
-.qe-account-toggle:active {
-    color: rgba(255, 255, 255, 0.7);
-    transform: scale(0.9);
-}
-
-/* 카드 컨테이너 */
-.qe-account-cards {
+/* 왼쪽 그룹: 토글 + Equity + P&L */
+.qe-account-left {
     display: flex;
     align-items: center;
     flex: 1;
@@ -54,13 +32,78 @@
     transition: all 0.3s ease;
 }
 
-.qe-account-item {
+/* 펼침 토글 (>) — 왼쪽에 위치 */
+.qe-account-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.35);
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    padding: 0;
+    margin-right: 4px;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.qe-account-toggle:active {
+    color: rgba(255, 255, 255, 0.7);
+    transform: scale(0.9);
+}
+
+/* 접힘 토글 (<) — Win/Lose 왼쪽에 위치, 기본 숨김 */
+.qe-account-toggle-right {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.35);
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    padding: 0;
+    margin-right: 4px;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.qe-account-toggle-right:active {
+    color: rgba(255, 255, 255, 0.7);
+    transform: scale(0.9);
+}
+
+/* 종목명 — 기본 숨김, 접힘 시 표시 */
+.qe-symbol-name {
+    display: none;
+    font-size: 14px;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 0.5px;
     flex: 1;
+    padding-left: 4px;
+}
+
+/* 오른쪽 그룹: Win/Lose (항상 고정 위치) */
+.qe-account-right {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+/* 카드 공통 */
+.qe-account-item {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 3px;
     min-width: 0;
+    padding: 0 8px;
     transition: all 0.3s ease;
 }
 
@@ -86,7 +129,6 @@
     height: 28px;
     background: rgba(255, 255, 255, 0.08);
     flex-shrink: 0;
-    margin: 0 4px;
     transition: all 0.3s ease;
 }
 
@@ -94,22 +136,21 @@
 .qe-account-value.positive { color: #00d4a4; }
 .qe-account-value.negative { color: #ff4d5a; }
 
-/* 접힌 상태 */
-.qe-account-bar.collapsed .qe-account-toggle {
-    transform: scaleX(-1);
-}
-
-.qe-account-bar.collapsed #qeEquityCard,
-.qe-account-bar.collapsed #qePLCard,
-.qe-account-bar.collapsed #qeDivider1,
-.qe-account-bar.collapsed #qeDivider2 {
+/* ========== 접힌 상태 ========== */
+.qe-account-bar.collapsed .qe-account-left {
     flex: 0;
     width: 0;
     min-width: 0;
-    opacity: 0;
     overflow: hidden;
-    margin: 0;
-    padding: 0;
+    opacity: 0;
+}
+
+.qe-account-bar.collapsed .qe-symbol-name {
+    display: block;
+}
+
+.qe-account-bar.collapsed .qe-account-toggle-right {
+    display: flex;
 }
 
 /* ========== 하단 고정 바 ========== */

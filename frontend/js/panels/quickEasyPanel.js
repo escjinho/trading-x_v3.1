@@ -94,10 +94,21 @@ const QuickEasyPanel = {
                 bar.classList.add('collapsed');
             }
         }
+        this.updateSymbolName();
+    },
+
+    updateSymbolName() {
+        const el = document.getElementById('qeSymbolName');
+        if (el) {
+            const symbol = window.currentSymbol || 'BTCUSD';
+            // .r 제거, . 제거해서 깔끔하게 표시
+            el.textContent = symbol.replace('.r', '').replace('.', '');
+        }
     },
 
     // ========== 어카운트 데이터 갱신 ==========
     updateAccount() {
+        this.updateSymbolName();
         // Equity
         const homeEquity = document.getElementById('homeEquity');
         const qeEquity = document.getElementById('qeEquity');
