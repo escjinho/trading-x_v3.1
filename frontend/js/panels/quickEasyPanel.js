@@ -105,12 +105,8 @@ const QuickEasyPanel = {
         const targetEl = document.getElementById('qeTargetValue');
         const lotEl = document.getElementById('qeLotValue');
 
-        if (targetEl) {
-            targetEl.textContent = '$' + this.target;
-        }
-        if (lotEl) {
-            lotEl.textContent = this.lotSize.toFixed(2);
-        }
+        if (targetEl) targetEl.textContent = '$' + this.target;
+        if (lotEl) lotEl.textContent = this.lotSize.toFixed(2);
     },
 
     show() {

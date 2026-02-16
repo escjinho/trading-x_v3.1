@@ -60,7 +60,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css?v=1771264446">
-        <link rel="stylesheet" href="css/quickeasy.css?v=1771265441">
+        <link rel="stylesheet" href="css/quickeasy.css?v=1771266183">
     <link rel="stylesheet" href="css/chart.css?v=1771264446">
 </head>
 <body>
@@ -1065,33 +1065,41 @@
                 <!-- Quick & Easy 패널 -->
                 <div id="quickPanel" style="display: none;">
                     <div class="qe-content">
-                        <!-- 주문 섹션 -->
+                        <!-- 컨텐츠 영역 (추후 개발) -->
+                    </div>
+
+                    <!-- ★ 하단 고정 바 (주문섹션 + 버튼) -->
+                    <div class="qe-bottom-bar" id="qeBottomBar">
+                        <!-- 주문섹션: Target + Lot Size -->
                         <div class="qe-order-section">
                             <!-- Target 카드 -->
                             <div class="qe-order-card">
-                                <div class="qe-order-label">Target</div>
-                                <div class="qe-order-control">
-                                    <button class="qe-ctrl-btn minus" id="qeTargetMinus">−</button>
-                                    <div class="qe-order-value" id="qeTargetValue">$100</div>
-                                    <button class="qe-ctrl-btn plus" id="qeTargetPlus">+</button>
+                                <div class="qe-order-label-row">
+                                    <span class="qe-label-title">TARGET</span>
+                                    <span class="qe-label-divider">|</span>
+                                    <span class="qe-label-unit">$5 단위</span>
                                 </div>
-                                <div class="qe-order-step">$5 단위</div>
+                                <div class="qe-order-control">
+                                    <button class="qe-ctrl-btn" id="qeTargetMinus">−</button>
+                                    <div class="qe-ctrl-value" id="qeTargetValue">$100</div>
+                                    <button class="qe-ctrl-btn" id="qeTargetPlus">+</button>
+                                </div>
                             </div>
                             <!-- Lot Size 카드 -->
                             <div class="qe-order-card">
-                                <div class="qe-order-label">Lot Size</div>
-                                <div class="qe-order-control">
-                                    <button class="qe-ctrl-btn minus" id="qeLotMinus">−</button>
-                                    <div class="qe-order-value" id="qeLotValue">0.50</div>
-                                    <button class="qe-ctrl-btn plus" id="qeLotPlus">+</button>
+                                <div class="qe-order-label-row">
+                                    <span class="qe-label-title">LOT SIZE</span>
+                                    <span class="qe-label-divider">|</span>
+                                    <span class="qe-label-unit">0.10 단위</span>
                                 </div>
-                                <div class="qe-order-step">0.10 단위</div>
+                                <div class="qe-order-control">
+                                    <button class="qe-ctrl-btn" id="qeLotMinus">−</button>
+                                    <div class="qe-ctrl-value" id="qeLotValue">0.50</div>
+                                    <button class="qe-ctrl-btn" id="qeLotPlus">+</button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- ★ 하단 고정 SELL/BUY 버튼 -->
-                    <div class="qe-bottom-bar" id="qeBottomBar">
+                        <!-- SELL / BUY 버튼 -->
                         <div class="qe-trade-buttons">
                             <button class="qe-sell-btn" id="qeSellBtn">SELL</button>
                             <button class="qe-buy-btn" id="qeBuyBtn">BUY</button>
