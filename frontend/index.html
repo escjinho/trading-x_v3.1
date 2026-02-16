@@ -63,9 +63,9 @@
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css?v=1771273363">
-        <link rel="stylesheet" href="css/quickeasy.css?v=1771273363">
-    <link rel="stylesheet" href="css/chart.css?v=1771273363">
+    <link rel="stylesheet" href="css/styles.css?v=1771275782">
+        <link rel="stylesheet" href="css/quickeasy.css?v=1771275782">
+    <link rel="stylesheet" href="css/chart.css?v=1771275782">
 </head>
 <body>
     <div class="app">
@@ -1071,37 +1071,51 @@
                     <!-- ★ 상단 고정: 어카운트 섹션 -->
                     <div class="qe-account-bar" id="qeAccountBar">
                         <div class="qe-account-inner">
-                            <!-- 토글 버튼 -->
-                            <button class="qe-account-toggle" id="qeAccountToggle" onclick="QuickEasyPanel.toggleAccount()">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <path id="qeToggleArrow" d="M9 5l7 7-7 7"/>
-                                </svg>
-                            </button>
-                            <!-- 3등분 카드 영역 -->
-                            <div class="qe-account-cards" id="qeAccountCards">
-                                <!-- 카드1: Equity (펼침) / Symbol (접힘) -->
-                                <div class="qe-account-item">
-                                    <div class="qe-card-expanded" id="qeEquityCard">
-                                        <div class="qe-account-label">EQUITY</div>
-                                        <div class="qe-account-value" id="qeEquity">$0.00</div>
+                            <!-- 접힌 상태: 종목 셀렉터 (왼쪽) -->
+                            <div class="qe-symbol-selector" id="qeSymbolSelector">
+                                <button class="qe-symbol-btn" id="qeSymbolBtn" onclick="QuickEasyPanel.toggleSymbolDropdown()">
+                                    <span class="qe-symbol-icon" id="qeSymbolIcon">₿</span>
+                                    <span class="qe-symbol-text" id="qeSymbolName">Bitcoin</span>
+                                    <span class="qe-symbol-arrow">▾</span>
+                                </button>
+                                <!-- 종목 드롭다운 -->
+                                <div class="qe-symbol-dropdown" id="qeSymbolDropdown">
+                                    <div class="qe-symbol-option" onclick="QuickEasyPanel.selectSymbol('BTCUSD', '₿', 'Bitcoin')">
+                                        <span class="qe-opt-icon">₿</span><span>Bitcoin</span>
                                     </div>
-                                    <div class="qe-card-collapsed" id="qeSymbolCard">
-                                        <div class="qe-account-label">SYMBOL</div>
-                                        <div class="qe-account-value" id="qeSymbolName">BTCUSD</div>
+                                    <div class="qe-symbol-option" onclick="QuickEasyPanel.selectSymbol('ETHUSD', 'Ξ', 'Ethereum')">
+                                        <span class="qe-opt-icon">Ξ</span><span>Ethereum</span>
+                                    </div>
+                                    <div class="qe-symbol-option" onclick="QuickEasyPanel.selectSymbol('XAUUSD.r', '🥇', 'Gold')">
+                                        <span class="qe-opt-icon">🥇</span><span>Gold</span>
+                                    </div>
+                                    <div class="qe-symbol-option" onclick="QuickEasyPanel.selectSymbol('EURUSD.r', '€', 'EUR/USD')">
+                                        <span class="qe-opt-icon">€</span><span>EUR/USD</span>
+                                    </div>
+                                    <div class="qe-symbol-option" onclick="QuickEasyPanel.selectSymbol('US100.', '📈', 'NASDAQ')">
+                                        <span class="qe-opt-icon">📈</span><span>NASDAQ</span>
                                     </div>
                                 </div>
-                                <div class="qe-account-divider" id="qeDivider1"></div>
-                                <!-- 카드2: Today P&L (펼침) / 빈공간 (접힘) -->
-                                <div class="qe-account-item" id="qePLCard">
-                                    <div class="qe-account-label">TODAY P&L</div>
-                                    <div class="qe-account-value" id="qeTodayPL">$0.00</div>
+                            </div>
+                            <!-- 펼친 상태: Equity (카드1) -->
+                            <div class="qe-account-item qe-expanded-only" id="qeEquityCard">
+                                <div class="qe-account-label">EQUITY</div>
+                                <div class="qe-account-value" id="qeEquity">$0.00</div>
+                            </div>
+                            <div class="qe-account-divider qe-expanded-only" id="qeDivider1"></div>
+                            <!-- 펼친 상태: Today P&L (카드2) -->
+                            <div class="qe-account-item qe-expanded-only" id="qePLCard">
+                                <div class="qe-account-label">TODAY P&L</div>
+                                <div class="qe-account-value" id="qeTodayPL">$0.00</div>
+                            </div>
+                            <div class="qe-account-divider qe-expanded-only" id="qeDivider2"></div>
+                            <!-- 항상: Win/Lose (카드3) + 토글 내장 -->
+                            <div class="qe-account-item qe-winlose-card" onclick="QuickEasyPanel.toggleAccount()">
+                                <div class="qe-account-label">
+                                    <span class="qe-toggle-icon" id="qeToggleIcon">◂</span>
+                                    WIN / LOSE
                                 </div>
-                                <div class="qe-account-divider" id="qeDivider2"></div>
-                                <!-- 카드3: Win/Lose (항상 표시) -->
-                                <div class="qe-account-item">
-                                    <div class="qe-account-label">WIN / LOSE</div>
-                                    <div class="qe-account-value" id="qeWinLose">--%</div>
-                                </div>
+                                <div class="qe-account-value" id="qeWinLose">--%</div>
                             </div>
                         </div>
                     </div>
@@ -1993,34 +2007,34 @@
     </div>
 </div>
 
-    <script src="js/config.js?v=1771273363"></script>
-    <script src="js/state.js?v=1771273363"></script>
-    <script src="js/auth.js?v=1771273363"></script>
-    <script src="js/api.js?v=1771273363"></script>
-    <script src="js/utils.js?v=1771273363"></script>
-    <script src="js/watchlist.js?v=1771273363"></script>
-    <script src="js/navigation.js?v=1771273363"></script>
+    <script src="js/config.js?v=1771275782"></script>
+    <script src="js/state.js?v=1771275782"></script>
+    <script src="js/auth.js?v=1771275782"></script>
+    <script src="js/api.js?v=1771275782"></script>
+    <script src="js/utils.js?v=1771275782"></script>
+    <script src="js/watchlist.js?v=1771275782"></script>
+    <script src="js/navigation.js?v=1771275782"></script>
 
     <!-- Chart Panels (모듈화) -->
-    <script src="js/panels/gaugePanel.js?v=1771273363"></script>
-    <script src="js/panels/chartGaugePanel.js?v=1771273363"></script>
+    <script src="js/panels/gaugePanel.js?v=1771275782"></script>
+    <script src="js/panels/chartGaugePanel.js?v=1771275782"></script>
 
     <!-- Indicator System -->
-    <script src="js/indicators/config.js?v=1771273363"></script>
-    <script src="js/indicators/calculator.js?v=1771273363"></script>
-    <script src="js/indicators/index.js?v=1771273363"></script>
+    <script src="js/indicators/config.js?v=1771275782"></script>
+    <script src="js/indicators/calculator.js?v=1771275782"></script>
+    <script src="js/indicators/index.js?v=1771275782"></script>
 
     <!-- Chart Type System -->
-    <script src="js/chartTypes/index.js?v=1771273363"></script>
+    <script src="js/chartTypes/index.js?v=1771275782"></script>
 
-    <script src="js/panels/chartPanel.js?v=1771273363"></script>
-    <script src="js/panels/symbolSelectorPanel.js?v=1771273363"></script>
-    <script src="js/panels/randomWalkPanel.js?v=1771273363"></script>
-    <script src="js/panels/multiOrderPanelV5.js?v=1771273363"></script>
-        <script src="js/panels/quickEasyPanel.js?v=1771273363"></script>
+    <script src="js/panels/chartPanel.js?v=1771275782"></script>
+    <script src="js/panels/symbolSelectorPanel.js?v=1771275782"></script>
+    <script src="js/panels/randomWalkPanel.js?v=1771275782"></script>
+    <script src="js/panels/multiOrderPanelV5.js?v=1771275782"></script>
+        <script src="js/panels/quickEasyPanel.js?v=1771275782"></script>
 
-    <script src="js/chart.js?v=1771273363"></script>
-    <script src="js/settings.js?v=1771273363"></script>
+    <script src="js/chart.js?v=1771275782"></script>
+    <script src="js/settings.js?v=1771275782"></script>
     <script>
         // ========== 타임프레임 드롭다운 함수 ==========
         function toggleTimeframeDropdown() {
@@ -3438,10 +3452,10 @@
         </div>
     </div>
 
-    <script src="js/market-schedule.js?v=1771273363"></script>
-    <script src="js/account.js?v=1771273363"></script>
-    <script src="js/trading.js?v=1771273363"></script>
-    <script src="js/connection.js?v=1771273363"></script>
-    <script src="js/init.js?v=1771273363"></script>
+    <script src="js/market-schedule.js?v=1771275782"></script>
+    <script src="js/account.js?v=1771275782"></script>
+    <script src="js/trading.js?v=1771275782"></script>
+    <script src="js/connection.js?v=1771275782"></script>
+    <script src="js/init.js?v=1771275782"></script>
 </body>
 </html>

@@ -26,36 +26,6 @@
     padding: 10px 0;
 }
 
-/* 토글 버튼 */
-.qe-account-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    background: transparent;
-    border: none;
-    color: rgba(255, 255, 255, 0.35);
-    cursor: pointer;
-    transition: all 0.2s;
-    flex-shrink: 0;
-    padding: 0;
-    margin-right: 4px;
-    -webkit-tap-highlight-color: transparent;
-}
-
-.qe-account-toggle:active {
-    color: rgba(255, 255, 255, 0.7);
-    transform: scale(0.9);
-}
-
-/* 3등분 카드 컨테이너 */
-.qe-account-cards {
-    display: flex;
-    align-items: center;
-    flex: 1;
-}
-
 /* 카드 공통 — 3등분 */
 .qe-account-item {
     flex: 1;
@@ -73,6 +43,9 @@
     letter-spacing: 0.8px;
     text-transform: uppercase;
     white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .qe-account-value {
@@ -95,34 +68,138 @@
 .qe-account-value.positive { color: #00d4a4; }
 .qe-account-value.negative { color: #ff4d5a; }
 
-/* 펼침/접힘 전환 카드 */
-.qe-card-expanded { display: flex; flex-direction: column; align-items: center; gap: 3px; }
-.qe-card-collapsed { display: none; flex-direction: column; align-items: center; gap: 3px; }
-
-/* ========== 접힌 상태 ========== */
-.qe-account-bar.collapsed .qe-account-toggle svg {
-    transform: scaleX(-1);
+/* ========== 종목 셀렉터 ========== */
+.qe-symbol-selector {
+    display: flex;
+    flex: 1;
+    position: relative;
 }
 
-.qe-account-bar.collapsed .qe-card-expanded {
+.qe-symbol-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 8px;
+    transition: background 0.15s;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.qe-symbol-btn:active {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.qe-symbol-icon {
+    font-size: 18px;
+    width: 24px;
+    text-align: center;
+}
+
+.qe-symbol-text {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+.qe-symbol-arrow {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.4);
+    transition: transform 0.2s;
+}
+
+.qe-symbol-arrow.open {
+    transform: rotate(180deg);
+}
+
+/* 종목 드롭다운 */
+.qe-symbol-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 6px;
+    background: #1a1a24;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 6px 0;
+    min-width: 180px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+    z-index: 100;
+}
+
+.qe-symbol-dropdown.open {
+    display: block;
+}
+
+.qe-symbol-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.12s;
+}
+
+.qe-symbol-option:active {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.qe-opt-icon {
+    font-size: 16px;
+    width: 22px;
+    text-align: center;
+}
+
+/* ========== Win/Lose 카드 (토글 내장) ========== */
+.qe-winlose-card {
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.qe-toggle-icon {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.45);
+    transition: all 0.2s;
+}
+
+/* ========== 접힌 상태 (기본) ========== */
+.qe-expanded-only {
     display: none;
 }
 
-.qe-account-bar.collapsed .qe-card-collapsed {
+.qe-account-bar .qe-symbol-selector {
     display: flex;
 }
 
-.qe-account-bar.collapsed #qePLCard {
-    opacity: 0;
-    visibility: hidden;
+/* ========== 펼친 상태 ========== */
+.qe-account-bar.expanded .qe-expanded-only {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
 }
 
-.qe-account-bar.collapsed #qeDivider1 {
-    opacity: 0;
+.qe-account-bar.expanded .qe-account-divider.qe-expanded-only {
+    display: block;
 }
 
-.qe-account-bar.collapsed #qeDivider2 {
-    opacity: 0;
+.qe-account-bar.expanded .qe-symbol-selector {
+    display: none;
+}
+
+.qe-account-bar.expanded .qe-toggle-icon {
+    display: inline;
+}
+
+.qe-account-bar.expanded #qeToggleIcon {
+    content: '▸';
 }
 
 /* ========== 하단 고정 바 ========== */
