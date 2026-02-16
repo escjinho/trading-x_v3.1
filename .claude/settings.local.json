@@ -82,7 +82,12 @@
       "Bash(head -20 __NEW_LINE_b973b97948aa5d60__ echo \"\" echo \"F. chart.css 1295~1320행 \\(indicator-panels\\)\" sed -n '1295,1320p' frontend/css/chart.css)",
       "Bash(supervisorctl restart:*)",
       "Bash(pm2 logs:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(head -30 __NEW_LINE_4a41f503034d3ef1__ echo \"\" echo \"=== 2. 백엔드에서 장마감 체크를 하는가? ===\" grep -n \"market.*close\\\\|isMarketOpen\\\\|weekend\\\\|saturday\\\\|sunday\\\\|closed\" backend/app/api/metaapi_service.py)",
+      "Bash(head -20 __NEW_LINE_4a41f503034d3ef1__ echo \"\" echo \"=== 4. 실제 WS 데이터: 지금 US100\\(나스닥\\)의 시세가 오고 있는지 ===\" curl -s \"http://localhost:8000/api/mt5/candles/US100.?timeframe=M1&count=3\")",
+      "Bash(head -10 __NEW_LINE_ed20f6e3dbcb9f4a__ echo \"\" echo \"=== 2. BB 시리즈 생성 옵션 전체 \\(lineType 있는지?\\) ===\" grep -n -A 10 \"bbUpperSeries.*=\" frontend/js/panels/chartPanel.js)",
+      "Bash(head -20 __NEW_LINE_ed20f6e3dbcb9f4a__ echo echo '=== 4. lightweight-charts 버전 확인 ===' grep -i \"lightweight-charts\\\\|LightweightCharts\\\\|version\" frontend/js/lib/lightweight-charts*)",
+      "Bash(head -3 ls -la frontend/js/lib/lightweight*)"
     ]
   }
 }
