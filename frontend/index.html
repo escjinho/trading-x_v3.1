@@ -63,9 +63,9 @@
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css?v=1771278952">
-        <link rel="stylesheet" href="css/quickeasy.css?v=1771278952">
-    <link rel="stylesheet" href="css/chart.css?v=1771278952">
+    <link rel="stylesheet" href="css/styles.css?v=1771279725">
+        <link rel="stylesheet" href="css/quickeasy.css?v=1771279725">
+    <link rel="stylesheet" href="css/chart.css?v=1771279725">
 </head>
 <body>
     <div class="app">
@@ -1083,22 +1083,27 @@
                                     <div class="qe-symbol-option" onclick="QuickEasyPanel.selectSymbol('BTCUSD')">
                                         <span class="qe-opt-icon" style="color:#f7931a;">₿</span>
                                         <span class="qe-opt-name">Bitcoin</span>
+                                        <span class="qe-opt-code">BTCUSD</span>
                                     </div>
                                     <div class="qe-symbol-option" onclick="QuickEasyPanel.selectSymbol('EURUSD.r')">
                                         <span class="qe-opt-icon" style="color:#0052cc;">€</span>
                                         <span class="qe-opt-name">EUR/USD</span>
+                                        <span class="qe-opt-code">EURUSD</span>
                                     </div>
                                     <div class="qe-symbol-option" onclick="QuickEasyPanel.selectSymbol('USDJPY.r')">
                                         <span class="qe-opt-icon" style="color:#dc143c;">¥</span>
                                         <span class="qe-opt-name">USD/JPY</span>
+                                        <span class="qe-opt-code">USDJPY</span>
                                     </div>
                                     <div class="qe-symbol-option" onclick="QuickEasyPanel.selectSymbol('XAUUSD.r')">
                                         <span class="qe-opt-icon" style="color:#ffd700;">✦</span>
                                         <span class="qe-opt-name">Gold</span>
+                                        <span class="qe-opt-code">XAUUSD</span>
                                     </div>
                                     <div class="qe-symbol-option" onclick="QuickEasyPanel.selectSymbol('US100.')">
                                         <span class="qe-opt-icon" style="color:#00b450;">⬡</span>
                                         <span class="qe-opt-name">NASDAQ</span>
+                                        <span class="qe-opt-code">US100</span>
                                     </div>
                                 </div>
                             </div>
@@ -1123,29 +1128,25 @@
 
                     <!-- ★ 하단 고정: 주문섹션 + SELL/BUY 버튼 -->
                     <div class="qe-bottom-bar" id="qeBottomBar">
-                        <!-- 주문섹션: Target + Lot Size -->
+                        <!-- 주문섹션: Target + Lot Size (라벨 박스 내부) -->
                         <div class="qe-order-section">
-                            <div class="qe-order-card">
-                                <div class="qe-order-label-row">
-                                    <span class="qe-label-title">TARGET</span>
-                                    <span class="qe-label-divider">|</span>
-                                    <span class="qe-label-unit">$5 단위</span>
-                                </div>
-                                <div class="qe-order-control">
+                            <div class="qe-order-box">
+                                <div class="qe-order-box-inner">
                                     <button class="qe-ctrl-btn" id="qeTargetMinus">−</button>
-                                    <div class="qe-ctrl-value" id="qeTargetValue">$100</div>
+                                    <div class="qe-ctrl-center">
+                                        <div class="qe-ctrl-label">TARGET</div>
+                                        <div class="qe-ctrl-value" id="qeTargetValue">$100</div>
+                                    </div>
                                     <button class="qe-ctrl-btn" id="qeTargetPlus">+</button>
                                 </div>
                             </div>
-                            <div class="qe-order-card">
-                                <div class="qe-order-label-row">
-                                    <span class="qe-label-title">LOT SIZE</span>
-                                    <span class="qe-label-divider">|</span>
-                                    <span class="qe-label-unit">0.10 단위</span>
-                                </div>
-                                <div class="qe-order-control">
+                            <div class="qe-order-box">
+                                <div class="qe-order-box-inner">
                                     <button class="qe-ctrl-btn" id="qeLotMinus">−</button>
-                                    <div class="qe-ctrl-value" id="qeLotValue">0.50</div>
+                                    <div class="qe-ctrl-center">
+                                        <div class="qe-ctrl-label">LOT SIZE</div>
+                                        <div class="qe-ctrl-value" id="qeLotValue">0.50</div>
+                                    </div>
                                     <button class="qe-ctrl-btn" id="qeLotPlus">+</button>
                                 </div>
                             </div>
@@ -2004,34 +2005,34 @@
     </div>
 </div>
 
-    <script src="js/config.js?v=1771278952"></script>
-    <script src="js/state.js?v=1771278952"></script>
-    <script src="js/auth.js?v=1771278952"></script>
-    <script src="js/api.js?v=1771278952"></script>
-    <script src="js/utils.js?v=1771278952"></script>
-    <script src="js/watchlist.js?v=1771278952"></script>
-    <script src="js/navigation.js?v=1771278952"></script>
+    <script src="js/config.js?v=1771279725"></script>
+    <script src="js/state.js?v=1771279725"></script>
+    <script src="js/auth.js?v=1771279725"></script>
+    <script src="js/api.js?v=1771279725"></script>
+    <script src="js/utils.js?v=1771279725"></script>
+    <script src="js/watchlist.js?v=1771279725"></script>
+    <script src="js/navigation.js?v=1771279725"></script>
 
     <!-- Chart Panels (모듈화) -->
-    <script src="js/panels/gaugePanel.js?v=1771278952"></script>
-    <script src="js/panels/chartGaugePanel.js?v=1771278952"></script>
+    <script src="js/panels/gaugePanel.js?v=1771279725"></script>
+    <script src="js/panels/chartGaugePanel.js?v=1771279725"></script>
 
     <!-- Indicator System -->
-    <script src="js/indicators/config.js?v=1771278952"></script>
-    <script src="js/indicators/calculator.js?v=1771278952"></script>
-    <script src="js/indicators/index.js?v=1771278952"></script>
+    <script src="js/indicators/config.js?v=1771279725"></script>
+    <script src="js/indicators/calculator.js?v=1771279725"></script>
+    <script src="js/indicators/index.js?v=1771279725"></script>
 
     <!-- Chart Type System -->
-    <script src="js/chartTypes/index.js?v=1771278952"></script>
+    <script src="js/chartTypes/index.js?v=1771279725"></script>
 
-    <script src="js/panels/chartPanel.js?v=1771278952"></script>
-    <script src="js/panels/symbolSelectorPanel.js?v=1771278952"></script>
-    <script src="js/panels/randomWalkPanel.js?v=1771278952"></script>
-    <script src="js/panels/multiOrderPanelV5.js?v=1771278952"></script>
-        <script src="js/panels/quickEasyPanel.js?v=1771278952"></script>
+    <script src="js/panels/chartPanel.js?v=1771279725"></script>
+    <script src="js/panels/symbolSelectorPanel.js?v=1771279725"></script>
+    <script src="js/panels/randomWalkPanel.js?v=1771279725"></script>
+    <script src="js/panels/multiOrderPanelV5.js?v=1771279725"></script>
+        <script src="js/panels/quickEasyPanel.js?v=1771279725"></script>
 
-    <script src="js/chart.js?v=1771278952"></script>
-    <script src="js/settings.js?v=1771278952"></script>
+    <script src="js/chart.js?v=1771279725"></script>
+    <script src="js/settings.js?v=1771279725"></script>
     <script>
         // ========== 타임프레임 드롭다운 함수 ==========
         function toggleTimeframeDropdown() {
@@ -3449,10 +3450,10 @@
         </div>
     </div>
 
-    <script src="js/market-schedule.js?v=1771278952"></script>
-    <script src="js/account.js?v=1771278952"></script>
-    <script src="js/trading.js?v=1771278952"></script>
-    <script src="js/connection.js?v=1771278952"></script>
-    <script src="js/init.js?v=1771278952"></script>
+    <script src="js/market-schedule.js?v=1771279725"></script>
+    <script src="js/account.js?v=1771279725"></script>
+    <script src="js/trading.js?v=1771279725"></script>
+    <script src="js/connection.js?v=1771279725"></script>
+    <script src="js/init.js?v=1771279725"></script>
 </body>
 </html>
