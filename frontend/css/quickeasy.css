@@ -117,9 +117,8 @@
     flex: 1;
     display: flex;
     align-items: center;
-    gap: 8px;
     height: 46px;
-    padding: 0 14px;
+    padding: 0 12px;
     border: none;
     border-radius: 12px;
     cursor: pointer;
@@ -141,13 +140,11 @@
 .qe-sell-btn {
     background: linear-gradient(135deg, rgba(220,53,69,0.85) 0%, rgba(200,35,51,0.95) 100%);
     box-shadow: 0 4px 20px rgba(220,53,69,0.3), inset 0 1px 0 rgba(255,255,255,0.12);
-    justify-content: flex-start;
 }
 
 .qe-buy-btn {
     background: linear-gradient(135deg, rgba(0,212,164,0.85) 0%, rgba(0,163,131,0.95) 100%);
     box-shadow: 0 4px 20px rgba(0,184,148,0.3), inset 0 1px 0 rgba(255,255,255,0.12);
-    justify-content: flex-end;
 }
 
 .qe-sell-btn:active,
@@ -155,28 +152,25 @@
     transform: scale(0.97);
 }
 
-/* 쌍화살표 SVG */
+/* 쌍화살표 SVG — 양쪽 끝에 고정 */
 .qe-btn-arrow {
     flex-shrink: 0;
 }
 
-/* SELL/BUY 텍스트 */
+/* SELL/BUY 텍스트 — 중앙 배치 (Orbitron via title-font) */
 .qe-btn-title {
-    font-size: 16px;
-    font-weight: 800;
-    letter-spacing: 1.5px;
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: 2px;
     color: #ffffff;
+    flex: 1;
+    text-align: center;
 }
 
-/* Payout % */
+/* Payout % — 양쪽 끝에 배치 */
 .qe-btn-payout {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.65);
+    color: rgba(255, 255, 255, 0.6);
+    flex-shrink: 0;
 }
-
-/* SELL: 화살표-SELL-payout 왼쪽정렬 */
-.qe-sell-btn .qe-btn-title { margin-right: auto; }
-
-/* BUY: payout-BUY-화살표 오른쪽정렬 */
-.qe-buy-btn .qe-btn-title { margin-left: auto; }
