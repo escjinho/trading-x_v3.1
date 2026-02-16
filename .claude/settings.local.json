@@ -82,8 +82,7 @@
       "Bash(head -20 __NEW_LINE_b973b97948aa5d60__ echo \"\" echo \"F. chart.css 1295~1320행 \\(indicator-panels\\)\" sed -n '1295,1320p' frontend/css/chart.css)",
       "Bash(supervisorctl restart:*)",
       "Bash(pm2 logs:*)",
-      "Bash(cat:*)",
-      "Bash(echo 'API 호출 실패' __NEW_LINE_fd72630d0b3acf9a__ echo echo '=== 8. 현재 서버 시간 + MarketSchedule 판단 테스트 ===' python3 -c \"\nfrom datetime import datetime, timezone\nnow = datetime.now\\(timezone.utc\\)\nday = now.weekday\\(\\)  # 0=월 6=일\nhour = now.hour\nprint\\(f''''UTC: {now}, weekday={day}\\(0=Mon 6=Sun\\), hour={hour}''''\\)\nis_sat = day == 5\nis_sun_before_open = day == 6 and hour < 22\nis_fri_after_close = day == 4 and hour >= 22\nclosed = is_sat or is_sun_before_open or is_fri_after_close\nprint\\(f''''장마감 여부: {closed} \\(sat={is_sat}, sun_early={is_sun_before_open}, fri_late={is_fri_after_close}\\)''''\\)\n\" __NEW_LINE_fd72630d0b3acf9a__ echo echo '=== 9. 서버 WS에서 장마감 시 데이터 전송 여부 확인 ===' grep -n \"all_candles\\\\|all_prices\\\\|broadcast\\\\|장 마감\\\\|market.*close\\\\|isMarketOpen\" backend/app/api/metaapi_service.py)"
+      "Bash(cat:*)"
     ]
   }
 }

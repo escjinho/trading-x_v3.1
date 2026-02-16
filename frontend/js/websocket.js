@@ -11,21 +11,16 @@ let balance = 0;
 
 // ★ 장 마감 체크 헬퍼 (MarketSchedule 우선 — 공휴일 포함)
 function isCurrentMarketClosed() {
-    // MarketSchedule 모듈 우선 (공휴일, 정확한 브로커 스케줄)
-    if (typeof MarketSchedule !== 'undefined' && MarketSchedule.isMarketOpen) {
-        return !MarketSchedule.isMarketOpen(chartSymbol);
-    }
-    // 폴백: 단순 주말 체크
     const _si = typeof getSymbolInfo === 'function' ? getSymbolInfo(chartSymbol) : null;
     const _isCrypto = _si && _si.category === 'Crypto Currency';
     if (_isCrypto) return false;
+    if (typeof MarketSchedule !== 'undefined' && MarketSchedule.isMarketOpen) {
+        return !MarketSchedule.isMarketOpen(chartSymbol);
+    }
     const _now = new Date();
     const _day = _now.getUTCDay();
     const _hour = _now.getUTCHours();
-    if (_day === 6) return true;
-    if (_day === 0 && _hour < 22) return true;
-    if (_day === 5 && _hour >= 22) return true;
-    return false;
+    return _day === 0 || _day === 6 || (_day === 5 && _hour >= 22);
 }
 
 // ========== Connect WebSocket ==========
@@ -88,7 +83,13 @@ function connectWebSocket() {
                 if (!window.lastIndicatorUpdate || Date.now() - window.lastIndicatorUpdate > 30000) {
                     window.lastIndicatorUpdate = Date.now();
                     // ★ 장 마감 시 캔들 리로드 중단
-                    if (!isCurrentMarketClosed()) {
+                    const _si2 = typeof getSymbolInfo === 'function' ? getSymbolInfo(chartSymbol) : null;
+                    const _isCrypto2 = _si2 && _si2.category === 'Crypto Currency';
+                    const _now2 = new Date();
+                    const _day2 = _now2.getUTCDay();
+                    const _hour2 = _now2.getUTCHours();
+                    const _marketClosed2 = !_isCrypto2 && (_day2 === 0 || _day2 === 6 || (_day2 === 5 && _hour2 >= 22));
+                    if (!_marketClosed2) {
                         loadCandles();
                     }
                 }
@@ -172,7 +173,13 @@ function connectWebSocket() {
             if (!window.lastIndicatorUpdate || Date.now() - window.lastIndicatorUpdate > 30000) {
                 window.lastIndicatorUpdate = Date.now();
                 // ★ 장 마감 시 캔들 리로드 중단
-                if (!isCurrentMarketClosed()) {
+                const _si3 = typeof getSymbolInfo === 'function' ? getSymbolInfo(chartSymbol) : null;
+                const _isCrypto3 = _si3 && _si3.category === 'Crypto Currency';
+                const _now3 = new Date();
+                const _day3 = _now3.getUTCDay();
+                const _hour3 = _now3.getUTCHours();
+                const _marketClosed3 = !_isCrypto3 && (_day3 === 0 || _day3 === 6 || (_day3 === 5 && _hour3 >= 22));
+                if (!_marketClosed3) {
                     loadCandles();
                 }
             }
