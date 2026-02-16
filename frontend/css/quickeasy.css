@@ -86,7 +86,7 @@
 .qe-symbol-btn {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 4px;
     background: transparent;
     border: none;
     color: #ffffff;
@@ -114,9 +114,11 @@
 }
 
 .qe-symbol-arrow {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.4);
+    font-size: 22px;
+    color: #00d4ff;
+    margin-left: 8px;
     transition: transform 0.2s;
+    line-height: 1;
 }
 
 .qe-symbol-arrow.open {
@@ -176,9 +178,9 @@
 }
 
 .qe-toggle-icon {
-    font-size: 16px;
-    color: rgba(255, 255, 255, 0.5);
-    transition: all 0.2s;
+    font-size: 22px;
+    color: #00d4ff;
+    line-height: 1;
 }
 
 /* ========== 하단 고정 바 ========== */
