@@ -6,10 +6,10 @@
 
 .qe-content {
     padding: 16px;
-    padding-bottom: 170px; /* 하단 고정 영역 확보 */
+    padding-bottom: 170px;
 }
 
-/* 하단 고정 바 (주문섹션 + 버튼 통합) */
+/* 하단 고정 바 */
 .qe-bottom-bar {
     display: none;
     position: fixed;
@@ -23,7 +23,7 @@
     z-index: 101;
 }
 
-/* ========== 주문섹션 (Target + Lot Size) ========== */
+/* ========== 주문섹션 ========== */
 .qe-order-section {
     display: flex;
     gap: 10px;
@@ -36,13 +36,13 @@
     flex-direction: column;
 }
 
-/* 라벨 한 줄: TARGET | $5 단위 */
+/* 라벨: TARGET | $5 단위 — 가운데 정렬 */
 .qe-order-label-row {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
     margin-bottom: 5px;
-    padding-left: 2px;
 }
 
 .qe-label-title {
@@ -83,7 +83,7 @@
     height: 100%;
     background: transparent;
     border: none;
-    color: #00d4ff;
+    color: rgba(255, 255, 255, 0.6);
     font-size: 20px;
     font-weight: 700;
     cursor: pointer;
@@ -93,7 +93,8 @@
 }
 
 .qe-ctrl-btn:active {
-    background: rgba(0, 212, 255, 0.15);
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
     transform: scale(0.92);
 }
 
@@ -109,9 +110,8 @@
 /* ========== SELL / BUY 버튼 ========== */
 .qe-trade-buttons {
     display: flex;
-    gap: 0;
-    height: 48px;
-    width: 100%;
+    gap: 10px;
+    padding: 6px 12px 8px 12px;
 }
 
 .qe-sell-btn,
@@ -120,10 +120,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
+    height: 44px;
+    font-size: 17px;
     font-weight: 800;
     letter-spacing: 1px;
     border: none;
+    border-radius: 10px;
     cursor: pointer;
     transition: all 0.15s;
     color: #ffffff;
@@ -131,22 +133,18 @@
 
 .qe-sell-btn {
     background: linear-gradient(180deg, #ff4d5a 0%, #dc3545 50%, #c82333 100%);
-    border-radius: 8px 2px 2px 8px;
-    clip-path: polygon(0 0, 100% 0, 97% 100%, 0 100%);
 }
 
 .qe-buy-btn {
     background: linear-gradient(180deg, #00d4a4 0%, #00b894 50%, #00a383 100%);
-    border-radius: 2px 8px 8px 2px;
-    clip-path: polygon(3% 0, 100% 0, 100% 100%, 0 100%);
 }
 
 .qe-sell-btn:active {
     background: linear-gradient(180deg, #dc3545 0%, #c82333 100%);
-    transform: scale(0.98);
+    transform: scale(0.97);
 }
 
 .qe-buy-btn:active {
     background: linear-gradient(180deg, #00b894 0%, #00a383 100%);
-    transform: scale(0.98);
+    transform: scale(0.97);
 }
