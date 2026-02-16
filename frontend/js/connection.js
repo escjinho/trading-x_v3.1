@@ -13,18 +13,21 @@ let _lastSoftRefreshAt = 0;  // ★★★ softRefresh 쿨다운용 타임스탬�
 
 // ★ 장 마감 체크 헬퍼 (MarketSchedule 우선 — 공휴일 포함)
 function isCurrentMarketClosed() {
-    const _si = typeof getSymbolInfo === 'function' ? getSymbolInfo(chartSymbol) : null;
-    const _isCrypto = _si && _si.category === 'Crypto Currency';
-    if (_isCrypto) return false;
-    // MarketSchedule 모듈 우선 (공휴일, 정확한 브로커 스케줄)
+    // MarketSchedule 모듈 우선 (정확한 브로커 스케줄)
     if (typeof MarketSchedule !== 'undefined' && MarketSchedule.isMarketOpen) {
         return !MarketSchedule.isMarketOpen(chartSymbol);
     }
     // 폴백: 단순 주말 체크
+    const _si = typeof getSymbolInfo === 'function' ? getSymbolInfo(chartSymbol) : null;
+    const _isCrypto = _si && _si.category === 'Crypto Currency';
+    if (_isCrypto) return false;
     const _now = new Date();
     const _day = _now.getUTCDay();
     const _hour = _now.getUTCHours();
-    return _day === 0 || _day === 6 || (_day === 5 && _hour >= 22);
+    if (_day === 6) return true;
+    if (_day === 0 && _hour < 22) return true;
+    if (_day === 5 && _hour >= 22) return true;
+    return false;
 }
 
 // ★★★ softRefresh() — 화면 전환/이벤트 시 페이지 리로드 없이 데이터만 갱신 ★★★

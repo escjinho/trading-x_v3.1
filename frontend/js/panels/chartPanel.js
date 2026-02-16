@@ -38,17 +38,19 @@ const ChartPanel = {
             return false;
         }
 
-        // ★ 장 마감 시 차트 업데이트 중단 (MarketSchedule 우선 — 공휴일 포함)
-        const _si = typeof getSymbolInfo === 'function' ? getSymbolInfo(chartSymbol) : null;
-        const _isCrypto = _si && _si.category === 'Crypto Currency';
-        if (!_isCrypto) {
-            if (typeof MarketSchedule !== 'undefined' && MarketSchedule.isMarketOpen) {
-                if (!MarketSchedule.isMarketOpen(chartSymbol)) return false;
-            } else {
+        // ★ 장 마감 시 차트 업데이트 중단 (MarketSchedule 우선)
+        if (typeof MarketSchedule !== 'undefined' && MarketSchedule.isMarketOpen) {
+            if (!MarketSchedule.isMarketOpen(chartSymbol)) return false;
+        } else {
+            const _si = typeof getSymbolInfo === 'function' ? getSymbolInfo(chartSymbol) : null;
+            const _isCrypto = _si && _si.category === 'Crypto Currency';
+            if (!_isCrypto) {
                 const _now = new Date();
                 const _day = _now.getUTCDay();
                 const _hour = _now.getUTCHours();
-                if (_day === 0 || _day === 6 || (_day === 5 && _hour >= 22)) return false;
+                if (_day === 6) return false;
+                if (_day === 0 && _hour < 22) return false;
+                if (_day === 5 && _hour >= 22) return false;
             }
         }
 
@@ -421,17 +423,22 @@ const ChartPanel = {
                     }
                 }
 
-                // 보이는 범위 설정 (최근 150개 캔들) + 오른쪽 여백 유지
+                // 보이는 범위 설정 — 장마감 시 마지막 캔들까지만, 장중에는 실시간 스크롤
                 const visibleBars = 150;
+                const _mktClosed = typeof MarketSchedule !== 'undefined' && MarketSchedule.isMarketOpen
+                    ? !MarketSchedule.isMarketOpen(chartSymbol) : false;
+
                 if (data.candles.length <= 20) {
-                    // ★ 캔들 적음 (BTC 1D/1W 등) — 전체 표시
                     chart.timeScale().fitContent();
+                } else if (_mktClosed && data.candles.length > visibleBars) {
+                    // ★ 장마감: 마지막 캔들까지만 표시 (빈 영역 방지)
+                    const from = data.candles[data.candles.length - visibleBars].time;
+                    const to = data.candles[data.candles.length - 1].time;
+                    try { chart.timeScale().setVisibleRange({ from, to }); } catch(e) { chart.timeScale().scrollToRealTime(); }
                 } else if (data.candles.length > visibleBars) {
-                    // ★ 캔들 많음 — 최근 캔들 기준 스크롤
                     chart.timeScale().scrollToRealTime();
                 } else {
-                    // ★ 20~150개 — 최근 캔들 기준 스크롤
-                    chart.timeScale().scrollToRealTime();
+                    chart.timeScale().fitContent();
                 }
 
                 // 마지막 가격 업데이트
