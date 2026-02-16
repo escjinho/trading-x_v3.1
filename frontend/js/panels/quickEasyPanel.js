@@ -17,10 +17,8 @@ const QE_SYMBOL_SPECS = {
     "US100.":   { contract_size: 20 }
 };
 
-// 종목별 아이콘, 색상, 이름
 const QE_SYMBOL_INFO = {
     "BTCUSD":   { icon: "₿", color: "#f7931a", name: "Bitcoin" },
-    "ETHUSD":   { icon: "Ξ", color: "#627eea", name: "Ethereum" },
     "EURUSD.r": { icon: "€", color: "#0052cc", name: "EUR/USD" },
     "USDJPY.r": { icon: "¥", color: "#dc143c", name: "USD/JPY" },
     "XAUUSD.r": { icon: "✦", color: "#ffd700", name: "Gold" },
@@ -29,7 +27,6 @@ const QE_SYMBOL_INFO = {
 
 const QuickEasyPanel = {
     initialized: false,
-    accountExpanded: false,  // 접힌 상태가 기본
     dropdownOpen: false,
 
     target: 100,
@@ -74,7 +71,6 @@ const QuickEasyPanel = {
         this.setupLongPress('qeLotMinus', () => this.adjustLot(-1));
         this.setupLongPress('qeLotPlus', () => this.adjustLot(1));
 
-        // 드롭다운 외부 클릭 닫기
         document.addEventListener('click', (e) => {
             const dropdown = document.getElementById('qeSymbolDropdown');
             const btn = document.getElementById('qeSymbolBtn');
@@ -104,19 +100,6 @@ const QuickEasyPanel = {
         el.addEventListener('mouseleave', stop);
     },
 
-    // ========== 어카운트 토글 ==========
-    toggleAccount() {
-        this.accountExpanded = !this.accountExpanded;
-        const bar = document.getElementById('qeAccountBar');
-        const icon = document.getElementById('qeToggleIcon');
-        if (bar) {
-            bar.classList.toggle('expanded', this.accountExpanded);
-        }
-        if (icon) {
-            icon.textContent = this.accountExpanded ? '▸' : '◂';
-        }
-    },
-
     // ========== 종목 셀렉터 ==========
     toggleSymbolDropdown() {
         this.dropdownOpen = !this.dropdownOpen;
@@ -135,10 +118,8 @@ const QuickEasyPanel = {
     },
 
     selectSymbol(symbol) {
-        // 글로벌 종목 변경
         if (window.currentSymbol !== symbol) {
             window.currentSymbol = symbol;
-            // 차트 등 다른 패널 종목도 변경
             if (typeof changeSymbol === 'function') {
                 changeSymbol(symbol);
             }
@@ -153,7 +134,6 @@ const QuickEasyPanel = {
         const info = QE_SYMBOL_INFO[symbol];
         const iconEl = document.getElementById('qeSymbolIcon');
         const nameEl = document.getElementById('qeSymbolName');
-
         if (iconEl) {
             iconEl.textContent = info ? info.icon : '📊';
             iconEl.style.color = info ? info.color : '#ffffff';
@@ -173,17 +153,8 @@ const QuickEasyPanel = {
             qeEquity.textContent = homeEquity.textContent;
         }
 
-        const qeTodayPL = document.getElementById('qeTodayPL');
-        if (qeTodayPL) {
-            const pl = window._todayPLFixed || 0;
-            const sign = pl >= 0 ? '+' : '';
-            qeTodayPL.textContent = sign + '$' + Math.abs(pl).toFixed(2);
-            qeTodayPL.className = 'qe-account-value ' + (pl > 0 ? 'positive' : pl < 0 ? 'negative' : '');
-        }
-
         const qeWinLose = document.getElementById('qeWinLose');
         if (qeWinLose) {
-            // 포지션 없으면 --%, 있으면 실시간 도달률 (추후 구현)
             qeWinLose.textContent = '--%';
         }
     },
