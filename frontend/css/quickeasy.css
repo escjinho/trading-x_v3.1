@@ -12,9 +12,7 @@
 
 /* ========== 어카운트 섹션 (상단 고정) ========== */
 .qe-account-bar {
-    display: flex;
-    align-items: center;
-    padding: 10px 12px;
+    padding: 0 12px;
     background: #0a0a0f;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     position: sticky;
@@ -22,17 +20,13 @@
     z-index: 10;
 }
 
-/* 왼쪽 그룹: 토글 + Equity + P&L */
-.qe-account-left {
+.qe-account-inner {
     display: flex;
     align-items: center;
-    flex: 1;
-    gap: 0;
-    overflow: hidden;
-    transition: all 0.3s ease;
+    padding: 10px 0;
 }
 
-/* 펼침 토글 (>) — 왼쪽에 위치 */
+/* 토글 버튼 */
 .qe-account-toggle {
     display: flex;
     align-items: center;
@@ -55,102 +49,80 @@
     transform: scale(0.9);
 }
 
-/* 접힘 토글 (<) — Win/Lose 왼쪽에 위치, 기본 숨김 */
-.qe-account-toggle-right {
-    display: none;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    background: transparent;
-    border: none;
-    color: rgba(255, 255, 255, 0.35);
-    cursor: pointer;
-    transition: all 0.2s;
-    flex-shrink: 0;
-    padding: 0;
-    margin-right: 4px;
-    -webkit-tap-highlight-color: transparent;
-}
-
-.qe-account-toggle-right:active {
-    color: rgba(255, 255, 255, 0.7);
-    transform: scale(0.9);
-}
-
-/* 종목명 — 기본 숨김, 접힘 시 표시 */
-.qe-symbol-name {
-    display: none;
-    font-size: 14px;
-    font-weight: 700;
-    color: #ffffff;
-    letter-spacing: 0.5px;
-    flex: 1;
-    padding-left: 4px;
-}
-
-/* 오른쪽 그룹: Win/Lose (항상 고정 위치) */
-.qe-account-right {
+/* 3등분 카드 컨테이너 */
+.qe-account-cards {
     display: flex;
     align-items: center;
-    flex-shrink: 0;
+    flex: 1;
 }
 
-/* 카드 공통 */
+/* 카드 공통 — 3등분 */
 .qe-account-item {
+    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 3px;
     min-width: 0;
-    padding: 0 8px;
-    transition: all 0.3s ease;
 }
 
 .qe-account-label {
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.35);
     letter-spacing: 0.8px;
     text-transform: uppercase;
     white-space: nowrap;
 }
 
 .qe-account-value {
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 700;
     color: #ffffff;
-    letter-spacing: 0.2px;
+    letter-spacing: 0.3px;
     white-space: nowrap;
 }
 
 .qe-account-divider {
     width: 1px;
-    height: 28px;
+    height: 30px;
     background: rgba(255, 255, 255, 0.08);
     flex-shrink: 0;
-    transition: all 0.3s ease;
+    transition: opacity 0.3s ease;
 }
 
 /* P&L 색상 */
 .qe-account-value.positive { color: #00d4a4; }
 .qe-account-value.negative { color: #ff4d5a; }
 
+/* 펼침/접힘 전환 카드 */
+.qe-card-expanded { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.qe-card-collapsed { display: none; flex-direction: column; align-items: center; gap: 3px; }
+
 /* ========== 접힌 상태 ========== */
-.qe-account-bar.collapsed .qe-account-left {
-    flex: 0;
-    width: 0;
-    min-width: 0;
-    overflow: hidden;
+.qe-account-bar.collapsed .qe-account-toggle svg {
+    transform: scaleX(-1);
+}
+
+.qe-account-bar.collapsed .qe-card-expanded {
+    display: none;
+}
+
+.qe-account-bar.collapsed .qe-card-collapsed {
+    display: flex;
+}
+
+.qe-account-bar.collapsed #qePLCard {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.qe-account-bar.collapsed #qeDivider1 {
     opacity: 0;
 }
 
-.qe-account-bar.collapsed .qe-symbol-name {
-    display: block;
-}
-
-.qe-account-bar.collapsed .qe-account-toggle-right {
-    display: flex;
+.qe-account-bar.collapsed #qeDivider2 {
+    opacity: 0;
 }
 
 /* ========== 하단 고정 바 ========== */

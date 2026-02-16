@@ -88,20 +88,14 @@ const QuickEasyPanel = {
         this.accountExpanded = !this.accountExpanded;
         const bar = document.getElementById('qeAccountBar');
         if (bar) {
-            if (this.accountExpanded) {
-                bar.classList.remove('collapsed');
-            } else {
-                bar.classList.add('collapsed');
-            }
+            bar.classList.toggle('collapsed', !this.accountExpanded);
         }
-        this.updateSymbolName();
     },
 
     updateSymbolName() {
         const el = document.getElementById('qeSymbolName');
         if (el) {
             const symbol = window.currentSymbol || 'BTCUSD';
-            // .r 제거, . 제거해서 깔끔하게 표시
             el.textContent = symbol.replace('.r', '').replace('.', '');
         }
     },
