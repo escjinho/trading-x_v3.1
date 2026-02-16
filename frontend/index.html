@@ -59,8 +59,8 @@
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css?v=1771237182">
-    <link rel="stylesheet" href="css/chart.css?v=1771237182">
+    <link rel="stylesheet" href="css/styles.css?v=1771263625">
+    <link rel="stylesheet" href="css/chart.css?v=1771263625">
 </head>
 <body>
     <div class="app">
@@ -1047,18 +1047,23 @@
                     </div>
                     
                 </div><!-- multiOrderPanelV5 닫기 -->
-                
-                <!-- Quick & Easy (준비중) -->
-                <div id="quickPanel" style="display: none; padding: 20px;">
+
+                <!-- Multi Order V5 - 준비중 -->
+                <div id="multiV5ComingSoon" style="display: none; padding: 20px;">
                     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center;">
                         <div style="font-size: 80px; margin-bottom: 20px;">🚧</div>
-                        <h2 style="color: #00d4ff; font-size: 24px; margin-bottom: 12px;">Quick & Easy</h2>
+                        <h2 style="color: #00d4ff; font-size: 24px; margin-bottom: 12px;">Multi Order V5</h2>
                         <p style="color: var(--text-muted); font-size: 16px; margin-bottom: 8px;">준비중입니다</p>
                         <p style="color: var(--text-muted); font-size: 14px;">빠른 시일 내에 오픈 예정입니다!</p>
                         <div style="margin-top: 30px; padding: 16px 24px; background: rgba(0, 212, 255, 0.1); border: 1px solid rgba(0, 212, 255, 0.3); border-radius: 12px;">
-                            <p style="color: #00d4ff; font-size: 14px;">💡 Buy/Sell 또는 Multi Order V5을 이용해주세요</p>
+                            <p style="color: #00d4ff; font-size: 14px;">💡 Buy/Sell 또는 Quick & Easy를 이용해주세요</p>
                         </div>
                     </div>
+                </div>
+                
+                <!-- Quick & Easy 패널 -->
+                <div id="quickPanel" style="display: none;">
+                    <!-- Quick & Easy 컨텐츠 (개발 예정) -->
                 </div>
                 
             </div>
@@ -1893,33 +1898,33 @@
     </div>
 </div>
 
-    <script src="js/config.js?v=1771237182"></script>
-    <script src="js/state.js?v=1771237182"></script>
-    <script src="js/auth.js?v=1771237182"></script>
-    <script src="js/api.js?v=1771237182"></script>
-    <script src="js/utils.js?v=1771237182"></script>
-    <script src="js/watchlist.js?v=1771237182"></script>
-    <script src="js/navigation.js?v=1771237182"></script>
+    <script src="js/config.js?v=1771263625"></script>
+    <script src="js/state.js?v=1771263625"></script>
+    <script src="js/auth.js?v=1771263625"></script>
+    <script src="js/api.js?v=1771263625"></script>
+    <script src="js/utils.js?v=1771263625"></script>
+    <script src="js/watchlist.js?v=1771263625"></script>
+    <script src="js/navigation.js?v=1771263625"></script>
 
     <!-- Chart Panels (모듈화) -->
-    <script src="js/panels/gaugePanel.js?v=1771237182"></script>
-    <script src="js/panels/chartGaugePanel.js?v=1771237182"></script>
+    <script src="js/panels/gaugePanel.js?v=1771263625"></script>
+    <script src="js/panels/chartGaugePanel.js?v=1771263625"></script>
 
     <!-- Indicator System -->
-    <script src="js/indicators/config.js?v=1771237182"></script>
-    <script src="js/indicators/calculator.js?v=1771237182"></script>
-    <script src="js/indicators/index.js?v=1771237182"></script>
+    <script src="js/indicators/config.js?v=1771263625"></script>
+    <script src="js/indicators/calculator.js?v=1771263625"></script>
+    <script src="js/indicators/index.js?v=1771263625"></script>
 
     <!-- Chart Type System -->
-    <script src="js/chartTypes/index.js?v=1771237182"></script>
+    <script src="js/chartTypes/index.js?v=1771263625"></script>
 
-    <script src="js/panels/chartPanel.js?v=1771237182"></script>
-    <script src="js/panels/symbolSelectorPanel.js?v=1771237182"></script>
-    <script src="js/panels/randomWalkPanel.js?v=1771237182"></script>
-    <script src="js/panels/multiOrderPanelV5.js?v=1771237182"></script>
+    <script src="js/panels/chartPanel.js?v=1771263625"></script>
+    <script src="js/panels/symbolSelectorPanel.js?v=1771263625"></script>
+    <script src="js/panels/randomWalkPanel.js?v=1771263625"></script>
+    <script src="js/panels/multiOrderPanelV5.js?v=1771263625"></script>
 
-    <script src="js/chart.js?v=1771237182"></script>
-    <script src="js/settings.js?v=1771237182"></script>
+    <script src="js/chart.js?v=1771263625"></script>
+    <script src="js/settings.js?v=1771263625"></script>
     <script>
         // ========== 타임프레임 드롭다운 함수 ==========
         function toggleTimeframeDropdown() {
@@ -3337,10 +3342,10 @@
         </div>
     </div>
 
-    <script src="js/market-schedule.js?v=1771237182"></script>
-    <script src="js/account.js?v=1771237182"></script>
-    <script src="js/trading.js?v=1771237182"></script>
-    <script src="js/connection.js?v=1771237182"></script>
-    <script src="js/init.js?v=1771237182"></script>
+    <script src="js/market-schedule.js?v=1771263625"></script>
+    <script src="js/account.js?v=1771263625"></script>
+    <script src="js/trading.js?v=1771263625"></script>
+    <script src="js/connection.js?v=1771263625"></script>
+    <script src="js/init.js?v=1771263625"></script>
 </body>
 </html>

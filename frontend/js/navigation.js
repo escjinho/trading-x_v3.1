@@ -250,6 +250,7 @@ function selectTradeSubmenuItem(view) {
 function showTradePanel(panel) {
     const buysellPanel = document.getElementById('buysellPanel');
     const multiOrderPanelV5 = document.getElementById('multiOrderPanelV5');
+    const multiV5ComingSoon = document.getElementById('multiV5ComingSoon');
     const quickPanel = document.getElementById('quickPanel');
     
     // 모든 패널 숨기기
@@ -258,6 +259,9 @@ function showTradePanel(panel) {
         multiOrderPanelV5.classList.remove('active');
         multiOrderPanelV5.style.display = 'none';
     }
+    if (multiV5ComingSoon) {
+        multiV5ComingSoon.style.display = 'none';
+    }
     if (quickPanel) {
         quickPanel.style.display = 'none';
     }
@@ -265,22 +269,17 @@ function showTradePanel(panel) {
     // 선택된 패널만 표시
     if (panel === 'buysell') {
         buysellPanel.style.display = 'block';
-        // Account Info에서 값 동기화
         syncAccountInfoToPanels();
     } else if (panel === 'multiV5') {
-        if (multiOrderPanelV5) {
-            multiOrderPanelV5.classList.add('active');
-            multiOrderPanelV5.style.display = 'block';
-            if (typeof updateMultiOrderPanelV5 === 'function') {
-                updateMultiOrderPanelV5();
-            }
-            // Account Info에서 값 동기화
-            syncAccountInfoToPanels();
+        // ★ Multi Order V5 — 준비중 표시
+        if (multiV5ComingSoon) {
+            multiV5ComingSoon.style.display = 'block';
         }
     } else if (panel === 'multi') {
-        // Quick & Easy 패널 - 준비중
+        // ★ Quick & Easy 패널
         if (quickPanel) {
             quickPanel.style.display = 'block';
+            syncAccountInfoToPanels();
         }
     }
 }
