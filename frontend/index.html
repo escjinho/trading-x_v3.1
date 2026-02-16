@@ -64,7 +64,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css?v=1771275782">
-        <link rel="stylesheet" href="css/quickeasy.css?v=1771275782">
+        <link rel="stylesheet" href="css/quickeasy.css?v=1771277108">
     <link rel="stylesheet" href="css/chart.css?v=1771275782">
 </head>
 <body>
@@ -1070,50 +1070,59 @@
                 <div id="quickPanel" style="display: none;">
                     <!-- ★ 상단 고정: 어카운트 섹션 -->
                     <div class="qe-account-bar" id="qeAccountBar">
-                        <div class="qe-account-inner">
-                            <!-- 접힌 상태: 종목 셀렉터 (왼쪽) -->
-                            <div class="qe-symbol-selector" id="qeSymbolSelector">
-                                <button class="qe-symbol-btn" id="qeSymbolBtn" onclick="QuickEasyPanel.toggleSymbolDropdown()">
-                                    <span class="qe-symbol-icon" id="qeSymbolIcon">₿</span>
-                                    <span class="qe-symbol-text" id="qeSymbolName">Bitcoin</span>
-                                    <span class="qe-symbol-arrow">▾</span>
-                                </button>
-                                <!-- 종목 드롭다운 -->
-                                <div class="qe-symbol-dropdown" id="qeSymbolDropdown">
-                                    <div class="qe-symbol-option" onclick="QuickEasyPanel.selectSymbol('BTCUSD', '₿', 'Bitcoin')">
-                                        <span class="qe-opt-icon">₿</span><span>Bitcoin</span>
-                                    </div>
-                                    <div class="qe-symbol-option" onclick="QuickEasyPanel.selectSymbol('ETHUSD', 'Ξ', 'Ethereum')">
-                                        <span class="qe-opt-icon">Ξ</span><span>Ethereum</span>
-                                    </div>
-                                    <div class="qe-symbol-option" onclick="QuickEasyPanel.selectSymbol('XAUUSD.r', '🥇', 'Gold')">
-                                        <span class="qe-opt-icon">🥇</span><span>Gold</span>
-                                    </div>
-                                    <div class="qe-symbol-option" onclick="QuickEasyPanel.selectSymbol('EURUSD.r', '€', 'EUR/USD')">
-                                        <span class="qe-opt-icon">€</span><span>EUR/USD</span>
-                                    </div>
-                                    <div class="qe-symbol-option" onclick="QuickEasyPanel.selectSymbol('US100.', '📈', 'NASDAQ')">
-                                        <span class="qe-opt-icon">📈</span><span>NASDAQ</span>
+                        <div class="qe-account-grid">
+                            <!-- 칸1: 종목(접힘) / Equity(펼침) -->
+                            <div class="qe-grid-cell">
+                                <div class="qe-cell-collapsed" id="qeSymbolCell">
+                                    <button class="qe-symbol-btn" id="qeSymbolBtn" onclick="QuickEasyPanel.toggleSymbolDropdown()">
+                                        <span class="qe-symbol-icon" id="qeSymbolIcon" style="color:#f7931a;">₿</span>
+                                        <span class="qe-symbol-text" id="qeSymbolName">Bitcoin</span>
+                                        <span class="qe-symbol-arrow">▾</span>
+                                    </button>
+                                    <div class="qe-symbol-dropdown" id="qeSymbolDropdown">
+                                        <div class="qe-symbol-option" onclick="QuickEasyPanel.selectSymbol('BTCUSD')">
+                                            <span class="qe-opt-icon" style="color:#f7931a;">₿</span>
+                                            <span class="qe-opt-name">Bitcoin</span>
+                                        </div>
+                                        <div class="qe-symbol-option" onclick="QuickEasyPanel.selectSymbol('EURUSD.r')">
+                                            <span class="qe-opt-icon" style="color:#0052cc;">€</span>
+                                            <span class="qe-opt-name">EUR/USD</span>
+                                        </div>
+                                        <div class="qe-symbol-option" onclick="QuickEasyPanel.selectSymbol('USDJPY.r')">
+                                            <span class="qe-opt-icon" style="color:#dc143c;">¥</span>
+                                            <span class="qe-opt-name">USD/JPY</span>
+                                        </div>
+                                        <div class="qe-symbol-option" onclick="QuickEasyPanel.selectSymbol('XAUUSD.r')">
+                                            <span class="qe-opt-icon" style="color:#ffd700;">✦</span>
+                                            <span class="qe-opt-name">Gold</span>
+                                        </div>
+                                        <div class="qe-symbol-option" onclick="QuickEasyPanel.selectSymbol('US100.')">
+                                            <span class="qe-opt-icon" style="color:#00b450;">⬡</span>
+                                            <span class="qe-opt-name">NASDAQ</span>
+                                        </div>
                                     </div>
                                 </div>
+                                <div class="qe-cell-expanded" id="qeEquityCell">
+                                    <div class="qe-account-label">EQUITY</div>
+                                    <div class="qe-account-value" id="qeEquity">$0.00</div>
+                                </div>
                             </div>
-                            <!-- 펼친 상태: Equity (카드1) -->
-                            <div class="qe-account-item qe-expanded-only" id="qeEquityCard">
-                                <div class="qe-account-label">EQUITY</div>
-                                <div class="qe-account-value" id="qeEquity">$0.00</div>
+                            <!-- 구분선1 (펼침만) -->
+                            <div class="qe-grid-divider qe-show-expanded" id="qeDivider1"></div>
+                            <!-- 칸2: 빈공간(접힘) / Today P&L(펼침) -->
+                            <div class="qe-grid-cell">
+                                <div class="qe-cell-expanded" id="qePLCell">
+                                    <div class="qe-account-label">TODAY P&L</div>
+                                    <div class="qe-account-value" id="qeTodayPL">$0.00</div>
+                                </div>
                             </div>
-                            <div class="qe-account-divider qe-expanded-only" id="qeDivider1"></div>
-                            <!-- 펼친 상태: Today P&L (카드2) -->
-                            <div class="qe-account-item qe-expanded-only" id="qePLCard">
-                                <div class="qe-account-label">TODAY P&L</div>
-                                <div class="qe-account-value" id="qeTodayPL">$0.00</div>
-                            </div>
-                            <div class="qe-account-divider qe-expanded-only" id="qeDivider2"></div>
-                            <!-- 항상: Win/Lose (카드3) + 토글 내장 -->
-                            <div class="qe-account-item qe-winlose-card" onclick="QuickEasyPanel.toggleAccount()">
+                            <!-- 구분선2 (펼침만) -->
+                            <div class="qe-grid-divider qe-show-expanded" id="qeDivider2"></div>
+                            <!-- 칸3: Win/Lose (항상) + 토글 내장 -->
+                            <div class="qe-grid-cell qe-winlose-cell" onclick="QuickEasyPanel.toggleAccount()">
                                 <div class="qe-account-label">
                                     <span class="qe-toggle-icon" id="qeToggleIcon">◂</span>
-                                    WIN / LOSE
+                                    <span>WIN / LOSE</span>
                                 </div>
                                 <div class="qe-account-value" id="qeWinLose">--%</div>
                             </div>
@@ -2031,7 +2040,7 @@
     <script src="js/panels/symbolSelectorPanel.js?v=1771275782"></script>
     <script src="js/panels/randomWalkPanel.js?v=1771275782"></script>
     <script src="js/panels/multiOrderPanelV5.js?v=1771275782"></script>
-        <script src="js/panels/quickEasyPanel.js?v=1771275782"></script>
+        <script src="js/panels/quickEasyPanel.js?v=1771277108"></script>
 
     <script src="js/chart.js?v=1771275782"></script>
     <script src="js/settings.js?v=1771275782"></script>

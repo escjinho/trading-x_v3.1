@@ -17,12 +17,14 @@ const QE_SYMBOL_SPECS = {
     "US100.":   { contract_size: 20 }
 };
 
-const QE_POPULAR_SYMBOLS = {
-    "BTCUSD":   { icon: "₿", name: "Bitcoin" },
-    "ETHUSD":   { icon: "Ξ", name: "Ethereum" },
-    "XAUUSD.r": { icon: "🥇", name: "Gold" },
-    "EURUSD.r": { icon: "€", name: "EUR/USD" },
-    "US100.":   { icon: "📈", name: "NASDAQ" }
+// 종목별 아이콘, 색상, 이름
+const QE_SYMBOL_INFO = {
+    "BTCUSD":   { icon: "₿", color: "#f7931a", name: "Bitcoin" },
+    "ETHUSD":   { icon: "Ξ", color: "#627eea", name: "Ethereum" },
+    "EURUSD.r": { icon: "€", color: "#0052cc", name: "EUR/USD" },
+    "USDJPY.r": { icon: "¥", color: "#dc143c", name: "USD/JPY" },
+    "XAUUSD.r": { icon: "✦", color: "#ffd700", name: "Gold" },
+    "US100.":   { icon: "⬡", color: "#00b450", name: "NASDAQ" }
 };
 
 const QuickEasyPanel = {
@@ -132,7 +134,7 @@ const QuickEasyPanel = {
         if (arrow) arrow.classList.remove('open');
     },
 
-    selectSymbol(symbol, icon, name) {
+    selectSymbol(symbol) {
         // 글로벌 종목 변경
         if (window.currentSymbol !== symbol) {
             window.currentSymbol = symbol;
@@ -148,11 +150,17 @@ const QuickEasyPanel = {
 
     updateSymbolDisplay() {
         const symbol = window.currentSymbol || 'BTCUSD';
-        const info = QE_POPULAR_SYMBOLS[symbol];
+        const info = QE_SYMBOL_INFO[symbol];
         const iconEl = document.getElementById('qeSymbolIcon');
         const nameEl = document.getElementById('qeSymbolName');
-        if (iconEl) iconEl.textContent = info ? info.icon : '📊';
-        if (nameEl) nameEl.textContent = info ? info.name : symbol.replace('.r', '').replace('.', '');
+
+        if (iconEl) {
+            iconEl.textContent = info ? info.icon : '📊';
+            iconEl.style.color = info ? info.color : '#ffffff';
+        }
+        if (nameEl) {
+            nameEl.textContent = info ? info.name : symbol.replace('.r', '').replace('.', '');
+        }
     },
 
     // ========== 어카운트 데이터 갱신 ==========
