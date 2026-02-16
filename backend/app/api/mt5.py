@@ -757,22 +757,32 @@ async def get_candles(
     # ★ null/0 값 캔들 필터링 (lightweight-charts "Value is null" 에러 방지)
     if candles:
         candles = [c for c in candles if c.get('time') and c.get('open') and c.get('high') and c.get('low') and c.get('close')]
+
+    # ★ time 기준 정렬 + 같은 time 중복 제거 (MetaAPI vs realtime 시간 기준 충돌 방지)
+    if candles:
+        candles.sort(key=lambda x: x['time'])
+        seen_times = {}
+        for c in candles:
+            seen_times[c['time']] = c  # 같은 time이면 마지막 것 유지
+        candles = sorted(seen_times.values(), key=lambda x: x['time'])
+
+    if candles:
         closes = [c['close'] for c in candles]
         highs = [c['high'] for c in candles]
         lows = [c['low'] for c in candles]
 
-    if not candles:
-        # MetaAPI 캐시가 비었을 때만 Binance fallback (BTC/ETH만, 서버 시작 직후 대비)
-        if 'BTC' in symbol or 'ETH' in symbol:
-            try:
-                candles = await fetch_binance_candles(symbol, timeframe, count)
-                if candles:
-                    closes = [c['close'] for c in candles]
-                    highs = [c['high'] for c in candles]
-                    lows = [c['low'] for c in candles]
-                    print(f"[Candles] {symbol}/{timeframe} - Binance fallback {len(candles)}개")
-            except Exception as e:
-                print(f"[Candles] Binance fallback error: {e}")
+    # ★ Binance fallback 비활성화 (MetaAPI와 시간 기준 불일치로 D1/W1 역순 발생)
+    # if not candles:
+    #     if 'BTC' in symbol or 'ETH' in symbol:
+    #         try:
+    #             candles = await fetch_binance_candles(symbol, timeframe, count)
+    #             if candles:
+    #                 closes = [c['close'] for c in candles]
+    #                 highs = [c['high'] for c in candles]
+    #                 lows = [c['low'] for c in candles]
+    #                 print(f"[Candles] {symbol}/{timeframe} - Binance fallback {len(candles)}개")
+    #         except Exception as e:
+    #             print(f"[Candles] Binance fallback error: {e}")
 
     if not candles:
         return {"candles": [], "indicators": {}, "source": "no_data", "timeframe": timeframe}

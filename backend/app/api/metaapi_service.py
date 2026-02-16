@@ -463,20 +463,44 @@ def update_candle_realtime(symbol: str, current_price: float):
 
     for tf, (minutes, max_candles) in _TF_CONFIG.items():
         seconds = minutes * 60
-        candle_time = (current_ts // seconds) * seconds  # 타임프레임별 정렬
 
         if tf not in quote_candle_cache[symbol]:
             quote_candle_cache[symbol][tf] = []
 
         candles = quote_candle_cache[symbol][tf]
 
+        # ★ D1/W1: 히스토리 캔들의 시간 기준 유지 (MetaAPI=16:00/22:00 vs UTC=00:00 충돌 방지)
+        if tf in ("D1", "W1") and candles:
+            last_time = candles[-1]['time']
+            if current_ts < last_time + seconds:
+                # 현재 캔들 기간 내 — OHLC 업데이트
+                candles[-1]['close'] = current_price
+                candles[-1]['high'] = max(candles[-1]['high'], current_price)
+                candles[-1]['low'] = min(candles[-1]['low'], current_price)
+            else:
+                # 새 캔들 기간 — 히스토리 기준 시간으로 생성
+                periods = (current_ts - last_time) // seconds
+                new_time = last_time + periods * seconds
+                candles.append({
+                    'time': new_time,
+                    'open': current_price,
+                    'high': current_price,
+                    'low': current_price,
+                    'close': current_price,
+                    'volume': 0
+                })
+                while len(candles) > max_candles:
+                    candles.pop(0)
+            continue
+
+        # 기존 로직 (M1~H4)
+        candle_time = (current_ts // seconds) * seconds
+
         if candles and candles[-1].get('time') == candle_time:
-            # 현재 캔들 업데이트
             candles[-1]['close'] = current_price
             candles[-1]['high'] = max(candles[-1]['high'], current_price)
             candles[-1]['low'] = min(candles[-1]['low'], current_price)
         else:
-            # 새 캔들 추가
             new_candle = {
                 'time': candle_time,
                 'open': current_price,
@@ -486,7 +510,6 @@ def update_candle_realtime(symbol: str, current_price: float):
                 'volume': 0
             }
             candles.append(new_candle)
-            # 최대 개수 유지
             while len(candles) > max_candles:
                 candles.pop(0)
 
