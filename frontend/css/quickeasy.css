@@ -6,7 +6,7 @@
 
 .qe-content {
     padding: 16px;
-    padding-bottom: 170px;
+    padding-bottom: 190px;
 }
 
 /* 하단 고정 바 */
@@ -36,7 +36,6 @@
     flex-direction: column;
 }
 
-/* 라벨: TARGET | $5 단위 — 가운데 정렬 */
 .qe-order-label-row {
     display: flex;
     align-items: center;
@@ -63,7 +62,6 @@
     color: rgba(255, 255, 255, 0.3);
 }
 
-/* 값 조정 컨트롤 */
 .qe-order-control {
     display: flex;
     align-items: center;
@@ -107,11 +105,11 @@
     letter-spacing: 0.3px;
 }
 
-/* ========== SELL / BUY 버튼 ========== */
+/* ========== SELL / BUY 버튼 (Option A: 글래스모피즘) ========== */
 .qe-trade-buttons {
     display: flex;
     gap: 10px;
-    padding: 6px 12px 8px 12px;
+    padding: 6px 12px 10px 12px;
 }
 
 .qe-sell-btn,
@@ -119,32 +117,74 @@
     flex: 1;
     display: flex;
     align-items: center;
-    justify-content: center;
-    height: 44px;
-    font-size: 17px;
-    font-weight: 800;
-    letter-spacing: 1px;
+    justify-content: space-between;
+    height: 64px;
+    padding: 0 16px;
     border: none;
-    border-radius: 10px;
+    border-radius: 12px;
     cursor: pointer;
-    transition: all 0.15s;
+    transition: all 0.2s;
     color: #ffffff;
+    position: relative;
+    overflow: hidden;
+}
+
+/* 글래스 오버레이 */
+.qe-sell-btn::before,
+.qe-buy-btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 50%);
+    pointer-events: none;
 }
 
 .qe-sell-btn {
-    background: linear-gradient(180deg, #ff4d5a 0%, #dc3545 50%, #c82333 100%);
+    background: linear-gradient(135deg, rgba(220,53,69,0.85) 0%, rgba(200,35,51,0.95) 100%);
+    box-shadow: 0 4px 20px rgba(220,53,69,0.3), inset 0 1px 0 rgba(255,255,255,0.12);
 }
 
 .qe-buy-btn {
-    background: linear-gradient(180deg, #00d4a4 0%, #00b894 50%, #00a383 100%);
+    background: linear-gradient(135deg, rgba(0,212,164,0.85) 0%, rgba(0,163,131,0.95) 100%);
+    box-shadow: 0 4px 20px rgba(0,184,148,0.3), inset 0 1px 0 rgba(255,255,255,0.12);
 }
 
 .qe-sell-btn:active {
-    background: linear-gradient(180deg, #dc3545 0%, #c82333 100%);
     transform: scale(0.97);
+    box-shadow: 0 2px 10px rgba(220,53,69,0.4);
 }
 
 .qe-buy-btn:active {
-    background: linear-gradient(180deg, #00b894 0%, #00a383 100%);
     transform: scale(0.97);
+    box-shadow: 0 2px 10px rgba(0,184,148,0.4);
+}
+
+/* 화살표 SVG */
+.qe-btn-arrow {
+    width: 32px;
+    height: 32px;
+    opacity: 0.35;
+    flex-shrink: 0;
+}
+
+/* 텍스트 그룹 */
+.qe-btn-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+}
+
+.qe-btn-title {
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    color: #ffffff;
+}
+
+.qe-btn-payout {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    margin-top: 1px;
 }
