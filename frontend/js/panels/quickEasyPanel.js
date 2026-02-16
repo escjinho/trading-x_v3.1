@@ -186,12 +186,9 @@ const QuickEasyPanel = {
         if (!spec) return 0;
 
         let bid = 0, ask = 0;
-        if (window._lastPrices && window._lastPrices[symbol]) {
-            bid = window._lastPrices[symbol].bid || 0;
-            ask = window._lastPrices[symbol].ask || 0;
-        } else if (window.lastBid && window.lastAsk) {
-            bid = window.lastBid;
-            ask = window.lastAsk;
+        if (window.allPrices && window.allPrices[symbol]) {
+            bid = window.allPrices[symbol].bid || 0;
+            ask = window.allPrices[symbol].ask || 0;
         }
         if (bid <= 0 || ask <= 0) return 0;
 

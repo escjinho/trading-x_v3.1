@@ -84,7 +84,8 @@
       "Bash(pm2 logs:*)",
       "Bash(cat:*)",
       "Bash(head -10 __NEW_LINE_a3f55bb1790beace__ echo \"\" echo \"=== 재시작 후 BTC D1 시간 순서 검증 ===\" sleep 10 python3 -c \"\nimport json, subprocess, datetime\nraw = subprocess.getoutput\\(''''curl -s \"\"http://localhost:8000/api/mt5/candles/BTCUSD?timeframe=D1&count=5\"\"''''\\)\ndata = json.loads\\(raw\\)\ncandles = data.get\\(''''candles'''', []\\)\nprint\\(f''''BTC D1 캔들 수: {len\\(candles\\)}''''\\)\nif candles:\n    ok = True\n    for i, c in enumerate\\(candles\\):\n        dt = datetime.datetime.utcfromtimestamp\\(c[''''time'''']\\)\n        marker = ''''''''\n        if i > 0 and c[''''time''''] <= candles[i-1][''''time'''']:\n            marker = '''' ❌ 역순!''''\n            ok = False\n        print\\(f''''  {dt} \\(time={c[\"\"time\"\"]}\\){marker}''''\\)\n    print\\(f''''\\\\n시간 순서: {\"\"✅ 정상\"\" if ok else \"\"❌ 역순 있음\"\"} ''''\\)\nelse:\n    print\\(''''⚠️ 캔들 없음 \\(캐시 로딩 중일 수 있음\\)''''\\)\n\")",
-      "Bash(node --check:*)"
+      "Bash(node --check:*)",
+      "Bash(cd /var/www/trading-x grep -rn \"window\\\\.\\\\|bid\\\\|ask\" frontend/js/panels/quickEasyPanel.js)"
     ]
   }
 }
