@@ -16,6 +16,24 @@ const ChartPanel = {
     _bidCurrent: null,
     _bidAnimFrameId: null,
 
+    // ★ 인디케이터 데이터에서 시간 갭 > maxGapSec인 구간에 null 삽입 (직선 방지)
+    _insertNullAtGaps(data, maxGapSec) {
+        if (!data || data.length < 2) return data;
+        const result = [];
+        for (let i = 0; i < data.length; i++) {
+            if (i > 0) {
+                const gap = data[i].time - data[i-1].time;
+                if (gap > maxGapSec) {
+                    // 갭 시작 직후와 갭 끝 직전에 null 삽입
+                    result.push({ time: data[i-1].time + 1, value: null });
+                    result.push({ time: data[i].time - 1, value: null });
+                }
+            }
+            result.push(data[i]);
+        }
+        return result;
+    },
+
     /**
      * 차트 패널 초기화
      */
@@ -411,13 +429,14 @@ const ChartPanel = {
                 // 기준가격 설정 (첫 번째 캔들의 시가)
                 this.referencePrice = data.candles[0].open;
 
-                // 인디케이터 데이터 설정 (★ null 체크 + try-catch)
+                // 인디케이터 데이터 설정 (★ null 체크 + try-catch + 갭 처리)
                 if (data.indicators) {
                     try {
-                        if (data.indicators.bb_upper && bbUpperSeries) bbUpperSeries.setData(data.indicators.bb_upper);
-                        if (data.indicators.bb_middle && bbMiddleSeries) bbMiddleSeries.setData(data.indicators.bb_middle);
-                        if (data.indicators.bb_lower && bbLowerSeries) bbLowerSeries.setData(data.indicators.bb_lower);
-                        if (data.indicators.lwma && lwmaSeries) lwmaSeries.setData(data.indicators.lwma);
+                        const _gapSec = 7200; // 2시간 이상 갭이면 null 삽입
+                        if (data.indicators.bb_upper && bbUpperSeries) bbUpperSeries.setData(this._insertNullAtGaps(data.indicators.bb_upper, _gapSec));
+                        if (data.indicators.bb_middle && bbMiddleSeries) bbMiddleSeries.setData(this._insertNullAtGaps(data.indicators.bb_middle, _gapSec));
+                        if (data.indicators.bb_lower && bbLowerSeries) bbLowerSeries.setData(this._insertNullAtGaps(data.indicators.bb_lower, _gapSec));
+                        if (data.indicators.lwma && lwmaSeries) lwmaSeries.setData(this._insertNullAtGaps(data.indicators.lwma, _gapSec));
                     } catch (e) {
                         // lightweight-charts "Value is null" 무시
                     }
@@ -462,10 +481,11 @@ const ChartPanel = {
             const data = await apiCall(`/mt5/candles/${chartSymbol}?timeframe=${currentTimeframe}&count=100`);
             if (data && data.indicators) {
                 try {
-                    if (data.indicators.bb_upper && bbUpperSeries) bbUpperSeries.setData(data.indicators.bb_upper);
-                    if (data.indicators.bb_middle && bbMiddleSeries) bbMiddleSeries.setData(data.indicators.bb_middle);
-                    if (data.indicators.bb_lower && bbLowerSeries) bbLowerSeries.setData(data.indicators.bb_lower);
-                    if (data.indicators.lwma && lwmaSeries) lwmaSeries.setData(data.indicators.lwma);
+                    const _gapSec = 7200; // 2시간 이상 갭이면 null 삽입
+                    if (data.indicators.bb_upper && bbUpperSeries) bbUpperSeries.setData(this._insertNullAtGaps(data.indicators.bb_upper, _gapSec));
+                    if (data.indicators.bb_middle && bbMiddleSeries) bbMiddleSeries.setData(this._insertNullAtGaps(data.indicators.bb_middle, _gapSec));
+                    if (data.indicators.bb_lower && bbLowerSeries) bbLowerSeries.setData(this._insertNullAtGaps(data.indicators.bb_lower, _gapSec));
+                    if (data.indicators.lwma && lwmaSeries) lwmaSeries.setData(this._insertNullAtGaps(data.indicators.lwma, _gapSec));
                 } catch (e) {
                     // lightweight-charts "Value is null" 무시
                 }
