@@ -98,9 +98,10 @@
     font-size: 18px;
     color: rgba(255, 255, 255, 0.5);
     margin-left: 6px;
-    line-height: 0.6;
+    line-height: 1;
     transition: transform 0.2s;
-    vertical-align: middle;
+    position: relative;
+    top: -3px;
 }
 
 .qe-symbol-arrow.open {
