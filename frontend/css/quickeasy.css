@@ -305,6 +305,14 @@
     text-align: center;
 }
 
+.qe-sell-btn .qe-btn-title {
+    margin-left: -6px;
+}
+
+.qe-buy-btn .qe-btn-title {
+    margin-right: -6px;
+}
+
 .qe-btn-payout {
     font-size: 12px;
     font-weight: 600;
