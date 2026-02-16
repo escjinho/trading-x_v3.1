@@ -265,6 +265,10 @@ function showTradePanel(panel) {
     if (quickPanel) {
         quickPanel.style.display = 'none';
     }
+    // Quick&Easy 하단 버튼바 숨기기
+    if (typeof QuickEasyPanel !== 'undefined') {
+        QuickEasyPanel.hide();
+    }
     
     // 선택된 패널만 표시
     if (panel === 'buysell') {
@@ -280,6 +284,10 @@ function showTradePanel(panel) {
         if (quickPanel) {
             quickPanel.style.display = 'block';
             syncAccountInfoToPanels();
+            if (typeof QuickEasyPanel !== 'undefined') {
+                QuickEasyPanel.init();
+                QuickEasyPanel.show();
+            }
         }
     }
 }

@@ -1,0 +1,69 @@
+/* ========== Quick & Easy 패널 ========== */
+
+#quickPanel {
+    position: relative;
+}
+
+.qe-content {
+    padding: 16px;
+    padding-bottom: 80px; /* 하단 버튼 영역 확보 */
+}
+
+/* 하단 고정 SELL/BUY 버튼바 */
+.qe-bottom-bar {
+    display: none;
+    position: fixed;
+    bottom: 58px;
+    left: 0;
+    right: 0;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 8px 0 0 0;
+    background: #000000;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    z-index: 101;
+}
+
+.qe-trade-buttons {
+    display: flex;
+    gap: 0;
+    height: 48px;
+    width: 100%;
+}
+
+.qe-sell-btn,
+.qe-buy-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: #ffffff;
+}
+
+.qe-sell-btn {
+    background: linear-gradient(180deg, #ff4d5a 0%, #dc3545 50%, #c82333 100%);
+    border-radius: 8px 2px 2px 8px;
+    clip-path: polygon(0 0, 100% 0, 97% 100%, 0 100%);
+}
+
+.qe-buy-btn {
+    background: linear-gradient(180deg, #00d4a4 0%, #00b894 50%, #00a383 100%);
+    border-radius: 2px 8px 8px 2px;
+    clip-path: polygon(3% 0, 100% 0, 100% 100%, 0 100%);
+}
+
+.qe-sell-btn:active {
+    background: linear-gradient(180deg, #dc3545 0%, #c82333 100%);
+    transform: scale(0.98);
+}
+
+.qe-buy-btn:active {
+    background: linear-gradient(180deg, #00b894 0%, #00a383 100%);
+    transform: scale(0.98);
+}
