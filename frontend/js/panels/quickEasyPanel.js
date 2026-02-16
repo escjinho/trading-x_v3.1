@@ -1,12 +1,10 @@
 /**
  * Quick & Easy Panel
  * 간편 트레이딩 패널 — magic=100003
- * 바이너리 옵션 스타일
  */
 
 const QE_MAGIC_NUMBER = 100003;
 
-// 종목별 스프레드 비용 계산에 필요한 contract_size
 const QE_SYMBOL_SPECS = {
     "BTCUSD":   { contract_size: 1 },
     "ETHUSD":   { contract_size: 1 },
@@ -21,8 +19,8 @@ const QE_SYMBOL_SPECS = {
 
 const QuickEasyPanel = {
     initialized: false,
+    accountExpanded: true,  // 펼침 상태 (기본: 펼침)
 
-    // 주문 설정 상태
     target: 100,
     targetStep: 5,
     targetMin: 5,
@@ -39,29 +37,26 @@ const QuickEasyPanel = {
         this.setupEventListeners();
         this.updateDisplay();
         this.updatePayout();
+        this.updateAccount();
         this.initialized = true;
     },
 
     setupEventListeners() {
-        // SELL / BUY
         const sellBtn = document.getElementById('qeSellBtn');
         const buyBtn = document.getElementById('qeBuyBtn');
         if (sellBtn) sellBtn.addEventListener('click', () => this.placeSell());
         if (buyBtn) buyBtn.addEventListener('click', () => this.placeBuy());
 
-        // Target -/+
         const targetMinus = document.getElementById('qeTargetMinus');
         const targetPlus = document.getElementById('qeTargetPlus');
         if (targetMinus) targetMinus.addEventListener('click', () => this.adjustTarget(-1));
         if (targetPlus) targetPlus.addEventListener('click', () => this.adjustTarget(1));
 
-        // Lot Size -/+
         const lotMinus = document.getElementById('qeLotMinus');
         const lotPlus = document.getElementById('qeLotPlus');
         if (lotMinus) lotMinus.addEventListener('click', () => this.adjustLot(-1));
         if (lotPlus) lotPlus.addEventListener('click', () => this.adjustLot(1));
 
-        // 길게 누르기 (연속 조정)
         this.setupLongPress('qeTargetMinus', () => this.adjustTarget(-1));
         this.setupLongPress('qeTargetPlus', () => this.adjustTarget(1));
         this.setupLongPress('qeLotMinus', () => this.adjustLot(-1));
@@ -71,22 +66,15 @@ const QuickEasyPanel = {
     setupLongPress(elementId, callback) {
         const el = document.getElementById(elementId);
         if (!el) return;
-
-        let interval = null;
-        let timeout = null;
-
+        let interval = null, timeout = null;
         const start = (e) => {
             e.preventDefault();
-            timeout = setTimeout(() => {
-                interval = setInterval(callback, 100);
-            }, 400);
+            timeout = setTimeout(() => { interval = setInterval(callback, 100); }, 400);
         };
-
         const stop = () => {
             if (timeout) { clearTimeout(timeout); timeout = null; }
             if (interval) { clearInterval(interval); interval = null; }
         };
-
         el.addEventListener('touchstart', start, { passive: false });
         el.addEventListener('touchend', stop);
         el.addEventListener('touchcancel', stop);
@@ -95,6 +83,49 @@ const QuickEasyPanel = {
         el.addEventListener('mouseleave', stop);
     },
 
+    // ========== 어카운트 토글 ==========
+    toggleAccount() {
+        this.accountExpanded = !this.accountExpanded;
+        const bar = document.getElementById('qeAccountBar');
+        if (bar) {
+            if (this.accountExpanded) {
+                bar.classList.remove('collapsed');
+            } else {
+                bar.classList.add('collapsed');
+            }
+        }
+    },
+
+    // ========== 어카운트 데이터 갱신 ==========
+    updateAccount() {
+        // Equity
+        const homeEquity = document.getElementById('homeEquity');
+        const qeEquity = document.getElementById('qeEquity');
+        if (homeEquity && qeEquity) {
+            qeEquity.textContent = homeEquity.textContent;
+        }
+
+        // Today P/L
+        const qeTodayPL = document.getElementById('qeTodayPL');
+        if (qeTodayPL) {
+            const pl = window._todayPLFixed || 0;
+            const sign = pl >= 0 ? '+' : '';
+            qeTodayPL.textContent = sign + '$' + Math.abs(pl).toFixed(2);
+            qeTodayPL.className = 'qe-account-value ' + (pl > 0 ? 'positive' : pl < 0 ? 'negative' : '');
+        }
+
+        // Win / Lose (%)
+        const qeWinLose = document.getElementById('qeWinLose');
+        if (qeWinLose) {
+            const wins = window.todayWins || 0;
+            const losses = window.todayLosses || 0;
+            const total = wins + losses;
+            const rate = total > 0 ? Math.round((wins / total) * 100) : 0;
+            qeWinLose.textContent = wins + ' / ' + losses + ' (' + rate + '%)';
+        }
+    },
+
+    // ========== Target / Lot ==========
     adjustTarget(direction) {
         this.target += direction * this.targetStep;
         this.target = Math.max(this.targetMin, Math.min(this.targetMax, this.target));
@@ -117,21 +148,13 @@ const QuickEasyPanel = {
         if (lotEl) lotEl.textContent = this.lotSize.toFixed(2);
     },
 
-    /**
-     * Payout % 계산
-     * 공식: payout = ((target - spreadCost) / target) * 100
-     * spreadCost = (ask - bid) * contract_size * lotSize
-     */
+    // ========== Payout % ==========
     getSpreadCost() {
-        // 현재 선택된 종목의 bid/ask 가져오기
         const symbol = window.currentSymbol || 'BTCUSD';
         const spec = QE_SYMBOL_SPECS[symbol];
         if (!spec) return 0;
 
-        // WebSocket에서 받은 최신 bid/ask
         let bid = 0, ask = 0;
-
-        // connection.js의 가격 데이터 접근
         if (window._lastPrices && window._lastPrices[symbol]) {
             bid = window._lastPrices[symbol].bid || 0;
             ask = window._lastPrices[symbol].ask || 0;
@@ -139,40 +162,38 @@ const QuickEasyPanel = {
             bid = window.lastBid;
             ask = window.lastAsk;
         }
-
         if (bid <= 0 || ask <= 0) return 0;
 
         const spread = ask - bid;
-        const spreadCost = spread * spec.contract_size * this.lotSize;
-        return spreadCost;
+        return spread * spec.contract_size * this.lotSize;
     },
 
     updatePayout() {
         const spreadCost = this.getSpreadCost();
         let payout = 0;
-
         if (this.target > 0 && spreadCost >= 0) {
             payout = ((this.target - spreadCost) / this.target) * 100;
             payout = Math.max(0, Math.min(100, payout));
         }
-
         const payoutText = spreadCost > 0 ? payout.toFixed(1) + '%' : '--%';
-
         const sellPayout = document.getElementById('qeSellPayout');
         const buyPayout = document.getElementById('qeBuyPayout');
         if (sellPayout) sellPayout.textContent = payoutText;
         if (buyPayout) buyPayout.textContent = payoutText;
     },
 
+    // ========== Show / Hide ==========
     show() {
         const panel = document.getElementById('quickPanel');
         const bottomBar = document.getElementById('qeBottomBar');
         if (panel) panel.style.display = 'block';
         if (bottomBar) bottomBar.style.display = 'block';
         this.updatePayout();
-
-        // 1초마다 payout 갱신 (스프레드 변동 반영)
-        this._payoutInterval = setInterval(() => this.updatePayout(), 1000);
+        this.updateAccount();
+        this._payoutInterval = setInterval(() => {
+            this.updatePayout();
+            this.updateAccount();
+        }, 1000);
     },
 
     hide() {
@@ -180,7 +201,6 @@ const QuickEasyPanel = {
         const bottomBar = document.getElementById('qeBottomBar');
         if (panel) panel.style.display = 'none';
         if (bottomBar) bottomBar.style.display = 'none';
-
         if (this._payoutInterval) {
             clearInterval(this._payoutInterval);
             this._payoutInterval = null;
@@ -188,12 +208,10 @@ const QuickEasyPanel = {
     },
 
     placeSell() {
-        console.log('[QuickEasy] SELL — target:', this.target, 'lot:', this.lotSize, 'spread:', this.getSpreadCost().toFixed(2));
-        // TODO: 주문 기능 구현
+        console.log('[QuickEasy] SELL — target:', this.target, 'lot:', this.lotSize);
     },
 
     placeBuy() {
-        console.log('[QuickEasy] BUY — target:', this.target, 'lot:', this.lotSize, 'spread:', this.getSpreadCost().toFixed(2));
-        // TODO: 주문 기능 구현
+        console.log('[QuickEasy] BUY — target:', this.target, 'lot:', this.lotSize);
     }
 };

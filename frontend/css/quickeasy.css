@@ -6,10 +6,113 @@
 
 .qe-content {
     padding: 16px;
+    padding-top: 8px;
     padding-bottom: 170px;
 }
 
-/* 하단 고정 바 */
+/* ========== 어카운트 섹션 (상단 고정) ========== */
+.qe-account-bar {
+    display: flex;
+    align-items: center;
+    padding: 10px 8px 10px 4px;
+    background: #0a0a0f;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+/* 토글 버튼 */
+.qe-account-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.35);
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.qe-account-toggle:active {
+    color: rgba(255, 255, 255, 0.7);
+    transform: scale(0.9);
+}
+
+/* 카드 컨테이너 */
+.qe-account-cards {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    gap: 0;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.qe-account-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    min-width: 0;
+    transition: all 0.3s ease;
+}
+
+.qe-account-label {
+    font-size: 9px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.3);
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.qe-account-value {
+    font-size: 13px;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+}
+
+.qe-account-divider {
+    width: 1px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.08);
+    flex-shrink: 0;
+    margin: 0 4px;
+    transition: all 0.3s ease;
+}
+
+/* P&L 색상 */
+.qe-account-value.positive { color: #00d4a4; }
+.qe-account-value.negative { color: #ff4d5a; }
+
+/* 접힌 상태 */
+.qe-account-bar.collapsed .qe-account-toggle {
+    transform: scaleX(-1);
+}
+
+.qe-account-bar.collapsed #qeEquityCard,
+.qe-account-bar.collapsed #qePLCard,
+.qe-account-bar.collapsed #qeDivider1,
+.qe-account-bar.collapsed #qeDivider2 {
+    flex: 0;
+    width: 0;
+    min-width: 0;
+    opacity: 0;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+}
+
+/* ========== 하단 고정 바 ========== */
 .qe-bottom-bar {
     display: none;
     position: fixed;
@@ -105,7 +208,7 @@
     letter-spacing: 0.3px;
 }
 
-/* ========== SELL / BUY 버튼 (1줄 + 글래스모피즘) ========== */
+/* ========== SELL / BUY 버튼 ========== */
 .qe-trade-buttons {
     display: flex;
     gap: 10px;
@@ -152,12 +255,8 @@
     transform: scale(0.97);
 }
 
-/* 쌍화살표 SVG — 양쪽 끝에 고정 */
-.qe-btn-arrow {
-    flex-shrink: 0;
-}
+.qe-btn-arrow { flex-shrink: 0; }
 
-/* SELL/BUY 텍스트 — 중앙 배치 (Orbitron via title-font) */
 .qe-btn-title {
     font-size: 18px;
     font-weight: 900;
@@ -167,7 +266,6 @@
     text-align: center;
 }
 
-/* Payout % — 양쪽 끝에 배치 */
 .qe-btn-payout {
     font-size: 12px;
     font-weight: 600;
