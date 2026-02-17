@@ -384,10 +384,12 @@ const QuickEasyPanel = {
         'BTCUSD':   { tick_size: 0.01, tick_value: 0.01, contract_size: 1 },
         'ETHUSD':   { tick_size: 0.01, tick_value: 0.01, contract_size: 1 },
         'EURUSD.r': { tick_size: 0.00001, tick_value: 1.0, contract_size: 100000 },
-        'USDJPY.r': { tick_size: 0.001, tick_value: 1.0, contract_size: 100000 },
+        'USDJPY.r': { tick_size: 0.001, tick_value: 0.67, contract_size: 100000 },
         'GBPUSD.r': { tick_size: 0.00001, tick_value: 1.0, contract_size: 100000 },
         'XAUUSD.r': { tick_size: 0.01, tick_value: 1.0, contract_size: 100 },
-        'US100.':   { tick_size: 0.01, tick_value: 0.01, contract_size: 1 }
+        'US100.':   { tick_size: 0.01, tick_value: 0.2, contract_size: 20 },
+        'AUDUSD.r': { tick_size: 0.00001, tick_value: 1.0, contract_size: 100000 },
+        'USDCAD.r': { tick_size: 0.00001, tick_value: 0.74, contract_size: 100000 }
     },
 
     // profit 계산 (백엔드 calculate_demo_profit 동일)
