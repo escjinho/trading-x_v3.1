@@ -124,6 +124,10 @@ const QuickEasyPanel = {
         this.updateSymbolDisplay();
         this.updatePayout();
         this.closeSymbolDropdown();
+        // 틱차트 리셋
+        if (typeof QeTickChart !== 'undefined') {
+            QeTickChart.reset();
+        }
     },
 
     updateSymbolDisplay() {
@@ -214,8 +218,15 @@ const QuickEasyPanel = {
     show() {
         const panel = document.getElementById('quickPanel');
         const bottomBar = document.getElementById('qeBottomBar');
-        if (panel) panel.style.display = 'block';
+        if (panel) panel.style.display = 'flex';
         if (bottomBar) bottomBar.style.display = 'block';
+        // 틱차트 초기화
+        setTimeout(() => {
+            if (typeof QeTickChart !== 'undefined') {
+                QeTickChart.init();
+                QeTickChart.resize();
+            }
+        }, 100);
         this.updatePayout();
         this.updateAccount();
         this._payoutInterval = setInterval(() => {

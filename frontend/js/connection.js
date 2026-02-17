@@ -461,6 +461,14 @@ function connectWebSocket() {
             // ★ 전역 가격 저장 (V5 패널에서 사용)
             if (data.all_prices) {
                 window.allPrices = data.all_prices;
+                // Quick&Easy 틱차트 업데이트
+                if (typeof QeTickChart !== 'undefined' && QeTickChart.initialized) {
+                    const sym = window.currentSymbol || 'BTCUSD';
+                    if (window.allPrices && window.allPrices[sym]) {
+                        const bid = window.allPrices[sym].bid || 0;
+                        if (bid > 0) QeTickChart.addTick(bid);
+                    }
+                }
             }
             
             // Chart prices만 업데이트 (★ 장 마감 시 업데이트 차단)
@@ -755,6 +763,14 @@ function connectWebSocket() {
         // ★ 전역 가격 저장 (V5 패널에서 사용)
         if (data.all_prices) {
             window.allPrices = data.all_prices;
+                // Quick&Easy 틱차트 업데이트
+                if (typeof QeTickChart !== 'undefined' && QeTickChart.initialized) {
+                    const sym = window.currentSymbol || 'BTCUSD';
+                    if (window.allPrices && window.allPrices[sym]) {
+                        const bid = window.allPrices[sym].bid || 0;
+                        if (bid > 0) QeTickChart.addTick(bid);
+                    }
+                }
         }
         
         // Chart prices — ★ 장 마감 시 업데이트 차단
