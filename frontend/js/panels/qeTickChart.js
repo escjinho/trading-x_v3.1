@@ -253,24 +253,19 @@ const QeTickChart = {
         console.log('[QeTickChart] 리셋 완료');
     },
 
-    // ========== 리사이즈 (동적 높이 계산) ==========
+    // ========== 리사이즈 ==========
     resize() {
         const container = document.getElementById('qeChartContainer');
         const wrap = document.getElementById('qeChartWrap');
         if (!this.chart || !container || !wrap) return;
 
-        // CSS flex가 높이를 결정하므로, 컨테이너 실제 높이 사용
-        const chartW = container.clientWidth;
-        const chartH = wrap.clientHeight || container.clientHeight;
+        // wrap의 실제 렌더링 높이 사용 (CSS flex가 계산한 값)
+        const w = wrap.clientWidth;
+        const h = wrap.clientHeight;
 
-        if (chartH > 0) {
-            this.chart.applyOptions({
-                width: chartW,
-                height: chartH
-            });
+        if (w > 0 && h > 0) {
+            this.chart.applyOptions({ width: w, height: h });
         }
-
-        console.log('[QeTickChart] resize: w=' + chartW + ' h=' + chartH);
     },
 
     destroy() {
