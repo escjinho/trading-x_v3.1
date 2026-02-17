@@ -2206,6 +2206,7 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                                             "auto_closed": True,
                                             "closed_profit": profit,
                                             "is_win": is_win,
+                                            "magic": pos.magic,  # ★ Quick&Easy 패널 연동용
                                             "message": f"🎯 목표 도달! +${profit:,.2f}" if is_win else f"💔 손절! ${profit:,.2f}",
                                             "closed_at": current_time,  # ★ 청산 시간 추가
                                             "martin_step": martin_step,

@@ -3877,6 +3877,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 "auto_closed": auto_closed,
                 "closed_profit": closed_profit,
                 "is_win": is_win,
+                "magic": magic,  # ★ Quick&Easy 패널 연동용
                 "closed_message": closed_message,
                 "closed_at": closed_at,
                 "martin_reset": martin_reset,

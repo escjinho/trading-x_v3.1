@@ -1177,6 +1177,12 @@ function connectWebSocket() {
                 setTimeout(() => {
                     window._plGaugeFrozen = false;
                 }, 5000);
+
+                // ★★★ Quick&Easy 패널 청산 연동 (magic=100003) ★★★
+                if (data.magic === 100003 && typeof QuickEasyPanel !== 'undefined') {
+                    console.log('[WS Live] 🎯 Quick&Easy auto_closed → hidePositionView');
+                    QuickEasyPanel.hidePositionView();
+                }
             }
             }  // ★ wsConnectionStartTime 체크 else 블록 닫기
         }
@@ -1694,6 +1700,12 @@ async function fetchDemoData() {
 
                     // 포지션 UI 업데이트
                     updatePositionUI(false, null);
+
+                    // ★★★ Quick&Easy 패널 청산 연동 (magic=100003) ★★★
+                    if (data.magic === 100003 && typeof QuickEasyPanel !== 'undefined') {
+                        console.log('[fetchDemoData] 🎯 Quick&Easy auto_closed → hidePositionView');
+                        QuickEasyPanel.hidePositionView();
+                    }
                 }
                 }  // ★ wsConnectionStartTime 체크 else 블록 닫기
             }
