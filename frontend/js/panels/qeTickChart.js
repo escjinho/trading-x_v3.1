@@ -67,9 +67,9 @@ const QeTickChart = {
                 borderColor: 'rgba(255, 255, 255, 0.06)',
                 timeVisible: true,
                 secondsVisible: true,
-                rightOffset: 8,
+                rightOffset: 15,
                 fixLeftEdge: false,
-                fixRightEdge: true
+                fixRightEdge: false
             },
             crosshair: {
                 mode: LightweightCharts.CrosshairMode.Normal,
