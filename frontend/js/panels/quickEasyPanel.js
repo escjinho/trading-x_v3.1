@@ -155,6 +155,9 @@ const QuickEasyPanel = {
             qeEquity.textContent = homeEquity.textContent;
         }
 
+        // 포지션 활성 중이면 Win/Lose 덮어쓰기 방지
+        if (this._posEntryPrice > 0) return;
+
         const qeWinLose = document.getElementById('qeWinLose');
         if (qeWinLose) {
             qeWinLose.textContent = '--%';
@@ -503,7 +506,14 @@ const QuickEasyPanel = {
             clearInterval(this._posTimer);
             this._posTimer = null;
         }
-        // _winLoseTimer 제거됨 (addTick 기반으로 변경)
+
+        // 포지션 상태 완전 리셋
+        this._posEntryPrice = 0;
+        this._posSide = '';
+        this._posSymbol = '';
+        this._posVolume = 0;
+        this._posTarget = 0;
+        this._posTPSL = null;
 
         // Win/Lose 초기화
         const wlEl = document.getElementById('qeWinLose');
