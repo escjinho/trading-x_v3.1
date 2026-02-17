@@ -256,8 +256,8 @@ const QuickEasyPanel = {
         }
     },
 
-    placeSell() {
-        console.log('[QuickEasy] SELL — target:', this.target, 'lot:', this.lotSize);
+    async placeSell() {
+        await this.placeOrder('SELL');
     },
 
     calcPanelHeight() {
@@ -277,6 +277,105 @@ const QuickEasyPanel = {
     },
 
     placeBuy() {
-        console.log('[QuickEasy] BUY — target:', this.target, 'lot:', this.lotSize);
+        this.placeOrder('BUY');
+    },
+
+    // ========== 실제 주문 실행 ==========
+    async placeOrder(side) {
+        const symbol = window.currentSymbol || 'BTCUSD';
+        const volume = this.lotSize;
+        const target = this.target;
+        const token = localStorage.getItem('token');
+
+        if (!token) {
+            if (typeof showToast === 'function') showToast('로그인이 필요합니다', 'error');
+            return;
+        }
+
+        // 버튼 비활성화 (중복 주문 방지)
+        const sellBtn = document.getElementById('qeSellBtn');
+        const buyBtn = document.getElementById('qeBuyBtn');
+        if (sellBtn) sellBtn.disabled = true;
+        if (buyBtn) buyBtn.disabled = true;
+
+        try {
+            const isDemo = window.isDemo || false;
+            const baseUrl = window.API_URL || '';
+            const endpoint = isDemo 
+                ? `/demo/order?symbol=${symbol}&order_type=${side}&volume=${volume}&target=${target}`
+                : `/mt5/order?symbol=${symbol}&order_type=${side}&volume=${volume}&target=${target}`;
+
+            let result;
+            if (typeof apiCall === 'function') {
+                result = await apiCall(endpoint, 'POST');
+            } else {
+                const response = await fetch(baseUrl + endpoint, {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                result = await response.json();
+            }
+
+            if (result && result.success) {
+                // 성공 사운드
+                if (typeof playSound === 'function') {
+                    playSound(side.toLowerCase());
+                }
+
+                // 성공 토스트
+                const payout = this.getCurrentPayout();
+                const expectedProfit = (target * payout / 100).toFixed(0);
+                if (typeof showToast === 'function') {
+                    showToast(
+                        '⚡ ' + side + ' 주문 체결! Target $' + target + ' (예상수익 $' + expectedProfit + ')',
+                        'success'
+                    );
+                }
+
+                // 차트에 진입가격 라인 표시
+                const entryPrice = this.getEntryPrice();
+                if (entryPrice > 0 && typeof QeTickChart !== 'undefined') {
+                    QeTickChart.showEntryLine(entryPrice, side.toLowerCase());
+                }
+
+                // 데모 데이터 새로고침
+                if (isDemo && typeof fetchDemoData === 'function') {
+                    fetchDemoData();
+                }
+
+                console.log('[QuickEasy] ' + side + ' 주문 성공:', result);
+            } else {
+                const msg = (result && result.message) ? result.message : '주문 실패';
+                if (typeof showToast === 'function') showToast(msg, 'error');
+                console.error('[QuickEasy] 주문 실패:', result);
+            }
+        } catch (e) {
+            if (typeof showToast === 'function') showToast('네트워크 오류', 'error');
+            console.error('[QuickEasy] 주문 에러:', e);
+        } finally {
+            // 버튼 재활성화
+            if (sellBtn) sellBtn.disabled = false;
+            if (buyBtn) buyBtn.disabled = false;
+        }
+    },
+
+    // 현재 payout % 가져오기
+    getCurrentPayout() {
+        const el = document.getElementById('qeSellPayout') || document.getElementById('qeBuyPayout');
+        if (el) {
+            const text = el.textContent.replace('%', '');
+            const val = parseFloat(text);
+            if (!isNaN(val)) return val;
+        }
+        return 86; // 기본값
+    },
+
+    // 현재 진입가 가져오기
+    getEntryPrice() {
+        const symbol = window.currentSymbol || 'BTCUSD';
+        if (window.allPrices && window.allPrices[symbol]) {
+            return window.allPrices[symbol].bid || 0;
+        }
+        return 0;
     }
 };

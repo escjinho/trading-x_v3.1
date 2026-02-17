@@ -90,7 +90,16 @@
       "Bash(head -5 __NEW_LINE_5f2ac97eb0cf812d__ echo \"\" echo \"=== 3. MetaAPI 틱 데이터 수신부 ===\" grep -n \"onTick\\\\|SynchronizationListener\\\\|safeUpdateCandle\\\\|allPrices\" frontend/js/connection.js)",
       "Bash(cd /var/www/trading-x __NEW_LINE_4fed0aa787cbb3f6__ echo \"=== Chart 탭 패널 구조 ===\" grep -n \"chartPanel\\\\|chart-container\\\\|tradingview\" frontend/index.html)",
       "Bash(head -10 echo \"\" echo \"=== Chart 탭 CSS \\(높이 관련\\) ===\" grep -B2 -A8 \"chart-container\\\\|chartPanel\\\\|tv-chart\" frontend/css/*.css)",
-      "Bash(head -15 echo \"\" echo \"=== Chart 탭의 iframe/widget 높이 ===\" grep -n \"iframe\\\\|widget\\\\|tv_chart\" frontend/index.html)"
+      "Bash(head -15 echo \"\" echo \"=== Chart 탭의 iframe/widget 높이 ===\" grep -n \"iframe\\\\|widget\\\\|tv_chart\" frontend/index.html)",
+      "Bash(cd /var/www/trading-x __NEW_LINE_18049e2746ec1289__ echo \"=== placeBuy/placeSell 현재 상태 ===\" grep -n \"placeBuy\\\\|placeSell\\\\|placeOrder\" frontend/js/panels/quickEasyPanel.js)",
+      "Bash(head -10 echo \"\" echo \"=== apiCall 함수 ===\" grep -n \"function apiCall\\\\|async function apiCall\" frontend/js/*.js)",
+      "Bash(head -5 echo \"\" echo \"=== isDemo / API_URL / token ===\" grep -n \"window.isDemo\\\\|let isDemo\\\\|const isDemo\" frontend/js/*.js)",
+      "Bash(head -5 grep -n \"API_URL\\\\s*=\" frontend/js/*.js)",
+      "Bash(head:*)",
+      "Bash(head -5 echo \"\" echo \"=== playSound ===\" grep -n \"function playSound\" frontend/js/*.js)",
+      "Bash(head -3 echo \"\" echo \"=== showToast ===\" grep -n \"function showToast\" frontend/js/*.js)",
+      "Bash(head -3 echo \"\" echo \"=== SELL/BUY 버튼 onclick ===\" grep -n \"qeSell\\\\|qeBuy\\\\|placeBuy\\\\|placeSell\" frontend/index.html)",
+      "Bash(cd /var/www/trading-x grep -n -A20 \"placeSell\\(\\)\" frontend/js/panels/quickEasyPanel.js)"
     ]
   }
 }
