@@ -101,7 +101,8 @@
       "Bash(head -3 echo \"\" echo \"=== SELL/BUY 버튼 onclick ===\" grep -n \"qeSell\\\\|qeBuy\\\\|placeBuy\\\\|placeSell\" frontend/index.html)",
       "Bash(cd /var/www/trading-x grep -n -A20 \"placeSell\\(\\)\" frontend/js/panels/quickEasyPanel.js)",
       "Bash(sqlite3:*)",
-      "Bash(cd /var/www/trading-x __NEW_LINE_4f9d2294d6373235__ echo \"=== 1. window.isDemo 사용처 확인 ===\" grep -n 'window.isDemo' frontend/js/panels/quickEasyPanel.js __NEW_LINE_4f9d2294d6373235__ echo \"\" echo \"=== 2. mt5.py 중복체크 + 캐시 클리어 로직 확인 ===\" grep -n 'user_live_cache\\\\|user_metaapi_cache' backend/app/api/mt5.py)"
+      "Bash(cd /var/www/trading-x __NEW_LINE_4f9d2294d6373235__ echo \"=== 1. window.isDemo 사용처 확인 ===\" grep -n 'window.isDemo' frontend/js/panels/quickEasyPanel.js __NEW_LINE_4f9d2294d6373235__ echo \"\" echo \"=== 2. mt5.py 중복체크 + 캐시 클리어 로직 확인 ===\" grep -n 'user_live_cache\\\\|user_metaapi_cache' backend/app/api/mt5.py)",
+      "Bash(\" | tr -d '''' \\\\n''''\\)\")"
     ]
   }
 }

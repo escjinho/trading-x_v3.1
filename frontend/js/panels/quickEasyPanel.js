@@ -307,9 +307,9 @@ const QuickEasyPanel = {
         if (buyBtn) buyBtn.disabled = true;
 
         try {
-            const isDemo = isDemo || false;
+            const _isDemo = (typeof isDemo !== 'undefined') ? isDemo : false;
             const baseUrl = window.API_URL || '';
-            const endpoint = isDemo 
+            const endpoint = _isDemo
                 ? `/demo/order?symbol=${symbol}&order_type=${side}&volume=${volume}&target=${target}&magic=${QE_MAGIC_NUMBER}`
                 : `/mt5/order?symbol=${symbol}&order_type=${side}&volume=${volume}&target=${target}&magic=${QE_MAGIC_NUMBER}`;
 
@@ -587,9 +587,9 @@ const QuickEasyPanel = {
         if (closeBtn) closeBtn.disabled = true;
 
         try {
-            const isDemo = isDemo || false;
+            const _isDemo = (typeof isDemo !== 'undefined') ? isDemo : false;
 
-            if (isDemo) {
+            if (_isDemo) {
                 // 데모: 전체 청산 API
                 const endpoint = '/demo/close-all?symbol=' + symbol + '&magic=' + QE_MAGIC_NUMBER;
                 if (typeof apiCall === 'function') {
