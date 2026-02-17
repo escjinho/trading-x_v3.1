@@ -337,10 +337,11 @@ const QuickEasyPanel = {
                     );
                 }
 
-                // 차트에 진입가격 라인 표시
+                // 차트에 진입가격 + SL/TP 라인 표시
                 const entryPrice = this.getEntryPrice();
                 if (entryPrice > 0 && typeof QeTickChart !== 'undefined') {
-                    QeTickChart.showEntryLine(entryPrice, side.toLowerCase());
+                    const tpsl = this.calcTPSL(entryPrice, side, volume, target, symbol);
+                    QeTickChart.showEntryLine(entryPrice, side.toLowerCase(), tpsl.tp, tpsl.sl);
                 }
 
                 // 포지션 뷰로 전환

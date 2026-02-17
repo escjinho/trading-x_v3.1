@@ -15,6 +15,10 @@ const QeTickChart = {
     animFrameId: null,
     animating: false,
     priceLine: null,         // 진입가격 라인
+    tpPriceLine: null,       // TP 라인
+    slPriceLine: null,       // SL 라인
+    _autoReturnTimer: null,  // 자동복귀 타이머
+    _userInteracting: false, // 사용자 조작 중
     initialized: false,
 
     // 종목별 카테고리
@@ -77,8 +81,8 @@ const QeTickChart = {
                 vertLine: { color: 'rgba(255, 255, 255, 0.15)', width: 1, style: 2 },
                 horzLine: { color: 'rgba(255, 255, 255, 0.15)', width: 1, style: 2 }
             },
-            handleScroll: false,
-            handleScale: false
+            handleScroll: true,
+            handleScale: true
         });
 
         this.areaSeries = this.chart.addAreaSeries({
@@ -95,6 +99,38 @@ const QeTickChart = {
                 precision: this.getDecimals(),
                 minMove: Math.pow(10, -this.getDecimals())
             }
+        });
+
+        // 사용자 조작 감지 → 5초 후 자동 현재가 복귀
+        this.chart.timeScale().subscribeVisibleTimeRangeChange(() => {
+            if (this._userInteracting) return;
+            this._userInteracting = true;
+            if (this._autoReturnTimer) clearTimeout(this._autoReturnTimer);
+            this._autoReturnTimer = setTimeout(() => {
+                this._userInteracting = false;
+                if (this.chart) {
+                    this.chart.timeScale().scrollToRealTime();
+                }
+            }, 5000);
+        });
+
+        // 터치/마우스 조작 감지
+        container.addEventListener('touchstart', () => {
+            this._userInteracting = true;
+            if (this._autoReturnTimer) clearTimeout(this._autoReturnTimer);
+        }, { passive: true });
+        container.addEventListener('touchend', () => {
+            this._autoReturnTimer = setTimeout(() => {
+                this._userInteracting = false;
+                if (this.chart) this.chart.timeScale().scrollToRealTime();
+            }, 5000);
+        }, { passive: true });
+        container.addEventListener('mouseup', () => {
+            if (this._autoReturnTimer) clearTimeout(this._autoReturnTimer);
+            this._autoReturnTimer = setTimeout(() => {
+                this._userInteracting = false;
+                if (this.chart) this.chart.timeScale().scrollToRealTime();
+            }, 5000);
         });
 
         // 리사이즈 대응
@@ -237,22 +273,52 @@ const QeTickChart = {
         // 항상 초록색 유지
     },
 
-    // ========== 진입가격 라인 ==========
-    showEntryLine(price, side) {
+    // ========== 진입가격 + SL/TP 라인 ==========
+    showEntryLine(price, side, tpPrice, slPrice) {
         this.removeEntryLine();
         if (!this.areaSeries) return;
 
-        const color = side === 'buy' ? '#00d4a4' : '#ff4d5a';
+        const sideColor = side === 'buy' ? '#00d4a4' : '#ff4d5a';
         const label = side === 'buy' ? '● BUY' : '● SELL';
 
+        // 진입가 점선
         this.priceLine = this.areaSeries.createPriceLine({
             price: price,
-            color: color,
+            color: sideColor,
             lineWidth: 1,
-            lineStyle: 2,  // 점선
+            lineStyle: 2,
             axisLabelVisible: true,
             title: label
         });
+
+        // TP 라인 (항상 초록)
+        if (tpPrice && tpPrice > 0) {
+            this.tpPriceLine = this.areaSeries.createPriceLine({
+                price: tpPrice,
+                color: '#00d4a4',
+                lineWidth: 2,
+                lineStyle: 0,  // 실선
+                axisLabelVisible: true,
+                title: 'TP'
+            });
+        }
+
+        // SL 라인 (항상 빨강)
+        if (slPrice && slPrice > 0) {
+            this.slPriceLine = this.areaSeries.createPriceLine({
+                price: slPrice,
+                color: '#ff4d5a',
+                lineWidth: 2,
+                lineStyle: 0,
+                axisLabelVisible: true,
+                title: 'SL'
+            });
+        }
+
+        // 진입 시 줌아웃 연출: SL/TP 전체 보이도록
+        if (tpPrice && slPrice) {
+            this.zoomToShowTPSL(price, tpPrice, slPrice);
+        }
     },
 
     removeEntryLine() {
@@ -260,6 +326,39 @@ const QeTickChart = {
             this.areaSeries.removePriceLine(this.priceLine);
             this.priceLine = null;
         }
+        if (this.tpPriceLine && this.areaSeries) {
+            this.areaSeries.removePriceLine(this.tpPriceLine);
+            this.tpPriceLine = null;
+        }
+        if (this.slPriceLine && this.areaSeries) {
+            this.areaSeries.removePriceLine(this.slPriceLine);
+            this.slPriceLine = null;
+        }
+    },
+
+    // ========== 진입 시 줌아웃 → 자동 복귀 ==========
+    zoomToShowTPSL(entry, tp, sl) {
+        if (!this.chart || !this.areaSeries) return;
+
+        // SL/TP가 보이도록 가격 범위 조정
+        const margin = Math.abs(tp - sl) * 0.15;
+        const high = Math.max(tp, sl) + margin;
+        const low = Math.min(tp, sl) - margin;
+
+        this.areaSeries.applyOptions({
+            autoscaleInfoProvider: () => ({
+                priceRange: { minValue: low, maxValue: high }
+            })
+        });
+
+        // 2.5초 후 자동스케일 복원
+        setTimeout(() => {
+            if (this.areaSeries) {
+                this.areaSeries.applyOptions({
+                    autoscaleInfoProvider: undefined
+                });
+            }
+        }, 2500);
     },
 
     // ========== 종목 변경 시 리셋 ==========
