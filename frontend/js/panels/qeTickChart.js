@@ -168,6 +168,28 @@ const QeTickChart = {
         if (this.tickData.length > this.maxTicks * 2) {
             this.tickData = this.tickData.slice(-this.maxTicks);
         }
+
+        // 펄스 마커 위치 업데이트
+        this.updatePulse(now, price);
+    },
+
+    // ========== 현재가 펄스 마커 ==========
+    updatePulse(time, price) {
+        const marker = document.getElementById('qePulseMarker');
+        if (!marker || !this.chart || !this.areaSeries) return;
+
+        try {
+            const timeCoord = this.chart.timeScale().timeToCoordinate(time);
+            const priceCoord = this.areaSeries.priceToCoordinate(price);
+
+            if (timeCoord !== null && priceCoord !== null && timeCoord > 0 && priceCoord > 0) {
+                marker.style.display = 'block';
+                marker.style.left = timeCoord + 'px';
+                marker.style.top = priceCoord + 'px';
+            }
+        } catch (e) {
+            // 좌표 변환 실패 시 무시
+        }
     },
 
     // ========== 호가 영역 업데이트 ==========
