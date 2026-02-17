@@ -140,7 +140,7 @@ const QeTickChart = {
         if (!this.areaSeries) { this.animating = false; return; }
 
         const diff = this.targetPrice - (this.lastPrice || this.targetPrice);
-        const step = diff * 0.15;  // 이징: 30%씩 접근
+        const step = diff * 0.08;  // 이징: 30%씩 접근
 
         if (Math.abs(diff) < 0.001) {
             // 도착 — 최종값 적용
