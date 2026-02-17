@@ -378,6 +378,41 @@ const QuickEasyPanel = {
         return 86; // 기본값
     },
 
+    // 종목별 스펙 (백엔드 DEFAULT_SYMBOL_SPECS와 동일)
+    SYMBOL_SPECS: {
+        'BTCUSD':   { tick_size: 0.01, tick_value: 0.01, contract_size: 1 },
+        'ETHUSD':   { tick_size: 0.01, tick_value: 0.01, contract_size: 1 },
+        'EURUSD.r': { tick_size: 0.00001, tick_value: 1.0, contract_size: 100000 },
+        'USDJPY.r': { tick_size: 0.001, tick_value: 1.0, contract_size: 100000 },
+        'GBPUSD.r': { tick_size: 0.00001, tick_value: 1.0, contract_size: 100000 },
+        'XAUUSD.r': { tick_size: 0.01, tick_value: 1.0, contract_size: 100 },
+        'US100.':   { tick_size: 0.01, tick_value: 0.01, contract_size: 1 }
+    },
+
+    // profit 계산 (백엔드 calculate_demo_profit 동일)
+    calcProfit(entryPrice, currentPrice, side, volume, symbol) {
+        const spec = this.SYMBOL_SPECS[symbol] || { tick_size: 0.01, tick_value: 0.01, contract_size: 1 };
+        let priceDiff = currentPrice - entryPrice;
+        if (side === 'SELL') priceDiff = -priceDiff;
+        return priceDiff * volume * spec.contract_size * spec.tick_value / spec.tick_size;
+    },
+
+    // TP/SL 가격 계산
+    calcTPSL(entryPrice, side, volume, target, symbol) {
+        const spec = this.SYMBOL_SPECS[symbol] || { tick_size: 0.01, tick_value: 0.01, contract_size: 1 };
+        const profitPerPoint = volume * spec.contract_size * spec.tick_value / spec.tick_size;
+        if (profitPerPoint <= 0) return { tp: 0, sl: 0 };
+
+        const tpDiff = target / profitPerPoint;
+        const slDiff = (target * 0.98) / profitPerPoint;
+
+        if (side === 'BUY') {
+            return { tp: entryPrice + tpDiff, sl: entryPrice - slDiff };
+        } else {
+            return { tp: entryPrice - tpDiff, sl: entryPrice + slDiff };
+        }
+    },
+
     // 현재 진입가 가져오기
     getEntryPrice() {
         const symbol = window.currentSymbol || 'BTCUSD';
@@ -430,6 +465,18 @@ const QuickEasyPanel = {
             if (timeEl) timeEl.textContent = mm + ':' + ss;
         }, 1000);
 
+        // Win/Lose 실시간 업데이트
+        this._posEntryPrice = entryPrice;
+        this._posSide = side;
+        this._posSymbol = window.currentSymbol || 'BTCUSD';
+        this._posVolume = this.lotSize;
+        this._posTarget = this.target;
+        this._posTPSL = this.calcTPSL(entryPrice, side, this.lotSize, this.target, this._posSymbol);
+
+        if (this._winLoseTimer) clearInterval(this._winLoseTimer);
+        this._winLoseTimer = setInterval(() => this.updateWinLose(), 500);
+        this.updateWinLose(); // 즉시 1회
+
         // CLOSE 버튼 이벤트
         const closeBtn = document.getElementById('qeCloseBtn');
         if (closeBtn) {
@@ -450,12 +497,58 @@ const QuickEasyPanel = {
             clearInterval(this._posTimer);
             this._posTimer = null;
         }
+        if (this._winLoseTimer) {
+            clearInterval(this._winLoseTimer);
+            this._winLoseTimer = null;
+        }
+
+        // Win/Lose 초기화
+        const wlEl = document.getElementById('qeWinLose');
+        if (wlEl) { wlEl.textContent = '--%'; wlEl.style.color = ''; }
 
         // 진입라인 제거
         if (typeof QeTickChart !== 'undefined') {
             QeTickChart.removeEntryLine();
         }
     },
+
+    updateWinLose() {
+        const symbol = this._posSymbol;
+        const currentPrice = (window.allPrices && window.allPrices[symbol])
+            ? (window.allPrices[symbol].bid || 0) : 0;
+        if (currentPrice <= 0 || !this._posEntryPrice) return;
+
+        const profit = this.calcProfit(
+            this._posEntryPrice, currentPrice, this._posSide,
+            this._posVolume, symbol
+        );
+        const target = this._posTarget;
+        const slAmount = target * 0.98;
+        const totalRange = target + slAmount;
+
+        // -slAmount ~ +target 범위에서 현재 위치 (0~100%)
+        let winPct = ((profit + slAmount) / totalRange) * 100;
+        winPct = Math.max(0, Math.min(100, winPct));
+
+        const wlEl = document.getElementById('qeWinLose');
+        if (wlEl) {
+            if (winPct >= 50) {
+                wlEl.textContent = Math.round(winPct) + '%';
+                wlEl.style.color = '#00d4a4';
+            } else {
+                wlEl.textContent = Math.round(winPct) + '%';
+                wlEl.style.color = '#ff4d5a';
+            }
+        }
+    },
+
+    _winLoseTimer: null,
+    _posEntryPrice: 0,
+    _posSide: '',
+    _posSymbol: '',
+    _posVolume: 0,
+    _posTarget: 0,
+    _posTPSL: null,
 
     async closePosition() {
         const symbol = window.currentSymbol || 'BTCUSD';
