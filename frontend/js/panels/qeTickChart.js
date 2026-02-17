@@ -194,24 +194,9 @@ const QeTickChart = {
         if (catEl) catEl.textContent = this.CATEGORIES[symbol] || 'Market';
     },
 
-    // ========== 상승/하락 색상 ==========
+    // ========== 색상 (항상 초록) ==========
     updateColor(price) {
-        if (!this.areaSeries) return;
-
-        const isUp = price >= this.prevPrice;
-        if (isUp) {
-            this.areaSeries.applyOptions({
-                topColor: 'rgba(0, 212, 164, 0.25)',
-                bottomColor: 'rgba(0, 212, 164, 0.02)',
-                lineColor: '#00d4a4'
-            });
-        } else {
-            this.areaSeries.applyOptions({
-                topColor: 'rgba(255, 77, 90, 0.25)',
-                bottomColor: 'rgba(255, 77, 90, 0.02)',
-                lineColor: '#ff4d5a'
-            });
-        }
+        // 항상 초록색 유지
     },
 
     // ========== 진입가격 라인 ==========
