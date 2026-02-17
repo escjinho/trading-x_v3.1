@@ -82,13 +82,13 @@ const QeTickChart = {
         });
 
         this.areaSeries = this.chart.addAreaSeries({
-            topColor: 'rgba(0, 212, 164, 0.25)',
-            bottomColor: 'rgba(0, 212, 164, 0.02)',
-            lineColor: '#00d4a4',
+            topColor: 'rgba(0, 210, 255, 0.25)',
+            bottomColor: 'rgba(0, 210, 255, 0.02)',
+            lineColor: '#00d2ff',
             lineWidth: 2,
             crosshairMarkerVisible: true,
             crosshairMarkerRadius: 4,
-            crosshairMarkerBorderColor: '#00d4a4',
+            crosshairMarkerBorderColor: '#00d2ff',
             crosshairMarkerBackgroundColor: '#0a0a0f',
             priceFormat: {
                 type: 'price',
