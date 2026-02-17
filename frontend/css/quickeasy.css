@@ -4,7 +4,7 @@
     position: relative;
     display: none;
     flex-direction: column;
-    height: calc(100vh - 58px - 128px);
+    height: calc(100vh - 58px - 148px);
     overflow: hidden;
 }
 
