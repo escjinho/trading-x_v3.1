@@ -108,9 +108,7 @@ const QeTickChart = {
             if (this._autoReturnTimer) clearTimeout(this._autoReturnTimer);
             this._autoReturnTimer = setTimeout(() => {
                 this._userInteracting = false;
-                if (this.chart) {
-                    this.chart.timeScale().scrollToRealTime();
-                }
+                this.resetChartView();
             }, 5000);
         });
 
@@ -122,14 +120,14 @@ const QeTickChart = {
         container.addEventListener('touchend', () => {
             this._autoReturnTimer = setTimeout(() => {
                 this._userInteracting = false;
-                if (this.chart) this.chart.timeScale().scrollToRealTime();
+                this.resetChartView();
             }, 5000);
         }, { passive: true });
         container.addEventListener('mouseup', () => {
             if (this._autoReturnTimer) clearTimeout(this._autoReturnTimer);
             this._autoReturnTimer = setTimeout(() => {
                 this._userInteracting = false;
-                if (this.chart) this.chart.timeScale().scrollToRealTime();
+                this.resetChartView();
             }, 5000);
         });
 
@@ -340,7 +338,6 @@ const QeTickChart = {
     zoomToShowTPSL(entry, tp, sl) {
         if (!this.chart || !this.areaSeries) return;
 
-        // SL/TP가 보이도록 가격 범위 조정
         const margin = Math.abs(tp - sl) * 0.15;
         const high = Math.max(tp, sl) + margin;
         const low = Math.min(tp, sl) - margin;
@@ -351,14 +348,30 @@ const QeTickChart = {
             })
         });
 
-        // 2.5초 후 자동스케일 복원
-        setTimeout(() => {
-            if (this.areaSeries) {
-                this.areaSeries.applyOptions({
-                    autoscaleInfoProvider: undefined
-                });
-            }
-        }, 2500);
+        // 2.5초 후 완벽 복원
+        setTimeout(() => this.resetChartView(), 2500);
+    },
+
+    // ========== 차트 초기 상태 완벽 복원 ==========
+    resetChartView() {
+        if (!this.chart || !this.areaSeries) return;
+
+        // 1. autoscaleInfoProvider 제거
+        this.areaSeries.applyOptions({
+            autoscaleInfoProvider: undefined
+        });
+
+        // 2. 가격축 자동스케일 + 마진 복원
+        this.chart.priceScale('right').applyOptions({
+            autoScale: true,
+            scaleMargins: { top: 0.1, bottom: 0.1 }
+        });
+
+        // 3. 시간축 복원
+        this.chart.timeScale().scrollToRealTime();
+        this.chart.timeScale().applyOptions({
+            rightOffset: 6
+        });
     },
 
     // ========== 종목 변경 시 리셋 ==========
