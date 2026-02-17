@@ -220,13 +220,18 @@ const QuickEasyPanel = {
         const bottomBar = document.getElementById('qeBottomBar');
         if (panel) panel.style.display = 'flex';
         if (bottomBar) bottomBar.style.display = 'block';
-        // 틱차트 초기화
+        // 틱차트 초기화 (다단계 resize로 레이아웃 안정화)
         setTimeout(() => {
             if (typeof QeTickChart !== 'undefined') {
                 QeTickChart.init();
                 QeTickChart.resize();
             }
         }, 100);
+        setTimeout(() => {
+            if (typeof QeTickChart !== 'undefined') {
+                QeTickChart.resize();
+            }
+        }, 300);
         this.updatePayout();
         this.updateAccount();
         this._payoutInterval = setInterval(() => {

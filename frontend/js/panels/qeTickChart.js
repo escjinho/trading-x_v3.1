@@ -259,28 +259,18 @@ const QeTickChart = {
         const wrap = document.getElementById('qeChartWrap');
         if (!this.chart || !container || !wrap) return;
 
-        // 동적 높이 계산: 화면 전체에서 각 요소 높이 차감
-        const vh = window.innerHeight;
-        const header = document.querySelector('.hero-section');
-        const accountBar = document.getElementById('qeAccountBar');
-        const bottomBar = document.getElementById('qeBottomBar');
-        const navBar = document.querySelector('.bottom-nav');
+        // CSS flex가 높이를 결정하므로, 컨테이너 실제 높이 사용
+        const chartW = container.clientWidth;
+        const chartH = wrap.clientHeight || container.clientHeight;
 
-        const headerH = header ? header.offsetHeight : 0;
-        const accountH = accountBar ? accountBar.offsetHeight : 0;
-        const bottomH = bottomBar ? bottomBar.offsetHeight : 0;
-        const navH = navBar ? navBar.offsetHeight : 0;
+        if (chartH > 0) {
+            this.chart.applyOptions({
+                width: chartW,
+                height: chartH
+            });
+        }
 
-        const chartH = vh - headerH - accountH - bottomH - navH;
-
-        wrap.style.height = Math.max(200, chartH) + 'px';
-
-        this.chart.applyOptions({
-            width: container.clientWidth,
-            height: Math.max(200, chartH)
-        });
-
-        console.log('[QeTickChart] resize: vh=' + vh + ' header=' + headerH + ' account=' + accountH + ' bottom=' + bottomH + ' nav=' + navH + ' → chart=' + chartH);
+        console.log('[QeTickChart] resize: w=' + chartW + ' h=' + chartH);
     },
 
     destroy() {

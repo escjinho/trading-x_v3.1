@@ -10,6 +10,7 @@
 
 .qe-content {
     padding: 0;
+    padding-bottom: 130px; /* space for fixed qe-bottom-bar */
     display: flex;
     flex-direction: column;
     flex: 1;
