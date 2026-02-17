@@ -358,8 +358,8 @@ const QeTickChart = {
         // 플래그만 세팅 → provider가 자동 반영 (applyOptions 불필요)
         this._customPriceRange = { minValue: low, maxValue: high };
 
-        // 2.5초 후 복원
-        setTimeout(() => this.resetChartView(), 2500);
+        // 3초 후 복원
+        setTimeout(() => this.resetChartView(), 3000);
     },
 
     // ========== 차트 초기 상태 완벽 복원 ==========
