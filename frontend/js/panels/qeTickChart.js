@@ -55,8 +55,8 @@ const QeTickChart = {
                 fontSize: 10
             },
             grid: {
-                vertLines: { color: 'rgba(255, 255, 255, 0.04)' },
-                horzLines: { color: 'rgba(255, 255, 255, 0.04)' }
+                vertLines: { color: 'transparent' },
+                horzLines: { color: 'transparent' }
             },
             rightPriceScale: {
                 borderColor: 'rgba(255, 255, 255, 0.06)',
