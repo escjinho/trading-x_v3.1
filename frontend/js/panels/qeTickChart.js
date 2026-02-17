@@ -356,9 +356,10 @@ const QeTickChart = {
     resetChartView() {
         if (!this.chart || !this.areaSeries) return;
 
-        // 1. autoscaleInfoProvider 제거
+        // 1. autoscaleInfoProvider → null 반환 (기본 autoScale 동작으로 복귀)
+        //    undefined는 3.8.0에서 불안정 → () => null이 안전
         this.areaSeries.applyOptions({
-            autoscaleInfoProvider: undefined
+            autoscaleInfoProvider: () => null
         });
 
         // 2. 가격축 자동스케일 + 마진 복원
