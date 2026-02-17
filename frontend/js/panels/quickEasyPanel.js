@@ -307,8 +307,8 @@ const QuickEasyPanel = {
             const isDemo = window.isDemo || false;
             const baseUrl = window.API_URL || '';
             const endpoint = isDemo 
-                ? `/demo/order?symbol=${symbol}&order_type=${side}&volume=${volume}&target=${target}`
-                : `/mt5/order?symbol=${symbol}&order_type=${side}&volume=${volume}&target=${target}`;
+                ? `/demo/order?symbol=${symbol}&order_type=${side}&volume=${volume}&target=${target}&magic=${QE_MAGIC_NUMBER}`
+                : `/mt5/order?symbol=${symbol}&order_type=${side}&volume=${volume}&target=${target}&magic=${QE_MAGIC_NUMBER}`;
 
             let result;
             if (typeof apiCall === 'function') {
@@ -566,13 +566,13 @@ const QuickEasyPanel = {
 
             if (isDemo) {
                 // 데모: 전체 청산 API
-                const endpoint = '/demo/close-all?symbol=' + symbol;
+                const endpoint = '/demo/close-all?symbol=' + symbol + '&magic=' + QE_MAGIC_NUMBER;
                 if (typeof apiCall === 'function') {
                     await apiCall(endpoint, 'POST');
                 }
             } else {
                 // 라이브: 심볼별 청산
-                const endpoint = '/mt5/close-all?symbol=' + symbol;
+                const endpoint = '/mt5/close-all?symbol=' + symbol + '&magic=' + QE_MAGIC_NUMBER;
                 if (typeof apiCall === 'function') {
                     await apiCall(endpoint, 'POST');
                 }

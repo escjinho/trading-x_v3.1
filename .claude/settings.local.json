@@ -99,7 +99,8 @@
       "Bash(head -5 echo \"\" echo \"=== playSound ===\" grep -n \"function playSound\" frontend/js/*.js)",
       "Bash(head -3 echo \"\" echo \"=== showToast ===\" grep -n \"function showToast\" frontend/js/*.js)",
       "Bash(head -3 echo \"\" echo \"=== SELL/BUY 버튼 onclick ===\" grep -n \"qeSell\\\\|qeBuy\\\\|placeBuy\\\\|placeSell\" frontend/index.html)",
-      "Bash(cd /var/www/trading-x grep -n -A20 \"placeSell\\(\\)\" frontend/js/panels/quickEasyPanel.js)"
+      "Bash(cd /var/www/trading-x grep -n -A20 \"placeSell\\(\\)\" frontend/js/panels/quickEasyPanel.js)",
+      "Bash(sqlite3:*)"
     ]
   }
 }
