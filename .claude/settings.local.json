@@ -87,7 +87,10 @@
       "Bash(node --check:*)",
       "Bash(cd /var/www/trading-x grep -rn \"window\\\\.\\\\|bid\\\\|ask\" frontend/js/panels/quickEasyPanel.js)",
       "Bash(cd /var/www/trading-x echo \"=== 1. lightweight-charts 로딩 확인 ===\" grep -n \"lightweight-charts\\\\|LightweightCharts\" frontend/index.html)",
-      "Bash(head -5 __NEW_LINE_5f2ac97eb0cf812d__ echo \"\" echo \"=== 3. MetaAPI 틱 데이터 수신부 ===\" grep -n \"onTick\\\\|SynchronizationListener\\\\|safeUpdateCandle\\\\|allPrices\" frontend/js/connection.js)"
+      "Bash(head -5 __NEW_LINE_5f2ac97eb0cf812d__ echo \"\" echo \"=== 3. MetaAPI 틱 데이터 수신부 ===\" grep -n \"onTick\\\\|SynchronizationListener\\\\|safeUpdateCandle\\\\|allPrices\" frontend/js/connection.js)",
+      "Bash(cd /var/www/trading-x __NEW_LINE_4fed0aa787cbb3f6__ echo \"=== Chart 탭 패널 구조 ===\" grep -n \"chartPanel\\\\|chart-container\\\\|tradingview\" frontend/index.html)",
+      "Bash(head -10 echo \"\" echo \"=== Chart 탭 CSS \\(높이 관련\\) ===\" grep -B2 -A8 \"chart-container\\\\|chartPanel\\\\|tv-chart\" frontend/css/*.css)",
+      "Bash(head -15 echo \"\" echo \"=== Chart 탭의 iframe/widget 높이 ===\" grep -n \"iframe\\\\|widget\\\\|tv_chart\" frontend/index.html)"
     ]
   }
 }
