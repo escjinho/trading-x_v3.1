@@ -356,22 +356,41 @@ const QeTickChart = {
     resetChartView() {
         if (!this.chart || !this.areaSeries) return;
 
-        // 1. autoscaleInfoProvider 제거
+        // 1. autoscaleInfoProvider를 null 함수로 교체 (undefined가 안 먹는 경우 대비)
         this.areaSeries.applyOptions({
-            autoscaleInfoProvider: undefined
+            autoscaleInfoProvider: () => null
         });
 
-        // 2. 가격축 자동스케일 + 마진 복원
-        this.chart.priceScale('right').applyOptions({
-            autoScale: true,
-            scaleMargins: { top: 0.1, bottom: 0.1 }
-        });
+        // 2. 약간의 딜레이 후 가격축 강제 리셋
+        setTimeout(() => {
+            if (!this.chart || !this.areaSeries) return;
 
-        // 3. 시간축 복원
-        this.chart.timeScale().scrollToRealTime();
-        this.chart.timeScale().applyOptions({
-            rightOffset: 6
-        });
+            // autoscaleInfoProvider 완전 제거
+            this.areaSeries.applyOptions({
+                autoscaleInfoProvider: undefined
+            });
+
+            // 가격축 자동스케일 + 마진 복원
+            this.chart.priceScale('right').applyOptions({
+                autoScale: true,
+                scaleMargins: { top: 0.1, bottom: 0.1 }
+            });
+
+            // 시간축 복원
+            this.chart.timeScale().scrollToRealTime();
+            this.chart.timeScale().applyOptions({
+                rightOffset: 6
+            });
+
+            // 강제로 fitContent 후 다시 scrollToRealTime
+            this.chart.timeScale().fitContent();
+            setTimeout(() => {
+                if (this.chart) {
+                    this.chart.timeScale().scrollToRealTime();
+                    this.chart.timeScale().applyOptions({ rightOffset: 6 });
+                }
+            }, 100);
+        }, 50);
     },
 
     // ========== 종목 변경 시 리셋 ==========
