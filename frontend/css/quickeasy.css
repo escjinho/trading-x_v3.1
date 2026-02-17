@@ -4,13 +4,13 @@
     position: relative;
     display: none;
     flex-direction: column;
-    height: calc(100vh - 58px);
+    height: calc(100vh - 58px - 128px);
     overflow: hidden;
 }
 
 .qe-content {
     padding: 0;
-    padding-bottom: 130px; /* space for fixed qe-bottom-bar */
+ /* space for fixed qe-bottom-bar */
     display: flex;
     flex-direction: column;
     flex: 1;
