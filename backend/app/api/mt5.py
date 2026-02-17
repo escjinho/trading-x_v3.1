@@ -1961,6 +1961,20 @@ async def close_all_positions(
                 # 전체 청산
                 user_live_cache[current_user.id]["positions"] = []
 
+        # ★★★ user_metaapi_cache도 동일하게 초기화 (중복 주문 방지용) ★★★
+        from .metaapi_service import user_metaapi_cache
+        if current_user.id in user_metaapi_cache:
+            if symbol or magic is not None:
+                closed_ids = [p.get('id') for p in target_positions]
+                cache_positions = user_metaapi_cache[current_user.id].get("positions", [])
+                user_metaapi_cache[current_user.id]["positions"] = [
+                    p for p in cache_positions if p.get("id") not in closed_ids
+                ]
+                print(f"[MetaAPI CloseAll] 🧹 user_metaapi_cache 포지션 {len(closed_ids)}개 제거")
+            else:
+                user_metaapi_cache[current_user.id]["positions"] = []
+                print(f"[MetaAPI CloseAll] 🧹 user_metaapi_cache 전체 초기화")
+
         if closed_count > 0:
             if _use_user_metaapi:
                 current_user.metaapi_last_active = datetime.utcnow()
