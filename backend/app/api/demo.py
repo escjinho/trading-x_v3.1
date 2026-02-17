@@ -367,14 +367,36 @@ async def get_demo_account(
             print(f"[MARTIN-DEBUG] Checking close: symbol={position.symbol}, profit={profit:.2f}, target={target}, magic={position.magic}")
 
             if target > 0:
-                if profit >= target:  # WIN: 정확히 target 도달
-                    should_close = True
-                    is_win = True
-                    print(f"[MARTIN-DEBUG] AUTO CLOSE TRIGGERED! is_win=True, profit={profit:.2f}")
-                elif profit <= -target * 0.98:  # LOSE: target의 98% 도달 시 청산
-                    should_close = True
-                    is_win = False
-                    print(f"[MARTIN-DEBUG] AUTO CLOSE TRIGGERED! is_win=False, profit={profit:.2f}")
+                # ★ 가격 기반 청산 (tp_price/sl_price 우선)
+                if position.tp_price and position.sl_price and current_price > 0:
+                    if position.trade_type == "BUY":
+                        if current_price >= position.tp_price:
+                            should_close = True
+                            is_win = True
+                            print(f"[AUTO-CLOSE] BUY TP 도달! current={current_price} >= tp={position.tp_price}")
+                        elif current_price <= position.sl_price:
+                            should_close = True
+                            is_win = False
+                            print(f"[AUTO-CLOSE] BUY SL 도달! current={current_price} <= sl={position.sl_price}")
+                    else:  # SELL
+                        if current_price <= position.tp_price:
+                            should_close = True
+                            is_win = True
+                            print(f"[AUTO-CLOSE] SELL TP 도달! current={current_price} <= tp={position.tp_price}")
+                        elif current_price >= position.sl_price:
+                            should_close = True
+                            is_win = False
+                            print(f"[AUTO-CLOSE] SELL SL 도달! current={current_price} >= sl={position.sl_price}")
+                else:
+                    # fallback: profit 기반 (tp_price 없는 기존 포지션)
+                    if profit >= target:
+                        should_close = True
+                        is_win = True
+                        print(f"[AUTO-CLOSE] Fallback WIN: profit={profit:.2f} >= target={target}")
+                    elif profit <= -target * 0.98:
+                        should_close = True
+                        is_win = False
+                        print(f"[AUTO-CLOSE] Fallback LOSE: profit={profit:.2f} <= -{target*0.98:.2f}")
 
             if not should_close and target > 0:
                 print(f"[MARTIN-DEBUG] No close: profit={profit:.2f}, target_range=[{-target*0.98:.2f}, {target:.2f}]")
@@ -802,6 +824,45 @@ async def place_demo_order(
         print(f"[DEMO ORDER] ⚠️ All sources failed, using dummy: {entry_price}")
     print(f"[DEMO ORDER] 📊 Entry price: {entry_price}")
 
+    # ★ B안: TP/SL 가격 계산 (magic=100003 Quick&Easy)
+    tp_price_val = None
+    sl_price_val = None
+    if target > 0:
+        specs = DEFAULT_SYMBOL_SPECS.get(symbol, {"tick_size": 0.01, "tick_value": 0.01, "contract_size": 1})
+        tick_size = specs.get("tick_size", 0.01)
+        tick_value = specs.get("tick_value", 0.01)
+        contract_size = specs.get("contract_size", 1)
+        ppp = volume * contract_size * tick_value / tick_size if tick_size > 0 else 1
+
+        if magic == 100003:
+            # B안 비대칭: TP=target/ppp, SL=(target-spread)/ppp
+            spread_raw = 0
+            from .metaapi_service import quote_price_cache
+            if quote_price_cache and symbol in quote_price_cache:
+                pd = quote_price_cache[symbol]
+                spread_raw = abs(pd.get('ask', 0) - pd.get('bid', 0))
+            spread_cost = (spread_raw / tick_size) * tick_value * volume if tick_size > 0 else 0
+            tp_diff = target / ppp if ppp > 0 else 0
+            sl_diff = max((target - spread_cost) / ppp, tp_diff * 0.1) if ppp > 0 else 0
+
+            if order_type.upper() == "BUY":
+                tp_price_val = round(entry_price + tp_diff, 8)
+                sl_price_val = round(entry_price - sl_diff, 8)
+            else:
+                tp_price_val = round(entry_price - tp_diff, 8)
+                sl_price_val = round(entry_price + sl_diff, 8)
+            print(f"[DEMO B안] TP={tp_price_val}, SL={sl_price_val}, spread_cost={spread_cost:.2f}")
+        else:
+            # 기존 로직 (Buy/Sell, Martin)
+            tp_diff = target / ppp if ppp > 0 else 0
+            sl_diff = (target * 0.98) / ppp if ppp > 0 else 0
+            if order_type.upper() == "BUY":
+                tp_price_val = round(entry_price + tp_diff, 8)
+                sl_price_val = round(entry_price - sl_diff, 8)
+            else:
+                tp_price_val = round(entry_price - tp_diff, 8)
+                sl_price_val = round(entry_price + sl_diff, 8)
+
     # 포지션 생성 (Basic/NoLimit 모드용 - target 그대로 사용)
     new_position = DemoPosition(
         user_id=current_user.id,
@@ -810,7 +871,9 @@ async def place_demo_order(
         volume=volume,
         entry_price=entry_price,
         target_profit=target,
-        magic=magic
+        magic=magic,
+        tp_price=tp_price_val,
+        sl_price=sl_price_val
     )
 
     db.add(new_position)

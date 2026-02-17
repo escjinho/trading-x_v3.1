@@ -30,7 +30,9 @@ class DemoPosition(Base):
     volume = Column(Float, nullable=False)
     entry_price = Column(Float, nullable=False)
     target_profit = Column(Float, default=100.0)  # 목표 수익
-    magic = Column(Integer, default=100001)  # 패널 구분용 매직넘버
+    magic = Column(Integer, default=100001)
+    tp_price = Column(Float, nullable=True)   # B안: TP 가격
+    sl_price = Column(Float, nullable=True)   # B안: SL 가격  # 패널 구분용 매직넘버
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
