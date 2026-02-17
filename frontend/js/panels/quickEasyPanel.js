@@ -47,6 +47,7 @@ const QuickEasyPanel = {
         this.updatePayout();
         this.updateAccount();
         this.updateSymbolDisplay();
+        window.addEventListener('resize', () => this.calcPanelHeight());
         this.initialized = true;
     },
 
@@ -220,14 +221,17 @@ const QuickEasyPanel = {
         const bottomBar = document.getElementById('qeBottomBar');
         if (panel) panel.style.display = 'flex';
         if (bottomBar) bottomBar.style.display = 'block';
-        // 틱차트 초기화 (다단계 resize로 레이아웃 안정화)
+
+        // 동적 높이 계산: 실제 DOM 요소 측정
         setTimeout(() => {
+            this.calcPanelHeight();
             if (typeof QeTickChart !== 'undefined') {
                 QeTickChart.init();
                 QeTickChart.resize();
             }
         }, 100);
         setTimeout(() => {
+            this.calcPanelHeight();
             if (typeof QeTickChart !== 'undefined') {
                 QeTickChart.resize();
             }
@@ -254,6 +258,22 @@ const QuickEasyPanel = {
 
     placeSell() {
         console.log('[QuickEasy] SELL — target:', this.target, 'lot:', this.lotSize);
+    },
+
+    calcPanelHeight() {
+        const panel = document.getElementById('quickPanel');
+        const bottomBar = document.getElementById('qeBottomBar');
+        const nav = document.querySelector('.bottom-nav');
+        const header = document.querySelector('.hero-section');
+        if (!panel) return;
+
+        const vh = window.innerHeight;
+        const navH = nav ? nav.offsetHeight : 58;
+        const headerH = header ? header.offsetHeight : 60;
+        const bottomH = bottomBar ? bottomBar.offsetHeight : 0;
+
+        const panelH = vh - headerH - navH - bottomH;
+        panel.style.height = panelH + 'px';
     },
 
     placeBuy() {

@@ -4,7 +4,7 @@
     position: relative;
     display: none;
     flex-direction: column;
-    height: calc(100vh - 60px) !important;
+    
     overflow: hidden;
 }
 
@@ -175,7 +175,12 @@
 /* ========== 하단 고정 바 ========== */
 .qe-bottom-bar {
     display: none;
-    flex-shrink: 0;
+    position: fixed;
+    bottom: 58px;
+    left: 0;
+    right: 0;
+    max-width: 480px;
+    margin: 0 auto;
     background: #0a0a0f;
     border-top: 1px solid rgba(255, 255, 255, 0.06);
     z-index: 101;
