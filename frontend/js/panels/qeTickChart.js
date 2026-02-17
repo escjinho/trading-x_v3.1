@@ -67,7 +67,7 @@ const QeTickChart = {
                 borderColor: 'rgba(255, 255, 255, 0.06)',
                 timeVisible: true,
                 secondsVisible: true,
-                rightOffset: 15,
+                rightOffset: 8,
                 fixLeftEdge: false,
                 fixRightEdge: false
             },
