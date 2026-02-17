@@ -343,6 +343,9 @@ const QuickEasyPanel = {
                     QeTickChart.showEntryLine(entryPrice, side.toLowerCase());
                 }
 
+                // 포지션 뷰로 전환
+                this.showPositionView(side, entryPrice);
+
                 // 데모 데이터 새로고침
                 if (isDemo && typeof fetchDemoData === 'function') {
                     fetchDemoData();
@@ -382,5 +385,122 @@ const QuickEasyPanel = {
             return window.allPrices[symbol].bid || 0;
         }
         return 0;
+    },
+
+    // ========== 포지션 뷰 ==========
+    _posTimer: null,
+    _posStartTime: 0,
+    _posOrderId: null,
+
+    showPositionView(side, entryPrice) {
+        const orderSection = document.querySelector('.qe-order-section');
+        const tradeButtons = document.querySelector('.qe-trade-buttons');
+        const posView = document.getElementById('qePositionView');
+        if (!posView) return;
+
+        // 주문 섹션 숨기기
+        if (orderSection) orderSection.style.display = 'none';
+        if (tradeButtons) tradeButtons.style.display = 'none';
+        posView.style.display = 'block';
+
+        // 포지션 정보 표시
+        const typeEl = document.getElementById('qePosType');
+        const entryEl = document.getElementById('qePosEntry');
+        const timeEl = document.getElementById('qePosTime');
+
+        if (typeEl) {
+            typeEl.textContent = side;
+            typeEl.className = 'qe-pos-value ' + (side === 'BUY' ? 'buy-type' : 'sell-type');
+        }
+        if (entryEl) {
+            const decimals = (typeof QeTickChart !== 'undefined') ? QeTickChart.getDecimals() : 2;
+            entryEl.textContent = entryPrice.toLocaleString('en-US', {
+                minimumFractionDigits: decimals,
+                maximumFractionDigits: decimals
+            });
+        }
+
+        // 경과시간 카운터 시작
+        this._posStartTime = Date.now();
+        if (this._posTimer) clearInterval(this._posTimer);
+        this._posTimer = setInterval(() => {
+            const elapsed = Math.floor((Date.now() - this._posStartTime) / 1000);
+            const mm = String(Math.floor(elapsed / 60)).padStart(2, '0');
+            const ss = String(elapsed % 60).padStart(2, '0');
+            if (timeEl) timeEl.textContent = mm + ':' + ss;
+        }, 1000);
+
+        // CLOSE 버튼 이벤트
+        const closeBtn = document.getElementById('qeCloseBtn');
+        if (closeBtn) {
+            closeBtn.onclick = () => this.closePosition();
+        }
+    },
+
+    hidePositionView() {
+        const orderSection = document.querySelector('.qe-order-section');
+        const tradeButtons = document.querySelector('.qe-trade-buttons');
+        const posView = document.getElementById('qePositionView');
+
+        if (posView) posView.style.display = 'none';
+        if (orderSection) orderSection.style.display = 'flex';
+        if (tradeButtons) tradeButtons.style.display = 'flex';
+
+        if (this._posTimer) {
+            clearInterval(this._posTimer);
+            this._posTimer = null;
+        }
+
+        // 진입라인 제거
+        if (typeof QeTickChart !== 'undefined') {
+            QeTickChart.removeEntryLine();
+        }
+    },
+
+    async closePosition() {
+        const symbol = window.currentSymbol || 'BTCUSD';
+        const token = localStorage.getItem('access_token');
+        if (!token) return;
+
+        const closeBtn = document.getElementById('qeCloseBtn');
+        if (closeBtn) closeBtn.disabled = true;
+
+        try {
+            const isDemo = window.isDemo || false;
+
+            if (isDemo) {
+                // 데모: 전체 청산 API
+                const endpoint = '/demo/close-all?symbol=' + symbol;
+                if (typeof apiCall === 'function') {
+                    await apiCall(endpoint, 'POST');
+                }
+            } else {
+                // 라이브: 심볼별 청산
+                const endpoint = '/mt5/close-all?symbol=' + symbol;
+                if (typeof apiCall === 'function') {
+                    await apiCall(endpoint, 'POST');
+                }
+            }
+
+            if (typeof showToast === 'function') {
+                showToast('포지션 청산 완료', 'success');
+            }
+            if (typeof playSound === 'function') {
+                playSound('close');
+            }
+
+            // 데모 데이터 갱신
+            if (isDemo && typeof fetchDemoData === 'function') {
+                fetchDemoData();
+            }
+        } catch (e) {
+            if (typeof showToast === 'function') {
+                showToast('청산 실패', 'error');
+            }
+            console.error('[QuickEasy] 청산 에러:', e);
+        } finally {
+            if (closeBtn) closeBtn.disabled = false;
+            this.hidePositionView();
+        }
     }
 };
