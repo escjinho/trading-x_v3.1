@@ -2133,14 +2133,36 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                                 is_win = False
 
                                 if target > 0 and auto_closed_info is None:  # 아직 청산 안 됐을 때만
-                                    if profit >= target:  # WIN
-                                        should_close = True
-                                        is_win = True
-                                        print(f"[DEMO WS] 🎯 AUTO CLOSE WIN! Profit ${profit:.2f} >= Target ${target:.2f}")
-                                    elif profit <= -target * 0.98:  # LOSE (98% 도달 시)
-                                        should_close = True
-                                        is_win = False
-                                        print(f"[DEMO WS] 💔 AUTO CLOSE LOSE! Profit ${profit:.2f} <= -Target*0.98 ${-target * 0.98:.2f}")
+                                    # ★ B안: 가격 기반 청산 (tp_price/sl_price 우선)
+                                    if pos.tp_price and pos.sl_price and current_px > 0:
+                                        if pos.trade_type == "BUY":
+                                            if current_px >= pos.tp_price:
+                                                should_close = True
+                                                is_win = True
+                                                print(f"[DEMO WS] 🎯 BUY TP 도달! current={current_px} >= tp={pos.tp_price}")
+                                            elif current_px <= pos.sl_price:
+                                                should_close = True
+                                                is_win = False
+                                                print(f"[DEMO WS] 💔 BUY SL 도달! current={current_px} <= sl={pos.sl_price}")
+                                        else:  # SELL
+                                            if current_px <= pos.tp_price:
+                                                should_close = True
+                                                is_win = True
+                                                print(f"[DEMO WS] 🎯 SELL TP 도달! current={current_px} <= tp={pos.tp_price}")
+                                            elif current_px >= pos.sl_price:
+                                                should_close = True
+                                                is_win = False
+                                                print(f"[DEMO WS] 💔 SELL SL 도달! current={current_px} >= sl={pos.sl_price}")
+                                    else:
+                                        # fallback: profit 기반 (tp_price 없는 기존 포지션)
+                                        if profit >= target:  # WIN
+                                            should_close = True
+                                            is_win = True
+                                            print(f"[DEMO WS] 🎯 Fallback WIN! Profit ${profit:.2f} >= Target ${target:.2f}")
+                                        elif profit <= -target * 0.98:  # LOSE (98% 도달 시)
+                                            should_close = True
+                                            is_win = False
+                                            print(f"[DEMO WS] 💔 Fallback LOSE! Profit ${profit:.2f} <= -Target*0.98 ${-target * 0.98:.2f}")
 
                                 if should_close:
                                     # 자동청산 실행
