@@ -307,7 +307,7 @@ const QuickEasyPanel = {
         if (buyBtn) buyBtn.disabled = true;
 
         try {
-            const isDemo = window.isDemo || false;
+            const isDemo = isDemo || false;
             const baseUrl = window.API_URL || '';
             const endpoint = isDemo 
                 ? `/demo/order?symbol=${symbol}&order_type=${side}&volume=${volume}&target=${target}&magic=${QE_MAGIC_NUMBER}`
@@ -587,7 +587,7 @@ const QuickEasyPanel = {
         if (closeBtn) closeBtn.disabled = true;
 
         try {
-            const isDemo = window.isDemo || false;
+            const isDemo = isDemo || false;
 
             if (isDemo) {
                 // 데모: 전체 청산 API
