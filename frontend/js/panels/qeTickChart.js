@@ -96,15 +96,10 @@ const QeTickChart = {
         });
 
         // 리사이즈 대응
-        this._resizeObserver = new ResizeObserver(() => {
-            if (this.chart && container.clientWidth > 0) {
-                this.chart.applyOptions({
-                    width: container.clientWidth,
-                    height: container.clientHeight
-                });
-            }
+        window.addEventListener('resize', () => this.resize());
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => this.resize(), 300);
         });
-        this._resizeObserver.observe(container);
 
         this.initialized = true;
         console.log('[QeTickChart] 초기화 완료');
@@ -258,15 +253,34 @@ const QeTickChart = {
         console.log('[QeTickChart] 리셋 완료');
     },
 
-    // ========== 리사이즈 ==========
+    // ========== 리사이즈 (동적 높이 계산) ==========
     resize() {
         const container = document.getElementById('qeChartContainer');
-        if (this.chart && container) {
-            this.chart.applyOptions({
-                width: container.clientWidth,
-                height: container.clientHeight
-            });
-        }
+        const wrap = document.getElementById('qeChartWrap');
+        if (!this.chart || !container || !wrap) return;
+
+        // 동적 높이 계산: 화면 전체에서 각 요소 높이 차감
+        const vh = window.innerHeight;
+        const header = document.querySelector('.hero-section');
+        const accountBar = document.getElementById('qeAccountBar');
+        const bottomBar = document.getElementById('qeBottomBar');
+        const navBar = document.querySelector('.bottom-nav');
+
+        const headerH = header ? header.offsetHeight : 0;
+        const accountH = accountBar ? accountBar.offsetHeight : 0;
+        const bottomH = bottomBar ? bottomBar.offsetHeight : 0;
+        const navH = navBar ? navBar.offsetHeight : 0;
+
+        const chartH = vh - headerH - accountH - bottomH - navH;
+
+        wrap.style.height = Math.max(200, chartH) + 'px';
+
+        this.chart.applyOptions({
+            width: container.clientWidth,
+            height: Math.max(200, chartH)
+        });
+
+        console.log('[QeTickChart] resize: vh=' + vh + ' header=' + headerH + ' account=' + accountH + ' bottom=' + bottomH + ' nav=' + navH + ' → chart=' + chartH);
     },
 
     destroy() {

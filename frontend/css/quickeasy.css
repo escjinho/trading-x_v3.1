@@ -4,13 +4,11 @@
     position: relative;
     display: none;
     flex-direction: column;
-    height: calc(100vh - 58px);
     overflow: hidden;
 }
 
 .qe-content {
     padding: 0;
-    padding-bottom: 130px;
     display: flex;
     flex-direction: column;
     flex: 1;
