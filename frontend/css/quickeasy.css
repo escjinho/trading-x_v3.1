@@ -2,7 +2,7 @@
 
 #quickPanel {
     position: relative;
-    display: flex;
+    display: none;
     flex-direction: column;
     height: calc(100vh - 58px);
     overflow: hidden;
@@ -10,7 +10,6 @@
 
 .qe-content {
     padding: 0;
-    padding-bottom: 0;
     display: flex;
     flex-direction: column;
     flex: 1;
@@ -329,15 +328,18 @@
 }
 
 
-/* ========== 호가 영역 ========== */
-.qe-quote-bar {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    padding: 8px 10px 2px 10px;
+/* ========== 호가 오버레이 (차트 위) ========== */
+.qe-quote-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 5;
+    pointer-events: none;
+    padding: 8px 10px;
 }
 
-.qe-quote-left {
+.qe-quote-bar {
     display: flex;
     align-items: baseline;
     gap: 10px;
@@ -349,6 +351,7 @@
     color: #ffffff;
     letter-spacing: 0.5px;
     font-variant-numeric: tabular-nums;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
 .qe-quote-change {
@@ -361,12 +364,14 @@
     font-size: 13px;
     font-weight: 600;
     color: #00d4a4;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 .qe-change-pct {
     font-size: 13px;
     font-weight: 600;
     color: #00d4a4;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 .qe-change-value.negative,
@@ -379,9 +384,10 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 0 10px 6px 10px;
+    margin-top: 2px;
     font-size: 11px;
     color: rgba(255, 255, 255, 0.4);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 .qe-info-symbol {
@@ -413,6 +419,7 @@
     overflow: hidden;
     margin: 0;
     min-height: 0;
+    width: 100%;
 }
 
 .qe-chart-container {

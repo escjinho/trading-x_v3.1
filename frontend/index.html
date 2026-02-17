@@ -63,9 +63,9 @@
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css?v=1771286703">
-        <link rel="stylesheet" href="css/quickeasy.css?v=1771286703">
-    <link rel="stylesheet" href="css/chart.css?v=1771286703">
+    <link rel="stylesheet" href="css/styles.css?v=1771287241">
+        <link rel="stylesheet" href="css/quickeasy.css?v=1771287241">
+    <link rel="stylesheet" href="css/chart.css?v=1771287241">
 </head>
 <body>
     <div class="app">
@@ -1123,25 +1123,25 @@
                     </div>
 
                     <div class="qe-content">
-                        <!-- 호가 영역 -->
-                        <div class="qe-quote-bar" id="qeQuoteBar">
-                            <div class="qe-quote-left">
-                                <div class="qe-quote-price" id="qeQuotePrice">0.00</div>
-                                <div class="qe-quote-change" id="qeQuoteChange">
-                                    <span class="qe-change-value" id="qeChangeValue">+0.00</span>
-                                    <span class="qe-change-pct" id="qeChangePct">(0.00%)</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="qe-quote-info" id="qeQuoteInfo">
-                            <span class="qe-info-symbol" id="qeInfoSymbol">BTCUSD</span>
-                            <span class="qe-info-dot">·</span>
-                            <span class="qe-info-category" id="qeInfoCategory">Crypto Currency</span>
-                            <span class="qe-info-status" id="qeInfoStatus"></span>
-                        </div>
-                        <!-- 틱차트 영역 -->
+                        <!-- 틱차트 영역 (호가 오버레이 포함) -->
                         <div class="qe-chart-wrap" id="qeChartWrap">
                             <div class="qe-chart-container" id="qeChartContainer"></div>
+                            <!-- 호가 오버레이 (차트 위) -->
+                            <div class="qe-quote-overlay">
+                                <div class="qe-quote-bar" id="qeQuoteBar">
+                                    <div class="qe-quote-price" id="qeQuotePrice">0.00</div>
+                                    <div class="qe-quote-change" id="qeQuoteChange">
+                                        <span class="qe-change-value" id="qeChangeValue">+0.00</span>
+                                        <span class="qe-change-pct" id="qeChangePct">(0.00%)</span>
+                                    </div>
+                                </div>
+                                <div class="qe-quote-info" id="qeQuoteInfo">
+                                    <span class="qe-info-symbol" id="qeInfoSymbol">BTCUSD</span>
+                                    <span class="qe-info-dot">·</span>
+                                    <span class="qe-info-category" id="qeInfoCategory">Crypto Currency</span>
+                                    <span class="qe-info-status" id="qeInfoStatus"></span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -2024,35 +2024,35 @@
     </div>
 </div>
 
-    <script src="js/config.js?v=1771286703"></script>
-    <script src="js/state.js?v=1771286703"></script>
-    <script src="js/auth.js?v=1771286703"></script>
-    <script src="js/api.js?v=1771286703"></script>
-    <script src="js/utils.js?v=1771286703"></script>
-    <script src="js/watchlist.js?v=1771286703"></script>
-    <script src="js/navigation.js?v=1771286703"></script>
+    <script src="js/config.js?v=1771287241"></script>
+    <script src="js/state.js?v=1771287241"></script>
+    <script src="js/auth.js?v=1771287241"></script>
+    <script src="js/api.js?v=1771287241"></script>
+    <script src="js/utils.js?v=1771287241"></script>
+    <script src="js/watchlist.js?v=1771287241"></script>
+    <script src="js/navigation.js?v=1771287241"></script>
 
     <!-- Chart Panels (모듈화) -->
-    <script src="js/panels/gaugePanel.js?v=1771286703"></script>
-    <script src="js/panels/chartGaugePanel.js?v=1771286703"></script>
+    <script src="js/panels/gaugePanel.js?v=1771287241"></script>
+    <script src="js/panels/chartGaugePanel.js?v=1771287241"></script>
 
     <!-- Indicator System -->
-    <script src="js/indicators/config.js?v=1771286703"></script>
-    <script src="js/indicators/calculator.js?v=1771286703"></script>
-    <script src="js/indicators/index.js?v=1771286703"></script>
+    <script src="js/indicators/config.js?v=1771287241"></script>
+    <script src="js/indicators/calculator.js?v=1771287241"></script>
+    <script src="js/indicators/index.js?v=1771287241"></script>
 
     <!-- Chart Type System -->
-    <script src="js/chartTypes/index.js?v=1771286703"></script>
+    <script src="js/chartTypes/index.js?v=1771287241"></script>
 
-    <script src="js/panels/chartPanel.js?v=1771286703"></script>
-    <script src="js/panels/symbolSelectorPanel.js?v=1771286703"></script>
-    <script src="js/panels/randomWalkPanel.js?v=1771286703"></script>
-    <script src="js/panels/multiOrderPanelV5.js?v=1771286703"></script>
-        <script src="js/panels/quickEasyPanel.js?v=1771286703"></script>
-        <script src="js/panels/qeTickChart.js?v=1771286703"></script>
+    <script src="js/panels/chartPanel.js?v=1771287241"></script>
+    <script src="js/panels/symbolSelectorPanel.js?v=1771287241"></script>
+    <script src="js/panels/randomWalkPanel.js?v=1771287241"></script>
+    <script src="js/panels/multiOrderPanelV5.js?v=1771287241"></script>
+        <script src="js/panels/quickEasyPanel.js?v=1771287241"></script>
+        <script src="js/panels/qeTickChart.js?v=1771287241"></script>
 
-    <script src="js/chart.js?v=1771286703"></script>
-    <script src="js/settings.js?v=1771286703"></script>
+    <script src="js/chart.js?v=1771287241"></script>
+    <script src="js/settings.js?v=1771287241"></script>
     <script>
         // ========== 타임프레임 드롭다운 함수 ==========
         function toggleTimeframeDropdown() {
@@ -3470,10 +3470,10 @@
         </div>
     </div>
 
-    <script src="js/market-schedule.js?v=1771286703"></script>
-    <script src="js/account.js?v=1771286703"></script>
-    <script src="js/trading.js?v=1771286703"></script>
-    <script src="js/connection.js?v=1771286703"></script>
-    <script src="js/init.js?v=1771286703"></script>
+    <script src="js/market-schedule.js?v=1771287241"></script>
+    <script src="js/account.js?v=1771287241"></script>
+    <script src="js/trading.js?v=1771287241"></script>
+    <script src="js/connection.js?v=1771287241"></script>
+    <script src="js/init.js?v=1771287241"></script>
 </body>
 </html>
