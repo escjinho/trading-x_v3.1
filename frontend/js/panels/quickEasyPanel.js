@@ -285,7 +285,12 @@ const QuickEasyPanel = {
         const symbol = window.currentSymbol || 'BTCUSD';
         const volume = this.lotSize;
         const target = this.target;
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('access_token');
+
+        // 게스트 체크
+        if (typeof checkGuestAction === 'function' && !checkGuestAction('trade')) {
+            return;
+        }
 
         if (!token) {
             if (typeof showToast === 'function') showToast('로그인이 필요합니다', 'error');
