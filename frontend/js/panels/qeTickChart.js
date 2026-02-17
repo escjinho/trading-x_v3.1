@@ -13,6 +13,7 @@ const QeTickChart = {
     prevPrice: 0,           // 보간용
     targetPrice: 0,
     animFrameId: null,
+    animating: false,
     priceLine: null,         // 진입가격 라인
     initialized: false,
 
@@ -111,11 +112,9 @@ const QeTickChart = {
         return this.DECIMALS[symbol] || 2;
     },
 
-    // ========== 틱 데이터 추가 ==========
+    // ========== 틱 데이터 추가 (보간 애니메이션) ==========
     addTick(price) {
         if (!this.areaSeries || price <= 0) return;
-
-        const now = Math.floor(Date.now() / 1000);
 
         // 첫 틱이면 openPrice 설정
         if (this.openPrice === 0) {
@@ -123,31 +122,52 @@ const QeTickChart = {
         }
 
         this.prevPrice = this.lastPrice || price;
-        this.lastPrice = price;
         this.targetPrice = price;
 
-        // 틱 데이터 추가
+        // 보간 시작
+        if (!this.animating) {
+            this.animating = true;
+            this.interpolate();
+        }
+
+        // 호가 업데이트 (즉시)
+        this.updateQuote(price);
+        this.updateColor(price);
+    },
+
+    // ========== 60fps 보간 애니메이션 ==========
+    interpolate() {
+        if (!this.areaSeries) { this.animating = false; return; }
+
+        const diff = this.targetPrice - (this.lastPrice || this.targetPrice);
+        const step = diff * 0.3;  // 이징: 30%씩 접근
+
+        if (Math.abs(diff) < 0.001) {
+            // 도착 — 최종값 적용
+            this.lastPrice = this.targetPrice;
+            this.commitTick(this.targetPrice);
+            this.animating = false;
+            return;
+        }
+
+        this.lastPrice = (this.lastPrice || this.targetPrice) + step;
+        this.commitTick(this.lastPrice);
+
+        this.animFrameId = requestAnimationFrame(() => this.interpolate());
+    },
+
+    // ========== 차트에 실제 데이터 반영 ==========
+    commitTick(price) {
+        const now = Math.floor(Date.now() / 1000);
+
         this.tickData.push({ time: now, value: price });
 
-        // 동일 시간 중복 방지 (같은 초에 여러 틱)
-        // lightweight-charts는 같은 time에 update
-        const lastIdx = this.tickData.length - 1;
-        if (lastIdx > 0 && this.tickData[lastIdx].time === this.tickData[lastIdx - 1].time) {
-            this.areaSeries.update({ time: now, value: price });
-        } else {
-            this.areaSeries.update({ time: now, value: price });
-        }
+        this.areaSeries.update({ time: now, value: price });
 
         // 최대 틱 수 유지
         if (this.tickData.length > this.maxTicks * 2) {
             this.tickData = this.tickData.slice(-this.maxTicks);
         }
-
-        // 호가 업데이트
-        this.updateQuote(price);
-
-        // 색상 업데이트 (상승/하락)
-        this.updateColor(price);
     },
 
     // ========== 호가 영역 업데이트 ==========
