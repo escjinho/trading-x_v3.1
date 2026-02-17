@@ -406,8 +406,12 @@ const QuickEasyPanel = {
         const profitPerPoint = volume * spec.contract_size * spec.tick_value / spec.tick_size;
         if (profitPerPoint <= 0) return { tp: 0, sl: 0 };
 
+        // ★ B안 비대칭: TP=target/ppp (멀리), SL=(target-spread)/ppp (가까이)
+        // TP 도달 시: WIN = target - spreadCost (payout %)
+        // SL 도달 시: LOSE = -target (전액 손실)
+        const spreadCost = this.getSpreadCost();
         const tpDiff = target / profitPerPoint;
-        const slDiff = (target * 0.98) / profitPerPoint;
+        const slDiff = Math.max((target - spreadCost) / profitPerPoint, tpDiff * 0.1);
 
         if (side === 'BUY') {
             return { tp: entryPrice + tpDiff, sl: entryPrice - slDiff };
@@ -476,8 +480,7 @@ const QuickEasyPanel = {
         this._posTarget = this.target;
         this._posTPSL = this.calcTPSL(entryPrice, side, this.lotSize, this.target, this._posSymbol);
 
-        if (this._winLoseTimer) clearInterval(this._winLoseTimer);
-        this._winLoseTimer = setInterval(() => this.updateWinLose(), 500);
+        // Win/Lose는 addTick에서 실시간 업데이트 (깜빡임 방지)
         this.updateWinLose(); // 즉시 1회
 
         // CLOSE 버튼 이벤트
@@ -500,10 +503,7 @@ const QuickEasyPanel = {
             clearInterval(this._posTimer);
             this._posTimer = null;
         }
-        if (this._winLoseTimer) {
-            clearInterval(this._winLoseTimer);
-            this._winLoseTimer = null;
-        }
+        // _winLoseTimer 제거됨 (addTick 기반으로 변경)
 
         // Win/Lose 초기화
         const wlEl = document.getElementById('qeWinLose');
@@ -519,29 +519,44 @@ const QuickEasyPanel = {
         const symbol = this._posSymbol;
         const currentPrice = (window.allPrices && window.allPrices[symbol])
             ? (window.allPrices[symbol].bid || 0) : 0;
-        if (currentPrice <= 0 || !this._posEntryPrice) return;
+        if (currentPrice <= 0 || !this._posEntryPrice || !this._posTPSL) return;
 
-        const profit = this.calcProfit(
-            this._posEntryPrice, currentPrice, this._posSide,
-            this._posVolume, symbol
-        );
-        const target = this._posTarget;
-        const slAmount = target * 0.98;
-        const totalRange = target + slAmount;
+        const entry = this._posEntryPrice;
+        const tp = this._posTPSL.tp;
+        const sl = this._posTPSL.sl;
+        const side = this._posSide;
 
-        // -slAmount ~ +target 범위에서 현재 위치 (0~100%)
-        let winPct = ((profit + slAmount) / totalRange) * 100;
-        winPct = Math.max(0, Math.min(100, winPct));
+        // 가격 기반 이동 거리 계산
+        let tpDist, slDist, movement;
+        if (side === 'BUY') {
+            tpDist = tp - entry;
+            slDist = entry - sl;
+            movement = currentPrice - entry;
+        } else {
+            tpDist = entry - tp;
+            slDist = sl - entry;
+            movement = entry - currentPrice;
+        }
 
         const wlEl = document.getElementById('qeWinLose');
-        if (wlEl) {
-            if (winPct >= 50) {
-                wlEl.textContent = Math.round(winPct) + '%';
-                wlEl.style.color = '#00d4a4';
-            } else {
-                wlEl.textContent = Math.round(winPct) + '%';
-                wlEl.style.color = '#ff4d5a';
-            }
+        if (!wlEl) return;
+
+        if (tpDist <= 0 || slDist <= 0) {
+            wlEl.textContent = '0%';
+            wlEl.style.color = 'rgba(255,255,255,0.5)';
+            return;
+        }
+
+        if (movement >= 0) {
+            // Win 방향
+            const pct = Math.min(Math.round((movement / tpDist) * 100), 100);
+            wlEl.textContent = 'Win +' + pct + '%';
+            wlEl.style.color = '#00d4a4';
+        } else {
+            // Lose 방향
+            const pct = Math.min(Math.round((Math.abs(movement) / slDist) * 100), 100);
+            wlEl.textContent = 'Lose -' + pct + '%';
+            wlEl.style.color = '#ff4d5a';
         }
     },
 

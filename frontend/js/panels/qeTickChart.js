@@ -175,6 +175,11 @@ const QeTickChart = {
         // 호가 업데이트 (즉시)
         this.updateQuote(price);
         this.updateColor(price);
+
+        // Win/Lose 실시간 업데이트 (틱마다, 깜빡임 없음)
+        if (typeof QuickEasyPanel !== 'undefined' && QuickEasyPanel._posEntryPrice > 0) {
+            QuickEasyPanel.updateWinLose();
+        }
     },
 
     // ========== 60fps 보간 애니메이션 ==========
