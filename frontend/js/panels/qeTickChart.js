@@ -60,13 +60,14 @@ const QeTickChart = {
             },
             rightPriceScale: {
                 borderColor: 'rgba(255, 255, 255, 0.06)',
-                scaleMargins: { top: 0.1, bottom: 0.1 }
+                scaleMargins: { top: 0.1, bottom: 0.1 },
+                minimumWidth: 80
             },
             timeScale: {
                 borderColor: 'rgba(255, 255, 255, 0.06)',
                 timeVisible: true,
                 secondsVisible: true,
-                rightOffset: 30,
+                rightOffset: 8,
                 fixLeftEdge: false,
                 fixRightEdge: true
             },
