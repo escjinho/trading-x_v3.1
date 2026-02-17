@@ -19,6 +19,7 @@ const QeTickChart = {
     slPriceLine: null,       // SL 라인
     _autoReturnTimer: null,  // 자동복귀 타이머
     _userInteracting: false, // 사용자 조작 중
+    _customPriceRange: null, // 줌아웃 시 커스텀 가격 범위 (플래그)
     initialized: false,
 
     // 종목별 카테고리
@@ -98,6 +99,13 @@ const QeTickChart = {
                 type: 'price',
                 precision: this.getDecimals(),
                 minMove: Math.pow(10, -this.getDecimals())
+            },
+            // ★ 한 번만 설정, 절대 제거/교체 안 함 (3.8.0 안정성)
+            autoscaleInfoProvider: (baseImpl) => {
+                if (this._customPriceRange) {
+                    return { priceRange: this._customPriceRange };
+                }
+                return baseImpl ? baseImpl() : null;
             }
         });
 
@@ -342,13 +350,10 @@ const QeTickChart = {
         const high = Math.max(tp, sl) + margin;
         const low = Math.min(tp, sl) - margin;
 
-        this.areaSeries.applyOptions({
-            autoscaleInfoProvider: () => ({
-                priceRange: { minValue: low, maxValue: high }
-            })
-        });
+        // 플래그만 세팅 → provider가 자동 반영 (applyOptions 불필요)
+        this._customPriceRange = { minValue: low, maxValue: high };
 
-        // 2.5초 후 완벽 복원
+        // 2.5초 후 복원
         setTimeout(() => this.resetChartView(), 2500);
     },
 
@@ -356,11 +361,8 @@ const QeTickChart = {
     resetChartView() {
         if (!this.chart || !this.areaSeries) return;
 
-        // 1. autoscaleInfoProvider → null 반환 (기본 autoScale 동작으로 복귀)
-        //    undefined는 3.8.0에서 불안정 → () => null이 안전
-        this.areaSeries.applyOptions({
-            autoscaleInfoProvider: () => null
-        });
+        // 1. 커스텀 가격 범위 해제 → provider가 baseImpl() 호출 → 현재가 중심 autoScale
+        this._customPriceRange = null;
 
         // 2. 가격축 자동스케일 + 마진 복원
         this.chart.priceScale('right').applyOptions({
@@ -368,7 +370,7 @@ const QeTickChart = {
             scaleMargins: { top: 0.1, bottom: 0.1 }
         });
 
-        // 3. 시간축 복원
+        // 3. 시간축 복원 (현재가 중심)
         this.chart.timeScale().scrollToRealTime();
         this.chart.timeScale().applyOptions({
             rightOffset: 6
