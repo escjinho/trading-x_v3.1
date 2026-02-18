@@ -195,7 +195,7 @@ const QuickEasyPanel = {
                 symbolCard.style.position = 'relative';
                 badge = document.createElement('span');
                 badge.id = 'qePosBadge';
-                badge.style.cssText = 'position:absolute;top:-4px;right:-4px;' +
+                badge.style.cssText = 'position:absolute;top:2px;right:-4px;' +
                     'min-width:16px;height:16px;border-radius:8px;' +
                     'background:#00d4a4;color:#000;font-size:10px;font-weight:700;' +
                     'display:none;align-items:center;justify-content:center;padding:0 4px;';
@@ -214,15 +214,20 @@ const QuickEasyPanel = {
         // ★ 드롭다운 종목 옆 포지션 표시
         document.querySelectorAll('.qe-symbol-option').forEach(item => {
             const sym = item.dataset.symbol;
+            if (!sym) return;
             let dot = item.querySelector('.qe-pos-dot');
             if (this._positions[sym]) {
                 if (!dot) {
                     dot = document.createElement('span');
                     dot.className = 'qe-pos-dot';
-                    dot.style.cssText = 'width:6px;height:6px;border-radius:50%;margin-left:auto;flex-shrink:0;';
+                    dot.style.cssText = 'width:8px;height:8px;border-radius:50%;margin-left:auto;flex-shrink:0;box-shadow:0 0 6px currentColor;';
+                    item.style.display = 'flex';
+                    item.style.alignItems = 'center';
                     item.appendChild(dot);
                 }
-                dot.style.background = this._positions[sym].side === 'BUY' ? '#00b450' : '#dc3246';
+                const color = this._positions[sym].side === 'BUY' ? '#00b450' : '#dc3246';
+                dot.style.background = color;
+                dot.style.color = color;
                 dot.style.display = 'block';
             } else if (dot) {
                 dot.style.display = 'none';
