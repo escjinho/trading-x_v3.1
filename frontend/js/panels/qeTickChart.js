@@ -22,6 +22,8 @@ const QeTickChart = {
     _customPriceRange: null, // 줌아웃 시 커스텀 가격 범위 (플래그)
     initialized: false,
     _loadingHistory: false,  // 히스토리 로딩 중 플래그
+    _progressCanvas: null,   // SL/TP 진행도 바 캔버스
+    _entryData: null,        // { price, side, tp, sl }
 
     // 종목별 카테고리
     CATEGORIES: {
@@ -286,6 +288,9 @@ const QeTickChart = {
 
         // 펄스 마커 위치 업데이트
         this.updatePulse(now, price);
+
+        // ★ SL/TP 진행도 바 업데이트
+        if (this._entryData) this.drawProgressBars();
     },
 
     // ========== 현재가 펄스 마커 ==========
@@ -398,6 +403,11 @@ const QeTickChart = {
         if (tpPrice && slPrice) {
             this.zoomToShowTPSL(price, tpPrice, slPrice);
         }
+
+        // ★ SL/TP 진행도 바 시작
+        this._entryData = { price, side, tp: tpPrice, sl: slPrice };
+        this.initProgressCanvas();
+        this.drawProgressBars();
     },
 
     removeEntryLine() {
@@ -412,6 +422,90 @@ const QeTickChart = {
         if (this.slPriceLine && this.areaSeries) {
             this.areaSeries.removePriceLine(this.slPriceLine);
             this.slPriceLine = null;
+        }
+        // ★ 진행도 바 제거
+        this._entryData = null;
+        if (this._progressCanvas) {
+            this._progressCanvas.remove();
+            this._progressCanvas = null;
+        }
+    },
+
+    // ========== SL/TP 진행도 바 ==========
+    initProgressCanvas() {
+        if (this._progressCanvas) this._progressCanvas.remove();
+        const wrap = document.getElementById('qeChartWrap');
+        if (!wrap) return;
+        const canvas = document.createElement('canvas');
+        canvas.id = 'qeProgressCanvas';
+        canvas.style.cssText = 'position:absolute;top:0;right:0;width:100%;height:100%;pointer-events:none;z-index:5;';
+        wrap.appendChild(canvas);
+        this._progressCanvas = canvas;
+    },
+
+    drawProgressBars() {
+        const canvas = this._progressCanvas;
+        const ed = this._entryData;
+        if (!canvas || !ed || !this.areaSeries || !this.chart) return;
+
+        const rect = canvas.parentElement.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Y축 너비 계산 (오른쪽 가격 스케일)
+        const chartEl = canvas.parentElement.querySelector('table, .tv-lightweight-charts');
+        const priceScaleWidth = 80; // 기본 Y축 너비
+        const barX = canvas.width - priceScaleWidth - 3; // Y축 왼쪽 2px 바
+        const barWidth = 2;
+
+        // 가격 → 픽셀 좌표 변환
+        const entryY = this.areaSeries.priceToCoordinate(ed.price);
+        const tpY = this.areaSeries.priceToCoordinate(ed.tp);
+        const slY = this.areaSeries.priceToCoordinate(ed.sl);
+        if (entryY === null || tpY === null || slY === null) return;
+
+        // 현재 가격의 진행도 계산
+        const currentPrice = this.lastPrice || ed.price;
+        const tpProgress = Math.max(0, Math.min(1,
+            (currentPrice - ed.price) / (ed.tp - ed.price)
+        ));
+        const slProgress = Math.max(0, Math.min(1,
+            (currentPrice - ed.price) / (ed.sl - ed.price)
+        ));
+
+        // TP 바 (초록): entry → TP, 진행도에 따라 진해짐
+        const tpTop = Math.min(entryY, tpY);
+        const tpBottom = Math.max(entryY, tpY);
+        const tpHeight = tpBottom - tpTop;
+        if (tpHeight > 0) {
+            const tpGrad = ctx.createLinearGradient(0, entryY, 0, tpY);
+            const tpAlphaBase = 0.15;
+            const tpAlphaMax = 0.15 + tpProgress * 0.65;
+            if (ed.side === 'buy') {
+                tpGrad.addColorStop(0, 'rgba(0, 212, 164, ' + tpAlphaBase + ')');
+                tpGrad.addColorStop(1, 'rgba(0, 212, 164, ' + tpAlphaMax + ')');
+            } else {
+                tpGrad.addColorStop(0, 'rgba(0, 212, 164, ' + tpAlphaBase + ')');
+                tpGrad.addColorStop(1, 'rgba(0, 212, 164, ' + tpAlphaMax + ')');
+            }
+            ctx.fillStyle = tpGrad;
+            ctx.fillRect(barX, tpTop, barWidth, tpHeight);
+        }
+
+        // SL 바 (빨강): entry → SL, 진행도에 따라 진해짐
+        const slTop = Math.min(entryY, slY);
+        const slBottom = Math.max(entryY, slY);
+        const slHeight = slBottom - slTop;
+        if (slHeight > 0) {
+            const slGrad = ctx.createLinearGradient(0, entryY, 0, slY);
+            const slAlphaBase = 0.15;
+            const slAlphaMax = 0.15 + slProgress * 0.65;
+            slGrad.addColorStop(0, 'rgba(255, 77, 90, ' + slAlphaBase + ')');
+            slGrad.addColorStop(1, 'rgba(255, 77, 90, ' + slAlphaMax + ')');
+            ctx.fillStyle = slGrad;
+            ctx.fillRect(barX, slTop, barWidth, slHeight);
         }
     },
 
