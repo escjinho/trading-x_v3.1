@@ -115,6 +115,8 @@ const QeTickChart = {
 
         // 사용자 조작 감지 → 5초 후 자동 현재가 복귀
         this.chart.timeScale().subscribeVisibleTimeRangeChange(() => {
+            if (this._entryOverlay) this.updateEntryOverlay();
+            if (this._entryData) this.drawProgressBars();
             if (this._userInteracting) return;
             this._userInteracting = true;
             if (this._autoReturnTimer) clearTimeout(this._autoReturnTimer);
@@ -122,6 +124,12 @@ const QeTickChart = {
                 this._userInteracting = false;
                 this.resetChartView();
             }, 5000);
+        });
+
+        // ★ 가격축 변화 시에도 오버레이 추적
+        this.chart.subscribeCrosshairMove(() => {
+            if (this._entryOverlay) this.updateEntryOverlay();
+            if (this._entryData) this.drawProgressBars();
         });
 
         // 터치/마우스 조작 감지
