@@ -77,7 +77,7 @@ const QeTickChart = {
                 borderColor: 'rgba(255, 255, 255, 0.06)',
                 timeVisible: true,
                 secondsVisible: true,
-                rightOffset: 6,
+                rightOffset: 8,
                 fixLeftEdge: false,
                 fixRightEdge: false
             },
@@ -432,7 +432,7 @@ const QeTickChart = {
             const ov = document.createElement('div');
             ov.className = 'qe-entry-overlay';
             ov.innerHTML = '<span class="qe-entry-dot" style="color:' + sideColor + '">◉</span> <span class="qe-entry-label">' + (side === 'buy' ? 'BUY' : 'SELL') + '</span>';
-            ov.style.cssText = 'position:absolute;right:80px;pointer-events:none;z-index:6;' +
+            ov.style.cssText = 'position:absolute;right:82px;pointer-events:none;z-index:6;' +
                 'font-size:9px;font-weight:700;letter-spacing:0.5px;' +
                 'color:' + sideColor + ';' +
                 'background:rgba(10,10,15,0.7);padding:1px 5px;border-radius:3px;' +
@@ -628,7 +628,7 @@ const QeTickChart = {
         // 3. 시간축 복원 (현재가 중심)
         this.chart.timeScale().scrollToRealTime();
         this.chart.timeScale().applyOptions({
-            rightOffset: 6
+            rightOffset: 8
         });
     },
 
