@@ -340,14 +340,8 @@ const QuickEasyPanel = {
                     );
                 }
 
-                // 차트에 진입가격 + SL/TP 라인 표시
+                // 포지션 뷰로 전환 (진입가격 + SL/TP 라인 표시 포함)
                 const entryPrice = this.getEntryPrice();
-                if (entryPrice > 0 && typeof QeTickChart !== 'undefined') {
-                    const tpsl = this.calcTPSL(entryPrice, side, volume, target, symbol);
-                    QeTickChart.showEntryLine(entryPrice, side.toLowerCase(), tpsl.tp, tpsl.sl);
-                }
-
-                // 포지션 뷰로 전환
                 this.showPositionView(side, entryPrice);
                 // 버튼 4초 비활성화 (중복 진입 방지)
                 const buyBtn = document.getElementById('qeBuyBtn');
@@ -496,6 +490,11 @@ const QuickEasyPanel = {
         this._posVolume = posVolume;
         this._posTarget = posTarget;
         this._posTPSL = this.calcTPSL(entryPrice, side, posVolume, posTarget, this._posSymbol);
+
+        // ★ 차트에 진입가 + TP/SL 라인 그리기 (복구 시에도 표시)
+        if (typeof QeTickChart !== 'undefined' && this._posTPSL) {
+            QeTickChart.showEntryLine(entryPrice, side.toLowerCase(), this._posTPSL.tp, this._posTPSL.sl);
+        }
 
         // Win/Lose는 addTick에서 실시간 업데이트 (깜빡임 방지)
         this.updateWinLose(); // 즉시 1회
