@@ -717,10 +717,12 @@ function connectWebSocket() {
             if (typeof QuickEasyPanel !== 'undefined' && data.positions && Array.isArray(data.positions)) {
                 const qePos = data.positions.find(p => p.magic == 100003);
                 if (qePos && QuickEasyPanel._posEntryPrice <= 0) {
-                    console.log('[WS Demo] 🔄 이지패널 포지션 복구 (from positions array)');
+                    console.log('[WS Demo] 🔄 이지패널 포지션 복구 (from positions array)', qePos);
                     QuickEasyPanel.showPositionView(
                         qePos.type === 'BUY' ? 'BUY' : 'SELL',
-                        qePos.entry
+                        qePos.entry,
+                        qePos.volume,   // ★ 복구 시 실제 volume 전달
+                        qePos.target    // ★ 복구 시 실제 target 전달
                     );
                 }
             }

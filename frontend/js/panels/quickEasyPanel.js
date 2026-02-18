@@ -446,7 +446,7 @@ const QuickEasyPanel = {
     _posStartTime: 0,
     _posOrderId: null,
 
-    showPositionView(side, entryPrice) {
+    showPositionView(side, entryPrice, volume = null, target = null) {
         const orderSection = document.querySelector('.qe-order-section');
         const tradeButtons = document.querySelector('.qe-trade-buttons');
         const posView = document.getElementById('qePositionView');
@@ -485,13 +485,17 @@ const QuickEasyPanel = {
         }, 1000);
 
         // Win/Lose 실시간 업데이트
+        // ★ 복구 시 volume/target이 전달되면 사용, 아니면 현재 UI 값 사용
+        const posVolume = volume !== null ? volume : this.lotSize;
+        const posTarget = target !== null ? target : this.target;
+
         this._posEntryPrice = entryPrice;
         this._posOpenedAt = Date.now();  // No position 안전장치 쿨다운용
         this._posSide = side;
         this._posSymbol = window.currentSymbol || 'BTCUSD';
-        this._posVolume = this.lotSize;
-        this._posTarget = this.target;
-        this._posTPSL = this.calcTPSL(entryPrice, side, this.lotSize, this.target, this._posSymbol);
+        this._posVolume = posVolume;
+        this._posTarget = posTarget;
+        this._posTPSL = this.calcTPSL(entryPrice, side, posVolume, posTarget, this._posSymbol);
 
         // Win/Lose는 addTick에서 실시간 업데이트 (깜빡임 방지)
         this.updateWinLose(); // 즉시 1회
