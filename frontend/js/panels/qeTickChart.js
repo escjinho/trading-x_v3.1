@@ -411,7 +411,7 @@ const QeTickChart = {
             const ov = document.createElement('div');
             ov.className = 'qe-entry-overlay';
             ov.innerHTML = '<span class="qe-entry-dot" style="color:' + sideColor + '">◉</span> <span class="qe-entry-label">' + (side === 'buy' ? 'BUY' : 'SELL') + '</span>';
-            ov.style.cssText = 'position:absolute;right:102px;pointer-events:none;z-index:6;' +
+            ov.style.cssText = 'position:absolute;right:82px;pointer-events:none;z-index:6;' +
                 'font-size:9px;font-weight:700;letter-spacing:0.5px;' +
                 'color:' + sideColor + ';' +
                 'background:rgba(10,10,15,0.7);padding:1px 5px;border-radius:3px;' +
@@ -546,15 +546,10 @@ const QeTickChart = {
         const tpHeight = tpBottom - tpTop;
         if (tpHeight > 0) {
             const tpGrad = ctx.createLinearGradient(0, entryY, 0, tpY);
-            const tpAlphaBase = 0.3;
-            const tpAlphaMax = 0.3 + tpProgress * 0.6;
-            if (ed.side === 'buy') {
-                tpGrad.addColorStop(0, 'rgba(0, 212, 164, ' + tpAlphaBase + ')');
-                tpGrad.addColorStop(1, 'rgba(0, 212, 164, ' + tpAlphaMax + ')');
-            } else {
-                tpGrad.addColorStop(0, 'rgba(0, 212, 164, ' + tpAlphaBase + ')');
-                tpGrad.addColorStop(1, 'rgba(0, 212, 164, ' + tpAlphaMax + ')');
-            }
+            const tpAlphaBase = 0.5;
+            const tpAlphaMax = 0.5 + tpProgress * 0.45;
+            tpGrad.addColorStop(0, 'rgba(0, 255, 136, ' + tpAlphaBase + ')');
+            tpGrad.addColorStop(1, 'rgba(0, 255, 136, ' + tpAlphaMax + ')');
             ctx.fillStyle = tpGrad;
             ctx.fillRect(barX, tpTop, barWidth, tpHeight);
         }
@@ -565,10 +560,10 @@ const QeTickChart = {
         const slHeight = slBottom - slTop;
         if (slHeight > 0) {
             const slGrad = ctx.createLinearGradient(0, entryY, 0, slY);
-            const slAlphaBase = 0.3;
-            const slAlphaMax = 0.3 + slProgress * 0.6;
-            slGrad.addColorStop(0, 'rgba(255, 77, 90, ' + slAlphaBase + ')');
-            slGrad.addColorStop(1, 'rgba(255, 77, 90, ' + slAlphaMax + ')');
+            const slAlphaBase = 0.5;
+            const slAlphaMax = 0.5 + slProgress * 0.45;
+            slGrad.addColorStop(0, 'rgba(255, 85, 102, ' + slAlphaBase + ')');
+            slGrad.addColorStop(1, 'rgba(255, 85, 102, ' + slAlphaMax + ')');
             ctx.fillStyle = slGrad;
             ctx.fillRect(barX, slTop, barWidth, slHeight);
         }
