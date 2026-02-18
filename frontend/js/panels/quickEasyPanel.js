@@ -195,7 +195,7 @@ const QuickEasyPanel = {
                 symbolCard.style.position = 'relative';
                 badge = document.createElement('span');
                 badge.id = 'qePosBadge';
-                badge.style.cssText = 'position:absolute;top:0px;right:-4px;' +
+                badge.style.cssText = 'position:absolute;top:-1px;right:-4px;' +
                     'min-width:16px;height:16px;border-radius:8px;' +
                     'background:#00d4a4;color:#000;font-size:10px;font-weight:700;' +
                     'display:none;align-items:center;justify-content:center;padding:1px 4px 0 4px;';
