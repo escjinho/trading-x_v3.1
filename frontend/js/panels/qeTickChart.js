@@ -165,6 +165,13 @@ const QeTickChart = {
 
     async loadInitialHistory() {
         this._loadingHistory = true;
+        // ★ 안전장치: 5초 후 강제 해제 (API 지연/실패 대비)
+        this._loadingTimeout = setTimeout(() => {
+            if (this._loadingHistory) {
+                console.warn('[QeTickChart] ⚠️ 히스토리 로딩 타임아웃 → 강제 해제');
+                this._loadingHistory = false;
+            }
+        }, 5000);
         const symbol = window.currentSymbol || 'BTCUSD';
         const KST_OFFSET = 9 * 3600;
         try {
@@ -197,6 +204,7 @@ const QeTickChart = {
                     this.lastPrice = unique[unique.length - 1].value;
                     this.openPrice = unique[0].value;
                     this.prevPrice = this.lastPrice;
+                    this._lastHistoryTime = unique[unique.length - 1].time; // ★ 히스토리 마지막 시간 기록
                     console.log('[QeTickChart] ★ 초기 히스토리 로딩:', unique.length, '틱');
                     // ★ 5초 후 최근 구간으로 줌인
                     setTimeout(() => {
@@ -215,6 +223,10 @@ const QeTickChart = {
             console.warn('[QeTickChart] 히스토리 로딩 실패:', e);
         } finally {
             this._loadingHistory = false;
+            if (this._loadingTimeout) {
+                clearTimeout(this._loadingTimeout);
+                this._loadingTimeout = null;
+            }
         }
     },
 
@@ -275,7 +287,13 @@ const QeTickChart = {
 
     // ========== 차트에 실제 데이터 반영 ==========
     commitTick(price) {
-        const now = Math.floor(Date.now() / 1000) + 9 * 3600; // KST 표시
+        let now = Math.floor(Date.now() / 1000) + 9 * 3600; // KST 표시
+
+        // ★ 시간 역전 방지: 항상 마지막 데이터보다 큰 time 보장
+        if (this.tickData.length > 0) {
+            const lastTime = this.tickData[this.tickData.length - 1].time;
+            if (now <= lastTime) now = lastTime + 1;
+        }
 
         this.tickData.push({ time: now, value: price });
 
