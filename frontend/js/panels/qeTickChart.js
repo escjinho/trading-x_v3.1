@@ -390,13 +390,13 @@ const QeTickChart = {
         const sideColor = side === 'buy' ? '#00d4a4' : '#ff4d5a';
         const label = side === 'buy' ? '◉ BUY' : '◉ SELL';
 
-        // 진입가 점선
+        // 진입가 점선 (호가 박스 제거, 라인 위 타이틀만 표시)
         this.priceLine = this.areaSeries.createPriceLine({
             price: price,
             color: sideColor,
             lineWidth: 1,
             lineStyle: 2,
-            axisLabelVisible: true,
+            axisLabelVisible: false,
             title: label
         });
 
@@ -479,10 +479,18 @@ const QeTickChart = {
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Y축 경계 위치 = 차트 플롯 영역 너비 (동적 계산)
-        const plotWidth = this.chart.timeScale().width();
-        const barX = plotWidth; // 차트-호가 경계에 정확히 위치
-        const barWidth = 2;
+        // Y축 경계 위치 = 캔버스 너비 - Y축 너비
+        const chartContainer = document.getElementById('qeChartContainer');
+        let priceScaleW = 100;
+        if (chartContainer) {
+            const tableEl = chartContainer.querySelector('table');
+            if (tableEl) {
+                const plotCell = tableEl.querySelector('tr:first-child td:first-child');
+                if (plotCell) priceScaleW = canvas.width - plotCell.clientWidth;
+            }
+        }
+        const barX = canvas.width - priceScaleW - 2;
+        const barWidth = 4;
 
         // 가격 → 픽셀 좌표 변환
         const entryY = this.areaSeries.priceToCoordinate(ed.price);
@@ -505,8 +513,8 @@ const QeTickChart = {
         const tpHeight = tpBottom - tpTop;
         if (tpHeight > 0) {
             const tpGrad = ctx.createLinearGradient(0, entryY, 0, tpY);
-            const tpAlphaBase = 0.15;
-            const tpAlphaMax = 0.15 + tpProgress * 0.65;
+            const tpAlphaBase = 0.3;
+            const tpAlphaMax = 0.3 + tpProgress * 0.6;
             if (ed.side === 'buy') {
                 tpGrad.addColorStop(0, 'rgba(0, 212, 164, ' + tpAlphaBase + ')');
                 tpGrad.addColorStop(1, 'rgba(0, 212, 164, ' + tpAlphaMax + ')');
@@ -524,8 +532,8 @@ const QeTickChart = {
         const slHeight = slBottom - slTop;
         if (slHeight > 0) {
             const slGrad = ctx.createLinearGradient(0, entryY, 0, slY);
-            const slAlphaBase = 0.15;
-            const slAlphaMax = 0.15 + slProgress * 0.65;
+            const slAlphaBase = 0.3;
+            const slAlphaMax = 0.3 + slProgress * 0.6;
             slGrad.addColorStop(0, 'rgba(255, 77, 90, ' + slAlphaBase + ')');
             slGrad.addColorStop(1, 'rgba(255, 77, 90, ' + slAlphaMax + ')');
             ctx.fillStyle = slGrad;
