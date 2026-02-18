@@ -576,8 +576,8 @@ const QeTickChart = {
             const tpGrad = ctx.createLinearGradient(0, entryY, 0, tpY);
             const tpAlphaBase = 0.5;
             const tpAlphaMax = 0.5 + tpProgress * 0.45;
-            tpGrad.addColorStop(0, 'rgba(0, 255, 136, ' + tpAlphaBase + ')');
-            tpGrad.addColorStop(1, 'rgba(0, 255, 136, ' + tpAlphaMax + ')');
+            tpGrad.addColorStop(0, 'rgba(50, 255, 160, ' + tpAlphaBase + ')');
+            tpGrad.addColorStop(1, 'rgba(50, 255, 160, ' + tpAlphaMax + ')');
             ctx.fillStyle = tpGrad;
             ctx.fillRect(barX, tpTop, barWidth, tpHeight);
         }
@@ -590,8 +590,8 @@ const QeTickChart = {
             const slGrad = ctx.createLinearGradient(0, entryY, 0, slY);
             const slAlphaBase = 0.5;
             const slAlphaMax = 0.5 + slProgress * 0.45;
-            slGrad.addColorStop(0, 'rgba(255, 85, 102, ' + slAlphaBase + ')');
-            slGrad.addColorStop(1, 'rgba(255, 85, 102, ' + slAlphaMax + ')');
+            slGrad.addColorStop(0, 'rgba(255, 110, 120, ' + slAlphaBase + ')');
+            slGrad.addColorStop(1, 'rgba(255, 110, 120, ' + slAlphaMax + ')');
             ctx.fillStyle = slGrad;
             ctx.fillRect(barX, slTop, barWidth, slHeight);
         }
