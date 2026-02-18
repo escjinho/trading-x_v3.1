@@ -1006,8 +1006,8 @@ function connectWebSocket() {
                 let html = '';
                 data.history.slice().reverse().forEach(h => {
                     const profit = h.profit || 0;
-                    const profitClass = profit >= 0 ? 'positive' : 'negative';
-                    const profitSign = profit >= 0 ? '+' : '';
+                    const profitClass = profit > 0 ? 'positive' : profit < 0 ? 'negative' : 'neutral';
+                    const profitSign = profit > 0 ? '+' : '';
                     const typeStr = h.type === 0 ? 'BUY' : (h.type === 1 ? 'SELL' : (h.type || ''));
                     const typeColor = (h.type === 0 || h.type === 'BUY') ? 'var(--buy-color)' : 'var(--sell-color)';
                     const symbol = h.symbol || '';

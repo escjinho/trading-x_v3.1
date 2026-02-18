@@ -1521,12 +1521,15 @@ function updateHistorySummary() {
     }
     
     if (plEl) {
-        if (totalPL >= 0) {
+        if (totalPL > 0) {
             plEl.textContent = '+$' + totalPL.toFixed(2);
             plEl.className = 'history-summary-value positive';
-        } else {
+        } else if (totalPL < 0) {
             plEl.textContent = '-$' + Math.abs(totalPL).toFixed(2);
             plEl.className = 'history-summary-value negative';
+        } else {
+            plEl.textContent = '$0.00';
+            plEl.className = 'history-summary-value';
         }
     }
 }
@@ -1559,8 +1562,8 @@ function renderFilteredHistory() {
     if (filtered.length > 0) {
         let html = '';
         filtered.forEach(h => {
-            const profitClass = h.profit >= 0 ? 'positive' : 'negative';
-            const profitSign = h.profit >= 0 ? '+' : '';
+            const profitClass = h.profit > 0 ? 'positive' : h.profit < 0 ? 'negative' : 'neutral';
+            const profitSign = h.profit > 0 ? '+' : '';
             const typeColor = h.type === 'BUY' ? 'var(--buy-color)' : 'var(--sell-color)';
             
             // 가격 포맷팅 (종목별 소수점 자릿수)

@@ -58,6 +58,9 @@
 .history-profit.negative {
     color: var(--sell-color);
 }
+.history-profit.neutral {
+    color: var(--text-primary);
+}
 
 /* ========== 가격 표시 추가 ========== */
 .history-divider {
