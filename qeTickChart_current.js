@@ -24,7 +24,6 @@ const QeTickChart = {
     _loadingHistory: false,  // 히스토리 로딩 중 플래그
     _progressCanvas: null,   // SL/TP 진행도 바 캔버스
     _entryData: null,        // { price, side, tp, sl }
-    _entryOverlay: null,     // ◉ BUY/SELL 커스텀 라벨
 
     // 종목별 카테고리
     CATEGORIES: {
@@ -315,9 +314,6 @@ const QeTickChart = {
         // 펄스 마커 위치 업데이트
         this.updatePulse(now, price);
 
-        // ★ 진입가 오버레이 위치 업데이트
-        if (this._entryOverlay) this.updateEntryOverlay();
-
         // ★ SL/TP 진행도 바 업데이트
         if (this._entryData) this.drawProgressBars();
     },
@@ -394,33 +390,15 @@ const QeTickChart = {
         const sideColor = side === 'buy' ? '#00d4a4' : '#ff4d5a';
         const label = side === 'buy' ? '◉ BUY' : '◉ SELL';
 
-        // 진입가 점선 (호가 박스 제거)
+        // 진입가 점선 (호가 박스 제거, 라인 위 타이틀만 표시)
         this.priceLine = this.areaSeries.createPriceLine({
             price: price,
             color: sideColor,
             lineWidth: 1,
             lineStyle: 2,
             axisLabelVisible: false,
-            title: ''
+            title: label
         });
-
-        // ★ 커스텀 ◉ BUY/SELL 오버레이
-        if (this._entryOverlay) this._entryOverlay.remove();
-        const wrap = document.getElementById('qeChartWrap');
-        if (wrap) {
-            const ov = document.createElement('div');
-            ov.className = 'qe-entry-overlay';
-            ov.innerHTML = '<span class="qe-entry-dot" style="color:' + sideColor + '">◉</span> <span class="qe-entry-label">' + (side === 'buy' ? 'BUY' : 'SELL') + '</span>';
-            ov.style.cssText = 'position:absolute;right:102px;pointer-events:none;z-index:6;' +
-                'font-size:9px;font-weight:700;letter-spacing:0.5px;' +
-                'color:' + sideColor + ';' +
-                'background:rgba(10,10,15,0.7);padding:1px 5px;border-radius:3px;' +
-                'white-space:nowrap;transform:translateY(-50%);';
-            wrap.appendChild(ov);
-            this._entryOverlay = ov;
-            this._entryOverlayPrice = price;
-            this.updateEntryOverlay();
-        }
 
         // TP 라인 (항상 초록)
         if (tpPrice && tpPrice > 0) {
@@ -470,28 +448,11 @@ const QeTickChart = {
             this.areaSeries.removePriceLine(this.slPriceLine);
             this.slPriceLine = null;
         }
-        // ★ 오버레이 제거
-        if (this._entryOverlay) {
-            this._entryOverlay.remove();
-            this._entryOverlay = null;
-        }
         // ★ 진행도 바 제거
         this._entryData = null;
         if (this._progressCanvas) {
             this._progressCanvas.remove();
             this._progressCanvas = null;
-        }
-    },
-
-    // ========== 진입가 커스텀 오버레이 위치 업데이트 ==========
-    updateEntryOverlay() {
-        if (!this._entryOverlay || !this.areaSeries || !this._entryOverlayPrice) return;
-        const y = this.areaSeries.priceToCoordinate(this._entryOverlayPrice);
-        if (y !== null && y > 0) {
-            this._entryOverlay.style.top = y + 'px';
-            this._entryOverlay.style.display = 'block';
-        } else {
-            this._entryOverlay.style.display = 'none';
         }
     },
 
@@ -518,11 +479,17 @@ const QeTickChart = {
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Y축 경계 = 차트 플롯 영역 끝
-        let plotW = 0;
-        try { plotW = this.chart.timeScale().width(); } catch(e) {}
-        if (!plotW || plotW <= 0) plotW = canvas.width - 100; // fallback
-        const barX = plotW - 2;
+        // Y축 경계 위치 = 캔버스 너비 - Y축 너비
+        const chartContainer = document.getElementById('qeChartContainer');
+        let priceScaleW = 100;
+        if (chartContainer) {
+            const tableEl = chartContainer.querySelector('table');
+            if (tableEl) {
+                const plotCell = tableEl.querySelector('tr:first-child td:first-child');
+                if (plotCell) priceScaleW = canvas.width - plotCell.clientWidth;
+            }
+        }
+        const barX = canvas.width - priceScaleW - 2;
         const barWidth = 4;
 
         // 가격 → 픽셀 좌표 변환
