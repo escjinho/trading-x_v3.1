@@ -425,8 +425,21 @@ const ChartPanel = {
                 this.lastCandleTime = lastCandle.time;
                 this.lastCandleData = { ...lastCandle };
 
-                // 기준가격 설정 (첫 번째 캔들의 시가)
-                this.referencePrice = data.candles[0].open;
+                // 기준가격 설정 (★ D1 시가 우선, fallback: 첫 캔들 시가)
+                if (window._dailyOpen && window._dailyOpen[chartSymbol]) {
+                    this.referencePrice = window._dailyOpen[chartSymbol];
+                } else {
+                    this.referencePrice = data.candles[0].open;
+                    // D1 시가 비동기 로딩
+                    apiCall('/mt5/candles/' + chartSymbol + '?timeframe=D1&count=1').then(d1 => {
+                        if (d1 && d1.candles && d1.candles.length > 0) {
+                            this.referencePrice = d1.candles[d1.candles.length - 1].open;
+                            window._dailyOpen = window._dailyOpen || {};
+                            window._dailyOpen[chartSymbol] = this.referencePrice;
+                            console.log('[ChartPanel] ★ D1 시가:', this.referencePrice);
+                        }
+                    }).catch(() => {});
+                }
 
                 // 인디케이터 데이터 설정 (★ null 체크 + try-catch)
                 if (data.indicators) {

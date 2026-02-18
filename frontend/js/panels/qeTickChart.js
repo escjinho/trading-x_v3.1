@@ -9,7 +9,8 @@ const QeTickChart = {
     tickData: [],
     maxTicks: 80,           // 화면에 보이는 최대 포인트
     lastPrice: 0,
-    openPrice: 0,           // 당일 시가 (등락 계산용)
+    openPrice: 0,           // 히스토리 첫 가격 (fallback)
+    dailyOpen: 0,          // ★ D1 캔들 시가 (실제 일일 등락용)
     prevPrice: 0,           // 보간용
     targetPrice: 0,
     animFrameId: null,
@@ -230,6 +231,16 @@ const QeTickChart = {
                     this.prevPrice = this.lastPrice;
                     this._lastHistoryTime = unique[unique.length - 1].time; // ★ 히스토리 마지막 시간 기록
                     console.log('[QeTickChart] ★ 초기 히스토리 로딩:', unique.length, '틱');
+                    // ★ D1 캔들에서 당일 시가 로딩
+                    try {
+                        const d1 = await apiCall('/mt5/candles/' + symbol + '?timeframe=D1&count=1');
+                        if (d1 && d1.candles && d1.candles.length > 0) {
+                            this.dailyOpen = d1.candles[d1.candles.length - 1].open;
+                            window._dailyOpen = window._dailyOpen || {};
+                            window._dailyOpen[symbol] = this.dailyOpen;
+                            console.log('[QeTickChart] ★ D1 시가:', this.dailyOpen);
+                        }
+                    } catch(e) { console.warn('[QeTickChart] D1 시가 로딩 실패:', e); }
                     // ★ 5초 후 최근 구간으로 줌인
                     setTimeout(() => {
                         if (this.chart && this.tickData.length > 0) {
@@ -378,10 +389,11 @@ const QeTickChart = {
             });
         }
 
-        // 등락
-        if (this.openPrice > 0) {
-            const change = price - this.openPrice;
-            const changePct = (change / this.openPrice) * 100;
+        // 등락 (★ D1 시가 우선, fallback: 히스토리 첫 가격)
+        const refPrice = this.dailyOpen > 0 ? this.dailyOpen : this.openPrice;
+        if (refPrice > 0) {
+            const change = price - refPrice;
+            const changePct = (change / refPrice) * 100;
             const sign = change >= 0 ? '+' : '';
             const isNeg = change < 0;
 
@@ -402,6 +414,30 @@ const QeTickChart = {
         const catEl = document.getElementById('qeInfoCategory');
         if (symbolEl) symbolEl.textContent = symbol.replace('.r', '').replace('.', '');
         if (catEl) catEl.textContent = this.CATEGORIES[symbol] || 'Market';
+
+        // ★ 장 운영 상태 (차트와 동일한 MarketSchedule 사용)
+        const statusEl = document.getElementById('qeInfoStatus');
+        if (statusEl) {
+            const isOpen = typeof MarketSchedule !== 'undefined' && MarketSchedule.isMarketOpen
+                ? MarketSchedule.isMarketOpen(symbol) : true;
+            if (isOpen) {
+                statusEl.style.display = 'none';
+            } else {
+                statusEl.style.display = 'inline-flex';
+                statusEl.style.alignItems = 'center';
+                statusEl.style.background = '#ff4d5a';
+                statusEl.style.width = 'auto';
+                statusEl.style.height = 'auto';
+                statusEl.style.borderRadius = '3px';
+                statusEl.style.padding = '0 4px';
+                statusEl.style.fontSize = '7px';
+                statusEl.style.color = '#fff';
+                statusEl.style.fontWeight = '700';
+                statusEl.style.letterSpacing = '0.3px';
+                statusEl.style.boxShadow = '0 0 4px rgba(255,77,90,0.5)';
+                statusEl.textContent = 'CLOSED';
+            }
+        }
     },
 
     // ========== 색상 (항상 초록) ==========
@@ -702,6 +738,7 @@ const QeTickChart = {
         this.tickData = [];
         this.lastPrice = 0;
         this.openPrice = 0;
+        this.dailyOpen = 0;
         this.prevPrice = 0;
         this.targetPrice = 0;
         this.removeEntryLine();
