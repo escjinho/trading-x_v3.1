@@ -138,7 +138,7 @@ function updateAccountInfoFromHistory(historyData) {
     if (todayPLEl) {
         if (displayPL > 0) {
             todayPLEl.textContent = '+$' + displayPL.toFixed(2);
-            todayPLEl.style.color = 'var(--buy-color)';
+            todayPLEl.style.color = 'var(--text-primary)';
         } else if (displayPL < 0) {
             todayPLEl.textContent = '-$' + Math.abs(displayPL).toFixed(2);
             todayPLEl.style.color = 'var(--sell-color)';

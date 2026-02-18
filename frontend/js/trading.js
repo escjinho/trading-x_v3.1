@@ -278,8 +278,8 @@ function updateTodayPL(profit) {
     // 1. Account 탭 Today P/L 업데이트 (_todayPLFixed 사용)
     const todayPLEl = document.getElementById('accTodayPL');
     if (todayPLEl) {
-        todayPLEl.textContent = (fixedPL >= 0 ? '+$' : '-$') + Math.abs(fixedPL).toFixed(2);
-        todayPLEl.style.color = fixedPL >= 0 ? 'var(--buy-color)' : 'var(--sell-color)';
+        todayPLEl.textContent = fixedPL > 0 ? '+$' + fixedPL.toFixed(2) : fixedPL < 0 ? '-$' + Math.abs(fixedPL).toFixed(2) : '$0.00';
+        todayPLEl.style.color = fixedPL > 0 ? 'var(--buy-color)' : fixedPL < 0 ? 'var(--sell-color)' : 'var(--text-primary)';
     }
 
     console.log(`[updateTodayPL] Profit: ${profit}, FixedPL: ${fixedPL}`);
@@ -308,12 +308,15 @@ function syncTradeTodayPL() {
 
     // ★★★ 항상 _todayPLFixed 값 직접 사용 ★★★
     const fixedPL = window._todayPLFixed || 0;
-    if (fixedPL >= 0) {
+    if (fixedPL > 0) {
         tradeTodayPL.textContent = '+$' + fixedPL.toFixed(2);
         tradeTodayPL.style.color = 'var(--buy-color)';
-    } else {
+    } else if (fixedPL < 0) {
         tradeTodayPL.textContent = '-$' + Math.abs(fixedPL).toFixed(2);
         tradeTodayPL.style.color = 'var(--sell-color)';
+    } else {
+        tradeTodayPL.textContent = '$0';
+        tradeTodayPL.style.color = 'var(--text-primary)';
     }
 }
 
@@ -1250,18 +1253,21 @@ function updateAccountStats(history) {
     const todayPLLabel = todayPLEl?.closest('.summary-box-v2')?.querySelector('.summary-label');
 
     if (todayPLEl) {
-        if (fixedPL >= 0) {
+        if (fixedPL > 0) {
             todayPLEl.textContent = '+$' + fixedPL.toFixed(2);
             todayPLEl.style.color = 'var(--buy-color)';
-        } else {
+        } else if (fixedPL < 0) {
             todayPLEl.textContent = '-$' + Math.abs(fixedPL).toFixed(2);
             todayPLEl.style.color = 'var(--sell-color)';
+        } else {
+            todayPLEl.textContent = '$0.00';
+            todayPLEl.style.color = 'var(--text-primary)';
         }
     }
 
-    // 라벨은 항상 Today P/L
+    // 라벨은 항상 Today P&L
     if (todayPLLabel) {
-        todayPLLabel.textContent = 'Today P/L';
+        todayPLLabel.textContent = 'Today P&L';
     }
 
     console.log(`[updateAccountStats] FixedPL: ${fixedPL}, Win/Lose: ${totalWins}/${totalLosses}`);
@@ -1344,12 +1350,15 @@ function selectPeriod(period, text) {
         const fixedPL = window._todayPLFixed || 0;
         const todayPLEl = document.getElementById('accTodayPL');
         if (todayPLEl) {
-            if (fixedPL >= 0) {
+            if (fixedPL > 0) {
                 todayPLEl.textContent = '+$' + fixedPL.toFixed(2);
                 todayPLEl.style.color = 'var(--buy-color)';
-            } else {
+            } else if (fixedPL < 0) {
                 todayPLEl.textContent = '-$' + Math.abs(fixedPL).toFixed(2);
                 todayPLEl.style.color = 'var(--sell-color)';
+            } else {
+                todayPLEl.textContent = '$0.00';
+                todayPLEl.style.color = 'var(--text-primary)';
             }
         }
         syncTradeTodayPL();

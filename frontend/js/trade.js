@@ -399,12 +399,15 @@ function updateQuickAccountInfo() {
     if (quickMargin) quickMargin.textContent = '$0';
     
     if (quickTodayPL) {
-        if (todayPL >= 0) {
+        if (todayPL > 0) {
             quickTodayPL.textContent = '+$' + Math.abs(todayPL).toFixed(0);
             quickTodayPL.style.color = 'var(--buy-color)';
-        } else {
+        } else if (todayPL < 0) {
             quickTodayPL.textContent = '-$' + Math.abs(todayPL).toFixed(0);
             quickTodayPL.style.color = 'var(--sell-color)';
+        } else {
+            quickTodayPL.textContent = '$0';
+            quickTodayPL.style.color = 'var(--text-primary)';
         }
     }
 }
