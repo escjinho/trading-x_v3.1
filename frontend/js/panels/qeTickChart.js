@@ -21,6 +21,7 @@ const QeTickChart = {
     _userInteracting: false, // 사용자 조작 중
     _customPriceRange: null, // 줌아웃 시 커스텀 가격 범위 (플래그)
     initialized: false,
+    _loadingHistory: false,  // 히스토리 로딩 중 플래그
 
     // 종목별 카테고리
     CATEGORIES: {
@@ -161,6 +162,7 @@ const QeTickChart = {
     },
 
     async loadInitialHistory() {
+        this._loadingHistory = true;
         const symbol = window.currentSymbol || 'BTCUSD';
         const KST_OFFSET = 9 * 3600;
         try {
@@ -209,6 +211,8 @@ const QeTickChart = {
             }
         } catch (e) {
             console.warn('[QeTickChart] 히스토리 로딩 실패:', e);
+        } finally {
+            this._loadingHistory = false;
         }
     },
 
@@ -220,6 +224,7 @@ const QeTickChart = {
     // ========== 틱 데이터 추가 (보간 애니메이션) ==========
     addTick(price) {
         if (!this.areaSeries || price <= 0) return;
+        if (this._loadingHistory) return; // 히스토리 로딩 중 무시
 
         // 첫 틱이면 openPrice 설정
         if (this.openPrice === 0) {
