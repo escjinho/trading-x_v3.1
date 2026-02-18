@@ -723,7 +723,8 @@ async def get_demo_account(
             "profit": pos_price_data["profit"],
             "target": pos.target_profit,
             "magic": pos.magic,
-            "margin": pos_price_data["margin"]
+            "margin": pos_price_data["margin"],
+            "opened_at": str(pos.created_at) if pos.created_at else ""
         })
 
     # ★ current_pl 계산 (모든 포지션 profit 합산)
@@ -979,7 +980,8 @@ async def get_demo_positions(
             "profit": profit,
             "target": pos.target_profit,
             "magic": pos.magic,
-            "margin": margin
+            "margin": margin,
+            "opened_at": str(pos.created_at) if pos.created_at else ""
         })
     
     return {
@@ -2265,7 +2267,8 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                                     "margin": pos_margin,
                                     "magic": pos.magic,  # ★ 패널 구분용
                                     "tp_price": pos.tp_price,
-                                    "sl_price": pos.sl_price
+                                    "sl_price": pos.sl_price,
+                                    "opened_at": str(pos.created_at) if pos.created_at else ""
                                 }
                                 positions_data.append(pos_data)
 
