@@ -1643,15 +1643,18 @@ async def reset_demo_martin_full(
 @router.post("/close-all")
 async def close_all_demo_positions(
     magic: int = None,
+    symbol: str = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """모든 데모 포지션 일괄 청산 (magic 필터 옵션)"""
+    """모든 데모 포지션 일괄 청산 (magic + symbol 필터 옵션)"""
     query = db.query(DemoPosition).filter(
         DemoPosition.user_id == current_user.id
     )
     if magic is not None:
         query = query.filter(DemoPosition.magic == magic)
+    if symbol is not None:
+        query = query.filter(DemoPosition.symbol == symbol)
     positions = query.all()
     
     if not positions:

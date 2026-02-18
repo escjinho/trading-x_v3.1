@@ -776,12 +776,10 @@ const QuickEasyPanel = {
     async _backgroundClose(symbol) {
         try {
             const isLive = typeof TradingState !== 'undefined' && TradingState.isLive;
-            const endpoint = isLive ? '/mt5/close' : '/demo/close';
-            await apiCall(endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ symbol: symbol, magic: QE_MAGIC_NUMBER })
-            });
+            const endpoint = isLive
+                ? '/mt5/close-all?symbol=' + symbol + '&magic=' + QE_MAGIC_NUMBER
+                : '/demo/close-all?symbol=' + symbol + '&magic=' + QE_MAGIC_NUMBER;
+            await apiCall(endpoint, 'POST');
             delete this._positions[symbol];
             this._updatePositionBadge();
             console.log('[QE] ✅ 백그라운드 청산 완료:', symbol);
