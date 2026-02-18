@@ -466,7 +466,8 @@ const QuickEasyPanel = {
             if (side === 'SELL') posInfo.classList.add('sell-pos');
         }
         if (entryEl) {
-            entryEl.textContent = '$' + posTarget;
+            const _t = target !== null ? target : this.target;
+            entryEl.textContent = '$' + _t;
         }
 
         // 경과시간 카운터 시작
