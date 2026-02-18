@@ -25,6 +25,8 @@ const QeTickChart = {
     _progressCanvas: null,   // SL/TP 진행도 바 캔버스
     _entryData: null,        // { price, side, tp, sl }
     _entryOverlay: null,     // ◉ BUY/SELL 커스텀 라벨
+    _tpOverlay: null,        // Win 커스텀 라벨
+    _slOverlay: null,        // Lose 커스텀 라벨
 
     // 종목별 카테고리
     CATEGORIES: {
@@ -443,28 +445,62 @@ const QeTickChart = {
             this.updateEntryOverlay();
         }
 
-        // TP 라인 (항상 초록)
+        // TP 라인 (라벨 숨김 → 커스텀 오버레이)
         if (tpPrice && tpPrice > 0) {
             this.tpPriceLine = this.areaSeries.createPriceLine({
                 price: tpPrice,
                 color: '#00d4a4',
-                lineWidth: 2,
-                lineStyle: 0,  // 실선
-                axisLabelVisible: true,
-                title: 'Win'
+                lineWidth: 1,
+                lineStyle: 0,
+                axisLabelVisible: false,
+                title: ''
             });
+            // ★ Win 커스텀 오버레이
+            if (this._tpOverlay) this._tpOverlay.remove();
+            if (wrap) {
+                const tpOv = document.createElement('div');
+                tpOv.className = 'qe-tp-overlay';
+                tpOv.innerHTML = '<span style="font-size:7px;margin-right:2px;">▲</span>Win';
+                tpOv.style.cssText = 'position:absolute;right:4px;pointer-events:none;z-index:6;' +
+                    'font-size:8px;font-weight:700;letter-spacing:0.3px;' +
+                    'color:#00d4a4;' +
+                    'background:rgba(0,212,164,0.12);border:1px solid rgba(0,212,164,0.4);' +
+                    'padding:1px 6px;border-radius:3px;' +
+                    'min-width:32px;text-align:center;' +
+                    'white-space:nowrap;transform:translateY(-50%);';
+                wrap.appendChild(tpOv);
+                this._tpOverlay = tpOv;
+                this._tpOverlayPrice = tpPrice;
+            }
         }
 
-        // SL 라인 (항상 빨강)
+        // SL 라인 (라벨 숨김 → 커스텀 오버레이)
         if (slPrice && slPrice > 0) {
             this.slPriceLine = this.areaSeries.createPriceLine({
                 price: slPrice,
                 color: '#ff4d5a',
-                lineWidth: 2,
+                lineWidth: 1,
                 lineStyle: 0,
-                axisLabelVisible: true,
-                title: 'Lose'
+                axisLabelVisible: false,
+                title: ''
             });
+            // ★ Lose 커스텀 오버레이
+            if (this._slOverlay) this._slOverlay.remove();
+            if (wrap) {
+                const slOv = document.createElement('div');
+                slOv.className = 'qe-sl-overlay';
+                slOv.innerHTML = '<span style="font-size:7px;margin-right:2px;">▼</span>Lose';
+                slOv.style.cssText = 'position:absolute;right:4px;pointer-events:none;z-index:6;' +
+                    'font-size:8px;font-weight:700;letter-spacing:0.3px;' +
+                    'color:#ff4d5a;' +
+                    'background:rgba(255,77,90,0.12);border:1px solid rgba(255,77,90,0.4);' +
+                    'padding:1px 6px;border-radius:3px;' +
+                    'min-width:32px;text-align:center;' +
+                    'white-space:nowrap;transform:translateY(-50%);';
+                wrap.appendChild(slOv);
+                this._slOverlay = slOv;
+                this._slOverlayPrice = slPrice;
+            }
         }
 
         // 진입 시 줌아웃 연출: SL/TP 전체 보이도록
@@ -503,6 +539,14 @@ const QeTickChart = {
             this._entryOverlay.remove();
             this._entryOverlay = null;
         }
+        if (this._tpOverlay) {
+            this._tpOverlay.remove();
+            this._tpOverlay = null;
+        }
+        if (this._slOverlay) {
+            this._slOverlay.remove();
+            this._slOverlay = null;
+        }
         // ★ 진행도 바 제거
         this._entryData = null;
         if (this._progressCanvas) {
@@ -513,13 +557,36 @@ const QeTickChart = {
 
     // ========== 진입가 커스텀 오버레이 위치 업데이트 ==========
     updateEntryOverlay() {
-        if (!this._entryOverlay || !this.areaSeries || !this._entryOverlayPrice) return;
-        const y = this.areaSeries.priceToCoordinate(this._entryOverlayPrice);
-        if (y !== null && y > 0) {
-            this._entryOverlay.style.top = y + 'px';
-            this._entryOverlay.style.display = 'block';
-        } else {
-            this._entryOverlay.style.display = 'none';
+        if (!this.areaSeries) return;
+        // ◉ BUY/SELL
+        if (this._entryOverlay && this._entryOverlayPrice) {
+            const y = this.areaSeries.priceToCoordinate(this._entryOverlayPrice);
+            if (y !== null && y > 0) {
+                this._entryOverlay.style.top = y + 'px';
+                this._entryOverlay.style.display = 'block';
+            } else {
+                this._entryOverlay.style.display = 'none';
+            }
+        }
+        // Win
+        if (this._tpOverlay && this._tpOverlayPrice) {
+            const ty = this.areaSeries.priceToCoordinate(this._tpOverlayPrice);
+            if (ty !== null && ty > 0) {
+                this._tpOverlay.style.top = ty + 'px';
+                this._tpOverlay.style.display = 'block';
+            } else {
+                this._tpOverlay.style.display = 'none';
+            }
+        }
+        // Lose
+        if (this._slOverlay && this._slOverlayPrice) {
+            const sy = this.areaSeries.priceToCoordinate(this._slOverlayPrice);
+            if (sy !== null && sy > 0) {
+                this._slOverlay.style.top = sy + 'px';
+                this._slOverlay.style.display = 'block';
+            } else {
+                this._slOverlay.style.display = 'none';
+            }
         }
     },
 
