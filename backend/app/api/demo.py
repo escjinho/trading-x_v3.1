@@ -2221,10 +2221,10 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                                             "martin_step_up": martin_step_up
                                         }
 
-                                        # ★★★ 10초 동안 자동청산 정보 유지 (프론트엔드가 놓치지 않도록) ★★★
+                                        # ★★★ 3초 동안 자동청산 정보 유지 (프론트엔드가 놓치지 않도록) ★★★
                                         demo_websocket_endpoint._auto_closed_cache[user_id] = {
                                             "info": auto_closed_info,
-                                            "until": current_time + 10  # 10초 동안 유지 (0.2초 간격 = 약 50회)
+                                            "until": current_time + 3  # 3초 동안 유지 (0.2초 간격 = 약 15회)
                                         }
 
                                         # 잔고 업데이트

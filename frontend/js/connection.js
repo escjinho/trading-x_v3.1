@@ -582,6 +582,9 @@ function connectWebSocket() {
                 const closedAt = data.closed_at || Date.now() / 1000;
                 const lastClosedAt = window._lastAutoClosedAt || 0;
                 const profit = data.closed_profit || 0;
+                // 중복 알림 방지
+                if (data.closed_at && data.closed_at === window._lastClosedAlert) return;
+                if (data.closed_at) window._lastClosedAlert = data.closed_at;
 
                 // ★ 중복 방지: closed_at 기준 (5초 이내 같은 값이면 무시)
                 const timeDiff = Math.abs(closedAt - lastClosedAt);
@@ -659,8 +662,12 @@ function connectWebSocket() {
 
                     // ★★★ Quick&Easy 패널 청산 연동 (magic=100003) ★★★
                     if (data.magic == 100003 && typeof QuickEasyPanel !== 'undefined') {
-                        console.log('[WS Demo] 🎯 Quick&Easy auto_closed → hidePositionView');
-                        QuickEasyPanel.hidePositionView();
+                        // 중복 방지: 같은 closed_at은 1회만 처리
+                        if (data.closed_at !== window._lastQEClosedAt) {
+                            window._lastQEClosedAt = data.closed_at;
+                            console.log('[WS Demo] 🎯 Quick&Easy auto_closed → hidePositionView');
+                            QuickEasyPanel.hidePositionView();
+                        }
                     }
                 }
                 }  // ★ wsConnectionStartTime 체크 else 블록 닫기
