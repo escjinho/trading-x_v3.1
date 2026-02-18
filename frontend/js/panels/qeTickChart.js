@@ -241,17 +241,17 @@ const QeTickChart = {
                             console.log('[QeTickChart] ★ D1 시가:', this.dailyOpen);
                         }
                     } catch(e) { console.warn('[QeTickChart] D1 시가 로딩 실패:', e); }
-                    // ★ 5초 후 최근 구간으로 줌인
+                    // ★ 1초 후 최근 구간으로 줌인 (40바 + 오른쪽 여백 8)
                     setTimeout(() => {
                         if (this.chart && this.tickData.length > 0) {
                             const totalBars = this.tickData.length;
                             const visibleBars = Math.min(40, totalBars);
                             this.chart.timeScale().setVisibleLogicalRange({
                                 from: totalBars - visibleBars,
-                                to: totalBars + 5
+                                to: totalBars + 8
                             });
                         }
-                    }, 5000);
+                    }, 1000);
                 }
             }
         } catch (e) {
@@ -766,6 +766,11 @@ const QeTickChart = {
         if (pctEl) { pctEl.textContent = '(0.00%)'; pctEl.className = 'qe-change-pct'; }
 
         console.log('[QeTickChart] 리셋 완료');
+
+        // ★ 새 종목 히스토리 + D1 시가 로딩
+        if (this.initialized) {
+            this.loadInitialHistory();
+        }
     },
 
     // ========== 리사이즈 ==========
