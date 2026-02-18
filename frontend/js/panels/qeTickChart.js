@@ -61,7 +61,7 @@ const QeTickChart = {
             layout: {
                 background: { type: 'solid', color: '#0a0a0f' },
                 textColor: 'rgba(255, 255, 255, 0.4)',
-                fontSize: 10
+                fontSize: 9
             },
             grid: {
                 vertLines: { color: 'transparent' },
@@ -388,7 +388,7 @@ const QeTickChart = {
         if (!this.areaSeries) return;
 
         const sideColor = side === 'buy' ? '#00d4a4' : '#ff4d5a';
-        const label = side === 'buy' ? '● BUY' : '● SELL';
+        const label = side === 'buy' ? '◉ BUY' : '◉ SELL';
 
         // 진입가 점선 (호가 박스 숨김, 라인+타이틀만 표시)
         this.priceLine = this.areaSeries.createPriceLine({
