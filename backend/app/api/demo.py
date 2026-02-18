@@ -491,7 +491,9 @@ async def get_demo_account(
                 "entry": position.entry_price,
                 "current": current_price,
                 "profit": profit,
-                "target": target
+                "target": target,
+                "tp_price": position.tp_price,
+                "sl_price": position.sl_price
             }
         else:
             tick = mt5.symbol_info_tick(position.symbol)
@@ -505,7 +507,9 @@ async def get_demo_account(
                     "entry": position.entry_price,
                     "current": position.entry_price,
                     "profit": 0,
-                    "target": position.target_profit
+                    "target": position.target_profit,
+                    "tp_price": position.tp_price,
+                    "sl_price": position.sl_price
                 }
             else:
                 print(f"[DEBUG] Tick OK - bid: {tick.bid}, ask: {tick.ask}")
@@ -2256,7 +2260,9 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                                     "profit": profit,
                                     "target": target,
                                     "margin": pos_margin,
-                                    "magic": pos.magic  # ★ 패널 구분용
+                                    "magic": pos.magic,  # ★ 패널 구분용
+                                    "tp_price": pos.tp_price,
+                                    "sl_price": pos.sl_price
                                 }
                                 positions_data.append(pos_data)
 

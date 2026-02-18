@@ -718,6 +718,10 @@ function connectWebSocket() {
                 const qePos = data.positions.find(p => p.magic == 100003);
                 if (qePos && QuickEasyPanel._posEntryPrice <= 0) {
                     console.log('[WS Demo] 🔄 이지패널 포지션 복구 (from positions array)', qePos);
+                    // ★ 서버 TP/SL 가격 저장 (프론트 재계산 방지)
+                    if (qePos.tp_price && qePos.sl_price) {
+                        window._serverTPSL = { tp: qePos.tp_price, sl: qePos.sl_price };
+                    }
                     QuickEasyPanel.showPositionView(
                         qePos.type === 'BUY' ? 'BUY' : 'SELL',
                         qePos.entry,

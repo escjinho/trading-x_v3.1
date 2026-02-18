@@ -489,15 +489,7 @@ const QuickEasyPanel = {
         this._posSymbol = window.currentSymbol || 'BTCUSD';
         this._posVolume = posVolume;
         this._posTarget = posTarget;
-        // ★ 서버 TP/SL 우선 사용 (spread 변동으로 인한 불일치 방지)
-        if (window._serverTPSL && window._serverTPSL.tp > 0 && window._serverTPSL.sl > 0) {
-            this._posTPSL = { tp: window._serverTPSL.tp, sl: window._serverTPSL.sl };
-            console.log('[QE] ★ 서버 TP/SL 사용:', this._posTPSL);
-            window._serverTPSL = null;
-        } else {
-            this._posTPSL = this.calcTPSL(entryPrice, side, posVolume, posTarget, this._posSymbol);
-            console.log('[QE] calcTPSL fallback:', this._posTPSL);
-        }
+        this._posTPSL = this.calcTPSL(entryPrice, side, posVolume, posTarget, this._posSymbol);
 
         // ★ 차트에 진입가 + TP/SL 라인 그리기 (복구 시에도 표시)
         if (typeof QeTickChart !== 'undefined' && this._posTPSL) {
