@@ -693,18 +693,6 @@ function connectWebSocket() {
                 if (typeof updatePositionUI === 'function') {
                     updatePositionUI(true, data.position);  // Buy/Sell 패널용
                 }
-
-                // ★★★ Quick&Easy 포지션 복구 (positions 배열에서 magic=100003 찾기) ★★★
-                if (typeof QuickEasyPanel !== 'undefined' && data.positions && Array.isArray(data.positions)) {
-                    const qePos = data.positions.find(p => p.magic == 100003);
-                    if (qePos && QuickEasyPanel._posEntryPrice <= 0) {
-                        console.log('[WS Demo] 🔄 이지패널 포지션 복구 (from positions array)');
-                        QuickEasyPanel.showPositionView(
-                            qePos.type === 'BUY' ? 'BUY' : 'SELL',
-                            qePos.entry
-                        );
-                    }
-                }
             } else if (!data.auto_closed) {  // 자동청산이 아닐 때만 포지션 없음 처리
                 console.log('[WS Demo] ❌ No position - calling updatePositionUI(false)');
 
@@ -721,6 +709,19 @@ function connectWebSocket() {
                 }
                 if (typeof updatePositionUI === 'function') {
                     updatePositionUI(false, null);
+                }
+            }
+
+            // ★★★ Quick&Easy 포지션 복구 (positions 배열에서 magic=100003 찾기) ★★★
+            // data.position 유무와 상관없이 독립적으로 체크
+            if (typeof QuickEasyPanel !== 'undefined' && data.positions && Array.isArray(data.positions)) {
+                const qePos = data.positions.find(p => p.magic == 100003);
+                if (qePos && QuickEasyPanel._posEntryPrice <= 0) {
+                    console.log('[WS Demo] 🔄 이지패널 포지션 복구 (from positions array)');
+                    QuickEasyPanel.showPositionView(
+                        qePos.type === 'BUY' ? 'BUY' : 'SELL',
+                        qePos.entry
+                    );
                 }
             }
 
