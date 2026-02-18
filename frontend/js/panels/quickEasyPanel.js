@@ -195,7 +195,7 @@ const QuickEasyPanel = {
                 symbolCard.style.position = 'relative';
                 badge = document.createElement('span');
                 badge.id = 'qePosBadge';
-                badge.style.cssText = 'position:absolute;top:-1px;right:-4px;' +
+                badge.style.cssText = 'position:absolute;top:-2px;right:-4px;' +
                     'min-width:16px;height:16px;border-radius:8px;' +
                     'background:#00d4a4;color:#000;font-size:10px;font-weight:700;' +
                     'display:none;align-items:center;justify-content:center;padding:1px 4px 0 4px;';
@@ -224,6 +224,9 @@ const QuickEasyPanel = {
                     item.style.display = 'flex';
                     item.style.alignItems = 'center';
                     item.style.paddingRight = '6px';
+                    // ★ 심볼코드 고정너비 → dot 정렬
+                    const codeEl = item.querySelector('.qe-opt-code');
+                    if (codeEl) codeEl.style.cssText += 'display:inline-block;width:62px;text-align:center;';
                     item.appendChild(dot);
                     // ★ 드롭다운 박스 너비 dot만큼 확장
                     const dropdown = document.getElementById('qeSymbolDropdown');
