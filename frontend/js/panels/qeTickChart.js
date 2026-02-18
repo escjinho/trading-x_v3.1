@@ -70,7 +70,7 @@ const QeTickChart = {
             rightPriceScale: {
                 borderColor: 'rgba(255, 255, 255, 0.06)',
                 scaleMargins: { top: 0.1, bottom: 0.1 },
-                minimumWidth: 80
+                minimumWidth: 100
             },
             timeScale: {
                 borderColor: 'rgba(255, 255, 255, 0.06)',
@@ -390,13 +390,13 @@ const QeTickChart = {
         const sideColor = side === 'buy' ? '#00d4a4' : '#ff4d5a';
         const label = side === 'buy' ? '◉ BUY' : '◉ SELL';
 
-        // 진입가 점선 (호가 박스 숨김, 라인+타이틀만 표시)
+        // 진입가 점선
         this.priceLine = this.areaSeries.createPriceLine({
             price: price,
             color: sideColor,
             lineWidth: 1,
             lineStyle: 2,
-            axisLabelVisible: false,
+            axisLabelVisible: true,
             title: label
         });
 
@@ -479,10 +479,9 @@ const QeTickChart = {
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Y축 너비 계산 (오른쪽 가격 스케일)
-        const chartEl = canvas.parentElement.querySelector('table, .tv-lightweight-charts');
-        const priceScaleWidth = 80; // 기본 Y축 너비
-        const barX = canvas.width - priceScaleWidth - 3; // Y축 왼쪽 2px 바
+        // Y축 경계 위치 = 차트 플롯 영역 너비 (동적 계산)
+        const plotWidth = this.chart.timeScale().width();
+        const barX = plotWidth; // 차트-호가 경계에 정확히 위치
         const barWidth = 2;
 
         // 가격 → 픽셀 좌표 변환
