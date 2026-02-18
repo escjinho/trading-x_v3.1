@@ -223,14 +223,11 @@ const QuickEasyPanel = {
                     dot.style.cssText = 'width:8px;height:8px;border-radius:50%;margin-left:6px;flex-shrink:0;box-shadow:0 0 6px currentColor;';
                     item.style.display = 'flex';
                     item.style.alignItems = 'center';
-                    // ★ 심볼코드(.qe-opt-code) 앞에 삽입 → 아이콘+이름+DOT+코드 순서
-                    const codeEl = item.querySelector('.qe-opt-code');
-                    if (codeEl) {
-                        codeEl.style.marginLeft = 'auto';
-                        item.insertBefore(dot, codeEl);
-                    } else {
-                        item.appendChild(dot);
-                    }
+                    item.style.paddingRight = '6px';
+                    item.appendChild(dot);
+                    // ★ 드롭다운 박스 너비 dot만큼 확장
+                    const dropdown = document.getElementById('qeSymbolDropdown');
+                    if (dropdown) dropdown.style.paddingRight = '0px';
                 }
                 const color = this._positions[sym].side === 'BUY' ? '#00b450' : '#dc3246';
                 dot.style.background = color;
