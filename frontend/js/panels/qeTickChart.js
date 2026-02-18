@@ -77,7 +77,7 @@ const QeTickChart = {
                 borderColor: 'rgba(255, 255, 255, 0.06)',
                 timeVisible: true,
                 secondsVisible: true,
-                rightOffset: 10,
+                rightOffset: 8,
                 fixLeftEdge: false,
                 fixRightEdge: false
             },
@@ -628,7 +628,7 @@ const QeTickChart = {
         // 3. 시간축 복원 (현재가 중심)
         this.chart.timeScale().scrollToRealTime();
         this.chart.timeScale().applyOptions({
-            rightOffset: 6
+            rightOffset: 8
         });
     },
 
