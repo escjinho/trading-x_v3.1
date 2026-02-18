@@ -287,12 +287,19 @@ const QeTickChart = {
 
     // ========== 차트에 실제 데이터 반영 ==========
     commitTick(price) {
-        let now = Math.floor(Date.now() / 1000) + 9 * 3600; // KST 표시
+        const now = Math.floor(Date.now() / 1000) + 9 * 3600; // KST 표시
 
-        // ★ 시간 역전 방지: 항상 마지막 데이터보다 큰 time 보장
+        // ★ 시간 역전/중복 방지: 마지막보다 작거나 같으면 update만 (새 포인트 추가 안 함)
         if (this.tickData.length > 0) {
             const lastTime = this.tickData[this.tickData.length - 1].time;
-            if (now <= lastTime) now = lastTime + 1;
+            if (now <= lastTime) {
+                // 같은 초: 가격만 업데이트
+                this.tickData[this.tickData.length - 1].value = price;
+                this.areaSeries.update({ time: lastTime, value: price });
+                this.updatePulse(lastTime, price);
+                if (this._entryData) this.drawProgressBars();
+                return;
+            }
         }
 
         this.tickData.push({ time: now, value: price });
