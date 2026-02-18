@@ -683,6 +683,11 @@ function connectWebSocket() {
                 }
             } else if (!data.auto_closed) {  // 자동청산이 아닐 때만 포지션 없음 처리
                 console.log('[WS Demo] ❌ No position - calling updatePositionUI(false)');
+                // Quick&Easy 안전장치: 포지션 없는데 포지션뷰가 열려있으면 닫기
+                if (typeof QuickEasyPanel !== 'undefined' && QuickEasyPanel._posEntryPrice > 0) {
+                    console.log('[WS Demo] 🔧 Quick&Easy 포지션뷰 강제 닫기');
+                    QuickEasyPanel.hidePositionView();
+                }
                 // ★★★ 유령 포지션 정리: 서버가 null 연속 보내면 프론트엔드 강제 초기화 ★★★
                 if (window._demoPositionHeld) {
                     window._demoNullCount = (window._demoNullCount || 0) + 1;
@@ -1179,7 +1184,7 @@ function connectWebSocket() {
                 }, 5000);
 
                 // ★★★ Quick&Easy 패널 청산 연동 (magic=100003) ★★★
-                if (data.magic === 100003 && typeof QuickEasyPanel !== 'undefined') {
+                if (data.magic == 100003 && typeof QuickEasyPanel !== 'undefined') {
                     console.log('[WS Live] 🎯 Quick&Easy auto_closed → hidePositionView');
                     QuickEasyPanel.hidePositionView();
                 }
@@ -1702,7 +1707,7 @@ async function fetchDemoData() {
                     updatePositionUI(false, null);
 
                     // ★★★ Quick&Easy 패널 청산 연동 (magic=100003) ★★★
-                    if (data.magic === 100003 && typeof QuickEasyPanel !== 'undefined') {
+                    if (data.magic == 100003 && typeof QuickEasyPanel !== 'undefined') {
                         console.log('[fetchDemoData] 🎯 Quick&Easy auto_closed → hidePositionView');
                         QuickEasyPanel.hidePositionView();
                     }
