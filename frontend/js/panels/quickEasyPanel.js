@@ -502,13 +502,13 @@ const QuickEasyPanel = {
         const spec = this.SYMBOL_SPECS[symbol] || { tick_size: 0.01, tick_value: 0.01, contract_size: 1 };
         let priceDiff = currentPrice - entryPrice;
         if (side === 'SELL') priceDiff = -priceDiff;
-        return priceDiff * volume * spec.contract_size * spec.tick_value / spec.tick_size;
+        return priceDiff * volume * spec.tick_value / spec.tick_size;
     },
 
     // TP/SL 가격 계산
     calcTPSL(entryPrice, side, volume, target, symbol) {
         const spec = this.SYMBOL_SPECS[symbol] || { tick_size: 0.01, tick_value: 0.01, contract_size: 1 };
-        const profitPerPoint = volume * spec.contract_size * spec.tick_value / spec.tick_size;
+        const profitPerPoint = volume * spec.tick_value / spec.tick_size;
         if (profitPerPoint <= 0) return { tp: 0, sl: 0 };
 
         // ★ TP/SL 대칭: 동일 거리
