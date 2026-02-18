@@ -126,11 +126,24 @@ const QeTickChart = {
             }, 5000);
         });
 
-        // ★ 가격축 변화 시에도 오버레이 추적
-        this.chart.subscribeCrosshairMove(() => {
+        // ★ requestAnimationFrame 루프로 오버레이/진행바 실시간 추적
+        this._rafTrackingId = null;
+        const trackOverlays = () => {
             if (this._entryOverlay) this.updateEntryOverlay();
             if (this._entryData) this.drawProgressBars();
-        });
+            // 포지션 있을 때만 루프 유지
+            if (this._entryOverlay || this._entryData) {
+                this._rafTrackingId = requestAnimationFrame(trackOverlays);
+            } else {
+                this._rafTrackingId = null;
+            }
+        };
+        // 포지션 생성 시 루프 시작을 위한 메서드
+        this._startTracking = () => {
+            if (!this._rafTrackingId) {
+                this._rafTrackingId = requestAnimationFrame(trackOverlays);
+            }
+        };
 
         // 터치/마우스 조작 감지
         container.addEventListener('touchstart', () => {
@@ -463,6 +476,9 @@ const QeTickChart = {
         this._entryData = { price, side, tp: tpPrice, sl: slPrice };
         this.initProgressCanvas();
         this.drawProgressBars();
+
+        // ★ rAF 트래킹 루프 시작
+        if (this._startTracking) this._startTracking();
     },
 
     removeEntryLine() {
@@ -478,7 +494,11 @@ const QeTickChart = {
             this.areaSeries.removePriceLine(this.slPriceLine);
             this.slPriceLine = null;
         }
-        // ★ 오버레이 제거
+        // ★ 오버레이 제거 + 트래킹 중지
+        if (this._rafTrackingId) {
+            cancelAnimationFrame(this._rafTrackingId);
+            this._rafTrackingId = null;
+        }
         if (this._entryOverlay) {
             this._entryOverlay.remove();
             this._entryOverlay = null;
