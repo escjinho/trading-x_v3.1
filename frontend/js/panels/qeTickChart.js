@@ -165,10 +165,10 @@ const QeTickChart = {
         const KST_OFFSET = 9 * 3600;
         try {
             if (typeof apiCall !== 'function') return;
-            const data = await apiCall('/mt5/candles/' + symbol + '?timeframe=M1&count=5');
+            const data = await apiCall('/mt5/candles/' + symbol + '?timeframe=M1&count=10');
             if (data && data.candles && data.candles.length > 0) {
                 const historyTicks = [];
-                const candles = data.candles.slice(-5);
+                const candles = data.candles.slice(-10);
                 candles.forEach(c => {
                     // 각 캔들의 open, high, low, close를 4개 틱으로 분해
                     const baseTime = c.time + KST_OFFSET;
@@ -194,6 +194,17 @@ const QeTickChart = {
                     this.openPrice = unique[0].value;
                     this.prevPrice = this.lastPrice;
                     console.log('[QeTickChart] ★ 초기 히스토리 로딩:', unique.length, '틱');
+                    // ★ 5초 후 최근 구간으로 줌인
+                    setTimeout(() => {
+                        if (this.chart && this.tickData.length > 0) {
+                            const totalBars = this.tickData.length;
+                            const visibleBars = Math.min(20, totalBars);
+                            this.chart.timeScale().setVisibleLogicalRange({
+                                from: totalBars - visibleBars,
+                                to: totalBars + 5
+                            });
+                        }
+                    }, 5000);
                 }
             }
         } catch (e) {
