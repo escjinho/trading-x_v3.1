@@ -125,9 +125,9 @@ function updateAccountInfoFromHistory(historyData) {
     const todayPLEl = document.getElementById('accTodayPL');
     const currentPLEl = document.getElementById('accCurrentPL');
     
-    // 오늘 거래가 있으면 오늘 통계, 없으면 전체 통계
-    const displayWins = todayTrades.length > 0 ? todayWins : allWins;
-    const displayLosses = todayTrades.length > 0 ? todayLosses : allLosses;
+    // ★ 항상 오늘 기준 Win/Lose (기간 필터 무관)
+    const displayWins = todayWins;
+    const displayLosses = todayLosses;
     // ★★★ Today P/L은 항상 _todayPLFixed 사용 ★★★
     const displayPL = window._todayPLFixed || 0;
     

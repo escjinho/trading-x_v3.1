@@ -1228,16 +1228,20 @@ function updateAccountStats(history) {
         console.log('[updateAccountStats] Today P/L fallback 계산:', window._todayPLFixed);
     }
 
-    // Win/Lose 통계 (인자 history 기준 - 필터에 따라 변경됨)
+    // Win/Lose 통계 — ★ 항상 오늘 기준 (기간 필터 영향 없음) ★
     let totalWins = 0;
     let totalLosses = 0;
 
-    history.forEach(h => {
-        const profit = h.profit || 0;
-        if (profit >= 0) {
-            totalWins++;
-        } else {
-            totalLosses++;
+    // allHistoryData(전체)에서 오늘 거래만 카운팅
+    const sourceData = (typeof allHistoryData !== 'undefined' && allHistoryData.length > 0) ? allHistoryData : history;
+    sourceData.forEach(h => {
+        if (h.time && h.time.startsWith(todayStr)) {
+            const profit = h.profit || 0;
+            if (profit > 0) {
+                totalWins++;
+            } else if (profit < 0) {
+                totalLosses++;
+            }
         }
     });
 
