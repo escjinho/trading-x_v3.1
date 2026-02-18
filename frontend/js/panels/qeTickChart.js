@@ -148,12 +148,56 @@ const QeTickChart = {
         this.initialized = true;
         console.log('[QeTickChart] 초기화 완료');
 
-        // ★ pending 진입 라인이 있으면 즉시 그리기 (포지션 복구 타이밍 해결)
-        if (this._pendingEntryLine) {
-            const p = this._pendingEntryLine;
-            console.log('[QeTickChart] ★ pending 라인 그리기:', p);
-            this.showEntryLine(p.price, p.side, p.tp, p.sl);
-            this._pendingEntryLine = null;
+        // ★ 초기 히스토리 로딩 (차트 빈 화면 방지)
+        this.loadInitialHistory().then(() => {
+            // ★ pending 진입 라인이 있으면 히스토리 로딩 후 그리기
+            if (this._pendingEntryLine) {
+                const p = this._pendingEntryLine;
+                console.log('[QeTickChart] ★ pending 라인 그리기:', p);
+                this.showEntryLine(p.price, p.side, p.tp, p.sl);
+                this._pendingEntryLine = null;
+            }
+        });
+    },
+
+    async loadInitialHistory() {
+        const symbol = window.currentSymbol || 'BTCUSD';
+        const KST_OFFSET = 9 * 3600;
+        try {
+            if (typeof apiCall !== 'function') return;
+            const data = await apiCall('/mt5/candles/' + symbol + '?timeframe=M1&count=30');
+            if (data && data.candles && data.candles.length > 0) {
+                const historyTicks = [];
+                const candles = data.candles.slice(-30);
+                candles.forEach(c => {
+                    // 각 캔들의 open, high, low, close를 4개 틱으로 분해
+                    const baseTime = c.time + KST_OFFSET;
+                    historyTicks.push({ time: baseTime, value: c.open });
+                    historyTicks.push({ time: baseTime + 15, value: c.high });
+                    historyTicks.push({ time: baseTime + 30, value: c.low });
+                    historyTicks.push({ time: baseTime + 45, value: c.close });
+                });
+                // 시간순 정렬 + 중복 제거
+                historyTicks.sort((a, b) => a.time - b.time);
+                const unique = [];
+                let lastTime = 0;
+                historyTicks.forEach(t => {
+                    if (t.time > lastTime) {
+                        unique.push(t);
+                        lastTime = t.time;
+                    }
+                });
+                if (unique.length > 0 && this.areaSeries) {
+                    this.areaSeries.setData(unique);
+                    this.tickData = unique;
+                    this.lastPrice = unique[unique.length - 1].value;
+                    this.openPrice = unique[0].value;
+                    this.prevPrice = this.lastPrice;
+                    console.log('[QeTickChart] ★ 초기 히스토리 로딩:', unique.length, '틱');
+                }
+            }
+        } catch (e) {
+            console.warn('[QeTickChart] 히스토리 로딩 실패:', e);
         }
     },
 
