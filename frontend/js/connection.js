@@ -724,20 +724,37 @@ function connectWebSocket() {
             // ★★★ Quick&Easy 포지션 복구 (positions 배열에서 magic=100003 찾기) ★★★
             // data.position 유무와 상관없이 독립적으로 체크
             if (typeof QuickEasyPanel !== 'undefined' && data.positions && Array.isArray(data.positions)) {
-                const qePos = data.positions.find(p => p.magic == 100003);
-                if (qePos && QuickEasyPanel._posEntryPrice <= 0) {
-                    console.log('[WS Demo] 🔄 이지패널 포지션 복구 (from positions array)', qePos);
-                    // ★ 서버 TP/SL 가격 저장 (프론트 재계산 방지)
-                    if (qePos.tp_price && qePos.sl_price) {
-                        window._serverTPSL = { tp: qePos.tp_price, sl: qePos.sl_price };
+                const qePositions = data.positions.filter(p => p.magic == 100003);
+                const currentSym = window.currentSymbol || 'BTCUSD';
+                qePositions.forEach(qePos => {
+                    const posSym = qePos.symbol || '';
+                    // ★ 딕셔너리에 저장 (모든 종목)
+                    if (!QuickEasyPanel._positions[posSym]) {
+                        QuickEasyPanel._positions[posSym] = {
+                            side: qePos.type === 'BUY' ? 'BUY' : 'SELL',
+                            entry: qePos.entry,
+                            volume: qePos.volume,
+                            target: qePos.target,
+                            tpsl: (qePos.tp_price && qePos.sl_price) ? { tp: qePos.tp_price, sl: qePos.sl_price } : null,
+                            startTime: Date.now(),
+                            openedAt: Date.now()
+                        };
+                        QuickEasyPanel._updatePositionBadge();
                     }
-                    QuickEasyPanel.showPositionView(
-                        qePos.type === 'BUY' ? 'BUY' : 'SELL',
-                        qePos.entry,
-                        qePos.volume,   // ★ 복구 시 실제 volume 전달
-                        qePos.target    // ★ 복구 시 실제 target 전달
-                    );
-                }
+                    // ★ 현재 보는 종목만 UI 복구
+                    if (posSym === currentSym && QuickEasyPanel._posEntryPrice <= 0) {
+                        console.log('[WS Demo] 🔄 이지패널 포지션 복구:', posSym);
+                        if (qePos.tp_price && qePos.sl_price) {
+                            window._serverTPSL = { tp: qePos.tp_price, sl: qePos.sl_price };
+                        }
+                        QuickEasyPanel.showPositionView(
+                            qePos.type === 'BUY' ? 'BUY' : 'SELL',
+                            qePos.entry,
+                            qePos.volume,
+                            qePos.target
+                        );
+                    }
+                });
             }
 
             // ★★★ Demo Today P/L — _todayPLFixed 단일 소스 ★★★
@@ -1221,8 +1238,16 @@ function connectWebSocket() {
 
                 // ★★★ Quick&Easy 패널 청산 연동 (magic=100003) ★★★
                 if (data.magic == 100003 && typeof QuickEasyPanel !== 'undefined') {
-                    console.log('[WS Live] 🎯 Quick&Easy auto_closed → hidePositionView');
-                    QuickEasyPanel.hidePositionView();
+                    const closedSym = data.symbol || '';
+                    const curSym = window.currentSymbol || 'BTCUSD';
+                    if (closedSym === curSym || QuickEasyPanel._posSymbol === closedSym) {
+                        console.log('[WS Live] 🎯 Quick&Easy auto_closed (현재 종목):', closedSym);
+                        QuickEasyPanel.hidePositionView(true);
+                    } else {
+                        console.log('[WS Live] 🎯 Quick&Easy auto_closed (다른 종목):', closedSym);
+                        delete QuickEasyPanel._positions[closedSym];
+                        QuickEasyPanel._updatePositionBadge();
+                    }
                 }
             }
             }  // ★ wsConnectionStartTime 체크 else 블록 닫기
@@ -1744,8 +1769,16 @@ async function fetchDemoData() {
 
                     // ★★★ Quick&Easy 패널 청산 연동 (magic=100003) ★★★
                     if (data.magic == 100003 && typeof QuickEasyPanel !== 'undefined') {
-                        console.log('[fetchDemoData] 🎯 Quick&Easy auto_closed → hidePositionView');
-                        QuickEasyPanel.hidePositionView();
+                        const closedSym = data.symbol || '';
+                        const curSym = window.currentSymbol || 'BTCUSD';
+                        if (closedSym === curSym || QuickEasyPanel._posSymbol === closedSym) {
+                            console.log('[fetchDemoData] 🎯 Quick&Easy auto_closed (현재 종목):', closedSym);
+                            QuickEasyPanel.hidePositionView(true);
+                        } else {
+                            console.log('[fetchDemoData] 🎯 Quick&Easy auto_closed (다른 종목):', closedSym);
+                            delete QuickEasyPanel._positions[closedSym];
+                            QuickEasyPanel._updatePositionBadge();
+                        }
                     }
                 }
                 }  // ★ wsConnectionStartTime 체크 else 블록 닫기
