@@ -213,7 +213,7 @@ const QeTickChart = {
 
     // ========== 차트에 실제 데이터 반영 ==========
     commitTick(price) {
-        const now = Math.floor(Date.now() / 1000);
+        const now = Math.floor(Date.now() / 1000) + 9 * 3600; // KST 표시
 
         this.tickData.push({ time: now, value: price });
 

@@ -57,6 +57,12 @@ const ChartPanel = {
         // time이 없으면 lastCandleTime 사용 (WS에서 {close: bid}만 전달하는 경우)
         if (!candleData.time && this.lastCandleTime > 0) {
             candleData.time = this.lastCandleTime;
+        } else if (candleData.time) {
+            // ★ KST 변환 (+9시간) — 차트 표시용 (중복 변환 방지)
+            const KST_OFFSET = 9 * 3600;
+            if (candleData.time < this.lastCandleTime - KST_OFFSET + 60) {
+                candleData.time += KST_OFFSET;
+            }
         }
         if (!candleData.time) return false;
 
@@ -393,6 +399,17 @@ const ChartPanel = {
                 if (typeof ChartTypeManager !== 'undefined' && (!ChartTypeManager.chart || !ChartTypeManager.series)) {
                     console.warn('[ChartPanel] Chart/series null — reinitializing');
                     this.initChart();
+                }
+
+                // ★ KST 변환 (+9시간) — 차트 표시용
+                const KST_OFFSET = 9 * 3600;
+                data.candles.forEach(c => { c.time += KST_OFFSET; });
+                if (data.indicators) {
+                    ['bb_upper', 'bb_middle', 'bb_lower', 'lwma'].forEach(key => {
+                        if (data.indicators[key]) {
+                            data.indicators[key].forEach(d => { d.time += KST_OFFSET; });
+                        }
+                    });
                 }
 
                 // ChartTypeManager를 통해 데이터 설정
