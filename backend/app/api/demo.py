@@ -2255,7 +2255,8 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                                     "current": current_px,
                                     "profit": profit,
                                     "target": target,
-                                    "margin": pos_margin
+                                    "margin": pos_margin,
+                                    "magic": pos.magic  # ★ 패널 구분용
                                 }
                                 positions_data.append(pos_data)
 
