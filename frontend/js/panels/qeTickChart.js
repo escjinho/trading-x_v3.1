@@ -445,28 +445,27 @@ const QeTickChart = {
             this.updateEntryOverlay();
         }
 
-        // TP 라인 (라벨 숨김 → 커스텀 오버레이)
+        // TP 라인 (호가에 초록 가격 표시)
         if (tpPrice && tpPrice > 0) {
             this.tpPriceLine = this.areaSeries.createPriceLine({
                 price: tpPrice,
                 color: '#00d4a4',
                 lineWidth: 1,
                 lineStyle: 0,
-                axisLabelVisible: false,
+                axisLabelVisible: true,
                 title: ''
             });
-            // ★ Win 커스텀 오버레이
+            // ★ Win 커스텀 오버레이 (호가 왼쪽 바깥)
             if (this._tpOverlay) this._tpOverlay.remove();
             if (wrap) {
                 const tpOv = document.createElement('div');
                 tpOv.className = 'qe-tp-overlay';
-                tpOv.innerHTML = '<span style="font-size:7px;margin-right:2px;">▲</span>Win';
-                tpOv.style.cssText = 'position:absolute;right:4px;pointer-events:none;z-index:6;' +
-                    'font-size:8px;font-weight:700;letter-spacing:0.3px;' +
+                tpOv.textContent = 'Win';
+                tpOv.style.cssText = 'position:absolute;right:100px;pointer-events:none;z-index:6;' +
+                    'font-size:8px;font-weight:700;letter-spacing:0.5px;' +
                     'color:#00d4a4;' +
-                    'background:rgba(0,212,164,0.12);border:1px solid rgba(0,212,164,0.4);' +
-                    'padding:1px 6px;border-radius:3px;' +
-                    'min-width:32px;text-align:center;' +
+                    'text-shadow:0 0 6px rgba(0,212,164,0.6),0 0 12px rgba(0,212,164,0.3);' +
+                    'background:rgba(0,212,164,0.08);padding:1px 6px;border-radius:3px;' +
                     'white-space:nowrap;transform:translateY(-50%);';
                 wrap.appendChild(tpOv);
                 this._tpOverlay = tpOv;
@@ -474,28 +473,27 @@ const QeTickChart = {
             }
         }
 
-        // SL 라인 (라벨 숨김 → 커스텀 오버레이)
+        // SL 라인 (호가에 빨강 가격 표시)
         if (slPrice && slPrice > 0) {
             this.slPriceLine = this.areaSeries.createPriceLine({
                 price: slPrice,
                 color: '#ff4d5a',
                 lineWidth: 1,
                 lineStyle: 0,
-                axisLabelVisible: false,
+                axisLabelVisible: true,
                 title: ''
             });
-            // ★ Lose 커스텀 오버레이
+            // ★ Lose 커스텀 오버레이 (호가 왼쪽 바깥)
             if (this._slOverlay) this._slOverlay.remove();
             if (wrap) {
                 const slOv = document.createElement('div');
                 slOv.className = 'qe-sl-overlay';
-                slOv.innerHTML = '<span style="font-size:7px;margin-right:2px;">▼</span>Lose';
-                slOv.style.cssText = 'position:absolute;right:4px;pointer-events:none;z-index:6;' +
-                    'font-size:8px;font-weight:700;letter-spacing:0.3px;' +
+                slOv.textContent = 'Lose';
+                slOv.style.cssText = 'position:absolute;right:100px;pointer-events:none;z-index:6;' +
+                    'font-size:8px;font-weight:700;letter-spacing:0.5px;' +
                     'color:#ff4d5a;' +
-                    'background:rgba(255,77,90,0.12);border:1px solid rgba(255,77,90,0.4);' +
-                    'padding:1px 6px;border-radius:3px;' +
-                    'min-width:32px;text-align:center;' +
+                    'text-shadow:0 0 6px rgba(255,77,90,0.6),0 0 12px rgba(255,77,90,0.3);' +
+                    'background:rgba(255,77,90,0.08);padding:1px 6px;border-radius:3px;' +
                     'white-space:nowrap;transform:translateY(-50%);';
                 wrap.appendChild(slOv);
                 this._slOverlay = slOv;
