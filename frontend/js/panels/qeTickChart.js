@@ -390,13 +390,13 @@ const QeTickChart = {
         const sideColor = side === 'buy' ? '#00d4a4' : '#ff4d5a';
         const label = side === 'buy' ? '● BUY' : '● SELL';
 
-        // 진입가 점선
+        // 진입가 점선 (호가 박스 숨김, 라인+타이틀만 표시)
         this.priceLine = this.areaSeries.createPriceLine({
             price: price,
             color: sideColor,
             lineWidth: 1,
             lineStyle: 2,
-            axisLabelVisible: true,
+            axisLabelVisible: false,
             title: label
         });
 
@@ -408,7 +408,7 @@ const QeTickChart = {
                 lineWidth: 2,
                 lineStyle: 0,  // 실선
                 axisLabelVisible: true,
-                title: 'TP'
+                title: 'Win'
             });
         }
 
@@ -420,7 +420,7 @@ const QeTickChart = {
                 lineWidth: 2,
                 lineStyle: 0,
                 axisLabelVisible: true,
-                title: 'SL'
+                title: 'Lose'
             });
         }
 
