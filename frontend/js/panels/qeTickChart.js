@@ -461,11 +461,11 @@ const QeTickChart = {
                 const tpOv = document.createElement('div');
                 tpOv.className = 'qe-tp-overlay';
                 tpOv.textContent = 'Win';
-                tpOv.style.cssText = 'position:absolute;right:100px;pointer-events:none;z-index:6;' +
+                tpOv.style.cssText = 'position:absolute;right:65px;pointer-events:none;z-index:6;' +
                     'font-size:8px;font-weight:700;letter-spacing:0.5px;' +
                     'color:#00d4a4;' +
-                    'text-shadow:0 0 6px rgba(0,212,164,0.6),0 0 12px rgba(0,212,164,0.3);' +
-                    'background:rgba(0,212,164,0.08);padding:1px 6px;border-radius:3px;' +
+                    'background:rgba(10,10,15,0.85);border:1px solid rgba(0,212,164,0.5);' +
+                    'padding:1px 6px;border-radius:3px;' +
                     'white-space:nowrap;transform:translateY(-50%);';
                 wrap.appendChild(tpOv);
                 this._tpOverlay = tpOv;
@@ -489,11 +489,11 @@ const QeTickChart = {
                 const slOv = document.createElement('div');
                 slOv.className = 'qe-sl-overlay';
                 slOv.textContent = 'Lose';
-                slOv.style.cssText = 'position:absolute;right:100px;pointer-events:none;z-index:6;' +
+                slOv.style.cssText = 'position:absolute;right:65px;pointer-events:none;z-index:6;' +
                     'font-size:8px;font-weight:700;letter-spacing:0.5px;' +
                     'color:#ff4d5a;' +
-                    'text-shadow:0 0 6px rgba(255,77,90,0.6),0 0 12px rgba(255,77,90,0.3);' +
-                    'background:rgba(255,77,90,0.08);padding:1px 6px;border-radius:3px;' +
+                    'background:rgba(10,10,15,0.85);border:1px solid rgba(255,77,90,0.5);' +
+                    'padding:1px 6px;border-radius:3px;' +
                     'white-space:nowrap;transform:translateY(-50%);';
                 wrap.appendChild(slOv);
                 this._slOverlay = slOv;
