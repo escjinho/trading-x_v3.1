@@ -165,10 +165,10 @@ const QeTickChart = {
         const KST_OFFSET = 9 * 3600;
         try {
             if (typeof apiCall !== 'function') return;
-            const data = await apiCall('/mt5/candles/' + symbol + '?timeframe=M1&count=30');
+            const data = await apiCall('/mt5/candles/' + symbol + '?timeframe=M1&count=5');
             if (data && data.candles && data.candles.length > 0) {
                 const historyTicks = [];
-                const candles = data.candles.slice(-30);
+                const candles = data.candles.slice(-5);
                 candles.forEach(c => {
                     // 각 캔들의 open, high, low, close를 4개 틱으로 분해
                     const baseTime = c.time + KST_OFFSET;
