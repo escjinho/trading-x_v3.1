@@ -164,12 +164,12 @@ function resetAccountInfo() {
     
     if (winLoseEl) winLoseEl.textContent = '0 / 0';
     if (todayPLEl) {
-        todayPLEl.textContent = '+$0.00';
-        todayPLEl.style.color = 'var(--buy-color)';
+        todayPLEl.textContent = '$0.00';
+        todayPLEl.style.color = 'var(--text-primary)';
     }
     if (currentPLEl) {
-        currentPLEl.textContent = '+$0.00';
-        currentPLEl.style.color = 'var(--buy-color)';
+        currentPLEl.textContent = '$0.00';
+        currentPLEl.style.color = 'var(--text-primary)';
     }
 }
 
