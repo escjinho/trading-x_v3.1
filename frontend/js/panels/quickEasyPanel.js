@@ -116,7 +116,42 @@ const QuickEasyPanel = {
     },
 
     selectSymbol(symbol) {
-        if (window.currentSymbol !== symbol) {
+        const prevSymbol = window.currentSymbol || 'BTCUSD';
+
+        // ★ 현재 포지션 상태 저장 (타이머 시간 포함)
+        if (this._posEntryPrice > 0 && this._posSymbol) {
+            this._positions[this._posSymbol] = {
+                side: this._posSide,
+                entry: this._posEntryPrice,
+                volume: this._posVolume,
+                target: this._posTarget,
+                tpsl: this._posTPSL,
+                startTime: this._posStartTime,
+                openedAt: this._posOpenedAt
+            };
+        }
+
+        // ★ 현재 차트 라인/타이머 정리 (UI만, 딕셔너리는 유지)
+        if (this._posTimer) { clearInterval(this._posTimer); this._posTimer = null; }
+        if (typeof QeTickChart !== 'undefined') QeTickChart.removeEntryLine();
+        const posView = document.getElementById('qePositionView');
+        const orderSection = document.querySelector('.qe-order-section');
+        const tradeButtons = document.querySelector('.qe-trade-buttons');
+        if (posView) posView.style.display = 'none';
+        if (orderSection) orderSection.style.display = 'flex';
+        if (tradeButtons) tradeButtons.style.display = 'flex';
+
+        // 기존 상태 변수 초기화
+        this._posEntryPrice = 0;
+        this._autoClosing = false;
+        this._posSide = '';
+        this._posSymbol = '';
+        this._posVolume = 0;
+        this._posTarget = 0;
+        this._posTPSL = null;
+
+        // 종목 전환
+        if (prevSymbol !== symbol) {
             window.currentSymbol = symbol;
             if (typeof changeSymbol === 'function') {
                 changeSymbol(symbol);
@@ -125,10 +160,74 @@ const QuickEasyPanel = {
         this.updateSymbolDisplay();
         this.updatePayout();
         this.closeSymbolDropdown();
-        // 틱차트 리셋
+
+        // 틱차트 리셋 + 새 종목 히스토리 로딩
         if (typeof QeTickChart !== 'undefined') {
             QeTickChart.reset();
         }
+
+        // ★ 새 종목에 저장된 포지션 있으면 복원
+        const savedPos = this._positions[symbol];
+        if (savedPos) {
+            this.showPositionView(
+                savedPos.side,
+                savedPos.entry,
+                savedPos.volume,
+                savedPos.target
+            );
+            // 타이머 시작 시간 복원 (경과시간 연속)
+            this._posStartTime = savedPos.startTime;
+        }
+
+        // Win/Lose 초기화
+        const wlEl = document.getElementById('qeWinLose');
+        if (wlEl && !savedPos) { wlEl.textContent = '--%'; wlEl.style.color = ''; }
+    },
+
+    // ★ 포지션 보유 뱃지 업데이트
+    _updatePositionBadge() {
+        const count = Object.keys(this._positions).length;
+        let badge = document.getElementById('qePosBadge');
+        if (!badge) {
+            // 뱃지 생성
+            const symbolCard = document.querySelector('.qe-symbol-card');
+            if (symbolCard) {
+                symbolCard.style.position = 'relative';
+                badge = document.createElement('span');
+                badge.id = 'qePosBadge';
+                badge.style.cssText = 'position:absolute;top:-4px;right:-4px;' +
+                    'min-width:16px;height:16px;border-radius:8px;' +
+                    'background:#00d4a4;color:#000;font-size:10px;font-weight:700;' +
+                    'display:none;align-items:center;justify-content:center;padding:0 4px;';
+                symbolCard.appendChild(badge);
+            }
+        }
+        if (badge) {
+            if (count > 0) {
+                badge.textContent = count;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        // ★ 드롭다운 종목 옆 포지션 표시
+        document.querySelectorAll('.qe-symbol-item').forEach(item => {
+            const sym = item.dataset.symbol;
+            let dot = item.querySelector('.qe-pos-dot');
+            if (this._positions[sym]) {
+                if (!dot) {
+                    dot = document.createElement('span');
+                    dot.className = 'qe-pos-dot';
+                    dot.style.cssText = 'width:6px;height:6px;border-radius:50%;margin-left:auto;flex-shrink:0;';
+                    item.appendChild(dot);
+                }
+                dot.style.background = this._positions[sym].side === 'BUY' ? '#00b450' : '#dc3246';
+                dot.style.display = 'block';
+            } else if (dot) {
+                dot.style.display = 'none';
+            }
+        });
     },
 
     updateSymbolDisplay() {
@@ -526,6 +625,18 @@ const QuickEasyPanel = {
         if (closeBtn) {
             closeBtn.onclick = () => this.closePosition();
         }
+
+        // ★ 종목별 포지션 저장
+        this._positions[this._posSymbol] = {
+            side: side,
+            entry: entryPrice,
+            volume: this._posVolume,
+            target: this._posTarget,
+            tpsl: this._posTPSL,
+            startTime: this._posStartTime,
+            openedAt: this._posOpenedAt
+        };
+        this._updatePositionBadge();
     },
 
     hidePositionView() {
@@ -543,6 +654,11 @@ const QuickEasyPanel = {
         }
 
         // 포지션 상태 완전 리셋
+        // ★ 종목별 딕셔너리에서 제거
+        if (this._posSymbol) {
+            delete this._positions[this._posSymbol];
+            this._updatePositionBadge();
+        }
         this._posEntryPrice = 0;
         this._autoClosing = false;
         this._posSide = '';
@@ -562,6 +678,9 @@ const QuickEasyPanel = {
     },
 
     updateWinLose() {
+        // ★ 백그라운드: 안 보는 종목도 자동청산 체크
+        this._checkBackgroundAutoClose();
+
         const symbol = this._posSymbol;
         const currentPrice = (window.allPrices && window.allPrices[symbol])
             ? (window.allPrices[symbol].bid || 0) : 0;
@@ -625,6 +744,52 @@ const QuickEasyPanel = {
     _posVolume: 0,
     _posTarget: 0,
     _posTPSL: null,
+    _positions: {},  // ★ 종목별 포지션 딕셔너리
+
+    // ★ 안 보는 종목도 TP/SL 자동청산 체크
+    _checkBackgroundAutoClose() {
+        if (!window.allPrices) return;
+        const currentSym = window.currentSymbol || 'BTCUSD';
+        Object.keys(this._positions).forEach(sym => {
+            if (sym === currentSym) return; // 현재 종목은 updateWinLose에서 처리
+            const pos = this._positions[sym];
+            if (!pos || !pos.tpsl) return;
+            const price = (window.allPrices[sym] && window.allPrices[sym].bid) || 0;
+            if (price <= 0) return;
+
+            let movement;
+            if (pos.side === 'BUY') movement = price - pos.entry;
+            else movement = pos.entry - price;
+
+            const tpDist = pos.side === 'BUY' ? (pos.tpsl.tp - pos.entry) : (pos.entry - pos.tpsl.tp);
+            const slDist = pos.side === 'BUY' ? (pos.entry - pos.tpsl.sl) : (pos.tpsl.sl - pos.entry);
+
+            if (tpDist > 0 && movement >= tpDist) {
+                console.log('[QE] 🎯 백그라운드 TP:', sym);
+                this._backgroundClose(sym);
+            } else if (slDist > 0 && Math.abs(movement) >= slDist && movement < 0) {
+                console.log('[QE] 💔 백그라운드 SL:', sym);
+                this._backgroundClose(sym);
+            }
+        });
+    },
+
+    async _backgroundClose(symbol) {
+        try {
+            const isLive = typeof TradingState !== 'undefined' && TradingState.isLive;
+            const endpoint = isLive ? '/mt5/close' : '/demo/close';
+            await apiCall(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ symbol: symbol, magic: QE_MAGIC_NUMBER })
+            });
+            delete this._positions[symbol];
+            this._updatePositionBadge();
+            console.log('[QE] ✅ 백그라운드 청산 완료:', symbol);
+        } catch(e) {
+            console.error('[QE] 백그라운드 청산 실패:', symbol, e);
+        }
+    },
 
     async closePosition() {
         const symbol = window.currentSymbol || 'BTCUSD';
