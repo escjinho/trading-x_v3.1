@@ -466,11 +466,7 @@ const QuickEasyPanel = {
             if (side === 'SELL') posInfo.classList.add('sell-pos');
         }
         if (entryEl) {
-            const decimals = (typeof QeTickChart !== 'undefined') ? QeTickChart.getDecimals() : 2;
-            entryEl.textContent = entryPrice.toLocaleString('en-US', {
-                minimumFractionDigits: decimals,
-                maximumFractionDigits: decimals
-            });
+            entryEl.textContent = '$' + posTarget;
         }
 
         // 경과시간 카운터 시작

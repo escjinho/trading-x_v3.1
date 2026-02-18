@@ -496,17 +496,13 @@
 .qe-position-info {
     display: flex;
     justify-content: space-between;
-    padding: 8px 15px;
-    margin: 0 12px;
+    padding: 0 15px;
+    margin: 8px 12px 6px 12px;
     border-radius: 10px;
-    background: rgba(0, 180, 80, 0.15);
-    border: 1px solid rgba(0, 180, 80, 0.4);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.10);
     height: 44px;
     align-items: center;
-}
-.qe-position-info.sell-pos {
-    background: rgba(220, 50, 70, 0.15);
-    border-color: rgba(220, 50, 70, 0.4);
 }
 
 .qe-pos-col {
@@ -548,10 +544,12 @@
 /* CLOSE TRADE 버튼 */
 .qe-close-section {
     padding: 6px 12px 10px 12px;
+    display: flex;
+    gap: 10px;
 }
 
 .qe-close-btn {
-    width: 100%;
+    flex: 1;
     height: 46px;
     border: none;
     border-radius: 12px;
