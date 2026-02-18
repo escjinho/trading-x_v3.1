@@ -683,15 +683,7 @@ function connectWebSocket() {
                 }
             } else if (!data.auto_closed) {  // 자동청산이 아닐 때만 포지션 없음 처리
                 console.log('[WS Demo] ❌ No position - calling updatePositionUI(false)');
-                // Quick&Easy 안전장치: 포지션 없는데 포지션뷰가 열려있으면 닫기
-                // 단, 진입 직후 5초는 무시 (서버 동기화 대기)
-                if (typeof QuickEasyPanel !== 'undefined' && QuickEasyPanel._posEntryPrice > 0) {
-                    const elapsed = Date.now() - (QuickEasyPanel._posOpenedAt || 0);
-                    if (elapsed > 5000) {
-                        console.log('[WS Demo] 🔧 Quick&Easy 포지션뷰 강제 닫기 (elapsed=' + elapsed + 'ms)');
-                        QuickEasyPanel.hidePositionView();
-                    }
-                }
+
                 // ★★★ 유령 포지션 정리: 서버가 null 연속 보내면 프론트엔드 강제 초기화 ★★★
                 if (window._demoPositionHeld) {
                     window._demoNullCount = (window._demoNullCount || 0) + 1;

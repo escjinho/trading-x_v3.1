@@ -510,6 +510,7 @@ const QuickEasyPanel = {
 
         // 포지션 상태 완전 리셋
         this._posEntryPrice = 0;
+        this._autoClosing = false;
         this._posSide = '';
         this._posSymbol = '';
         this._posVolume = 0;
@@ -563,11 +564,23 @@ const QuickEasyPanel = {
             const pct = Math.min(Math.round((movement / tpDist) * 100), 100);
             wlEl.textContent = 'Win +' + pct + '%';
             wlEl.style.color = '#00d4a4';
+            // ★ TP 도달: 프론트에서 직접 청산
+            if (pct >= 100 && !this._autoClosing) {
+                this._autoClosing = true;
+                console.log('[QE] 🎯 TP 도달! 자동청산 실행');
+                this.closePosition();
+            }
         } else {
             // Lose 방향
             const pct = Math.min(Math.round((Math.abs(movement) / slDist) * 100), 100);
             wlEl.textContent = 'Lose -' + pct + '%';
             wlEl.style.color = '#ff4d5a';
+            // ★ SL 도달: 프론트에서 직접 청산
+            if (pct >= 100 && !this._autoClosing) {
+                this._autoClosing = true;
+                console.log('[QE] 💔 SL 도달! 자동청산 실행');
+                this.closePosition();
+            }
         }
     },
 
