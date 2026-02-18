@@ -77,7 +77,7 @@ const QeTickChart = {
                 borderColor: 'rgba(255, 255, 255, 0.06)',
                 timeVisible: true,
                 secondsVisible: true,
-                rightOffset: 6,
+                rightOffset: 10,
                 fixLeftEdge: false,
                 fixRightEdge: false
             },
@@ -232,7 +232,7 @@ const QeTickChart = {
                     setTimeout(() => {
                         if (this.chart && this.tickData.length > 0) {
                             const totalBars = this.tickData.length;
-                            const visibleBars = Math.min(20, totalBars);
+                            const visibleBars = Math.min(40, totalBars);
                             this.chart.timeScale().setVisibleLogicalRange({
                                 from: totalBars - visibleBars,
                                 to: totalBars + 5
