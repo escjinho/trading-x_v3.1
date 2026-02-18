@@ -496,12 +496,12 @@
 .qe-position-info {
     display: flex;
     justify-content: space-between;
-    padding: 0 15px;
+    padding: 0;
     margin: 8px 12px 6px 12px;
     border-radius: 10px;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.10);
-    height: 44px;
+    height: 45px;
     align-items: center;
 }
 
@@ -517,6 +517,16 @@
     align-items: center;
     justify-content: center;
     gap: 0;
+    position: relative;
+}
+.qe-pos-col + .qe-pos-col::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 20%;
+    height: 60%;
+    width: 1px;
+    background: rgba(255, 255, 255, 0.12);
 }
 
 .qe-pos-label {
@@ -543,14 +553,14 @@
 
 /* CLOSE TRADE 버튼 */
 .qe-close-section {
-    padding: 6px 12px 10px 12px;
+    padding: 0 12px 10px 12px;
     display: flex;
     gap: 10px;
 }
 
 .qe-close-btn {
     flex: 1;
-    height: 46px;
+    height: 45px;
     border: none;
     border-radius: 12px;
     font-size: clamp(15px, 4.5vw, 18px);
