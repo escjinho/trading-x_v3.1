@@ -477,6 +477,7 @@ const QuickEasyPanel = {
 
         // Win/Lose 실시간 업데이트
         this._posEntryPrice = entryPrice;
+        this._posOpenedAt = Date.now();  // No position 안전장치 쿨다운용
         this._posSide = side;
         this._posSymbol = window.currentSymbol || 'BTCUSD';
         this._posVolume = this.lotSize;
