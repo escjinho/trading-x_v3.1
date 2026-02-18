@@ -949,22 +949,29 @@ function connectWebSocket() {
                 accFree.textContent = newFreeText;
             }
         }
-        // Current P&L 업데이트 (전체 포지션 손익 합계)
+        // Current P&L 업데이트 (전체 포지션 손익 합계 — BuySell + V5 + QE)
         if (accCurrentPL) {
             let currentProfit = 0;
-            
+
             // Buy/Sell 포지션 손익 (magic=100001)
             if (data.position) {
                 currentProfit += data.position.profit || 0;
             }
-            
+
             // V5 포지션 손익 (magic=100002)
             if (typeof v5Positions !== 'undefined' && v5Positions && v5Positions.length > 0) {
                 v5Positions.forEach(pos => {
                     currentProfit += pos.profit || 0;
                 });
             }
-            
+
+            // ★ QE 포지션 손익 (magic=100003) — positions 배열에서 합산
+            if (data.positions && Array.isArray(data.positions)) {
+                data.positions.filter(p => p.magic == 100003).forEach(pos => {
+                    currentProfit += pos.profit || 0;
+                });
+            }
+
             // 깜빡임 방지: 값이 변경된 경우에만 업데이트
             const newText = currentProfit > 0 
                 ? '+$' + currentProfit.toFixed(2) 
@@ -1412,7 +1419,7 @@ async function fetchAccountData() {
                 }
             }
 
-            // Current P&L 업데이트 (전체 포지션 손익 합계)
+            // Current P&L 업데이트 (전체 포지션 손익 합계 — BuySell + V5 + QE)
             if (accCurrentPL) {
                 let currentProfit = 0;
                 
@@ -1421,21 +1428,28 @@ async function fetchAccountData() {
                     currentProfit += data.position.profit || 0;
                 }
                 
-                // V5 포지션 손익 (magic=100002) - 전역 변수에서 가져오기
+                // V5 포지션 손익 (magic=100002)
                 if (typeof v5Positions !== 'undefined' && v5Positions && v5Positions.length > 0) {
                     v5Positions.forEach(pos => {
                         currentProfit += pos.profit || 0;
                     });
                 }
                 
+                // ★ QE 포지션 손익 (magic=100003)
+                if (data.positions && Array.isArray(data.positions)) {
+                    data.positions.filter(p => p.magic == 100003).forEach(pos => {
+                        currentProfit += pos.profit || 0;
+                    });
+                }
+                
                 // 값이 변경된 경우에만 업데이트 (깜빡임 방지)
-                const newText = currentProfit >= 0 
+                const newText = currentProfit > 0 
                     ? '+$' + currentProfit.toFixed(2) 
-                    : '-$' + Math.abs(currentProfit).toFixed(2);
+                    : currentProfit < 0 ? '-$' + Math.abs(currentProfit).toFixed(2) : '$0.00';
                 
                 if (accCurrentPL.textContent !== newText) {
                     accCurrentPL.textContent = newText;
-                    accCurrentPL.style.color = currentProfit >= 0 ? 'var(--buy-color)' : 'var(--sell-color)';
+                    accCurrentPL.style.color = currentProfit > 0 ? 'var(--buy-color)' : currentProfit < 0 ? 'var(--sell-color)' : 'var(--text-primary)';
                 }
             }
             
@@ -1844,21 +1858,24 @@ async function fetchDemoData() {
                 accFree.textContent = '$' + Math.round(freeMargin).toLocaleString();
             }
             
-            // Current P&L 업데이트 (현재 포지션 손익)
+            // Current P&L 업데이트 (전체 포지션 손익 — positions 배열 전체 합산)
             if (accCurrentPL) {
                 let currentProfit = 0;
-                if (data.position) {
-                    currentProfit = data.position.profit || 0;
-                } else if (data.positions && data.positions.length > 0) {
+                if (data.positions && data.positions.length > 0) {
                     currentProfit = data.positions.reduce((sum, pos) => sum + (pos.profit || 0), 0);
+                } else if (data.position) {
+                    currentProfit = data.position.profit || 0;
                 }
                 
-                if (currentProfit >= 0) {
+                if (currentProfit > 0) {
                     accCurrentPL.textContent = '+$' + currentProfit.toFixed(2);
                     accCurrentPL.style.color = 'var(--buy-color)';
-                } else {
+                } else if (currentProfit < 0) {
                     accCurrentPL.textContent = '-$' + Math.abs(currentProfit).toFixed(2);
                     accCurrentPL.style.color = 'var(--sell-color)';
+                } else {
+                    accCurrentPL.textContent = '$0.00';
+                    accCurrentPL.style.color = 'var(--text-primary)';
                 }
             }
             
