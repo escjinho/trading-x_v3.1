@@ -104,7 +104,10 @@
       "Bash(cd /var/www/trading-x __NEW_LINE_4f9d2294d6373235__ echo \"=== 1. window.isDemo 사용처 확인 ===\" grep -n 'window.isDemo' frontend/js/panels/quickEasyPanel.js __NEW_LINE_4f9d2294d6373235__ echo \"\" echo \"=== 2. mt5.py 중복체크 + 캐시 클리어 로직 확인 ===\" grep -n 'user_live_cache\\\\|user_metaapi_cache' backend/app/api/mt5.py)",
       "Bash(\" | tr -d '''' \\\\n''''\\)\")",
       "Bash(systemctl stop:*)",
-      "Bash(timeout 10 /var/www/trading-x/backend/venv/bin/python:*)"
+      "Bash(timeout 10 /var/www/trading-x/backend/venv/bin/python:*)",
+      "Bash(cd /var/www/trading-x __NEW_LINE_8c6a833f359c697c__ echo \"=== 1. 현재 열린 포지션 확인 ===\" PGPASSWORD=trading123 psql -h localhost -U trading -d tradingx -c \"SELECT id, symbol, trade_type, entry_price, tp_price, sl_price, magic FROM demo_positions WHERE magic=100003;\" __NEW_LINE_8c6a833f359c697c__ echo \"\" echo \"=== 2. 최근 자동청산 관련 로그 ===\" journalctl -u trading-x --no-pager -n 200)",
+      "Bash(tail -30 __NEW_LINE_8c6a833f359c697c__ echo \"\" echo \"=== 3. WebSocket 자동청산 체크 코드 확인 ===\" grep -n 'tp_price\\\\|sl_price\\\\|current_px\\\\|should_close' backend/app/api/demo.py)",
+      "Bash(cd /var/www/trading-x __NEW_LINE_10f7c1c8377869f8__ echo \"=== 1. WebSocket 자동청산 체크 코드 ===\" sed -n '2125,2175p' backend/app/api/demo.py __NEW_LINE_10f7c1c8377869f8__ echo \"\" echo \"=== 2. Quick&Easy에서 실제 magic 전달 확인 ===\" grep -n 'magic' frontend/js/panels/quickEasyPanel.js)"
     ]
   }
 }

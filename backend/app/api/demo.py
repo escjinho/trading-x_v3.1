@@ -356,7 +356,11 @@ async def get_demo_account(
             current_price, profit = calculate_demo_profit(
                 position.symbol, position.entry_price, position.trade_type, position.volume
             )
-            target = position.target_profit or 0
+            # Quick&Easy(100003)는 WebSocket에서만 자동청산 (hidePositionView 알림 위해)
+            if position.magic == 100003:
+                target = 0  # account-info에서 자동청산 스킵
+            else:
+                target = position.target_profit or 0
             print(f"[DEBUG-BRIDGE] Symbol: {position.symbol}, Entry: {position.entry_price}, Current: {current_price}, Profit: {profit}, Target: {target}")
 
             # 목표 수익/손실 도달시 자동 청산 (양방향)
@@ -2134,6 +2138,8 @@ async def demo_websocket_endpoint(websocket: WebSocket):
 
                                 if target > 0 and auto_closed_info is None:  # 아직 청산 안 됐을 때만
                                     # ★ B안: 가격 기반 청산 (tp_price/sl_price 우선)
+                                    if pos.magic == 100003:  # Quick&Easy 디버그
+                                        print(f"[QE-DEBUG] {pos.trade_type} current={current_px:.2f} TP={pos.tp_price:.2f} SL={pos.sl_price:.2f}")
                                     if pos.tp_price and pos.sl_price and current_px > 0:
                                         if pos.trade_type == "BUY":
                                             if current_px >= pos.tp_price:
