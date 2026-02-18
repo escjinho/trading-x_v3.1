@@ -289,8 +289,7 @@ const QuickEasyPanel = {
     // ========== Payout % ==========
     getSpreadCost() {
         const symbol = window.currentSymbol || 'BTCUSD';
-        const spec = QE_SYMBOL_SPECS[symbol];
-        if (!spec) return 0;
+        const spec = this.SYMBOL_SPECS[symbol] || { tick_size: 0.01, tick_value: 0.01 };
 
         let bid = 0, ask = 0;
         if (window.allPrices && window.allPrices[symbol]) {
@@ -300,7 +299,8 @@ const QuickEasyPanel = {
         if (bid <= 0 || ask <= 0) return 0;
 
         const spread = ask - bid;
-        return spread * spec.contract_size * this.lotSize;
+        // ★ 백엔드 공식과 일치: (spread / tick_size) * tick_value * volume
+        return (spread / spec.tick_size) * spec.tick_value * this.lotSize;
     },
 
     updatePayout() {

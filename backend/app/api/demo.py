@@ -836,11 +836,11 @@ async def place_demo_order(
     tp_price_val = None
     sl_price_val = None
     if target > 0:
-        specs = DEFAULT_SYMBOL_SPECS.get(symbol, {"tick_size": 0.01, "tick_value": 0.01, "contract_size": 1})
+        specs = DEFAULT_SYMBOL_SPECS.get(symbol, {"tick_size": 0.01, "tick_value": 0.01})
         tick_size = specs.get("tick_size", 0.01)
         tick_value = specs.get("tick_value", 0.01)
-        contract_size = specs.get("contract_size", 1)
-        ppp = volume * contract_size * tick_value / tick_size if tick_size > 0 else 1
+        # ★ contract_size 제거 - calculate_demo_profit 공식과 일치
+        ppp = volume * tick_value / tick_size if tick_size > 0 else 1
 
         if magic == 100003:
             # B안 비대칭: TP=target/ppp, SL=(target-spread)/ppp
