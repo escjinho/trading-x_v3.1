@@ -257,12 +257,7 @@ const QeTickChart = {
 
     // ========== 차트에 실제 데이터 반영 ==========
     commitTick(price) {
-        let now = Math.floor(Date.now() / 1000) + 9 * 3600; // KST 표시
-        // ★ 히스토리 시간과 충돌 방지 (항상 마지막보다 +1초 이상)
-        if (this.tickData.length > 0) {
-            const lastTime = this.tickData[this.tickData.length - 1].time;
-            if (now <= lastTime) now = lastTime + 1;
-        }
+        const now = Math.floor(Date.now() / 1000) + 9 * 3600; // KST 표시
 
         this.tickData.push({ time: now, value: price });
 
