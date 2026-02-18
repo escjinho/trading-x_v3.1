@@ -665,8 +665,17 @@ function connectWebSocket() {
                         // 중복 방지: 같은 closed_at은 1회만 처리
                         if (data.closed_at !== window._lastQEClosedAt) {
                             window._lastQEClosedAt = data.closed_at;
-                            console.log('[WS Demo] 🎯 Quick&Easy auto_closed → hidePositionView');
-                            QuickEasyPanel.hidePositionView();
+                            const closedSymbol = data.symbol || '';
+                            const currentSym = window.currentSymbol || 'BTCUSD';
+                            // ★ 현재 보는 종목이면 UI 청산, 아니면 딕셔너리에서만 제거
+                            if (closedSymbol === currentSym || QuickEasyPanel._posSymbol === closedSymbol) {
+                                console.log('[WS Demo] 🎯 Quick&Easy auto_closed (현재 종목):', closedSymbol);
+                                QuickEasyPanel.hidePositionView(true);
+                            } else {
+                                console.log('[WS Demo] 🎯 Quick&Easy auto_closed (다른 종목):', closedSymbol);
+                                delete QuickEasyPanel._positions[closedSymbol];
+                                QuickEasyPanel._updatePositionBadge();
+                            }
                         }
                     }
                 }

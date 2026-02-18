@@ -639,7 +639,7 @@ const QuickEasyPanel = {
         this._updatePositionBadge();
     },
 
-    hidePositionView() {
+    hidePositionView(actualClose = true) {
         const orderSection = document.querySelector('.qe-order-section');
         const tradeButtons = document.querySelector('.qe-trade-buttons');
         const posView = document.getElementById('qePositionView');
@@ -653,9 +653,8 @@ const QuickEasyPanel = {
             this._posTimer = null;
         }
 
-        // 포지션 상태 완전 리셋
-        // ★ 종목별 딕셔너리에서 제거
-        if (this._posSymbol) {
+        // ★ 실제 청산일 때만 딕셔너리에서 제거 (종목 전환은 제거하지 않음)
+        if (actualClose && this._posSymbol) {
             delete this._positions[this._posSymbol];
             this._updatePositionBadge();
         }
