@@ -559,12 +559,15 @@ function connectWebSocket() {
                 } else if (data.position && data.position.profit !== undefined) {
                     pl = data.position.profit || 0;
                 }
-                if (pl >= 0) {
+                if (pl > 0) {
                     accCurrentPL.textContent = '+$' + pl.toFixed(2);
                     accCurrentPL.style.color = 'var(--buy-color)';
-                } else {
+                } else if (pl < 0) {
                     accCurrentPL.textContent = '-$' + Math.abs(pl).toFixed(2);
                     accCurrentPL.style.color = 'var(--sell-color)';
+                } else {
+                    accCurrentPL.textContent = '$0.00';
+                    accCurrentPL.style.color = 'var(--text-primary)';
                 }
             }
             if ('leverage' in data) {
@@ -764,18 +767,20 @@ function connectWebSocket() {
                 const fixedPL = window._todayPLFixed;
                 const accTodayPL = document.getElementById('accTodayPL');
                 if (accTodayPL) {
-                    const newText = (fixedPL >= 0 ? '+$' : '-$') + Math.abs(fixedPL).toFixed(2);
+                    const newText = fixedPL > 0 ? '+$' + fixedPL.toFixed(2) : fixedPL < 0 ? '-$' + Math.abs(fixedPL).toFixed(2) : '$0.00';
+                    const newColor = fixedPL > 0 ? 'var(--buy-color)' : fixedPL < 0 ? 'var(--sell-color)' : 'var(--text-primary)';
                     if (accTodayPL.textContent !== newText) {
                         accTodayPL.textContent = newText;
-                        accTodayPL.style.color = fixedPL >= 0 ? 'var(--buy-color)' : 'var(--sell-color)';
+                        accTodayPL.style.color = newColor;
                     }
                 }
                 const v5TodayPL = document.getElementById('v5TodayPL');
                 if (v5TodayPL) {
-                    const newV5 = (fixedPL >= 0 ? '+$' : '-$') + Math.abs(fixedPL).toFixed(2);
+                    const newV5 = fixedPL > 0 ? '+$' + fixedPL.toFixed(2) : fixedPL < 0 ? '-$' + Math.abs(fixedPL).toFixed(2) : '$0.00';
+                    const v5Color = fixedPL > 0 ? 'var(--buy-color)' : fixedPL < 0 ? 'var(--sell-color)' : 'var(--text-primary)';
                     if (v5TodayPL.textContent !== newV5) {
                         v5TodayPL.textContent = newV5;
-                        v5TodayPL.style.color = fixedPL >= 0 ? 'var(--buy-color)' : 'var(--sell-color)';
+                        v5TodayPL.style.color = v5Color;
                     }
                 }
             }
@@ -961,10 +966,10 @@ function connectWebSocket() {
             }
             
             // 깜빡임 방지: 값이 변경된 경우에만 업데이트
-            const newText = currentProfit >= 0 
+            const newText = currentProfit > 0 
                 ? '+$' + currentProfit.toFixed(2) 
-                : '-$' + Math.abs(currentProfit).toFixed(2);
-            const newColor = currentProfit >= 0 ? 'var(--buy-color)' : 'var(--sell-color)';
+                : currentProfit < 0 ? '-$' + Math.abs(currentProfit).toFixed(2) : '$0.00';
+            const newColor = currentProfit > 0 ? 'var(--buy-color)' : currentProfit < 0 ? 'var(--sell-color)' : 'var(--text-primary)';
             
             if (accCurrentPL.textContent !== newText) {
                 accCurrentPL.textContent = newText;
@@ -978,10 +983,11 @@ function connectWebSocket() {
             const fixedPL = window._todayPLFixed;
             const accTodayPL = document.getElementById('accTodayPL');
             if (accTodayPL) {
-                const newText = (fixedPL >= 0 ? '+$' : '-$') + Math.abs(fixedPL).toFixed(2);
+                const newText = fixedPL > 0 ? '+$' + fixedPL.toFixed(2) : fixedPL < 0 ? '-$' + Math.abs(fixedPL).toFixed(2) : '$0.00';
+                const newColor = fixedPL > 0 ? 'var(--buy-color)' : fixedPL < 0 ? 'var(--sell-color)' : 'var(--text-primary)';
                 if (accTodayPL.textContent !== newText) {
                     accTodayPL.textContent = newText;
-                    accTodayPL.style.color = fixedPL >= 0 ? 'var(--buy-color)' : 'var(--sell-color)';
+                    accTodayPL.style.color = newColor;
                 }
             }
         }
