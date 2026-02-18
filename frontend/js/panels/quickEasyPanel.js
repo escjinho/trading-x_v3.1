@@ -412,12 +412,11 @@ const QuickEasyPanel = {
         const profitPerPoint = volume * spec.contract_size * spec.tick_value / spec.tick_size;
         if (profitPerPoint <= 0) return { tp: 0, sl: 0 };
 
-        // ★ B안 비대칭: TP=target/ppp (멀리), SL=(target-spread)/ppp (가까이)
-        // TP 도달 시: WIN = target - spreadCost (payout %)
+        // ★ TP/SL 대칭: 동일 거리
+        // TP 도달 시: WIN = target - spread (payout %)
         // SL 도달 시: LOSE = -target (전액 손실)
-        const spreadCost = this.getSpreadCost();
         const tpDiff = target / profitPerPoint;
-        const slDiff = Math.max((target - spreadCost) / profitPerPoint, tpDiff * 0.1);
+        const slDiff = target / profitPerPoint;  // ★ TP와 동일 거리
 
         if (side === 'BUY') {
             return { tp: entryPrice + tpDiff, sl: entryPrice - slDiff };

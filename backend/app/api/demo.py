@@ -851,7 +851,7 @@ async def place_demo_order(
                 spread_raw = abs(pd.get('ask', 0) - pd.get('bid', 0))
             spread_cost = (spread_raw / tick_size) * tick_value * volume if tick_size > 0 else 0
             tp_diff = target / ppp if ppp > 0 else 0
-            sl_diff = max((target - spread_cost) / ppp, tp_diff * 0.1) if ppp > 0 else 0
+            sl_diff = target / ppp if ppp > 0 else 0  # ★ TP와 동일 거리 → 손실 = target
 
             if order_type.upper() == "BUY":
                 tp_price_val = round(entry_price + tp_diff, 8)
