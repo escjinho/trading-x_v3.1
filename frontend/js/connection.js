@@ -656,6 +656,12 @@ function connectWebSocket() {
                     if (typeof updatePositionUI === 'function') {
                         updatePositionUI(false, null);
                     }
+
+                    // ★★★ Quick&Easy 패널 청산 연동 (magic=100003) ★★★
+                    if (data.magic == 100003 && typeof QuickEasyPanel !== 'undefined') {
+                        console.log('[WS Demo] 🎯 Quick&Easy auto_closed → hidePositionView');
+                        QuickEasyPanel.hidePositionView();
+                    }
                 }
                 }  // ★ wsConnectionStartTime 체크 else 블록 닫기
             }
@@ -676,8 +682,18 @@ function connectWebSocket() {
                     // lotSize는 base_lot 유지, 마틴 모드에서는 connection.js의 martin state에서 복원
                 }
 
-                if (typeof updatePositionUI === 'function') {
-                    updatePositionUI(true, data.position);
+                // magic 기반 패널 구분
+                if (data.position && data.position.magic == 100003 && typeof QuickEasyPanel !== 'undefined') {
+                    // 이지패널 포지션 복구
+                    if (QuickEasyPanel._posEntryPrice <= 0) {
+                        console.log('[WS Demo] 🔄 이지패널 포지션 복구');
+                        QuickEasyPanel.showPositionView(
+                            data.position.type === 'BUY' ? 'BUY' : 'SELL',
+                            data.position.entry
+                        );
+                    }
+                } else if (typeof updatePositionUI === 'function') {
+                    updatePositionUI(true, data.position);  // Buy/Sell 패널용
                 } else {
                     console.error('[WS Demo] ❌ updatePositionUI is not defined!');
                 }

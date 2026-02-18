@@ -349,6 +349,15 @@ const QuickEasyPanel = {
 
                 // 포지션 뷰로 전환
                 this.showPositionView(side, entryPrice);
+                // 버튼 4초 비활성화 (중복 진입 방지)
+                const buyBtn = document.getElementById('qeBuyBtn');
+                const sellBtn = document.getElementById('qeSellBtn');
+                if (buyBtn) buyBtn.disabled = true;
+                if (sellBtn) sellBtn.disabled = true;
+                setTimeout(() => {
+                    if (buyBtn) buyBtn.disabled = false;
+                    if (sellBtn) sellBtn.disabled = false;
+                }, 4000);
 
                 // 데모 데이터 새로고침
                 if (isDemo && typeof fetchDemoData === 'function') {
