@@ -459,6 +459,12 @@ const QuickEasyPanel = {
             typeEl.textContent = side;
             typeEl.className = 'qe-pos-value ' + (side === 'BUY' ? 'buy-type' : 'sell-type');
         }
+        // ★ 카드 배경색 BUY/SELL 전환
+        const posInfo = document.querySelector('.qe-position-info');
+        if (posInfo) {
+            posInfo.classList.remove('sell-pos');
+            if (side === 'SELL') posInfo.classList.add('sell-pos');
+        }
         if (entryEl) {
             const decimals = (typeof QeTickChart !== 'undefined') ? QeTickChart.getDecimals() : 2;
             entryEl.textContent = entryPrice.toLocaleString('en-US', {
