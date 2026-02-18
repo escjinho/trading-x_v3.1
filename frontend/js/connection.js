@@ -1993,6 +1993,11 @@ function switchTradingMode(mode) {
         window._weekHistoryData = null;
         window._todayPLFixed = null;
         if (typeof resetTradingPanel === 'function') resetTradingPanel();
+        // ★ 이지패널 포지션 뷰 초기화 (이전 모드 포지션 잔류 방지)
+        if (typeof QuickEasyPanel !== 'undefined') {
+            QuickEasyPanel.hidePositionView();
+            QeTickChart._pendingEntryLine = null;
+        }
         showToast('Demo 모드로 전환되었습니다', 'demo');
         updateHeroCTA('demo_with_live');
 
@@ -2062,6 +2067,11 @@ function switchTradingMode(mode) {
                 window._weekHistoryData = null;
                 window._todayPLFixed = null;
                 if (typeof resetTradingPanel === 'function') resetTradingPanel();
+                // ★ 이지패널 포지션 뷰 초기화 (이전 모드 포지션 잔류 방지)
+                if (typeof QuickEasyPanel !== 'undefined') {
+                    QuickEasyPanel.hidePositionView();
+                    QeTickChart._pendingEntryLine = null;
+                }
                 showToast('Live 모드로 전환되었습니다', 'success');
                 updateHeroCTA('live');
 

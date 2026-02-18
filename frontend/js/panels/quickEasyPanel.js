@@ -493,7 +493,19 @@ const QuickEasyPanel = {
 
         // ★ 차트에 진입가 + TP/SL 라인 그리기 (복구 시에도 표시)
         if (typeof QeTickChart !== 'undefined' && this._posTPSL) {
-            QeTickChart.showEntryLine(entryPrice, side.toLowerCase(), this._posTPSL.tp, this._posTPSL.sl);
+            if (QeTickChart.initialized && QeTickChart.areaSeries) {
+                // 차트 준비됨 → 즉시 그리기
+                QeTickChart.showEntryLine(entryPrice, side.toLowerCase(), this._posTPSL.tp, this._posTPSL.sl);
+            } else {
+                // ★ 차트 미초기화 → pending 저장 (init 완료 후 그림)
+                console.log('[QuickEasy] 차트 미초기화 → pending 라인 저장');
+                QeTickChart._pendingEntryLine = {
+                    price: entryPrice,
+                    side: side.toLowerCase(),
+                    tp: this._posTPSL.tp,
+                    sl: this._posTPSL.sl
+                };
+            }
         }
 
         // Win/Lose는 addTick에서 실시간 업데이트 (깜빡임 방지)

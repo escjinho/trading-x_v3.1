@@ -147,6 +147,14 @@ const QeTickChart = {
 
         this.initialized = true;
         console.log('[QeTickChart] 초기화 완료');
+
+        // ★ pending 진입 라인이 있으면 즉시 그리기 (포지션 복구 타이밍 해결)
+        if (this._pendingEntryLine) {
+            const p = this._pendingEntryLine;
+            console.log('[QeTickChart] ★ pending 라인 그리기:', p);
+            this.showEntryLine(p.price, p.side, p.tp, p.sl);
+            this._pendingEntryLine = null;
+        }
     },
 
     getDecimals() {
