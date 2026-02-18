@@ -190,7 +190,7 @@ const QuickEasyPanel = {
         let badge = document.getElementById('qePosBadge');
         if (!badge) {
             // 뱃지 생성
-            const symbolCard = document.querySelector('.qe-symbol-card');
+            const symbolCard = document.querySelector('.qe-symbol-cell');
             if (symbolCard) {
                 symbolCard.style.position = 'relative';
                 badge = document.createElement('span');
@@ -212,7 +212,7 @@ const QuickEasyPanel = {
         }
 
         // ★ 드롭다운 종목 옆 포지션 표시
-        document.querySelectorAll('.qe-symbol-item').forEach(item => {
+        document.querySelectorAll('.qe-symbol-option').forEach(item => {
             const sym = item.dataset.symbol;
             let dot = item.querySelector('.qe-pos-dot');
             if (this._positions[sym]) {
