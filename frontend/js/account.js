@@ -136,18 +136,21 @@ function updateAccountInfoFromHistory(historyData) {
     }
     
     if (todayPLEl) {
-        if (displayPL >= 0) {
+        if (displayPL > 0) {
             todayPLEl.textContent = '+$' + displayPL.toFixed(2);
             todayPLEl.style.color = 'var(--buy-color)';
-        } else {
+        } else if (displayPL < 0) {
             todayPLEl.textContent = '-$' + Math.abs(displayPL).toFixed(2);
             todayPLEl.style.color = 'var(--sell-color)';
+        } else {
+            todayPLEl.textContent = '$0.00';
+            todayPLEl.style.color = 'var(--text-primary)';
         }
     }
     
     if (currentPLEl) {
-        currentPLEl.textContent = '+$0.00';
-        currentPLEl.style.color = 'var(--buy-color)';
+        currentPLEl.textContent = '$0.00';
+        currentPLEl.style.color = 'var(--text-primary)';
     }
     
     console.log('[updateAccountInfoFromHistory] Today trades:', todayTrades.length, 'Total trades:', historyData.length);
