@@ -1418,14 +1418,14 @@ async def place_order(
                 # ★★★ TP/SL 포인트 계산 ★★★
                 point_value = tick_value if tick_value > 0 else 1
                 tp_points = int(target / (volume * point_value)) if volume * point_value > 0 else 500
-                sl_points = int((target * 0.98) / (volume * point_value)) if volume * point_value > 0 else tp_points  # SL = target * 0.98
-                print(f"[MetaAPI Order] TP/SL 계산: target=${target}, SL=${target*0.98:.0f} -> tp_points={tp_points}, sl_points={sl_points}")
+                sl_points = int(target / (volume * point_value)) if volume * point_value > 0 else tp_points  # SL = TP 동일 거리
+                print(f"[MetaAPI Order] TP/SL 계산: target=${target} -> tp_points={tp_points}, sl_points={sl_points}")
             else:
                 # 가격 없으면 기본값
                 specs = SYMBOL_SPECS.get(symbol, {"tick_value": 0.01})
                 point_value = specs.get("tick_value", 0.01)
                 tp_points = int(target / (volume * point_value)) if volume * point_value > 0 else 500
-                sl_points = int((target * 0.98) / (volume * point_value)) if volume * point_value > 0 else tp_points
+                sl_points = int(target / (volume * point_value)) if volume * point_value > 0 else tp_points
                 print(f"[MetaAPI Order] 가격 없음, 기본 SL/TP: tp={tp_points}, sl={sl_points}")
 
         # ★★★ MetaAPI 주문 실행 (유저별 or 공유) ★★★
