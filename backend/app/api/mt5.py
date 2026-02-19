@@ -3850,6 +3850,18 @@ async def websocket_endpoint(websocket: WebSocket):
                 else:
                     print(f"[LIVE WS] ✅ User {user_id} 새 포지션 감지 — 전송 허용 (old={_ack_pos_id}, new={_current_pos_id})")
 
+            # ★★★ 라이브 positions 배열 구성 (Open Positions 탭용) ★★★
+            live_positions_list = []
+            if _ws_use_user_metaapi and user_id:
+                # 유저별 MetaAPI 포지션
+                live_positions_list = user_metaapi_cache.get(user_id, {}).get("positions", [])
+            elif user_id and user_id in user_live_cache:
+                # user_live_cache 포지션
+                live_positions_list = user_live_cache[user_id].get("positions", [])
+            else:
+                # 공유 MetaAPI 포지션
+                live_positions_list = metaapi_positions or []
+
             data = {
                 "mt5_connected": user_has_mt5 or mt5_connected or metaapi_connected,  # ★ 전체 연결 상태
                 "metaapi_connected": metaapi_connected,  # ★★★ MetaAPI 연결 상태 (마틴 주문 제한용) ★★★
@@ -3863,6 +3875,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 "leverage": leverage,
                 "positions_count": positions_count,
                 "position": position_data,
+                "positions": live_positions_list,  # ★★★ Open Positions 탭용 ★★★
                 "buy_count": buy_count,
                 "sell_count": sell_count,
                 "neutral_count": neutral_count,

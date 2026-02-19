@@ -130,7 +130,11 @@ const OpenPositions = {
 
         let html = '';
         positions.forEach(pos => {
-            const isBuy = pos.type === 'BUY' || pos.type === 0;
+            // ★★★ 라이브(MetaAPI) vs 데모 필드 호환 처리 ★★★
+            // MetaAPI: type='POSITION_TYPE_BUY', openPrice, currentPrice, time
+            // Demo: type='BUY', entry, current, opened_at
+            const posType = pos.type || '';
+            const isBuy = posType === 'BUY' || posType === 0 || posType === 'POSITION_TYPE_BUY';
             const typeStr = isBuy ? 'BUY' : 'SELL';
             const cardClass = isBuy ? 'buy-card' : 'sell-card';
             const typeClass = isBuy ? 'buy' : 'sell';
@@ -141,13 +145,15 @@ const OpenPositions = {
             const profitClass = profit > 0 ? 'positive' : profit < 0 ? 'negative' : 'neutral';
             const profitText = profit > 0 ? '+$' + profit.toFixed(2) : profit < 0 ? '-$' + Math.abs(profit).toFixed(2) : '$0.00';
 
-            // 가격 소수점
+            // 가격 소수점 (라이브: openPrice/currentPrice, 데모: entry/current)
             const decimals = this._getDecimals(pos.symbol);
-            const entryStr = (pos.entry || 0).toFixed(decimals);
-            const currentStr = (pos.current || 0).toFixed(decimals);
+            const entryPrice = pos.entry || pos.openPrice || 0;
+            const currentPrice = pos.current || pos.currentPrice || 0;
+            const entryStr = entryPrice.toFixed(decimals);
+            const currentStr = currentPrice.toFixed(decimals);
 
-            // 진입 시간
-            const timeStr = this._formatTime(pos.opened_at);
+            // 진입 시간 (라이브: time, 데모: opened_at)
+            const timeStr = this._formatTime(pos.opened_at || pos.time);
 
             // 체크박스 (청산 모드일 때)
             const checkboxHtml = this._closeMode
