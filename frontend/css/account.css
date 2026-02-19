@@ -173,3 +173,300 @@
 .profit-negative {
     color: var(--sell-color);
 }
+/* ========== Account 탭 헤더 (Trade History / Open Positions) ========== */
+.acc-tab-header {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 12px;
+}
+
+.acc-tab {
+    flex: 1;
+    text-align: center;
+    padding: 12px 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    position: relative;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+}
+
+.acc-tab.active {
+    color: var(--text-primary);
+}
+
+.acc-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 20%;
+    right: 20%;
+    height: 2px;
+    background: var(--accent-cyan);
+    border-radius: 1px;
+}
+
+.acc-tab-count {
+    margin-left: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent-cyan);
+}
+
+.acc-tab-content {
+    display: none;
+}
+
+.acc-tab-content.active {
+    display: block;
+}
+
+/* ========== Open Positions 카드 ========== */
+.open-pos-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.open-pos-card {
+    padding: 10px 12px;
+    margin: 0 0 1px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    border-left: 3px solid transparent;
+    cursor: pointer;
+    transition: background 0.15s;
+    position: relative;
+}
+
+.open-pos-card:active {
+    background: rgba(255,255,255,0.03);
+}
+
+.open-pos-card.buy-card {
+    border-left-color: var(--buy-color);
+}
+
+.open-pos-card.sell-card {
+    border-left-color: var(--sell-color);
+}
+
+.open-pos-card.selected {
+    background: rgba(0, 212, 164, 0.08);
+}
+
+/* 1행 */
+.open-pos-row1 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 3px;
+}
+
+.open-pos-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.open-pos-symbol {
+    color: var(--text-primary);
+}
+
+.open-pos-type {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.open-pos-type.buy { color: var(--buy-color); }
+.open-pos-type.sell { color: var(--sell-color); }
+
+.open-pos-volume {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.open-pos-badge {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 8px;
+    letter-spacing: 0.5px;
+}
+
+.open-pos-badge.badge-pro {
+    background: rgba(0, 212, 164, 0.15);
+    color: #00d4a4;
+}
+
+.open-pos-badge.badge-easy {
+    background: rgba(255, 149, 0, 0.15);
+    color: #ff9500;
+}
+
+.open-pos-badge.badge-chart {
+    background: rgba(168, 85, 247, 0.15);
+    color: #a855f7;
+}
+
+.open-pos-badge.badge-v5 {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+}
+
+.open-pos-profit {
+    font-size: 14px;
+    font-weight: 700;
+    text-align: right;
+}
+
+.open-pos-profit.positive { color: var(--buy-color); }
+.open-pos-profit.negative { color: var(--sell-color); }
+.open-pos-profit.neutral { color: var(--text-primary); }
+
+/* 2행 */
+.open-pos-row2 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.open-pos-time {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 10.5px;
+}
+
+.open-pos-prices {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 10.5px;
+}
+
+.open-pos-arrow {
+    color: rgba(255,255,255,0.25);
+    margin: 0 3px;
+}
+
+/* 빈 상태 */
+.open-pos-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+}
+
+/* 체크박스 */
+.open-pos-checkbox {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 4px;
+    margin-right: 8px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.open-pos-checkbox.checked {
+    background: var(--accent-cyan);
+    border-color: var(--accent-cyan);
+}
+
+.open-pos-checkbox.checked::after {
+    content: '✓';
+    color: #000;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+/* ========== 하단 청산 버튼 ========== */
+.close-pos-bar {
+    padding: 12px;
+    position: sticky;
+    bottom: 0;
+    background: var(--bg-secondary);
+}
+
+.close-pos-btn-inactive {
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    border: 2px dashed rgba(255,255,255,0.15);
+    border-radius: 10px;
+    color: rgba(255,255,255,0.3);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.close-pos-btn-inactive:active {
+    border-color: rgba(255,255,255,0.3);
+    color: rgba(255,255,255,0.5);
+}
+
+/* 활성화 모드 하단 바 */
+.close-pos-action-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    position: sticky;
+    bottom: 0;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-color);
+    gap: 8px;
+}
+
+.close-pos-select-all {
+    background: transparent;
+    border: none;
+    color: var(--accent-cyan);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 8px 12px;
+}
+
+.close-pos-execute {
+    flex: 1;
+    max-width: 160px;
+    padding: 10px 16px;
+    background: var(--sell-color);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.close-pos-execute:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.close-pos-cancel {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 8px 12px;
+}
+
+.history-profit.neutral {
+    color: var(--text-primary);
+}
