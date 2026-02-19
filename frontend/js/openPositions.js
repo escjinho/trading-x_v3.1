@@ -21,6 +21,37 @@ const OpenPositions = {
     // ========== 초기화 ==========
     init() {
         console.log('[OpenPositions] ✅ Module initialized');
+
+        // 페이지 전환 시 바 숨김 처리
+        const observer = new MutationObserver(() => {
+            this._updateBarVisibility();
+        });
+        const accountPage = document.getElementById('page-account');
+        if (accountPage) {
+            observer.observe(accountPage, { attributes: true, attributeFilter: ['class'] });
+        }
+    },
+
+    // ========== Account 탭 + Open Positions 탭 활성 여부 체크 ==========
+    _isVisible() {
+        const accountPage = document.getElementById('page-account');
+        const isAccountActive = accountPage && accountPage.classList.contains('active');
+        return isAccountActive && this._currentTab === 'positions';
+    },
+
+    // ========== 하단 바 표시/숨김 ==========
+    _updateBarVisibility() {
+        const bar = document.getElementById('closePosBar');
+        const actionBar = document.getElementById('closePosActionBar');
+        const shouldShow = this._isVisible() && this._positions.length > 0;
+
+        if (this._closeMode) {
+            if (bar) bar.style.display = 'none';
+            if (actionBar) actionBar.style.display = shouldShow ? 'flex' : 'none';
+        } else {
+            if (bar) bar.style.display = shouldShow ? 'block' : 'none';
+            if (actionBar) actionBar.style.display = 'none';
+        }
     },
 
     // ========== 탭 전환 ==========
@@ -42,6 +73,9 @@ const OpenPositions = {
         if (tab === 'history' && this._closeMode) {
             this.cancelCloseMode();
         }
+
+        // ★ 하단 바 표시/숨김 업데이트
+        this._updateBarVisibility();
     },
 
     // ========== WS 데이터 수신 → 업데이트 ==========
@@ -60,11 +94,8 @@ const OpenPositions = {
             }
         }
 
-        // Close Position 버튼 표시/숨김
-        const bar = document.getElementById('closePosBar');
-        if (bar) {
-            bar.style.display = positions.length > 0 && !this._closeMode ? 'block' : 'none';
-        }
+        // ★ 하단 바 표시/숨김 업데이트
+        this._updateBarVisibility();
 
         // 현재 탭이 positions일 때만 렌더링
         if (this._currentTab === 'positions') {
@@ -86,10 +117,7 @@ const OpenPositions = {
                     <p style="color:var(--text-muted);margin-top:8px;font-size:13px;">No open positions</p>
                 </div>`;
             // 버튼 숨김
-            const bar = document.getElementById('closePosBar');
-            if (bar) bar.style.display = 'none';
-            const actionBar = document.getElementById('closePosActionBar');
-            if (actionBar) actionBar.style.display = 'none';
+            this._updateBarVisibility();
             return;
         }
 
@@ -151,15 +179,7 @@ const OpenPositions = {
         container.innerHTML = html;
 
         // 버튼 표시
-        const bar = document.getElementById('closePosBar');
-        const actionBar = document.getElementById('closePosActionBar');
-        if (this._closeMode) {
-            if (bar) bar.style.display = 'none';
-            if (actionBar) actionBar.style.display = 'flex';
-        } else {
-            if (bar) bar.style.display = 'block';
-            if (actionBar) actionBar.style.display = 'none';
-        }
+        this._updateBarVisibility();
     },
 
     // ========== 소수점 자릿수 ==========
