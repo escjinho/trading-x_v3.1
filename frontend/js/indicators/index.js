@@ -29,6 +29,29 @@ const IndicatorManager = {
     init(chart, candleSeries) {
         console.log('[IndicatorManager] init called, chart:', chart ? 'OK' : 'NULL');
 
+        // ★★★ 기존 차트와 다르면 activeIndicators/패널 초기화 (재생성 트리거) ★★★
+        // 심볼 변경, 차트 재초기화 시 기존 시리즈가 무효화되므로 정리 필요
+        if (this.mainChart !== null && this.mainChart !== chart) {
+            console.log('[IndicatorManager] Chart changed - clearing indicators for reinit');
+
+            // 패널 차트 제거
+            Object.keys(this.panelCharts).forEach(id => {
+                try {
+                    this.panelCharts[id].remove();
+                } catch(e) {}
+            });
+
+            // 패널 DOM 제거
+            const panelsContainer = document.getElementById('indicator-panels');
+            if (panelsContainer) {
+                panelsContainer.innerHTML = '';
+            }
+
+            // 지표 상태 초기화 (updateCandleData에서 restoreSavedIndicators 트리거)
+            this.activeIndicators = {};
+            this.panelCharts = {};
+        }
+
         this.mainChart = chart;
         this.mainSeries = candleSeries;
 

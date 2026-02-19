@@ -1365,15 +1365,16 @@ async def place_order(
                 "martin_lot": volume
             })
 
-    # ★★★ 중복 주문 방지: 같은 매직넘버 포지션 확인 (유저별 캐시 사용) ★★★
+    # ★★★ 중복 주문 방지: 같은 매직넘버 + 같은 종목 포지션 확인 ★★★
+    # 종목이 다르면 같은 매직넘버라도 독립 주문 허용 (QuickEasy 다종목 지원)
     if _use_user_metaapi:
         _user_positions = user_metaapi_cache.get(current_user.id, {}).get("positions", [])
     else:
         _user_positions = user_live_cache.get(current_user.id, {}).get("positions", [])
-    existing = [p for p in _user_positions if p.get('magic') == magic]
+    existing = [p for p in _user_positions if p.get('magic') == magic and p.get('symbol') == symbol]
     if existing:
-        print(f"[MetaAPI Order] 중복 주문 차단: user={current_user.id}, magic={magic}, 기존 포지션={len(existing)}개")
-        return JSONResponse({"success": False, "message": "이미 같은 매직넘버 포지션이 있습니다"})
+        print(f"[MetaAPI Order] 중복 주문 차단: user={current_user.id}, magic={magic}, symbol={symbol}, 기존 포지션={len(existing)}개")
+        return JSONResponse({"success": False, "message": f"{symbol} 포지션이 이미 있습니다"})
 
     # ★★★ MetaAPI를 통한 주문 실행 ★★★
     try:
