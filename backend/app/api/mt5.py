@@ -3880,6 +3880,13 @@ async def websocket_endpoint(websocket: WebSocket):
             # ★★★ 필드명 통일 변환 (MetaAPI → 프론트엔드 형식) ★★★
             live_positions_list = []
             for pos in raw_positions:
+                # ★ time 필드: datetime 객체면 ISO 문자열로 변환
+                _pos_time = pos.get("time", "")
+                if hasattr(_pos_time, 'isoformat'):
+                    _pos_time = _pos_time.isoformat()
+                elif _pos_time and not isinstance(_pos_time, str):
+                    _pos_time = str(_pos_time)
+
                 live_positions_list.append({
                     "id": pos.get("id"),
                     "ticket": pos.get("id"),  # 청산용 티켓 ID
@@ -3890,7 +3897,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     "entry": pos.get("openPrice", 0),  # ★ openPrice → entry
                     "current": pos.get("currentPrice", 0),  # ★ currentPrice → current
                     "magic": pos.get("magic", 0),
-                    "opened_at": pos.get("time", ""),  # ★ time → opened_at
+                    "opened_at": _pos_time,  # ★ time → opened_at (문자열 변환됨)
                     "sl": pos.get("stopLoss", 0),
                     "tp": pos.get("takeProfit", 0),
                     "target": pos.get("target", 0)
