@@ -3734,10 +3734,15 @@ async def websocket_endpoint(websocket: WebSocket):
                     except Exception as martin_err:
                         print(f"[WS MARTIN] DB 조회 오류: {martin_err}")
 
-                # 캐시 정리
-                if user_id and user_id in user_live_cache:
-                    user_live_cache[user_id]["positions"] = []
+                # ★★★ 청산된 포지션만 제거 (다른 포지션 유지!) ★★★
+                _streaming_closed_id = _user_streaming_closed.get("position_id", "")
+                if user_id and user_id in user_live_cache and _streaming_closed_id:
+                    user_live_cache[user_id]["positions"] = [
+                        p for p in user_live_cache[user_id].get("positions", [])
+                        if p.get("id") != _streaming_closed_id
+                    ]
                     user_live_cache[user_id]["updated_at"] = time_module.time()
+                    print(f"[WS] 🧹 Streaming 청산 - 포지션 {_streaming_closed_id} 제거")
                 if user_id in user_target_cache:
                     del user_target_cache[user_id]
             elif _user_closed_event:
@@ -3774,10 +3779,15 @@ async def websocket_endpoint(websocket: WebSocket):
                     except Exception as martin_err:
                         print(f"[WS MARTIN RPC] DB 조회 오류: {martin_err}")
 
-                # user_live_cache 포지션 정리
-                if user_id and user_id in user_live_cache:
-                    user_live_cache[user_id]["positions"] = []
+                # ★★★ 청산된 포지션만 제거 (다른 포지션 유지!) ★★★
+                _rpc_closed_id = _user_closed_event.get("position_id", "")
+                if user_id and user_id in user_live_cache and _rpc_closed_id:
+                    user_live_cache[user_id]["positions"] = [
+                        p for p in user_live_cache[user_id].get("positions", [])
+                        if p.get("id") != _rpc_closed_id
+                    ]
                     user_live_cache[user_id]["updated_at"] = time_module.time()
+                    print(f"[WS] 🧹 RPC 청산 - 포지션 {_rpc_closed_id} 제거")
 
                 # user_target_cache 정리
                 if user_id in user_target_cache:
@@ -3812,11 +3822,15 @@ async def websocket_endpoint(websocket: WebSocket):
                     except Exception as martin_err:
                         print(f"[WS MARTIN Events] DB 조회 오류: {martin_err}")
 
-                # ★★★ user_live_cache 포지션도 정리 (MT5 TP/SL 청산 동기화) ★★★
-                if user_id and user_id in user_live_cache:
-                    user_live_cache[user_id]["positions"] = []
+                # ★★★ 청산된 포지션만 제거 (다른 포지션 유지!) ★★★
+                _closed_event_ids = [e.get("position_id", "") for e in closed_events if e.get("position_id")]
+                if user_id and user_id in user_live_cache and _closed_event_ids:
+                    user_live_cache[user_id]["positions"] = [
+                        p for p in user_live_cache[user_id].get("positions", [])
+                        if p.get("id") not in _closed_event_ids
+                    ]
                     user_live_cache[user_id]["updated_at"] = time_module.time()
-                    print(f"[WS] 🧹 User {user_id} user_live_cache 포지션 정리 완료")
+                    print(f"[WS] 🧹 MT5 TP/SL 청산 - 포지션 {len(_closed_event_ids)}개 제거: {_closed_event_ids}")
 
                 # ★★★ user_target_cache 정리 (Option A: MT5 TP/SL 청산 후 모니터링 중단) ★★★
                 if user_id in user_target_cache:
@@ -3881,6 +3895,13 @@ async def websocket_endpoint(websocket: WebSocket):
                     "tp": pos.get("takeProfit", 0),
                     "target": pos.get("target", 0)
                 })
+
+            # ★★★ 디버깅 로그: 변환된 포지션 데이터 확인 ★★★
+            if live_positions_list and _ws_loop_count % 30 == 0:  # 30초마다 1회
+                print(f"[WS] 📋 라이브 포지션 전송: {len(live_positions_list)}개")
+                if live_positions_list:
+                    _sample = live_positions_list[0]
+                    print(f"[WS] 📋 샘플: id={_sample.get('id')}, symbol={_sample.get('symbol')}, entry={_sample.get('entry')}, current={_sample.get('current')}, profit={_sample.get('profit')}, opened_at={_sample.get('opened_at')}")
 
             data = {
                 "mt5_connected": user_has_mt5 or mt5_connected or metaapi_connected,  # ★ 전체 연결 상태

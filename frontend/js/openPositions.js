@@ -385,8 +385,13 @@ const OpenPositions = {
                     updateTodayPL(resp.profit);
                 }
 
-                // ★★★ _positions 배열에서 제거 ★★★
-                this._positions = this._positions.filter(p => p.id !== posId && p.id != posId);
+                // ★★★ _positions 배열에서 제거 (String 비교로 통일) ★★★
+                this._positions = this._positions.filter(p => String(p.id) !== String(posId));
+                console.log('[OpenPositions] 청산 후 남은 포지션:', this._positions.length);
+
+                // ★★★ UI 즉시 업데이트 ★★★
+                this.render();
+                this._updateBarVisibility();
 
                 // ★★★ 패널별 상태 초기화 ★★★
                 this._syncPanelAfterClose(posMagic, posSymbol, posId);
@@ -542,8 +547,8 @@ const OpenPositions = {
                     if (resp.profit !== undefined && typeof updateTodayPL === 'function') {
                         updateTodayPL(resp.profit);
                     }
-                    // ★★★ _positions 배열에서 제거 ★★★
-                    this._positions = this._positions.filter(p => p.id !== posId && p.id != posId);
+                    // ★★★ _positions 배열에서 제거 (String 비교로 통일) ★★★
+                    this._positions = this._positions.filter(p => String(p.id) !== String(posId));
                     // ★★★ 패널별 상태 초기화 ★★★
                     this._syncPanelAfterClose(info.magic, info.symbol, posId);
                 }
