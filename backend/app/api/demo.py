@@ -1001,12 +1001,20 @@ async def close_demo_position(
     db: Session = Depends(get_db)
 ):
     """데모 포지션 청산 (ticket 또는 symbol로 지정 가능)"""
+    # ★ 디버깅 로그
+    print(f"[close_demo_position] ticket={ticket}, symbol={symbol}, magic={magic}, user_id={current_user.id}")
+
+    # 유저의 모든 포지션 ID 확인 (디버깅)
+    all_positions = db.query(DemoPosition).filter(DemoPosition.user_id == current_user.id).all()
+    print(f"[close_demo_position] 유저의 모든 포지션 ID: {[p.id for p in all_positions]}")
+
     # ticket으로 특정 포지션 청산
     if ticket:
         position = db.query(DemoPosition).filter(
             DemoPosition.id == ticket,
             DemoPosition.user_id == current_user.id
         ).first()
+        print(f"[close_demo_position] ticket={ticket}으로 조회 결과: {position.id if position else 'None'}")
     # symbol + magic으로 해당 종목 포지션 청산
     elif symbol and magic:
         position = db.query(DemoPosition).filter(

@@ -85,6 +85,11 @@ const OpenPositions = {
         if (!Array.isArray(positions)) return;
         this._positions = positions;
 
+        // ★ 디버깅: 받은 positions 데이터 확인
+        if (positions.length > 0) {
+            console.log('[OpenPositions] updatePositions - 첫 번째 포지션:', JSON.stringify(positions[0]));
+        }
+
         // 탭 카운트 업데이트
         const countEl = document.getElementById('openPosCount');
         if (countEl) {
@@ -304,18 +309,34 @@ const OpenPositions = {
 
     // ========== 개별 청산 (롱프레스) ==========
     closeSingle(posId) {
-        const pos = this._positions.find(p => p.id === posId);
+        console.log('[OpenPositions] closeSingle - posId:', posId, 'type:', typeof posId);
+        console.log('[OpenPositions] closeSingle - _positions:', this._positions.map(p => ({ id: p.id, type: typeof p.id, symbol: p.symbol })));
+
+        const pos = this._positions.find(p => p.id === posId || p.id == posId);
+        console.log('[OpenPositions] closeSingle - found pos:', pos ? pos.symbol : 'NOT FOUND');
+
         if (!pos) return;
         this.showConfirmSheet('single', posId);
     },
 
     async _executeCloseSingle(posId) {
+        // ★ posId를 정수로 변환
+        const ticketId = parseInt(posId, 10);
+
         // Demo/Live 분기
         const endpoint = window.isDemo ? '/demo/close' : '/mt5/close';
-        console.log('[OpenPositions] _executeCloseSingle:', posId, 'endpoint:', endpoint);
+        const fullUrl = endpoint + '?ticket=' + ticketId;
+
+        console.log('[OpenPositions] _executeCloseSingle:', {
+            originalPosId: posId,
+            ticketId: ticketId,
+            endpoint: endpoint,
+            fullUrl: fullUrl,
+            isDemo: window.isDemo
+        });
 
         try {
-            const resp = await apiCall(endpoint + '?ticket=' + posId, 'POST');
+            const resp = await apiCall(fullUrl, 'POST');
             console.log('[OpenPositions] Close response:', resp);
 
             if (resp && resp.success !== false) {
@@ -395,12 +416,18 @@ const OpenPositions = {
 
         // Demo/Live 분기
         const endpoint = window.isDemo ? '/demo/close' : '/mt5/close';
-        console.log('[OpenPositions] _executeCloseMultiple:', count, '개, endpoint:', endpoint);
+        console.log('[OpenPositions] _executeCloseMultiple:', {
+            count: count,
+            ids: ids,
+            endpoint: endpoint,
+            isDemo: window.isDemo
+        });
 
         for (const posId of ids) {
+            const ticketId = parseInt(posId, 10);
             try {
-                const resp = await apiCall(endpoint + '?ticket=' + posId, 'POST');
-                console.log('[OpenPositions] Close', posId, ':', resp);
+                const resp = await apiCall(endpoint + '?ticket=' + ticketId, 'POST');
+                console.log('[OpenPositions] Close', ticketId, ':', resp);
 
                 if (resp && resp.success !== false) {
                     successCount++;
