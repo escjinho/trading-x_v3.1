@@ -323,6 +323,11 @@ const OpenPositions = {
         // ★ posId를 정수로 변환
         const ticketId = parseInt(posId, 10);
 
+        // ★ 청산 전 포지션 정보 저장 (패널 업데이트용)
+        const pos = this._positions.find(p => p.id === posId || p.id == posId);
+        const posMagic = pos ? pos.magic : null;
+        const posSymbol = pos ? pos.symbol : null;
+
         // Demo/Live 분기
         const endpoint = isDemo ? '/demo/close' : '/mt5/close';
         const fullUrl = endpoint + '?ticket=' + ticketId;
@@ -332,7 +337,9 @@ const OpenPositions = {
             ticketId: ticketId,
             endpoint: endpoint,
             fullUrl: fullUrl,
-            isDemo: isDemo
+            isDemo: isDemo,
+            magic: posMagic,
+            symbol: posSymbol
         });
 
         try {
@@ -345,12 +352,61 @@ const OpenPositions = {
                 if (resp.profit !== undefined && typeof updateTodayPL === 'function') {
                     updateTodayPL(resp.profit);
                 }
+
+                // ★★★ 패널별 상태 초기화 ★★★
+                this._syncPanelAfterClose(posMagic, posSymbol);
             } else {
                 showToast('청산 실패: ' + (resp?.message || ''), 'error');
             }
         } catch (e) {
             console.error('[OpenPositions] Close error:', e);
             showToast('청산 오류', 'error');
+        }
+    },
+
+    // ★★★ 청산 후 패널 상태 동기화 ★★★
+    _syncPanelAfterClose(magic, symbol) {
+        console.log('[OpenPositions] _syncPanelAfterClose:', { magic, symbol });
+
+        // QuickEasy (magic=100003)
+        if (magic === 100003 && typeof QuickEasyPanel !== 'undefined') {
+            // 포지션 딕셔너리에서 제거
+            if (QuickEasyPanel._positions && symbol) {
+                delete QuickEasyPanel._positions[symbol];
+            }
+            // 현재 보고 있는 종목이면 UI 초기화
+            const currentSym = window.currentSymbol || 'BTCUSD';
+            if (symbol === currentSym || QuickEasyPanel._posSymbol === symbol) {
+                if (typeof QuickEasyPanel.hidePositionView === 'function') {
+                    QuickEasyPanel.hidePositionView(true);
+                }
+            }
+            // 뱃지 업데이트
+            if (typeof QuickEasyPanel._updatePositionBadge === 'function') {
+                QuickEasyPanel._updatePositionBadge();
+            }
+        }
+
+        // BuySell Pro (magic=100001)
+        if (magic === 100001) {
+            if (typeof updatePositionUI === 'function') {
+                updatePositionUI(false, null);
+            }
+        }
+
+        // V5 Multi (magic=100002)
+        if (magic === 100002) {
+            if (typeof v5Positions !== 'undefined' && Array.isArray(v5Positions)) {
+                // symbol로 해당 포지션 제거
+                const idx = v5Positions.findIndex(p => p.symbol === symbol);
+                if (idx !== -1) {
+                    v5Positions.splice(idx, 1);
+                }
+            }
+            // V5 패널 UI 갱신
+            if (typeof updateMultiOrderPanelV5 === 'function') {
+                updateMultiOrderPanelV5();
+            }
         }
     },
 
@@ -414,17 +470,27 @@ const OpenPositions = {
         const count = ids.length;
         let successCount = 0;
 
+        // ★ 청산 전 포지션 정보 저장 (패널 업데이트용)
+        const posInfos = ids.map(posId => {
+            const pos = this._positions.find(p => p.id === posId || p.id == posId);
+            return { posId, magic: pos?.magic, symbol: pos?.symbol };
+        });
+
         // Demo/Live 분기
         const endpoint = isDemo ? '/demo/close' : '/mt5/close';
         console.log('[OpenPositions] _executeCloseMultiple:', {
             count: count,
             ids: ids,
             endpoint: endpoint,
-            isDemo: isDemo
+            isDemo: isDemo,
+            posInfos: posInfos
         });
 
-        for (const posId of ids) {
+        for (let i = 0; i < ids.length; i++) {
+            const posId = ids[i];
             const ticketId = parseInt(posId, 10);
+            const info = posInfos[i];
+
             try {
                 const resp = await apiCall(endpoint + '?ticket=' + ticketId, 'POST');
                 console.log('[OpenPositions] Close', ticketId, ':', resp);
@@ -434,6 +500,8 @@ const OpenPositions = {
                     if (resp.profit !== undefined && typeof updateTodayPL === 'function') {
                         updateTodayPL(resp.profit);
                     }
+                    // ★★★ 패널별 상태 초기화 ★★★
+                    this._syncPanelAfterClose(info.magic, info.symbol);
                 }
             } catch (e) {
                 console.error('[OpenPositions] Close error for', posId, e);
