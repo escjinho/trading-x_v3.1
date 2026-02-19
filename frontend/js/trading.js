@@ -1,6 +1,15 @@
 // ========== Buy/Sell 패널 매직넘버 ==========
 const BUYSELL_MAGIC_NUMBER = 100001;
 
+// ★★★ 포지션 타입 정규화 (MetaAPI: POSITION_TYPE_BUY → BUY) ★★★
+function normalizePositionType(type) {
+    if (!type) return '';
+    const t = String(type).toUpperCase();
+    if (t.includes('BUY')) return 'BUY';
+    if (t.includes('SELL')) return 'SELL';
+    return t;
+}
+
 // ★★★ MetaAPI 에러 메시지 → 사용자 친화적 메시지 변환 ★★★
 function friendlyError(msg) {
     if (!msg) return '일시적 오류가 발생했습니다';
@@ -435,14 +444,18 @@ function updatePositionUI(hasPos, posData) {
         document.getElementById('tradeButtonsNoPos').style.display = 'none';
         document.getElementById('tradeButtonsHasPos').style.display = 'block';
 
-        const isBuy = posData.type === 'BUY';
+        // ★★★ 포지션 타입 정규화 (POSITION_TYPE_BUY → BUY) ★★★
+        const posType = normalizePositionType(posData.type);
+        const isBuy = posType === 'BUY';
         const posCard = document.getElementById('positionCard');
         posCard.className = isBuy ? 'position-card buy-pos' : 'position-card sell-pos';
 
-        document.getElementById('posType').textContent = posData.type;
+        document.getElementById('posType').textContent = posType;
         document.getElementById('posType').style.color = isBuy ? '#00b450' : '#dc3246';
         document.getElementById('posType').style.textShadow = '0 0 10px ' + (isBuy ? 'rgba(0,180,80,0.5)' : 'rgba(220,50,70,0.5)');
-        document.getElementById('posEntry').textContent = posData.entry.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        // ★★★ 진입가 필드 호환 (라이브: openPrice, 데모: entry) ★★★
+        const entryPrice = posData.entry || posData.openPrice || 0;
+        document.getElementById('posEntry').textContent = entryPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
         if (!positionStartTime) {
             positionStartTime = Date.now();

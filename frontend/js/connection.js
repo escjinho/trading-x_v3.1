@@ -841,11 +841,16 @@ function connectWebSocket() {
                 const currentSym = window.currentSymbol || 'BTCUSD';
                 qePositions.forEach(qePos => {
                     const posSym = qePos.symbol || '';
+                    // ★★★ 포지션 타입 정규화 (POSITION_TYPE_BUY → BUY) ★★★
+                    const qeType = String(qePos.type || '').toUpperCase();
+                    const qeSide = qeType.includes('BUY') ? 'BUY' : 'SELL';
+                    // ★★★ 진입가 필드 호환 (라이브: openPrice, 데모: entry) ★★★
+                    const qeEntry = qePos.entry || qePos.openPrice || 0;
                     // ★ 딕셔너리에 저장 (모든 종목)
                     if (!QuickEasyPanel._positions[posSym]) {
                         QuickEasyPanel._positions[posSym] = {
-                            side: qePos.type === 'BUY' ? 'BUY' : 'SELL',
-                            entry: qePos.entry,
+                            side: qeSide,
+                            entry: qeEntry,
                             volume: qePos.volume,
                             target: qePos.target,
                             tpsl: (qePos.tp_price && qePos.sl_price) ? { tp: qePos.tp_price, sl: qePos.sl_price } : null,
@@ -861,8 +866,8 @@ function connectWebSocket() {
                             window._serverTPSL = { tp: qePos.tp_price, sl: qePos.sl_price };
                         }
                         QuickEasyPanel.showPositionView(
-                            qePos.type === 'BUY' ? 'BUY' : 'SELL',
-                            qePos.entry,
+                            qeSide,
+                            qeEntry,
                             qePos.volume,
                             qePos.target
                         );

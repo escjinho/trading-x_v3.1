@@ -984,7 +984,9 @@ function updateV5PositionListFor(panelId) {
     if (panelPositions.length > 0) {
         if (listWrapper) listWrapper.classList.add('has-positions');
         container.innerHTML = panelPositions.map((pos, idx) => {
-            const isBuy = pos.type === 'BUY' || pos.type === 0;
+            // ★★★ 포지션 타입 정규화 (POSITION_TYPE_BUY → BUY) ★★★
+            const posType = String(pos.type || '').toUpperCase();
+            const isBuy = posType === 'BUY' || posType.includes('BUY') || pos.type === 0;
             const typeText = isBuy ? 'BUY' : 'SELL';
             const profitClass = pos.profit >= 0 ? 'positive' : 'negative';
             const profitSign = pos.profit >= 0 ? '+' : '';

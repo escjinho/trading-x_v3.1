@@ -36,8 +36,11 @@ async function loadAccountHistory() {
                 const profit = item.profit || 0;
                 const profitClass = profit >= 0 ? 'profit-positive' : 'profit-negative';
                 const profitSign = profit >= 0 ? '+' : '';
-                const typeClass = (item.type === 'BUY' || item.type === 0) ? 'type-buy' : 'type-sell';
-                const typeText = (item.type === 'BUY' || item.type === 0) ? 'BUY' : 'SELL';
+                // ★★★ 포지션 타입 정규화 (POSITION_TYPE_BUY → BUY) ★★★
+                const itemType = String(item.type || '').toUpperCase();
+                const isBuy = itemType === 'BUY' || itemType.includes('BUY') || item.type === 0;
+                const typeClass = isBuy ? 'type-buy' : 'type-sell';
+                const typeText = isBuy ? 'BUY' : 'SELL';
                 
                 // Live 모드에서는 entry/exit 대신 price만 있을 수 있음
                 const entryPrice = item.entry || item.price || 0;

@@ -3,6 +3,15 @@
    EA 패널, Quick 패널, 거래 함수
    ======================================== */
 
+// ★★★ 포지션 타입 정규화 (MetaAPI: POSITION_TYPE_BUY → BUY) ★★★
+function normalizePositionType(type) {
+    if (!type) return '';
+    const t = String(type).toUpperCase();
+    if (t.includes('BUY')) return 'BUY';
+    if (t.includes('SELL')) return 'SELL';
+    return t;
+}
+
 // ========== Trade Variables ==========
 let currentSymbol = 'BTCUSD';
 let currentMode = 'basic';
@@ -175,14 +184,18 @@ function updatePositionUI(hasPos, posData) {
         document.getElementById('tradeButtonsNoPos').style.display = 'none';
         document.getElementById('tradeButtonsHasPos').style.display = 'block';
         
-        const isBuy = posData.type === 'BUY';
+        // ★★★ 포지션 타입 정규화 (POSITION_TYPE_BUY → BUY) ★★★
+        const posType = normalizePositionType(posData.type);
+        const isBuy = posType === 'BUY';
         const posCard = document.getElementById('positionCard');
         posCard.className = isBuy ? 'position-card buy-pos' : 'position-card sell-pos';
-        
-        document.getElementById('posType').textContent = posData.type;
+
+        document.getElementById('posType').textContent = posType;
         document.getElementById('posType').style.color = isBuy ? '#00b450' : '#dc3246';
         document.getElementById('posType').style.textShadow = '0 0 10px ' + (isBuy ? 'rgba(0,180,80,0.5)' : 'rgba(220,50,70,0.5)');
-        document.getElementById('posEntry').textContent = posData.entry.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        // ★★★ 진입가 필드 호환 (라이브: openPrice, 데모: entry) ★★★
+        const entryPrice = posData.entry || posData.openPrice || 0;
+        document.getElementById('posEntry').textContent = entryPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
         
         if (!positionStartTime) {
             positionStartTime = Date.now();
