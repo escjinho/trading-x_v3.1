@@ -22,6 +22,17 @@ body {
     background: linear-gradient(135deg, #0a0c10 0%, #151821 50%, #0a0c10 100%);
     color: var(--text-primary);
     min-height: 100vh;
+    /* ★ 모바일 롱프레스 방지 (구글 검색/텍스트 선택) */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: manipulation;
+}
+
+/* ★ 입력 필드는 텍스트 선택 허용 */
+input, textarea, [contenteditable="true"] {
+    -webkit-user-select: text;
+    user-select: text;
 }
 
 .app { max-width: 480px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }

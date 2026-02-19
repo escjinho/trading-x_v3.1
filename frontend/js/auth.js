@@ -23,6 +23,9 @@ window.isGuest = isGuest;
 let isDemo = true;
 window.isDemo = isDemo;  // ★ 전역 노출 (다른 모듈에서 사용)
 
+// ★ 모바일 롱프레스 컨텍스트 메뉴 방지 (구글 검색 팝업 차단)
+document.addEventListener('contextmenu', e => e.preventDefault());
+
 // ========== Session Config ==========
 const SESSION_TIMEOUT = 60 * 60 * 1000;  // 1시간 (밀리초)
 const TOKEN_REFRESH_INTERVAL = 50 * 60 * 1000;  // 50분마다 갱신 시도
