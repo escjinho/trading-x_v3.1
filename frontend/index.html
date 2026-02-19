@@ -3519,6 +3519,21 @@
         </div>
     </div>
 
+    <!-- ★ 청산 확인 바텀시트 -->
+    <div class="close-confirm-sheet" id="closeConfirmSheet">
+        <div class="close-confirm-overlay" onclick="OpenPositions.hideConfirmSheet()"></div>
+        <div class="close-confirm-panel">
+            <div class="close-confirm-title">포지션 청산</div>
+            <div class="close-confirm-content" id="closeConfirmContent">
+                <!-- 동적으로 채워짐 -->
+            </div>
+            <div class="close-confirm-buttons">
+                <button class="close-confirm-cancel" onclick="OpenPositions.hideConfirmSheet()">취소</button>
+                <button class="close-confirm-execute" id="closeConfirmExecute">청산</button>
+            </div>
+        </div>
+    </div>
+
     <script src="js/market-schedule.js?v=1771460859"></script>
     <script src="js/account.js?v=1771460859"></script>
     <script src="js/trading.js?v=1771460859"></script>

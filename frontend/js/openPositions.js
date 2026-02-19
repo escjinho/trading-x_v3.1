@@ -9,6 +9,8 @@ const OpenPositions = {
     _longPressTimer: null,
     _longPressId: null,
     _currentTab: 'history',
+    _pendingCloseType: null,  // 'single' or 'multi'
+    _pendingCloseId: null,    // posId for single close
 
     // ========== 매직넘버 → 뱃지 매핑 ==========
     BADGE_MAP: {
@@ -227,18 +229,78 @@ const OpenPositions = {
         }
     },
 
+    // ========== 바텀시트 표시/숨김 ==========
+    showConfirmSheet(type, posId) {
+        const sheet = document.getElementById('closeConfirmSheet');
+        const content = document.getElementById('closeConfirmContent');
+        const executeBtn = document.getElementById('closeConfirmExecute');
+        if (!sheet || !content) return;
+
+        this._pendingCloseType = type;
+        this._pendingCloseId = posId;
+
+        if (type === 'single') {
+            const pos = this._positions.find(p => p.id === posId);
+            if (!pos) return;
+
+            const isBuy = pos.type === 'BUY' || pos.type === 0;
+            const typeStr = isBuy ? 'BUY' : 'SELL';
+            const typeClass = isBuy ? 'buy' : 'sell';
+            const profit = pos.profit || 0;
+            const profitClass = profit > 0 ? 'positive' : profit < 0 ? 'negative' : 'neutral';
+            const profitText = profit > 0 ? '+$' + profit.toFixed(2) : profit < 0 ? '-$' + Math.abs(profit).toFixed(2) : '$0.00';
+
+            content.innerHTML = `
+                <div class="close-confirm-info">
+                    <div>
+                        <span class="close-confirm-symbol">${pos.symbol}</span>
+                        <span class="close-confirm-type ${typeClass}">${typeStr}</span>
+                        <span style="color:var(--text-muted);font-size:12px;margin-left:6px;">${pos.volume}lot</span>
+                    </div>
+                    <span class="close-confirm-profit ${profitClass}">${profitText}</span>
+                </div>
+                <div class="close-confirm-message">이 포지션을 청산하시겠습니까?</div>
+            `;
+        } else {
+            const count = this._selected.size;
+            content.innerHTML = `
+                <div class="close-confirm-message" style="font-size:15px;padding:16px 0;">
+                    선택한 <strong style="color:var(--accent-cyan);">${count}개</strong> 포지션을 청산하시겠습니까?
+                </div>
+            `;
+        }
+
+        if (executeBtn) {
+            executeBtn.onclick = () => this.confirmClose();
+        }
+
+        sheet.classList.add('active');
+    },
+
+    hideConfirmSheet() {
+        const sheet = document.getElementById('closeConfirmSheet');
+        if (sheet) {
+            sheet.classList.remove('active');
+        }
+        this._pendingCloseType = null;
+        this._pendingCloseId = null;
+    },
+
+    confirmClose() {
+        this.hideConfirmSheet();
+
+        if (this._pendingCloseType === 'single' && this._pendingCloseId) {
+            this._executeCloseSingle(this._pendingCloseId);
+        } else if (this._pendingCloseType === 'multi') {
+            this._executeCloseMultiple();
+        }
+    },
+
     // ========== 개별 청산 (롱프레스) ==========
     closeSingle(posId) {
         const pos = this._positions.find(p => p.id === posId);
         if (!pos) return;
-
-        const isBuy = pos.type === 'BUY' || pos.type === 0;
-        const profit = pos.profit || 0;
-        const profitText = profit >= 0 ? '+$' + profit.toFixed(2) : '-$' + Math.abs(profit).toFixed(2);
-
-        if (confirm(pos.symbol + ' ' + (isBuy ? 'BUY' : 'SELL') + ' ' + pos.volume + 'lot\nP/L: ' + profitText + '\n\n이 포지션을 청산하시겠습니까?')) {
-            this._executeCloseSingle(posId);
-        }
+        this.showConfirmSheet('single', posId);
     },
 
     async _executeCloseSingle(posId) {
@@ -309,13 +371,14 @@ const OpenPositions = {
         }
     },
 
-    async executeClosePositions() {
+    executeClosePositions() {
         if (this._selected.size === 0) return;
+        this.showConfirmSheet('multi', null);
+    },
 
-        const count = this._selected.size;
-        if (!confirm('선택한 ' + count + '개 포지션을 청산하시겠습니까?')) return;
-
+    async _executeCloseMultiple() {
         const ids = [...this._selected];
+        const count = ids.length;
         let successCount = 0;
 
         for (const posId of ids) {
