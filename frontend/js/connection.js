@@ -98,12 +98,10 @@ document.addEventListener('visibilitychange', function() {
         const _bgDuration = window._backgroundAt ? (Date.now() - window._backgroundAt) : 0;
         console.log(`[Visibility] 포그라운드로 복귀 (백그라운드 ${Math.round(_bgDuration/1000)}초)`);
 
-        // ★★★ 60초 이상 백그라운드여도 reload 금지! WS 재연결만 ★★★
+        // 60초 이상 백그라운드였으면 전체 리로드
         if (_bgDuration > 60000) {
-            console.log('[Visibility] 🔄 60초 이상 백그라운드 — WS 재연결 (reload 안 함)');
-            reconnectAttempt = 0;
-            if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
-            connectWebSocket();
+            console.log('[Visibility] 🔄 60초 이상 백그라운드 — 전체 리로드');
+            location.reload();
             return;
         }
 
@@ -301,11 +299,11 @@ function updateConnectionStatus(status, delay = 0) {
 
 // 재연결 시도 함수
 function attemptReconnect() {
-    // ★★★ 30초간 재연결 실패해도 reload 금지! 계속 재연결 시도 ★★★
+    // ★ 30초간 재연결 실패 시 페이지 리로드
     if (window._wsDisconnectedAt && (Date.now() - window._wsDisconnectedAt > 30000)) {
-        console.log('[WS] ⚠️ 30초간 재연결 실패 — 서버 다운 플래그 설정 (reload 안 함)');
-        window._serverWasDown = true;
-        // reload 하지 않고 재연결 계속 시도
+        console.log('[WS] ⚠️ 30초간 재연결 실패 — 페이지 리로드');
+        location.reload();
+        return;
     }
 
     console.log(`[WS] 연결 시도 (attempt ${reconnectAttempt + 1})`);
@@ -385,17 +383,23 @@ function connectWebSocket() {
             console.log('[WS] Polling stopped - WebSocket connected');
         }
 
-        // ★★★ 재연결 감지 시 — reload 금지! 플래그 초기화만 ★★★
+        // ★★★ 재연결 감지 시 — 서버 다운 복구면 페이지 리로드, 아니면 softRefresh ★★★
         if (_wsHasConnectedBefore) {
+            // 서버 다운 후 복구 감지 (2회 이상 재연결 시도 = 서버 다운이었음)
             if (_prevReconnectAttempt >= 2 || window._serverWasDown) {
-                console.log(`[WS] 🔄 서버 복구 감지! (시도 ${_prevReconnectAttempt}회) 플래그 초기화 (reload 안 함)`);
+                console.log(`[WS] 🔄 서버 복구 감지! (시도 ${_prevReconnectAttempt}회) 페이지 전체 리로드...`);
                 window._serverWasDown = false;
+                location.reload();
+                return;
             }
-            console.log(`[WS] 🔄 재연결 완료 (시도 ${_prevReconnectAttempt}회)`);
+            console.log(`[WS] 🔄 재연결 감지! (시도 ${_prevReconnectAttempt}회) softRefresh 실행...`);
             // ★★★ 라이브 포지션 플래그 초기화 (재연결 후 깨끗한 상태) ★★★
             window._closeConfirmedAt = null;
             window._userClosing = false;
             window._plGaugeFrozen = false;
+            // softRefresh로 통합 (쿨다운 리셋하여 즉시 실행)
+            _lastSoftRefreshAt = 0;
+            setTimeout(() => softRefresh('ws_reconnect'), 300);
         }
         _wsHasConnectedBefore = true;
 
@@ -732,16 +736,11 @@ function connectWebSocket() {
                 const currentSym = window.currentSymbol || 'BTCUSD';
                 qePositions.forEach(qePos => {
                     const posSym = qePos.symbol || '';
-                    // ★★★ 포지션 타입 정규화 (POSITION_TYPE_BUY → BUY) ★★★
-                    const qeType = String(qePos.type || '').toUpperCase();
-                    const qeSide = qeType.includes('BUY') ? 'BUY' : 'SELL';
-                    // ★★★ 진입가 필드 호환 (라이브: openPrice, 데모: entry) ★★★
-                    const qeEntry = qePos.entry || qePos.openPrice || 0;
                     // ★ 딕셔너리에 저장 (모든 종목)
                     if (!QuickEasyPanel._positions[posSym]) {
                         QuickEasyPanel._positions[posSym] = {
-                            side: qeSide,
-                            entry: qeEntry,
+                            side: qePos.type === 'BUY' ? 'BUY' : 'SELL',
+                            entry: qePos.entry,
                             volume: qePos.volume,
                             target: qePos.target,
                             tpsl: (qePos.tp_price && qePos.sl_price) ? { tp: qePos.tp_price, sl: qePos.sl_price } : null,
@@ -757,8 +756,8 @@ function connectWebSocket() {
                             window._serverTPSL = { tp: qePos.tp_price, sl: qePos.sl_price };
                         }
                         QuickEasyPanel.showPositionView(
-                            qeSide,
-                            qeEntry,
+                            qePos.type === 'BUY' ? 'BUY' : 'SELL',
+                            qePos.entry,
                             qePos.volume,
                             qePos.target
                         );
@@ -1551,7 +1550,7 @@ async function checkUserMode() {
         if (data.has_mt5) {
             console.log('[checkUserMode] Live mode - has_mt5=true');
             // MT5 계정 연결됨 → Live 모드
-            isDemo = false; window.isDemo = false;
+            isDemo = false;
             window._checkUserModeRetries = 0;  // ★ 재시도 카운터 리셋
             document.getElementById('headerStatus').textContent = 'Connected';
             document.getElementById('statusDot').style.background = '#00ff88';
@@ -1616,7 +1615,7 @@ async function checkUserMode() {
             
         } else {
             // MT5 없음 → Demo 모드
-            isDemo = true; window.isDemo = true;
+            isDemo = true;
             window._checkUserModeRetries = 0;  // ★ 재시도 카운터 리셋
             document.getElementById('headerStatus').textContent = 'Connected';
             document.getElementById('statusDot').style.background = '#00d4ff';
@@ -1694,7 +1693,7 @@ async function checkUserMode() {
         // 3회 실패 → 데모 모드 fallback + 서버 다운 플래그
         console.warn('[checkUserMode] 3회 재시도 실패 → 데모 모드 전환');
         window._serverWasDown = true;
-        isDemo = true; window.isDemo = true;
+        isDemo = true;
         fetchDemoData();
     }
 }
@@ -2078,7 +2077,7 @@ function switchTradingMode(mode) {
         const demoControl = document.getElementById('demoControlCard');
         if (demoControl) demoControl.style.display = 'block';
         
-        isDemo = true; window.isDemo = true;
+        isDemo = true;
         // ★★★ 모드 전환 시 히스토리 캐시 + 패널 리셋 ★★★
         window._weekHistoryData = null;
         window._todayPLFixed = null;
@@ -2152,7 +2151,7 @@ function switchTradingMode(mode) {
                 const demoControl = document.getElementById('demoControlCard');
                 if (demoControl) demoControl.style.display = 'none';
                 
-                isDemo = false; window.isDemo = false;
+                isDemo = false;
                 // ★★★ 모드 전환 시 히스토리 캐시 + 패널 리셋 ★★★
                 window._weekHistoryData = null;
                 window._todayPLFixed = null;
@@ -2397,7 +2396,7 @@ async function connectMT5Account() {
             });
             
             // Live 모드로 전환
-            isDemo = false; window.isDemo = false;
+            isDemo = false;
             if (typeof resetTradingPanel === 'function') resetTradingPanel();
 
             // 배지 업데이트

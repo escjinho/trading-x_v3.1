@@ -3896,13 +3896,6 @@ async def websocket_endpoint(websocket: WebSocket):
                     "target": pos.get("target", 0)
                 })
 
-            # ★★★ 디버깅 로그: 변환된 포지션 데이터 확인 ★★★
-            if live_positions_list and _ws_loop_count % 30 == 0:  # 30초마다 1회
-                print(f"[WS] 📋 라이브 포지션 전송: {len(live_positions_list)}개")
-                if live_positions_list:
-                    _sample = live_positions_list[0]
-                    print(f"[WS] 📋 샘플: id={_sample.get('id')}, symbol={_sample.get('symbol')}, entry={_sample.get('entry')}, current={_sample.get('current')}, profit={_sample.get('profit')}, opened_at={_sample.get('opened_at')}")
-
             data = {
                 "mt5_connected": user_has_mt5 or mt5_connected or metaapi_connected,  # ★ 전체 연결 상태
                 "metaapi_connected": metaapi_connected,  # ★★★ MetaAPI 연결 상태 (마틴 주문 제한용) ★★★
