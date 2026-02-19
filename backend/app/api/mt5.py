@@ -23,6 +23,19 @@ from datetime import datetime, timedelta
 from dateutil import parser as dateutil_parser
 import pytz
 
+# ★★★ JSON 직렬화 안전 변환 헬퍼 ★★★
+def safe_json_value(val):
+    """datetime, bytes 등 JSON 직렬화 안 되는 타입을 안전하게 변환"""
+    if val is None:
+        return None
+    if isinstance(val, (datetime,)):
+        return val.isoformat()
+    if hasattr(val, 'isoformat'):  # date, datetime 등
+        return val.isoformat()
+    if isinstance(val, bytes):
+        return val.decode('utf-8', errors='replace')
+    return val
+
 from ..database import get_db
 from ..utils.crypto import encrypt, decrypt
 
@@ -3880,13 +3893,6 @@ async def websocket_endpoint(websocket: WebSocket):
             # ★★★ 필드명 통일 변환 (MetaAPI → 프론트엔드 형식) ★★★
             live_positions_list = []
             for pos in raw_positions:
-                # ★ time 필드: datetime 객체면 ISO 문자열로 변환
-                _pos_time = pos.get("time", "")
-                if hasattr(_pos_time, 'isoformat'):
-                    _pos_time = _pos_time.isoformat()
-                elif _pos_time and not isinstance(_pos_time, str):
-                    _pos_time = str(_pos_time)
-
                 live_positions_list.append({
                     "id": pos.get("id"),
                     "ticket": pos.get("id"),  # 청산용 티켓 ID
@@ -3897,7 +3903,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     "entry": pos.get("openPrice", 0),  # ★ openPrice → entry
                     "current": pos.get("currentPrice", 0),  # ★ currentPrice → current
                     "magic": pos.get("magic", 0),
-                    "opened_at": _pos_time,  # ★ time → opened_at (문자열 변환됨)
+                    "opened_at": safe_json_value(pos.get("time", "")),  # ★ datetime 안전 변환
                     "sl": pos.get("stopLoss", 0),
                     "tp": pos.get("takeProfit", 0),
                     "target": pos.get("target", 0)
@@ -3941,7 +3947,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 "martin_accumulated_loss": martin_accumulated_loss
             }
             
-            await websocket.send_text(json.dumps(data))
+            # ★★★ default=str로 datetime 등 직렬화 안 되는 타입 자동 변환 ★★★
+            await websocket.send_text(json.dumps(data, default=str))
 
             # ★★★ 서버 ping (20초마다) ★★★
             if current_time - last_ping_time > 20:
@@ -3970,6 +3977,7 @@ async def websocket_endpoint(websocket: WebSocket):
             print(f"[LIVE WS] User {user_id} WebSocket disconnected")
             break
         except Exception as e:
-                if str(e):
-                    print(f"[LIVE WS] WebSocket Error (user {user_id}): {e}")
-                await asyncio.sleep(random.uniform(1.0, 3.0))
+            # ★ 에러 발생해도 WS 연결 유지, 해당 루프만 스킵
+            if str(e):
+                print(f"[LIVE WS] WebSocket Error (user {user_id}): {e}")
+            await asyncio.sleep(random.uniform(1.0, 3.0))
