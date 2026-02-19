@@ -198,6 +198,9 @@
     border-bottom: 1px solid rgba(255,255,255,0.04);
     cursor: pointer;
     transition: background 0.15s;
+    /* ★ 롱프레스 지원: pan-y만 허용 (수직 스크롤), 다른 제스처는 JS에서 처리 */
+    touch-action: pan-y;
+    -webkit-touch-callout: none;
 }
 
 .open-pos-card::before {

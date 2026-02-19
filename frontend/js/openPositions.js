@@ -163,15 +163,20 @@ const OpenPositions = {
             // 선택 상태
             const selectedClass = this._selected.has(pos.id) ? ' selected' : '';
 
+            // ★★★ pos.id를 따옴표로 감싸기 (라이브 모드에서 문자열 ID 지원) ★★★
+            const safeId = String(pos.id).replace(/'/g, "\\'");
+
             html += `
             <div class="open-pos-card ${cardClass}${selectedClass}" data-pos-id="${pos.id}"
-                 ontouchstart="OpenPositions._onTouchStart(${pos.id}, event)"
+                 ontouchstart="OpenPositions._onTouchStart('${safeId}', event)"
+                 ontouchmove="OpenPositions._onTouchMove(event)"
                  ontouchend="OpenPositions._onTouchEnd(event)"
                  ontouchcancel="OpenPositions._onTouchEnd(event)"
-                 onmousedown="OpenPositions._onTouchStart(${pos.id}, event)"
+                 onmousedown="OpenPositions._onTouchStart('${safeId}', event)"
+                 onmousemove="OpenPositions._onTouchMove(event)"
                  onmouseup="OpenPositions._onTouchEnd(event)"
                  onmouseleave="OpenPositions._onTouchEnd(event)"
-                 ${this._closeMode ? 'onclick="OpenPositions.toggleSelect(' + pos.id + ', event)"' : ''}>
+                 ${this._closeMode ? `onclick="OpenPositions.toggleSelect('${safeId}', event)"` : ''}>
                 <div class="open-pos-row1">
                     <div class="open-pos-info">
                         ${checkboxHtml}
@@ -225,15 +230,34 @@ const OpenPositions = {
 
     // ========== 롱프레스 (개별 청산) ==========
     _onTouchStart(posId, event) {
+        console.log('[OpenPositions] touchstart 감지, posId:', posId, 'closeMode:', this._closeMode);
         if (this._closeMode) return;
+
+        // 스크롤 감지용 시작 위치 저장
+        this._touchStartY = event.touches ? event.touches[0].clientY : event.clientY;
         this._longPressId = posId;
         this._longPressTimer = setTimeout(() => {
+            console.log('[OpenPositions] 롱프레스 600ms 완료, closeSingle 호출:', posId);
             this._longPressTimer = null;
             this.closeSingle(posId);
         }, 600);
     },
 
+    _onTouchMove(event) {
+        // 스크롤 시 롱프레스 취소
+        if (this._longPressTimer) {
+            const currentY = event.touches ? event.touches[0].clientY : event.clientY;
+            const deltaY = Math.abs(currentY - (this._touchStartY || 0));
+            if (deltaY > 10) {
+                console.log('[OpenPositions] touchmove 감지, 롱프레스 취소 (스크롤)');
+                clearTimeout(this._longPressTimer);
+                this._longPressTimer = null;
+            }
+        }
+    },
+
     _onTouchEnd(event) {
+        console.log('[OpenPositions] touchend 감지, timer:', this._longPressTimer);
         if (this._longPressTimer) {
             clearTimeout(this._longPressTimer);
             this._longPressTimer = null;
