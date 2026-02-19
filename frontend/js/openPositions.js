@@ -353,8 +353,11 @@ const OpenPositions = {
                     updateTodayPL(resp.profit);
                 }
 
+                // ★★★ _positions 배열에서 제거 ★★★
+                this._positions = this._positions.filter(p => p.id !== posId && p.id != posId);
+
                 // ★★★ 패널별 상태 초기화 ★★★
-                this._syncPanelAfterClose(posMagic, posSymbol);
+                this._syncPanelAfterClose(posMagic, posSymbol, posId);
             } else {
                 showToast('청산 실패: ' + (resp?.message || ''), 'error');
             }
@@ -365,11 +368,12 @@ const OpenPositions = {
     },
 
     // ★★★ 청산 후 패널 상태 동기화 ★★★
-    _syncPanelAfterClose(magic, symbol) {
-        console.log('[OpenPositions] _syncPanelAfterClose:', { magic, symbol });
+    _syncPanelAfterClose(magic, symbol, posId) {
+        console.log('[OpenPositions] _syncPanelAfterClose:', { magic, symbol, posId });
 
-        // QuickEasy (magic=100003)
-        if (magic === 100003 && typeof QuickEasyPanel !== 'undefined') {
+        // QuickEasy (magic=100003) - 느슨한 비교 사용
+        if (magic == 100003 && typeof QuickEasyPanel !== 'undefined') {
+            console.log('[OpenPositions] QE 패널 상태 초기화:', symbol);
             // 포지션 딕셔너리에서 제거
             if (QuickEasyPanel._positions && symbol) {
                 delete QuickEasyPanel._positions[symbol];
@@ -387,21 +391,22 @@ const OpenPositions = {
             }
         }
 
-        // BuySell Pro (magic=100001)
-        if (magic === 100001) {
+        // BuySell Pro (magic=100001) - 느슨한 비교 사용
+        if (magic == 100001) {
+            console.log('[OpenPositions] BuySell 패널 상태 초기화');
             if (typeof updatePositionUI === 'function') {
                 updatePositionUI(false, null);
             }
         }
 
-        // V5 Multi (magic=100002)
-        if (magic === 100002) {
+        // V5 Multi (magic=100002) - 느슨한 비교 사용
+        if (magic == 100002) {
+            console.log('[OpenPositions] V5 패널 상태 초기화');
             if (typeof v5Positions !== 'undefined' && Array.isArray(v5Positions)) {
-                // symbol로 해당 포지션 제거
-                const idx = v5Positions.findIndex(p => p.symbol === symbol);
-                if (idx !== -1) {
-                    v5Positions.splice(idx, 1);
-                }
+                // posId와 symbol 둘 다로 필터링
+                window.v5Positions = v5Positions.filter(p =>
+                    p.id !== posId && p.id != posId && p.symbol !== symbol
+                );
             }
             // V5 패널 UI 갱신
             if (typeof updateMultiOrderPanelV5 === 'function') {
@@ -500,8 +505,10 @@ const OpenPositions = {
                     if (resp.profit !== undefined && typeof updateTodayPL === 'function') {
                         updateTodayPL(resp.profit);
                     }
+                    // ★★★ _positions 배열에서 제거 ★★★
+                    this._positions = this._positions.filter(p => p.id !== posId && p.id != posId);
                     // ★★★ 패널별 상태 초기화 ★★★
-                    this._syncPanelAfterClose(info.magic, info.symbol);
+                    this._syncPanelAfterClose(info.magic, info.symbol, posId);
                 }
             } catch (e) {
                 console.error('[OpenPositions] Close error for', posId, e);
