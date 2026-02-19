@@ -136,7 +136,6 @@
 .history-time {
     font-size: 11px;
     color: var(--text-muted);
-    font-family: 'Roboto Mono', monospace;
     white-space: nowrap;
 }
 
