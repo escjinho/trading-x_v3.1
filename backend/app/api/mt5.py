@@ -3290,12 +3290,8 @@ async def websocket_endpoint(websocket: WebSocket):
                     last_user_metaapi_sync = current_time
                     try:
                         _u_account = await get_user_account_info(user_id, _ws_user_metaapi_id)
-                        if _user_has_position:
-                            # 포지션 있을 때만 포지션도 조회 (API 1콜 절약)
-                            _u_positions = await get_user_positions(user_id, _ws_user_metaapi_id)
-                        else:
-                            # 포지션 없으면 계정정보만 (60초에 1콜)
-                            _u_positions = user_metaapi_cache.get(user_id, {}).get("positions", [])
+                        # ★★★ 항상 포지션 조회 (모든 magic 포지션 표시 필요) ★★★
+                        _u_positions = await get_user_positions(user_id, _ws_user_metaapi_id)
 
                         if _u_account:
                             user_metaapi_cache[user_id] = {
@@ -3303,8 +3299,8 @@ async def websocket_endpoint(websocket: WebSocket):
                                 "positions": _u_positions or [],
                                 "last_sync": current_time
                             }
-                            # ★ 포지션 보유 여부 업데이트
-                            _user_has_position = len([p for p in (_u_positions or []) if p.get("magic", 0) == magic]) > 0
+                            # ★ 포지션 보유 여부 업데이트 (모든 magic 포지션 기준)
+                            _user_has_position = len(_u_positions or []) > 0
                     except Exception as _sync_err:
                         print(f"[LIVE WS] User {user_id} MetaAPI sync error: {_sync_err}")
 
@@ -3349,11 +3345,15 @@ async def websocket_endpoint(websocket: WebSocket):
                     if _is_user_close_recent:
                         # ★★★ 사용자가 직접 청산 → WS 자동감지 완전 스킵 + 캐시 강제 정리 ★★★
                         print(f"[LIVE WS] ⏭️ User {user_id} 사용자 청산 후 {current_time - _user_ack_time:.1f}초 — 자동감지 스킵")
+                        # ★ 청산된 포지션만 캐시에서 제거 (다른 포지션은 유지!)
+                        _closed_pos_id = _prev_user_position.get("id") if _prev_user_position else None
+                        if _closed_pos_id and user_id in user_live_cache:
+                            user_live_cache[user_id]["positions"] = [
+                                p for p in user_live_cache[user_id].get("positions", [])
+                                if p.get("id") != _closed_pos_id
+                            ]
                         _prev_user_position = None
                         _position_disappeared_count = 0
-                        # ★ 캐시에 남아있는 포지션도 강제 제거
-                        if user_id in user_live_cache:
-                            user_live_cache[user_id]["positions"] = []
                     else:
                         _position_disappeared_count += 1
                         # 2회 연속 확인 시 청산으로 확정 (SL/TP 빠른 감지 필요)

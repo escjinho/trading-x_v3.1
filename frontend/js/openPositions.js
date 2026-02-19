@@ -326,22 +326,24 @@ const OpenPositions = {
     },
 
     async _executeCloseSingle(posId) {
-        // ★ posId를 정수로 변환
-        const ticketId = parseInt(posId, 10);
-
         // ★ 청산 전 포지션 정보 저장 (패널 업데이트용)
         const pos = this._positions.find(p => p.id === posId || p.id == posId);
         const posMagic = pos ? pos.magic : null;
         const posSymbol = pos ? pos.symbol : null;
 
         // Demo/Live 분기
-        const endpoint = isDemo ? '/demo/close' : '/mt5/close';
-        const fullUrl = endpoint + '?ticket=' + ticketId;
+        // ★★★ 데모: ticket (정수), 라이브: position_id (문자열) ★★★
+        let fullUrl;
+        if (isDemo) {
+            const ticketId = parseInt(posId, 10);
+            fullUrl = '/demo/close?ticket=' + ticketId;
+        } else {
+            // 라이브: position_id는 문자열로 전달 (MetaAPI ID)
+            fullUrl = '/mt5/close?position_id=' + encodeURIComponent(posId) + '&symbol=' + encodeURIComponent(posSymbol || '');
+        }
 
         console.log('[OpenPositions] _executeCloseSingle:', {
             originalPosId: posId,
-            ticketId: ticketId,
-            endpoint: endpoint,
             fullUrl: fullUrl,
             isDemo: isDemo,
             magic: posMagic,
@@ -487,24 +489,29 @@ const OpenPositions = {
             return { posId, magic: pos?.magic, symbol: pos?.symbol };
         });
 
-        // Demo/Live 분기
-        const endpoint = isDemo ? '/demo/close' : '/mt5/close';
         console.log('[OpenPositions] _executeCloseMultiple:', {
             count: count,
             ids: ids,
-            endpoint: endpoint,
             isDemo: isDemo,
             posInfos: posInfos
         });
 
         for (let i = 0; i < ids.length; i++) {
             const posId = ids[i];
-            const ticketId = parseInt(posId, 10);
             const info = posInfos[i];
 
+            // ★★★ 데모: ticket, 라이브: position_id ★★★
+            let closeUrl;
+            if (isDemo) {
+                const ticketId = parseInt(posId, 10);
+                closeUrl = '/demo/close?ticket=' + ticketId;
+            } else {
+                closeUrl = '/mt5/close?position_id=' + encodeURIComponent(posId) + '&symbol=' + encodeURIComponent(info.symbol || '');
+            }
+
             try {
-                const resp = await apiCall(endpoint + '?ticket=' + ticketId, 'POST');
-                console.log('[OpenPositions] Close', ticketId, ':', resp);
+                const resp = await apiCall(closeUrl, 'POST');
+                console.log('[OpenPositions] Close', posId, ':', resp);
 
                 if (resp && resp.success !== false) {
                     successCount++;
