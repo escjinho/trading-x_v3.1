@@ -324,7 +324,7 @@ const OpenPositions = {
         const ticketId = parseInt(posId, 10);
 
         // Demo/Live 분기
-        const endpoint = window.isDemo ? '/demo/close' : '/mt5/close';
+        const endpoint = isDemo ? '/demo/close' : '/mt5/close';
         const fullUrl = endpoint + '?ticket=' + ticketId;
 
         console.log('[OpenPositions] _executeCloseSingle:', {
@@ -332,7 +332,7 @@ const OpenPositions = {
             ticketId: ticketId,
             endpoint: endpoint,
             fullUrl: fullUrl,
-            isDemo: window.isDemo
+            isDemo: isDemo
         });
 
         try {
@@ -415,12 +415,12 @@ const OpenPositions = {
         let successCount = 0;
 
         // Demo/Live 분기
-        const endpoint = window.isDemo ? '/demo/close' : '/mt5/close';
+        const endpoint = isDemo ? '/demo/close' : '/mt5/close';
         console.log('[OpenPositions] _executeCloseMultiple:', {
             count: count,
             ids: ids,
             endpoint: endpoint,
-            isDemo: window.isDemo
+            isDemo: isDemo
         });
 
         for (const posId of ids) {

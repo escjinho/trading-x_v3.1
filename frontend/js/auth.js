@@ -21,6 +21,7 @@ const isGuest = isGuestParam || sessionStorage.getItem('guest_mode') === 'true';
 window.isGuest = isGuest;
 
 let isDemo = true;
+window.isDemo = isDemo;  // ★ 전역 노출 (다른 모듈에서 사용)
 
 // ========== Session Config ==========
 const SESSION_TIMEOUT = 60 * 60 * 1000;  // 1시간 (밀리초)
