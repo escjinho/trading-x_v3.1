@@ -3851,16 +3851,36 @@ async def websocket_endpoint(websocket: WebSocket):
                     print(f"[LIVE WS] ✅ User {user_id} 새 포지션 감지 — 전송 허용 (old={_ack_pos_id}, new={_current_pos_id})")
 
             # ★★★ 라이브 positions 배열 구성 (Open Positions 탭용) ★★★
-            live_positions_list = []
+            # MetaAPI 원본 필드 → 프론트엔드 통일 필드로 변환
+            raw_positions = []
             if _ws_use_user_metaapi and user_id:
                 # 유저별 MetaAPI 포지션
-                live_positions_list = user_metaapi_cache.get(user_id, {}).get("positions", [])
+                raw_positions = user_metaapi_cache.get(user_id, {}).get("positions", [])
             elif user_id and user_id in user_live_cache:
                 # user_live_cache 포지션
-                live_positions_list = user_live_cache[user_id].get("positions", [])
+                raw_positions = user_live_cache[user_id].get("positions", [])
             else:
                 # 공유 MetaAPI 포지션
-                live_positions_list = metaapi_positions or []
+                raw_positions = metaapi_positions or []
+
+            # ★★★ 필드명 통일 변환 (MetaAPI → 프론트엔드 형식) ★★★
+            live_positions_list = []
+            for pos in raw_positions:
+                live_positions_list.append({
+                    "id": pos.get("id"),
+                    "ticket": pos.get("id"),  # 청산용 티켓 ID
+                    "symbol": pos.get("symbol"),
+                    "type": pos.get("type"),  # POSITION_TYPE_BUY → 프론트에서 정규화
+                    "volume": pos.get("volume", 0),
+                    "profit": pos.get("profit") or pos.get("unrealizedProfit", 0),
+                    "entry": pos.get("openPrice", 0),  # ★ openPrice → entry
+                    "current": pos.get("currentPrice", 0),  # ★ currentPrice → current
+                    "magic": pos.get("magic", 0),
+                    "opened_at": pos.get("time", ""),  # ★ time → opened_at
+                    "sl": pos.get("stopLoss", 0),
+                    "tp": pos.get("takeProfit", 0),
+                    "target": pos.get("target", 0)
+                })
 
             data = {
                 "mt5_connected": user_has_mt5 or mt5_connected or metaapi_connected,  # ★ 전체 연결 상태
