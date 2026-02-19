@@ -4102,3 +4102,56 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
         border-radius: 8px;
     }
 }
+
+/* ========== 차트 로딩 오버레이 (지표 변경 시 번쩍임 방지) ========== */
+.chart-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #131722;
+    z-index: 200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.chart-loading-overlay.active {
+    display: flex;
+    opacity: 1;
+}
+
+.chart-loading-overlay.fade-out {
+    opacity: 0;
+}
+
+.chart-loading-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.chart-loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(0, 212, 255, 0.2);
+    border-top-color: var(--accent-cyan);
+    border-radius: 50%;
+    animation: chartSpinner 0.8s linear infinite;
+}
+
+@keyframes chartSpinner {
+    to { transform: rotate(360deg); }
+}
+
+.chart-loading-text {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.6);
+    letter-spacing: 1px;
+}

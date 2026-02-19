@@ -41,6 +41,43 @@ const IndicatorManager = {
         console.log('[IndicatorManager] Initialized successfully');
     },
 
+    // ★★★ 차트 로딩 오버레이 (지표 변경 시 번쩍임 방지) ★★★
+    _overlayTimeout: null,
+
+    showChartOverlay() {
+        const overlay = document.getElementById('chartLoadingOverlay');
+        if (!overlay) return;
+
+        // 기존 타이머 취소
+        if (this._overlayTimeout) {
+            clearTimeout(this._overlayTimeout);
+            this._overlayTimeout = null;
+        }
+
+        overlay.classList.remove('fade-out');
+        overlay.classList.add('active');
+        console.log('[IndicatorManager] Chart overlay shown');
+    },
+
+    hideChartOverlay(delay = 800) {
+        const overlay = document.getElementById('chartLoadingOverlay');
+        if (!overlay) return;
+
+        // 기존 타이머 취소
+        if (this._overlayTimeout) {
+            clearTimeout(this._overlayTimeout);
+        }
+
+        this._overlayTimeout = setTimeout(() => {
+            overlay.classList.add('fade-out');
+            // 페이드아웃 완료 후 완전히 숨김
+            setTimeout(() => {
+                overlay.classList.remove('active', 'fade-out');
+                console.log('[IndicatorManager] Chart overlay hidden');
+            }, 300);
+        }, delay);
+    },
+
     /**
      * 메인 차트 시간축 동기화 설정
      */
@@ -231,6 +268,9 @@ const IndicatorManager = {
 
         console.log(`[IndicatorManager] Adding indicator: ${normalizedId}`);
 
+        // ★ 로딩 오버레이 표시
+        this.showChartOverlay();
+
         // enabled 상태 설정
         config.enabled = true;
 
@@ -255,6 +295,8 @@ const IndicatorManager = {
         }, 300);
         setTimeout(() => {
             window.dispatchEvent(new Event('resize'));
+            // ★ 로딩 오버레이 숨김 (600ms 후 + 200ms 버퍼)
+            this.hideChartOverlay(200);
         }, 600);
     },
 
@@ -268,6 +310,9 @@ const IndicatorManager = {
         if (!indicator) return;
 
         console.log(`[IndicatorManager] Removing indicator: ${normalizedId}`);
+
+        // ★ 로딩 오버레이 표시
+        this.showChartOverlay();
 
         const config = IndicatorConfig.get(normalizedId);
 
@@ -294,6 +339,8 @@ const IndicatorManager = {
         }, 300);
         setTimeout(() => {
             window.dispatchEvent(new Event('resize'));
+            // ★ 로딩 오버레이 숨김
+            this.hideChartOverlay(200);
         }, 600);
     },
 
@@ -302,9 +349,25 @@ const IndicatorManager = {
      */
     removeAll() {
         console.log('[IndicatorManager] Removing all indicators');
+
+        // ★ 오버레이는 한 번만 표시
+        this.showChartOverlay();
+
         const ids = Object.keys(this.activeIndicators);
+
+        // 개별 removeIndicator의 오버레이 호출 방지
         ids.forEach(id => {
-            this.removeIndicator(id);
+            const normalizedId = IndicatorConfig.normalizeId(id);
+            const indicator = this.activeIndicators[normalizedId];
+            if (!indicator) return;
+
+            const config = IndicatorConfig.get(normalizedId);
+            if (config.type === 'overlay') {
+                this.removeOverlayIndicator(normalizedId);
+            } else if (config.type === 'panel') {
+                this.removePanelIndicator(normalizedId);
+            }
+            delete this.activeIndicators[normalizedId];
         });
 
         // IndicatorConfig의 enabled 상태도 초기화
@@ -313,6 +376,13 @@ const IndicatorManager = {
 
         // 메인 차트 높이 복원
         this.restoreMainChartHeight();
+
+        // ★ 레이아웃 갱신 후 오버레이 숨김
+        setTimeout(() => {
+            this.updateLayout();
+            window.dispatchEvent(new Event('resize'));
+            this.hideChartOverlay(200);
+        }, 400);
     },
 
     /**
