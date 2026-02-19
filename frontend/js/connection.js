@@ -724,6 +724,11 @@ function connectWebSocket() {
                 }
             }
 
+            // ★ Open Positions 탭 실시간 업데이트
+            if (typeof OpenPositions !== 'undefined' && data.positions) {
+                OpenPositions.updatePositions(data.positions);
+            }
+
             // ★★★ Quick&Easy 포지션 복구 (positions 배열에서 magic=100003 찾기) ★★★
             // data.position 유무와 상관없이 독립적으로 체크
             if (typeof QuickEasyPanel !== 'undefined' && data.positions && Array.isArray(data.positions)) {
@@ -949,6 +954,11 @@ function connectWebSocket() {
                 accFree.textContent = newFreeText;
             }
         }
+        // ★ Open Positions 탭 실시간 업데이트
+        if (typeof OpenPositions !== 'undefined' && data.positions) {
+            OpenPositions.updatePositions(data.positions);
+        }
+
         // Current P&L 업데이트 (전체 포지션 손익 합계 — BuySell + V5 + QE)
         if (accCurrentPL) {
             let currentProfit = 0;
@@ -1419,6 +1429,11 @@ async function fetchAccountData() {
                 }
             }
 
+            // ★ Open Positions 탭 업데이트
+            if (typeof OpenPositions !== 'undefined' && data.positions) {
+                OpenPositions.updatePositions(data.positions);
+            }
+
             // Current P&L 업데이트 (전체 포지션 손익 합계 — BuySell + V5 + QE)
             if (accCurrentPL) {
                 let currentProfit = 0;
@@ -1858,6 +1873,11 @@ async function fetchDemoData() {
                 accFree.textContent = '$' + Math.round(freeMargin).toLocaleString();
             }
             
+            // ★ Open Positions 탭 업데이트
+            if (typeof OpenPositions !== 'undefined' && data.positions) {
+                OpenPositions.updatePositions(data.positions);
+            }
+
             // Current P&L 업데이트 (전체 포지션 손익 — positions 배열 전체 합산)
             if (accCurrentPL) {
                 let currentProfit = 0;
@@ -1878,7 +1898,7 @@ async function fetchDemoData() {
                     accCurrentPL.style.color = 'var(--text-primary)';
                 }
             }
-            
+
             // 포지션 정보
             if (data.position) {
                 console.log('[fetchDemoData] ✅ Position exists! (polling fallback)');
