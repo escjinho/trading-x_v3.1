@@ -11,6 +11,64 @@ let wsConnectionStartTime = 0;  // ★ WS 연결 시작 시간 (가짜 이벤트
 let _wsHasConnectedBefore = false;  // ★ 재연결 감지용 (최초 연결 vs 재연결 구분)
 let _lastSoftRefreshAt = 0;  // ★★★ softRefresh 쿨다운용 타임스탬프 ★★★
 
+// ★★★ 서비스 안정성 개선 v3.1 ★★★
+let _statusChangeTimer = null;  // 상태 변경 딜레이 타이머
+let _lastToastMessages = {};    // 토스트 메시지 중복 방지
+let _serverDownDetected = false; // 서버 다운 감지 플래그
+const STATUS_CHANGE_DELAY = 3000; // 상태 변경 딜레이 (3초)
+const TOAST_COOLDOWN = 30000;     // 토스트 쿨다운 (30초)
+
+// ★★★ 에러 토스트 쓰로틀링 (같은 메시지 30초 쿨다운) ★★★
+function showThrottledToast(message, type = 'error', duration = 3000) {
+    const now = Date.now();
+    const key = `${type}:${message}`;
+
+    // 30초 이내 같은 메시지는 무시
+    if (_lastToastMessages[key] && (now - _lastToastMessages[key]) < TOAST_COOLDOWN) {
+        console.log(`[Toast] 쓰로틀링: ${message} (${Math.round((TOAST_COOLDOWN - (now - _lastToastMessages[key])) / 1000)}초 남음)`);
+        return;
+    }
+
+    _lastToastMessages[key] = now;
+
+    // 원본 showToast 호출
+    if (typeof showToast === 'function') {
+        showToast(message, type, duration);
+    }
+}
+
+// ★★★ 연결 상태 변경 딜레이 (짧은 끊김 시 깜빡임 방지) ★★★
+function updateConnectionStatusDelayed(status, delay = 0) {
+    const statusDot = document.getElementById('statusDot');
+    const headerStatus = document.getElementById('headerStatus');
+
+    // 연결됨 상태는 즉시 반영
+    if (status === 'connected') {
+        if (_statusChangeTimer) {
+            clearTimeout(_statusChangeTimer);
+            _statusChangeTimer = null;
+        }
+        if (statusDot) statusDot.classList.remove('disconnected');
+        if (headerStatus) headerStatus.textContent = 'Connected';
+        return;
+    }
+
+    // 연결 끊김/재연결 중 상태는 3초 딜레이 (짧은 끊김 필터링)
+    if (_statusChangeTimer) return; // 이미 딜레이 중이면 무시
+
+    _statusChangeTimer = setTimeout(() => {
+        _statusChangeTimer = null;
+
+        if (status === 'disconnected') {
+            if (statusDot) statusDot.classList.add('disconnected');
+            if (headerStatus) headerStatus.textContent = 'Disconnected';
+        } else if (status === 'reconnecting') {
+            if (statusDot) statusDot.classList.add('disconnected');
+            if (headerStatus) headerStatus.textContent = `Reconnecting...`;
+        }
+    }, STATUS_CHANGE_DELAY);
+}
+
 // ★ 장 마감 체크 헬퍼 (MarketSchedule 우선 — 공휴일 포함)
 function isCurrentMarketClosed() {
     // MarketSchedule 모듈 우선 (정확한 브로커 스케줄)
@@ -31,15 +89,16 @@ function isCurrentMarketClosed() {
 }
 
 // ★★★ softRefresh() — 화면 전환/이벤트 시 페이지 리로드 없이 데이터만 갱신 ★★★
-async function softRefresh(reason = '') {
-    // 3초 쿨다운 (스팸 방지)
+// force=true: 쿨다운 무시 (서버 복구 시)
+async function softRefresh(reason = '', force = false) {
+    // 3초 쿨다운 (스팸 방지) - force=true면 무시
     const now = Date.now();
-    if (now - _lastSoftRefreshAt < 3000) {
+    if (!force && (now - _lastSoftRefreshAt < 3000)) {
         console.log(`[softRefresh] ⏳ 쿨다운 중 (${Math.round((3000 - (now - _lastSoftRefreshAt)) / 1000)}초 남음)`);
         return;
     }
     _lastSoftRefreshAt = now;
-    console.log(`[softRefresh] 🔄 실행 - reason: ${reason || 'manual'}`);
+    console.log(`[softRefresh] 🔄 실행 - reason: ${reason || 'manual'}, force: ${force}`);
 
     try {
         // 1. 계정 데이터 새로고침
@@ -58,7 +117,8 @@ async function softRefresh(reason = '') {
             checkMetaAPIStatus();
         }
 
-        // 3. 거래 내역 새로고침
+        // 3. 거래 내역 새로고침 (trading.js의 loadHistory 우선)
+        window._historyLoading = false; // 중복 방지 플래그 리셋
         if (typeof loadHistory === 'function') {
             loadHistory();
         }
@@ -76,9 +136,42 @@ async function softRefresh(reason = '') {
         // 6. 인디케이터 강제 업데이트 (다음 WS 메시지에서 즉시 반영되도록)
         window.lastIndicatorUpdate = 0;
 
+        // 7. Open Positions 갱신
+        if (typeof OpenPositions !== 'undefined' && typeof OpenPositions.render === 'function') {
+            // positions 데이터는 fetchDemoData/fetchAccountData에서 이미 업데이트됨
+            OpenPositions.render();
+        }
+
+        // 8. UI 상태 확인 및 갱신 (계좌 정보 표시 영역)
+        _updateUIVisibility();
+
         console.log(`[softRefresh] ✅ 완료`);
     } catch (e) {
         console.error('[softRefresh] ❌ 에러:', e);
+    }
+}
+
+// ★★★ UI 가시성 갱신 (계좌 연결 상태에 따른 화면 전환) ★★★
+function _updateUIVisibility() {
+    const accountCard = document.getElementById('accountCard');
+    const connectMT5Card = document.getElementById('connectMT5Card');
+    const demoCard = document.getElementById('demoAccountCard');
+
+    if (isDemo) {
+        // Demo 모드: Demo 카드 표시, MT5 연결 카드 숨김
+        if (demoCard) demoCard.style.display = '';
+        if (connectMT5Card) connectMT5Card.style.display = 'none';
+        if (accountCard) accountCard.style.display = 'none';
+    } else if (window._mt5Connected) {
+        // Live 모드 + MT5 연결됨: 계좌 카드 표시
+        if (accountCard) accountCard.style.display = '';
+        if (connectMT5Card) connectMT5Card.style.display = 'none';
+        if (demoCard) demoCard.style.display = 'none';
+    } else {
+        // Live 모드 + MT5 미연결: 연결 카드 표시
+        if (connectMT5Card) connectMT5Card.style.display = '';
+        if (accountCard) accountCard.style.display = 'none';
+        if (demoCard) demoCard.style.display = 'none';
     }
 }
 
@@ -231,7 +324,8 @@ function startHeartbeatMonitor() {
 
             ws = null;
             window.wsConnected = false;
-            updateConnectionStatus('disconnected');
+            _serverDownDetected = true; // 서버 다운 감지
+            updateConnectionStatusDelayed('disconnected');
 
             // 즉시 재연결 (백오프 리셋)
             reconnectAttempt = 0;
@@ -271,8 +365,13 @@ function reconnectWithBackoff() {
     const delay = getReconnectDelay();
     console.log(`[WS] 재연결 시도 ${reconnectAttempt + 1} - ${delay/1000}초 후`);
 
-    // UI 상태: Reconnecting...
-    updateConnectionStatus('reconnecting', delay);
+    // ★ 2회 이상 재연결 시도 = 서버 다운 감지
+    if (reconnectAttempt >= 1) {
+        _serverDownDetected = true;
+    }
+
+    // UI 상태: Reconnecting... (딜레이 적용으로 짧은 끊김 필터링)
+    updateConnectionStatusDelayed('reconnecting', delay);
 
     reconnectTimer = setTimeout(() => {
         reconnectAttempt++;
@@ -301,7 +400,8 @@ function updateConnectionStatus(status, delay = 0) {
 function attemptReconnect() {
     // ★ 30초간 재연결 실패 시 페이지 리로드
     if (window._wsDisconnectedAt && (Date.now() - window._wsDisconnectedAt > 30000)) {
-        console.log('[WS] ⚠️ 30초간 재연결 실패 — 페이지 리로드');
+        console.log('[WS] 30초간 재연결 실패 — 페이지 리로드');
+        _serverDownDetected = true; // 서버 다운 플래그 설정
         location.reload();
         return;
     }
@@ -312,6 +412,7 @@ function attemptReconnect() {
         connectWebSocket();
     } catch (e) {
         console.error('[WS] 연결 오류:', e);
+        _serverDownDetected = true;
         reconnectWithBackoff();
     }
 }
@@ -365,13 +466,18 @@ function connectWebSocket() {
         console.log('WebSocket connected');
         window.wsConnected = true;  // ★ WS 연결 플래그 (폴링 깜빡임 방지)
         window._wsDisconnectedAt = null;  // ★ 재연결 성공 시 타이머 리셋
-        document.getElementById('statusDot').classList.remove('disconnected');
-        document.getElementById('headerStatus').textContent = 'Connected';
+
+        // ★★★ 연결 상태 즉시 반영 (딜레이 타이머 취소) ★★★
+        updateConnectionStatusDelayed('connected');
+
         wsRetryCount = 0;
 
         // ★★★ reconnectAttempt 저장 후 리셋 (순서 중요!) ★★★
         const _prevReconnectAttempt = reconnectAttempt;
+        const _wasServerDown = _serverDownDetected; // 서버 다운 여부 저장
         reconnectAttempt = 0; // 백오프 카운터 리셋
+        _serverDownDetected = false; // 서버 다운 플래그 리셋
+
         if (reconnectTimer) {
             clearTimeout(reconnectTimer);
             reconnectTimer = null;
@@ -383,23 +489,22 @@ function connectWebSocket() {
             console.log('[WS] Polling stopped - WebSocket connected');
         }
 
-        // ★★★ 재연결 감지 시 — 서버 다운 복구면 페이지 리로드, 아니면 softRefresh ★★★
+        // ★★★ 재연결 감지 시 — 서버 다운 복구면 페이지 리로드 ★★★
         if (_wsHasConnectedBefore) {
-            // 서버 다운 후 복구 감지 (2회 이상 재연결 시도 = 서버 다운이었음)
-            if (_prevReconnectAttempt >= 2 || window._serverWasDown) {
-                console.log(`[WS] 🔄 서버 복구 감지! (시도 ${_prevReconnectAttempt}회) 페이지 전체 리로드...`);
+            // 서버 다운 후 복구 감지 (2회 이상 재연결 시도 OR _serverDownDetected)
+            if (_wasServerDown || _prevReconnectAttempt >= 2 || window._serverWasDown) {
+                console.log(`[WS] 🔄 서버 복구 감지! (시도 ${_prevReconnectAttempt}회, serverDown=${_wasServerDown}) 페이지 전체 리로드...`);
                 window._serverWasDown = false;
                 location.reload();
                 return;
             }
-            console.log(`[WS] 🔄 재연결 감지! (시도 ${_prevReconnectAttempt}회) softRefresh 실행...`);
+            console.log(`[WS] 🔄 재연결 감지! (시도 ${_prevReconnectAttempt}회) 강제 softRefresh 실행...`);
             // ★★★ 라이브 포지션 플래그 초기화 (재연결 후 깨끗한 상태) ★★★
             window._closeConfirmedAt = null;
             window._userClosing = false;
             window._plGaugeFrozen = false;
-            // softRefresh로 통합 (쿨다운 리셋하여 즉시 실행)
-            _lastSoftRefreshAt = 0;
-            setTimeout(() => softRefresh('ws_reconnect'), 300);
+            // ★★★ 강제 softRefresh (쿨다운 무시) ★★★
+            setTimeout(() => softRefresh('ws_reconnect', true), 300);
         }
         _wsHasConnectedBefore = true;
 
@@ -1309,9 +1414,9 @@ function connectWebSocket() {
             if (wasConnected === true && !data.metaapi_connected) {
                 console.log('[WS Live] ⚠️ MetaAPI 연결 끊김 감지!');
 
-                // 마틴 모드일 때 경고 토스트
+                // 마틴 모드일 때 경고 토스트 (쓰로틀링 적용)
                 if (currentMode === 'martin' && martinEnabled) {
-                    showToast('MetaAPI 연결이 불안정합니다\n주문이 제한됩니다', 'warning', 5000);
+                    showThrottledToast('MetaAPI 연결이 불안정합니다\n주문이 제한됩니다', 'warning', 5000);
 
                     // 마틴 주문 버튼 비활성화
                     document.querySelectorAll('.trade-btn').forEach(btn => {
@@ -1362,7 +1467,7 @@ function connectWebSocket() {
         if (intentionalClose) {
             console.log('[WS] Intentional close - skipping reconnect');
             intentionalClose = false;
-            updateConnectionStatus('disconnected');
+            updateConnectionStatusDelayed('disconnected');
             return;
         }
 
@@ -1685,7 +1790,7 @@ async function checkUserMode() {
 
         if (window._checkUserModeRetries <= 3) {
             console.log(`[checkUserMode] 재시도 ${window._checkUserModeRetries}/3 (3초 후)`);
-            showToast('서버에 연결하는 중입니다', 'info');
+            showThrottledToast('서버에 연결하는 중입니다', 'info');
             setTimeout(() => checkUserMode(), 3000);
             return;
         }

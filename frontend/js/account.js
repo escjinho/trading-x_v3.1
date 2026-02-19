@@ -3,8 +3,10 @@
    Account Info 업데이트 + 거래내역 로드
    ======================================== */
 
-// ========== 거래내역 로드 ==========
-async function loadHistory() {
+// ========== 거래내역 로드 (Account 탭 전용 - 간단 버전) ==========
+// ★ trading.js의 loadHistory()가 메인 함수 (period 지원, 중복 방지 등)
+// ★ 이 함수는 Account 탭 초기화 시에만 사용
+async function loadAccountHistory() {
     const container = document.getElementById('historyList');
     if (!container) return;
     
