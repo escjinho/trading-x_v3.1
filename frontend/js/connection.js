@@ -142,7 +142,48 @@ async function softRefresh(reason = '', force = false) {
             OpenPositions.render();
         }
 
-        // 8. UI 상태 확인 및 갱신 (계좌 정보 표시 영역)
+        // ★★★ 8. 라이브 모드 포지션 복구 (패널 동기화) ★★★
+        if (!isDemo) {
+            try {
+                const posData = await apiCall('/mt5/positions');
+                if (posData && posData.positions && posData.positions.length > 0) {
+                    console.log(`[softRefresh] 📋 라이브 포지션 ${posData.positions.length}개 복구`);
+
+                    // Open Positions 업데이트
+                    if (typeof OpenPositions !== 'undefined') {
+                        OpenPositions.updatePositions(posData.positions);
+                    }
+
+                    // 패널별 포지션 복구
+                    posData.positions.forEach(pos => {
+                        const magic = pos.magic;
+                        const symbol = pos.symbol;
+
+                        // QuickEasy (magic=100003)
+                        if (magic == 100003 && typeof QuickEasyPanel !== 'undefined') {
+                            if (!QuickEasyPanel._positions) QuickEasyPanel._positions = {};
+                            QuickEasyPanel._positions[symbol] = pos;
+                            console.log(`[softRefresh] QE 포지션 복구: ${symbol}`);
+                        }
+
+                        // BuySell (magic=100001) - 현재 심볼만
+                        if (magic == 100001 && symbol === window.currentSymbol) {
+                            if (typeof updatePositionUI === 'function') {
+                                const isBuy = String(pos.type).includes('BUY') || pos.type === 0;
+                                updatePositionUI(true, {
+                                    ...pos,
+                                    type: isBuy ? 'BUY' : 'SELL'
+                                });
+                            }
+                        }
+                    });
+                }
+            } catch (e) {
+                console.log('[softRefresh] 포지션 조회 실패:', e.message);
+            }
+        }
+
+        // 9. UI 상태 확인 및 갱신 (계좌 정보 표시 영역)
         _updateUIVisibility();
 
         console.log(`[softRefresh] ✅ 완료`);
@@ -191,10 +232,15 @@ document.addEventListener('visibilitychange', function() {
         const _bgDuration = window._backgroundAt ? (Date.now() - window._backgroundAt) : 0;
         console.log(`[Visibility] 포그라운드로 복귀 (백그라운드 ${Math.round(_bgDuration/1000)}초)`);
 
-        // 60초 이상 백그라운드였으면 전체 리로드
+        // ★★★ 60초 이상 백그라운드여도 reload 금지! softRefresh만 실행 ★★★
         if (_bgDuration > 60000) {
-            console.log('[Visibility] 🔄 60초 이상 백그라운드 — 전체 리로드');
-            location.reload();
+            console.log('[Visibility] 🔄 60초 이상 백그라운드 — WS 재연결 + softRefresh');
+            // WS 재연결
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                reconnectAttempt = 0;
+                connectWebSocket();
+            }
+            setTimeout(() => softRefresh('background_60s', true), 500);
             return;
         }
 
@@ -398,12 +444,12 @@ function updateConnectionStatus(status, delay = 0) {
 
 // 재연결 시도 함수
 function attemptReconnect() {
-    // ★ 30초간 재연결 실패 시 페이지 리로드
+    // ★★★ 30초간 재연결 실패해도 reload 금지! 계속 재연결 시도만 ★★★
     if (window._wsDisconnectedAt && (Date.now() - window._wsDisconnectedAt > 30000)) {
-        console.log('[WS] 30초간 재연결 실패 — 페이지 리로드');
-        _serverDownDetected = true; // 서버 다운 플래그 설정
-        location.reload();
-        return;
+        console.log('[WS] 30초간 재연결 실패 — 서버 다운 플래그만 설정 (reload 안 함)');
+        _serverDownDetected = true;
+        window._serverWasDown = true;
+        // reload 하지 않고 재연결 계속 시도
     }
 
     console.log(`[WS] 연결 시도 (attempt ${reconnectAttempt + 1})`);
@@ -489,14 +535,14 @@ function connectWebSocket() {
             console.log('[WS] Polling stopped - WebSocket connected');
         }
 
-        // ★★★ 재연결 감지 시 — 서버 다운 복구면 페이지 리로드 ★★★
+        // ★★★ 재연결 감지 시 — reload 금지! softRefresh만 실행 ★★★
         if (_wsHasConnectedBefore) {
-            // 서버 다운 후 복구 감지 (2회 이상 재연결 시도 OR _serverDownDetected)
+            // 서버 다운 후 복구 감지
             if (_wasServerDown || _prevReconnectAttempt >= 2 || window._serverWasDown) {
-                console.log(`[WS] 🔄 서버 복구 감지! (시도 ${_prevReconnectAttempt}회, serverDown=${_wasServerDown}) 페이지 전체 리로드...`);
+                console.log(`[WS] 🔄 서버 복구 감지! (시도 ${_prevReconnectAttempt}회, serverDown=${_wasServerDown}) softRefresh 실행 (reload 금지)`);
                 window._serverWasDown = false;
-                location.reload();
-                return;
+                _serverDownDetected = false;
+                // reload 대신 softRefresh 실행
             }
             console.log(`[WS] 🔄 재연결 감지! (시도 ${_prevReconnectAttempt}회) 강제 softRefresh 실행...`);
             // ★★★ 라이브 포지션 플래그 초기화 (재연결 후 깨끗한 상태) ★★★
