@@ -287,11 +287,17 @@ const OpenPositions = {
     },
 
     confirmClose() {
+        // ★ 먼저 값을 저장한 후 시트 닫기 (순서 중요!)
+        const closeType = this._pendingCloseType;
+        const closeId = this._pendingCloseId;
+
+        console.log('[OpenPositions] confirmClose:', closeType, closeId);
+
         this.hideConfirmSheet();
 
-        if (this._pendingCloseType === 'single' && this._pendingCloseId) {
-            this._executeCloseSingle(this._pendingCloseId);
-        } else if (this._pendingCloseType === 'multi') {
+        if (closeType === 'single' && closeId) {
+            this._executeCloseSingle(closeId);
+        } else if (closeType === 'multi') {
             this._executeCloseMultiple();
         }
     },
@@ -304,8 +310,14 @@ const OpenPositions = {
     },
 
     async _executeCloseSingle(posId) {
+        // Demo/Live 분기
+        const endpoint = window.isDemo ? '/demo/close' : '/mt5/close';
+        console.log('[OpenPositions] _executeCloseSingle:', posId, 'endpoint:', endpoint);
+
         try {
-            const resp = await apiCall('/demo/close?ticket=' + posId, 'POST');
+            const resp = await apiCall(endpoint + '?ticket=' + posId, 'POST');
+            console.log('[OpenPositions] Close response:', resp);
+
             if (resp && resp.success !== false) {
                 showToast('포지션이 청산되었습니다', 'success');
                 // Today P/L 업데이트
@@ -381,9 +393,15 @@ const OpenPositions = {
         const count = ids.length;
         let successCount = 0;
 
+        // Demo/Live 분기
+        const endpoint = window.isDemo ? '/demo/close' : '/mt5/close';
+        console.log('[OpenPositions] _executeCloseMultiple:', count, '개, endpoint:', endpoint);
+
         for (const posId of ids) {
             try {
-                const resp = await apiCall('/demo/close?ticket=' + posId, 'POST');
+                const resp = await apiCall(endpoint + '?ticket=' + posId, 'POST');
+                console.log('[OpenPositions] Close', posId, ':', resp);
+
                 if (resp && resp.success !== false) {
                     successCount++;
                     if (resp.profit !== undefined && typeof updateTodayPL === 'function') {
