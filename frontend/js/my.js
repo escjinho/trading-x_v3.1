@@ -701,6 +701,116 @@ function handleClearCache() {
     }
 }
 
+// ========== 공지사항 & FAQ ==========
+function switchNoticeTab(tab, el) {
+    document.querySelectorAll('#myView-noticeFaq .my-tab-item').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+
+    const noticeList = document.getElementById('myNoticeList');
+    const faqList = document.getElementById('myFaqList');
+
+    if (tab === 'notice') {
+        noticeList.style.display = 'block';
+        faqList.style.display = 'none';
+    } else {
+        noticeList.style.display = 'none';
+        faqList.style.display = 'block';
+    }
+}
+
+function toggleFaq(el) {
+    el.classList.toggle('open');
+}
+
+const noticeData = {
+    1: { type: '공지', date: '02.20', title: 'Trading-X v3.1 업데이트 안내', body: '안녕하세요, Trading-X입니다.\n\n금일 v3.1 업데이트가 배포되었습니다.\n\n주요 변경사항:\n• My 탭 전면 개편\n• Quick & Easy 패널 개선\n• 틱차트 애니메이션 줌인 효과 추가\n• 포지션 라인 표시 개선\n\n문의사항은 고객센터로 연락 부탁드립니다.' },
+    2: { type: '점검', date: '02.18', title: '2/22(토) 서버 정기 점검 안내', body: '안녕하세요, Trading-X입니다.\n\n아래와 같이 서버 정기 점검이 예정되어 있습니다.\n\n• 일시: 2026년 2월 22일 (토) 06:00 ~ 08:00 (KST)\n• 내용: 서버 안정화 및 보안 업데이트\n\n점검 시간 동안 서비스 이용이 제한됩니다.\n불편을 드려 죄송합니다.' },
+    3: { type: '이벤트', date: '02.15', title: '신규 가입 이벤트 - 최대 $100 보너스', body: '안녕하세요, Trading-X입니다.\n\n신규 가입 이벤트를 진행합니다!\n\n• 기간: 2026.02.15 ~ 03.15\n• 혜택: 가입 시 $10, 첫 입금 시 $50, 첫 거래 시 $40\n• 조건: 본인 인증 완료 필수\n\n많은 참여 부탁드립니다!' },
+    4: { type: '공지', date: '02.10', title: '개인정보 처리방침 변경 안내', body: '안녕하세요, Trading-X입니다.\n\n개인정보 처리방침이 일부 변경되었습니다.\n\n• 시행일: 2026년 2월 15일\n• 변경 내용: 마케팅 정보 수신 동의 항목 추가\n\n자세한 내용은 약관 및 정책 > 개인정보 처리방침에서 확인하실 수 있습니다.' },
+    5: { type: '공지', date: '02.01', title: 'HedgeHood 브로커 연동 시작', body: '안녕하세요, Trading-X입니다.\n\nHedgeHood Pty Ltd 브로커와의 공식 연동이 시작되었습니다.\n\n• ASIC 규제 브로커\n• 최대 1:500 레버리지\n• 빠른 입출금 지원\n\nMy > 내 계정 > MT5 계정 관리에서 계정을 연결하세요.' }
+};
+
+function openNoticeDetail(id) {
+    const data = noticeData[id];
+    if (!data) return;
+
+    document.getElementById('myNoticeDetailMeta').textContent = data.type + ' · ' + data.date;
+    document.getElementById('myNoticeDetailTitle').textContent = data.title;
+    document.getElementById('myNoticeDetailBody').textContent = data.body;
+
+    openMyDetail('noticeDetail');
+}
+
+// ========== 약관 상세 ==========
+const termsData = {
+    service: { title: '서비스 이용약관', body: '제1조 (목적)\n본 약관은 GOODFRIENDS CO., LTD(이하 "회사")가 운영하는 Trading-X 서비스의 이용 조건 및 절차에 관한 사항을 규정함을 목적으로 합니다.\n\n제2조 (용어의 정의)\n1. "서비스"란 회사가 제공하는 MT5 연동 트레이딩 플랫폼을 말합니다.\n2. "회원"이란 본 약관에 동의하고 서비스를 이용하는 자를 말합니다.\n\n제3조 (약관의 효력)\n본 약관은 서비스 화면에 게시하거나 기타의 방법으로 회원에게 공지함으로써 효력이 발생합니다.\n\n제4조 (서비스의 제공)\n회사는 다음의 서비스를 제공합니다.\n1. MT5 계정 연동 및 거래\n2. 실시간 시세 및 차트\n3. 포지션 관리 및 알림' },
+    privacy: { title: '개인정보 처리방침', body: '1. 개인정보의 수집 및 이용 목적\n회사는 다음의 목적을 위해 개인정보를 처리합니다.\n• 회원 가입 및 관리\n• 서비스 제공 및 운영\n• 마케팅 및 광고 활용\n\n2. 수집하는 개인정보 항목\n• 필수: 이메일, 비밀번호\n• 선택: 닉네임, 전화번호\n\n3. 개인정보의 보유 및 이용기간\n회원 탈퇴 시까지 또는 법령에서 정한 기간까지 보유합니다.\n\n4. 개인정보의 파기\n보유 기간이 만료된 개인정보는 지체 없이 파기합니다.\n\n5. 개인정보 보호책임자\n이메일: privacy@trading-x.ai' },
+    risk: { title: '투자 위험 고지', body: '⚠️ 투자 위험 고지\n\n파생상품(CFD) 거래는 높은 수준의 위험을 수반합니다.\n\n• 레버리지 거래로 인해 원금 이상의 손실이 발생할 수 있습니다.\n• 시장 변동성으로 인해 예상치 못한 손실이 발생할 수 있습니다.\n• 과거 수익률이 미래 수익을 보장하지 않습니다.\n\n본 서비스는 투자 조언을 제공하지 않습니다. 모든 투자 결정은 본인의 책임 하에 이루어집니다.\n\n거래를 시작하기 전 충분한 학습과 이해가 필요합니다. 감당할 수 있는 금액만 투자하시기 바랍니다.' },
+    aml: { title: '자금세탁방지 정책 (AML)', body: 'GOODFRIENDS CO., LTD는 자금세탁 및 테러자금조달 방지를 위해 다음의 정책을 시행합니다.\n\n1. 고객확인제도 (KYC)\n• 신규 회원은 본인 인증을 완료해야 합니다.\n• 의심 거래 발생 시 추가 인증을 요청할 수 있습니다.\n\n2. 의심거래 보고\n• 의심스러운 거래는 관련 기관에 보고됩니다.\n• 허위 정보 제공 시 계정이 정지될 수 있습니다.\n\n3. 거래 모니터링\n• 모든 거래는 자동 모니터링됩니다.\n• 비정상적인 패턴 감지 시 조사가 진행됩니다.\n\n4. 제재 준수\n• 국제 제재 대상과의 거래는 금지됩니다.' },
+    marketing: { title: '마케팅 정보 수신 동의', body: '마케팅 정보 수신 동의\n\n수신 동의 시 다음의 정보를 받으실 수 있습니다.\n\n• 이벤트 및 프로모션 안내\n• 신규 기능 업데이트 소식\n• 투자 관련 뉴스레터\n• 맞춤형 서비스 제안\n\n수신 방법: 앱 푸시, 이메일, SMS\n\n동의 철회는 My > 일반 > 알림 설정에서 언제든지 가능합니다.\n\n※ 필수 공지사항(서버 점검, 약관 변경 등)은 동의 여부와 관계없이 발송됩니다.' }
+};
+
+function openTermsDetail(type) {
+    const data = termsData[type];
+    if (!data) return;
+
+    document.getElementById('myTermsDetailTitle').textContent = data.title;
+    document.getElementById('myTermsDetailBody').textContent = data.body;
+
+    openMyDetail('termsDetail');
+}
+
+// ========== 1:1 문의하기 ==========
+function handleContactEmail() {
+    const email = 'support@trading-x.ai';
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(email).then(() => {
+            if (typeof showToast === 'function') showToast('📋 이메일 주소가 복사되었습니다', 'success');
+        });
+    } else {
+        window.location.href = 'mailto:' + email;
+    }
+}
+
+function handleContactTelegram() {
+    window.open('https://t.me/TradingX_Support', '_blank');
+}
+
+// ========== 오픈소스 라이선스 ==========
+const ossLibraries = [
+    { name: 'Lightweight Charts', license: 'Apache 2.0', version: 'v4.1.0' },
+    { name: 'Material Icons', license: 'Apache 2.0', version: '-' },
+    { name: 'MetaAPI SDK', license: 'MIT', version: 'v28.0' },
+    { name: 'Socket.IO', license: 'MIT', version: 'v4.6' },
+    { name: 'Chart.js', license: 'MIT', version: 'v4.4' },
+    { name: 'Axios', license: 'MIT', version: 'v1.6' }
+];
+
+function initOpenSourceView() {
+    const container = document.getElementById('myOpenSourceList');
+    if (!container) return;
+
+    container.innerHTML = ossLibraries.map(lib => `
+        <div class="my-oss-item">
+            <div class="my-oss-top">
+                <span class="my-oss-name">${lib.name}</span>
+                <span class="my-oss-license">${lib.license}</span>
+            </div>
+            <div class="my-oss-meta">${lib.version}</div>
+        </div>
+    `).join('');
+}
+
+// initDetailView 확장
+const _originalInitDetailView = typeof initDetailView === 'function' ? initDetailView : null;
+function initDetailView(detail) {
+    if (_originalInitDetailView) _originalInitDetailView(detail);
+
+    if (detail === 'openSource') {
+        initOpenSourceView();
+    }
+}
+
 // ========== 페이지 로드 시 초기화 ==========
 document.addEventListener('DOMContentLoaded', initMyTab);
 if (document.readyState === 'complete' || document.readyState === 'interactive') {

@@ -1862,3 +1862,253 @@
 .my-app-info-value.mono {
     font-family: 'Consolas', 'SF Mono', monospace;
 }
+
+/* ========================================
+   탭 바 (공지사항 & FAQ)
+   ======================================== */
+.my-tab-bar {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 16px;
+}
+
+.my-tab-item {
+    flex: 1;
+    text-align: center;
+    padding: 13px 0;
+    cursor: pointer;
+    position: relative;
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text-muted);
+}
+
+.my-tab-item.active {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.my-tab-item.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 20%;
+    right: 20%;
+    height: 2px;
+    background: var(--accent-cyan);
+}
+
+/* 공지사항 리스트 */
+.my-notice-item {
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+}
+
+.my-notice-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.my-notice-type {
+    font-size: 11px;
+    color: var(--text-dim);
+}
+
+.my-notice-new {
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: var(--accent-cyan);
+    color: #0a0c10;
+    font-weight: 700;
+}
+
+.my-notice-date {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-left: auto;
+    font-family: 'Consolas', 'SF Mono', monospace;
+}
+
+.my-notice-title {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* 공지사항 상세 */
+.my-notice-detail-meta {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 14px;
+}
+
+.my-notice-detail-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    line-height: 1.4;
+}
+
+.my-notice-detail-body {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.8;
+    white-space: pre-line;
+}
+
+/* FAQ 아코디언 */
+.my-faq-item {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.my-faq-q {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 0;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    gap: 12px;
+}
+
+.my-faq-arrow {
+    font-size: 18px;
+    color: var(--text-dim);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+}
+
+.my-faq-item.open .my-faq-arrow {
+    transform: rotate(180deg);
+}
+
+.my-faq-a {
+    display: none;
+    padding-bottom: 14px;
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.7;
+}
+
+.my-faq-item.open .my-faq-a {
+    display: block;
+}
+
+/* 1:1 문의 카드 */
+.my-contact-card {
+    background: var(--bg-tertiary);
+    border-radius: 12px;
+    padding: 15px 16px;
+    border: 1px solid var(--border-color);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.my-contact-card:active {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.my-contact-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.my-contact-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.my-contact-icon .material-icons-round {
+    font-size: 18px;
+}
+
+.my-contact-label {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.my-contact-value {
+    font-size: 12px;
+    margin-top: 2px;
+    font-family: 'Consolas', 'SF Mono', monospace;
+}
+
+/* 약관 상세 */
+.my-terms-detail-body {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.9;
+    white-space: pre-line;
+}
+
+/* 앱 로고 (이미지 매칭 - [TX] + Trading-X) */
+.my-app-logo-box {
+    width: 40px;
+    height: 40px;
+    border-radius: 9px;
+    border: 2px solid var(--accent-cyan);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.my-app-logo-text {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.my-app-subtitle {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 3px;
+    font-weight: 500;
+}
+
+/* 오픈소스 라이선스 아이템 */
+.my-oss-item {
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    padding: 9px 12px;
+    border: 1px solid var(--border-color);
+    margin-bottom: 3px;
+}
+
+.my-oss-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1px;
+}
+
+.my-oss-name {
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.my-oss-license {
+    font-size: 8px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: var(--bg-secondary);
+    color: var(--text-dim);
+}
+
+.my-oss-meta {
+    font-size: 9px;
+    color: var(--text-dim);
+}

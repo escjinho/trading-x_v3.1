@@ -2179,37 +2179,27 @@
                     </div>
                 </div>
 
-                <!-- ===== 고객센터 ===== -->
+                <!-- ===== 고객센터 (서브메뉴) ===== -->
                 <div class="my-view" id="myView-support">
                     <div class="my-sub-header">
                         <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
                         <span class="my-sub-title">고객센터</span>
                     </div>
                     <div class="my-sub-body">
-                        <div class="my-support-hero">
-                            <span class="material-icons-round" style="font-size: 40px; color: var(--accent-cyan); display: block; margin-bottom: 8px;">support_agent</span>
-                            <div style="font-size: 15px; font-weight: 600; margin-bottom: 4px;">무엇을 도와드릴까요?</div>
-                            <div style="font-size: 12px; color: var(--text-muted);">문의 사항이 있으시면 연락해 주세요</div>
-                        </div>
                         <div class="my-sub-card">
-                            <div class="my-sub-item" onclick="handleSupportAction('telegram')">
-                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">send</span></div><span class="my-sub-item-label">텔레그램 문의</span></div>
-                                <div class="my-sub-item-right"><span class="my-sub-item-hint">24시간</span><span class="material-icons-round my-sub-item-arrow">chevron_right</span></div>
+                            <div class="my-sub-item" onclick="openMyDetail('noticeFaq')">
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">article</span></div><span class="my-sub-item-label">공지사항 & FAQ</span></div>
+                                <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
                             </div>
-                            <div class="my-sub-item" onclick="handleSupportAction('email')">
-                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">email</span></div><span class="my-sub-item-label">이메일 문의</span></div>
-                                <div class="my-sub-item-right"><span class="my-sub-item-hint">support@trading-x.ai</span><span class="material-icons-round my-sub-item-arrow">chevron_right</span></div>
-                            </div>
-                            <div class="my-sub-item last" onclick="handleSupportAction('faq')">
-                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">quiz</span></div><span class="my-sub-item-label">자주 묻는 질문 (FAQ)</span></div>
+                            <div class="my-sub-item last" onclick="openMyDetail('contact')">
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">headset_mic</span></div><span class="my-sub-item-label">1:1 문의하기</span></div>
                                 <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
                             </div>
                         </div>
-                        <div style="margin-top: 14px; font-size: 11px; color: var(--text-dim); text-align: center;">운영시간: 평일 09:00 ~ 18:00 (KST)<br>텔레그램은 24시간 운영</div>
                     </div>
                 </div>
 
-                <!-- ===== 약관 및 정책 ===== -->
+                <!-- ===== 약관 및 정책 (서브메뉴 5개) ===== -->
                 <div class="my-view" id="myView-terms">
                     <div class="my-sub-header">
                         <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
@@ -2217,25 +2207,29 @@
                     </div>
                     <div class="my-sub-body">
                         <div class="my-sub-card">
-                            <div class="my-sub-item" onclick="handleTermsAction('service')">
+                            <div class="my-sub-item" onclick="openTermsDetail('service')">
                                 <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">description</span></div><span class="my-sub-item-label">서비스 이용약관</span></div>
                                 <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
                             </div>
-                            <div class="my-sub-item" onclick="handleTermsAction('privacy')">
+                            <div class="my-sub-item" onclick="openTermsDetail('privacy')">
                                 <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">privacy_tip</span></div><span class="my-sub-item-label">개인정보 처리방침</span></div>
                                 <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
                             </div>
-                            <div class="my-sub-item" onclick="handleTermsAction('risk')">
-                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">warning_amber</span></div><span class="my-sub-item-label">리스크 고지</span></div>
+                            <div class="my-sub-item" onclick="openTermsDetail('risk')">
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">warning_amber</span></div><span class="my-sub-item-label">투자 위험 고지</span></div>
                                 <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
                             </div>
-                            <div class="my-sub-item last" onclick="handleTermsAction('aml')">
+                            <div class="my-sub-item" onclick="openTermsDetail('aml')">
                                 <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">gavel</span></div><span class="my-sub-item-label">자금세탁방지 정책 (AML)</span></div>
+                                <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
+                            </div>
+                            <div class="my-sub-item last" onclick="openTermsDetail('marketing')">
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">mail</span></div><span class="my-sub-item-label">마케팅 정보 수신 동의</span></div>
                                 <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
                             </div>
                         </div>
                         <div style="margin-top: 14px; font-size: 10px; color: #3a4050; text-align: center; line-height: 1.6;">
-                            Trading-X는 GoodFriends CO., LTD에 의해 운영됩니다.<br>
+                            Trading-X는 GOODFRIENDS CO., LTD에 의해 운영됩니다.<br>
                             HedgeHood Pty Ltd (ASIC 라이선스) 제휴 브로커
                         </div>
                     </div>
@@ -2248,20 +2242,23 @@
                         <span class="my-sub-title">앱 정보</span>
                     </div>
                     <div class="my-sub-body">
-                        <!-- 앱 로고 + 버전 -->
+                        <!-- 앱 로고 (이미지 매칭) -->
                         <div class="my-app-info-hero">
-                            <div class="my-app-logo">
-                                <span style="font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; color: var(--accent-cyan);">T-X</span>
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 8px;">
+                                <div class="my-app-logo-box">
+                                    <span class="my-app-logo-text">TX</span>
+                                </div>
+                                <span class="my-app-name">Trading-X</span>
                             </div>
-                            <div class="my-app-name">Trading-X</div>
-                            <div class="my-app-version">Version 3.1.0</div>
+                            <div class="my-app-subtitle">PROFESSIONAL TRADING PLATFORM</div>
+                            <div class="my-app-version">v3.1.0</div>
                             <div class="my-app-build">Build 2026.02.21</div>
                         </div>
                         <!-- 정보 -->
                         <div class="my-detail-card">
                             <div class="my-app-info-row">
-                                <span class="my-app-info-label">운영사</span>
-                                <span class="my-app-info-value">GoodFriends CO., LTD</span>
+                                <span class="my-app-info-label">개발사</span>
+                                <span class="my-app-info-value">GOODFRIENDS CO., LTD</span>
                             </div>
                             <div class="my-app-info-row">
                                 <span class="my-app-info-label">제휴 브로커</span>
@@ -2273,29 +2270,177 @@
                             </div>
                             <div class="my-app-info-row">
                                 <span class="my-app-info-label">연결 서버</span>
-                                <span class="my-app-info-value mono" id="myAppServer">trading-x.ai</span>
+                                <span class="my-app-info-value mono">trading-x.ai</span>
                             </div>
-                            <div class="my-app-info-row last">
+                            <div class="my-app-info-row">
                                 <span class="my-app-info-label">API</span>
                                 <span class="my-app-info-value mono">MetaAPI v4</span>
+                            </div>
+                            <div class="my-app-info-row last">
+                                <span class="my-app-info-label">고객지원</span>
+                                <span class="my-app-info-value" style="color: var(--accent-cyan);">support@trading-x.ai</span>
                             </div>
                         </div>
                         <!-- 업데이트 & 캐시 -->
                         <div style="display: flex; gap: 8px; margin-top: 14px;">
                             <button class="my-action-btn secondary" style="flex: 1; font-size: 12px;" onclick="handleCheckUpdate()">
-                                <span class="material-icons-round" style="font-size: 14px; margin-right: 4px;">system_update</span>
+                                <span class="material-icons-round" style="font-size: 14px;">system_update</span>
                                 업데이트 확인
                             </button>
                             <button class="my-action-btn secondary" style="flex: 1; font-size: 12px;" onclick="handleClearCache()">
-                                <span class="material-icons-round" style="font-size: 14px; margin-right: 4px;">cleaning_services</span>
+                                <span class="material-icons-round" style="font-size: 14px;">cleaning_services</span>
                                 캐시 삭제
                             </button>
                         </div>
+                        <!-- 오픈소스 라이선스 -->
+                        <div class="my-sub-card" style="margin-top: 14px;">
+                            <div class="my-sub-item last" onclick="openMyDetail('openSource')">
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">code</span></div><span class="my-sub-item-label">오픈소스 라이선스</span></div>
+                                <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
+                            </div>
+                        </div>
                         <!-- 카피라이트 -->
                         <div style="text-align: center; margin-top: 24px;">
-                            <div style="font-size: 10px; color: #3a4050;">© 2026 GoodFriends CO., LTD</div>
+                            <div style="font-size: 10px; color: #3a4050;">© 2026 GOODFRIENDS CO., LTD</div>
                             <div style="font-size: 9px; color: #2a3040; margin-top: 2px;">All rights reserved.</div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- ===== 공지사항 & FAQ ===== -->
+                <div class="my-view" id="myView-noticeFaq">
+                    <div class="my-sub-header">
+                        <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
+                        <span class="my-sub-title">공지사항 & FAQ</span>
+                    </div>
+                    <div class="my-sub-body">
+                        <!-- 탭 -->
+                        <div class="my-tab-bar">
+                            <div class="my-tab-item active" onclick="switchNoticeTab('notice', this)">공지사항</div>
+                            <div class="my-tab-item" onclick="switchNoticeTab('faq', this)">FAQ</div>
+                        </div>
+                        <!-- 공지사항 리스트 -->
+                        <div id="myNoticeList">
+                            <div class="my-notice-item" onclick="openNoticeDetail(1)">
+                                <div class="my-notice-top"><span class="my-notice-type">공지</span><span class="my-notice-new">N</span><span class="my-notice-date">02.20</span></div>
+                                <div class="my-notice-title">Trading-X v3.1 업데이트 안내</div>
+                            </div>
+                            <div class="my-notice-item" onclick="openNoticeDetail(2)">
+                                <div class="my-notice-top"><span class="my-notice-type">점검</span><span class="my-notice-new">N</span><span class="my-notice-date">02.18</span></div>
+                                <div class="my-notice-title">2/22(토) 서버 정기 점검 안내</div>
+                            </div>
+                            <div class="my-notice-item" onclick="openNoticeDetail(3)">
+                                <div class="my-notice-top"><span class="my-notice-type">이벤트</span><span class="my-notice-date">02.15</span></div>
+                                <div class="my-notice-title">신규 가입 이벤트 - 최대 $100 보너스</div>
+                            </div>
+                            <div class="my-notice-item" onclick="openNoticeDetail(4)">
+                                <div class="my-notice-top"><span class="my-notice-type">공지</span><span class="my-notice-date">02.10</span></div>
+                                <div class="my-notice-title">개인정보 처리방침 변경 안내</div>
+                            </div>
+                            <div class="my-notice-item" onclick="openNoticeDetail(5)">
+                                <div class="my-notice-top"><span class="my-notice-type">공지</span><span class="my-notice-date">02.01</span></div>
+                                <div class="my-notice-title">HedgeHood 브로커 연동 시작</div>
+                            </div>
+                        </div>
+                        <!-- FAQ 리스트 -->
+                        <div id="myFaqList" style="display: none;">
+                            <div class="my-faq-item" onclick="toggleFaq(this)">
+                                <div class="my-faq-q"><span>Trading-X는 어떤 서비스인가요?</span><span class="material-icons-round my-faq-arrow">keyboard_arrow_down</span></div>
+                                <div class="my-faq-a">Trading-X는 MT5 거래소와 연동하여 편리한 주문 관리, 포지션 모니터링, 자동매매 등을 제공하는 트레이딩 플랫폼입니다. GOODFRIENDS CO., LTD에서 운영합니다.</div>
+                            </div>
+                            <div class="my-faq-item" onclick="toggleFaq(this)">
+                                <div class="my-faq-q"><span>데모 계정과 라이브 계정의 차이는?</span><span class="material-icons-round my-faq-arrow">keyboard_arrow_down</span></div>
+                                <div class="my-faq-a">데모 계정은 가상 자금으로 실제 시장 환경에서 연습할 수 있습니다. 라이브 계정은 실제 자금으로 거래되며, MT5 브로커 계정 연결이 필요합니다.</div>
+                            </div>
+                            <div class="my-faq-item" onclick="toggleFaq(this)">
+                                <div class="my-faq-q"><span>MT5 계정은 어떻게 연결하나요?</span><span class="material-icons-round my-faq-arrow">keyboard_arrow_down</span></div>
+                                <div class="my-faq-a">My > 내 계정 > MT5 계정 관리에서 브로커 계좌번호, 비밀번호, 서버 정보를 입력하면 됩니다. 이메일 인증이 선행되어야 합니다.</div>
+                            </div>
+                            <div class="my-faq-item" onclick="toggleFaq(this)">
+                                <div class="my-faq-q"><span>입출금은 어떻게 하나요?</span><span class="material-icons-round my-faq-arrow">keyboard_arrow_down</span></div>
+                                <div class="my-faq-a">입출금은 연결된 브로커(HedgeHood)의 클라이언트 포털에서 직접 진행합니다. My > 입출금 메뉴에서 가이드를 확인하세요.</div>
+                            </div>
+                            <div class="my-faq-item" onclick="toggleFaq(this)">
+                                <div class="my-faq-q"><span>커미션(수수료)은 어떻게 확인하나요?</span><span class="material-icons-round my-faq-arrow">keyboard_arrow_down</span></div>
+                                <div class="my-faq-a">My > 트레이딩 리포트 > 수수료 탭에서 커미션, 스왑, 총 비용을 확인할 수 있습니다.</div>
+                            </div>
+                            <div class="my-faq-item" onclick="toggleFaq(this)">
+                                <div class="my-faq-q"><span>비밀번호를 잊어버렸어요.</span><span class="material-icons-round my-faq-arrow">keyboard_arrow_down</span></div>
+                                <div class="my-faq-a">로그인 화면 '비밀번호 찾기'에서 이메일 인증코드를 받아 새 비밀번호를 설정할 수 있습니다.</div>
+                            </div>
+                            <div class="my-faq-item" onclick="toggleFaq(this)">
+                                <div class="my-faq-q"><span>고객센터에 문의하고 싶어요.</span><span class="material-icons-round my-faq-arrow">keyboard_arrow_down</span></div>
+                                <div class="my-faq-a">이메일: support@trading-x.ai<br>텔레그램: @TradingX_Support<br>운영시간: 평일 09:00~18:00 (KST)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== 1:1 문의하기 ===== -->
+                <div class="my-view" id="myView-contact">
+                    <div class="my-sub-header">
+                        <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
+                        <span class="my-sub-title">1:1 문의하기</span>
+                    </div>
+                    <div class="my-sub-body">
+                        <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">운영시간: <span style="font-weight: 500; color: var(--text-primary);">평일 09:00~18:00 (KST)</span></div>
+                        <!-- 이메일 -->
+                        <div class="my-contact-card" onclick="handleContactEmail()">
+                            <div class="my-contact-left">
+                                <div class="my-contact-icon" style="color: var(--accent-cyan);"><span class="material-icons-round">mail_outline</span></div>
+                                <div><div class="my-contact-label">이메일 문의</div><div class="my-contact-value" style="color: var(--accent-cyan);">support@trading-x.ai</div></div>
+                            </div>
+                            <span class="material-icons-round" style="font-size: 16px; color: var(--text-dim);">content_copy</span>
+                        </div>
+                        <!-- 텔레그램 -->
+                        <div class="my-contact-card" onclick="handleContactTelegram()">
+                            <div class="my-contact-left">
+                                <div class="my-contact-icon" style="color: #26A5E4;"><span class="material-icons-round">send</span></div>
+                                <div><div class="my-contact-label">텔레그램 문의</div><div class="my-contact-value" style="color: #26A5E4;">@TradingX_Support</div></div>
+                            </div>
+                            <span class="material-icons-round" style="font-size: 16px; color: var(--text-dim);">open_in_new</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== 공지사항 상세 ===== -->
+                <div class="my-view" id="myView-noticeDetail">
+                    <div class="my-sub-header">
+                        <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
+                        <span class="my-sub-title">공지사항</span>
+                    </div>
+                    <div class="my-sub-body">
+                        <div class="my-detail-card">
+                            <div class="my-notice-detail-meta" id="myNoticeDetailMeta">공지 · 02.20</div>
+                            <div class="my-notice-detail-title" id="myNoticeDetailTitle">제목</div>
+                            <div class="my-notice-detail-body" id="myNoticeDetailBody">내용</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== 약관 상세 ===== -->
+                <div class="my-view" id="myView-termsDetail">
+                    <div class="my-sub-header">
+                        <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
+                        <span class="my-sub-title" id="myTermsDetailTitle">약관</span>
+                    </div>
+                    <div class="my-sub-body">
+                        <div class="my-detail-card">
+                            <div style="font-size: 11px; color: var(--text-dim); margin-bottom: 14px;">시행일: 2025.02.01</div>
+                            <div class="my-terms-detail-body" id="myTermsDetailBody">내용</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== 오픈소스 라이선스 ===== -->
+                <div class="my-view" id="myView-openSource">
+                    <div class="my-sub-header">
+                        <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
+                        <span class="my-sub-title">오픈소스 라이선스</span>
+                    </div>
+                    <div class="my-sub-body">
+                        <div style="font-size: 10px; color: var(--text-dim); margin-bottom: 12px;">Trading-X는 아래의 오픈소스 소프트웨어를 사용합니다.</div>
+                        <div id="myOpenSourceList"></div>
                     </div>
                 </div>
 
