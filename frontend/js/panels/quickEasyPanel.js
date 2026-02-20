@@ -466,7 +466,14 @@ const QuickEasyPanel = {
                     entryPrice = (typeof QeTickChart !== 'undefined' && QeTickChart.lastPrice) || 0;
                     console.log('[QE] entryPrice lastPrice fallback:', entryPrice);
                 }
-                this.showPositionView(side, entryPrice);
+                // ★★★ 300ms 지연: 틱차트가 Y축 범위를 조정할 시간 확보 ★★★
+                // 문제: 즉시 호출 시 차트 Y축이 아직 진입가/SL/TP를 포함하지 않음
+                // 해결: 짧은 지연으로 차트 렌더링 완료 후 라인 그리기
+                const _entryPrice = entryPrice;
+                const _side = side;
+                setTimeout(() => {
+                    this.showPositionView(_side, _entryPrice);
+                }, 300);
                 // 버튼 4초 비활성화 (중복 진입 방지)
                 const buyBtn = document.getElementById('qeBuyBtn');
                 const sellBtn = document.getElementById('qeSellBtn');

@@ -555,6 +555,23 @@ const QeTickChart = {
 
         // ★ rAF 트래킹 루프 시작
         if (this._startTracking) this._startTracking();
+
+        // ★★★ 최초 진입 시 라인 표시 보장: Y축 강제 업데이트 ★★★
+        // 문제: showEntryLine() 호출 시점에 차트 Y축 범위가 아직 라인 가격을 포함하지 않을 수 있음
+        // 해결: 약간의 지연 후 fitContent() + zoomToShowTPSL() 재호출
+        if (this.chart && tpPrice && slPrice) {
+            setTimeout(() => {
+                if (!this.chart || !this.areaSeries) return;
+                // 1. 시간축 fitContent로 모든 데이터 표시
+                this.chart.timeScale().fitContent();
+                // 2. Y축 범위 재설정 (라인 포함)
+                this.zoomToShowTPSL(price, tpPrice, slPrice);
+                // 3. 오버레이 위치 업데이트
+                this.updateEntryOverlay();
+                this.drawProgressBars();
+                console.log('[QeTickChart] ★ 최초 진입 라인 표시 강제 업데이트 완료');
+            }, 100);
+        }
     },
 
     removeEntryLine() {
