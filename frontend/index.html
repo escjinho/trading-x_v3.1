@@ -1567,6 +1567,161 @@
                     </div>
                 </div>
 
+                <!-- ===== 비밀번호 변경 상세 페이지 ===== -->
+                <div class="my-view" id="myView-password">
+                    <div class="my-sub-header">
+                        <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
+                        <span class="my-sub-title">비밀번호 변경</span>
+                    </div>
+                    <div class="my-sub-body">
+                        <div class="my-detail-section">
+                            <div class="my-form-group">
+                                <label class="my-form-label">현재 비밀번호</label>
+                                <div class="my-form-input-wrap">
+                                    <input type="password" class="my-form-input" id="myCurrentPw" placeholder="현재 비밀번호 입력">
+                                    <span class="my-form-toggle-pw" onclick="togglePwVisibility('myCurrentPw', this)"><span class="material-icons-round">visibility_off</span></span>
+                                </div>
+                            </div>
+                            <div class="my-form-group">
+                                <label class="my-form-label">새 비밀번호</label>
+                                <div class="my-form-input-wrap">
+                                    <input type="password" class="my-form-input" id="myNewPw" placeholder="새 비밀번호 (8자 이상)">
+                                    <span class="my-form-toggle-pw" onclick="togglePwVisibility('myNewPw', this)"><span class="material-icons-round">visibility_off</span></span>
+                                </div>
+                                <div class="my-form-hint">영문, 숫자, 특수문자 조합 8자 이상</div>
+                            </div>
+                            <div class="my-form-group">
+                                <label class="my-form-label">새 비밀번호 확인</label>
+                                <div class="my-form-input-wrap">
+                                    <input type="password" class="my-form-input" id="myConfirmPw" placeholder="새 비밀번호 다시 입력">
+                                    <span class="my-form-toggle-pw" onclick="togglePwVisibility('myConfirmPw', this)"><span class="material-icons-round">visibility_off</span></span>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="my-action-btn primary" onclick="changePassword()">비밀번호 변경</button>
+                    </div>
+                </div>
+
+                <!-- ===== 이메일 인증 상세 페이지 ===== -->
+                <div class="my-view" id="myView-email">
+                    <div class="my-sub-header">
+                        <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
+                        <span class="my-sub-title">이메일 인증</span>
+                    </div>
+                    <div class="my-sub-body">
+                        <div class="my-detail-section">
+                            <div class="my-email-status">
+                                <span class="material-icons-round" id="myEmailStatusIcon">mark_email_unread</span>
+                                <div class="my-email-status-text">
+                                    <div class="my-email-addr" id="myEmailAddr">user@example.com</div>
+                                    <div class="my-email-state unverified" id="myEmailState">미인증</div>
+                                </div>
+                            </div>
+                            <div class="my-email-desc">이메일 인증을 완료하면 계정 보안이 강화되고,<br>비밀번호 분실 시 복구가 가능합니다.</div>
+                        </div>
+                        <div class="my-detail-section" id="myEmailCodeSection" style="display: none;">
+                            <label class="my-form-label">인증 코드 입력</label>
+                            <div class="my-email-code-row">
+                                <input type="text" class="my-email-code-input" maxlength="1" data-idx="0" oninput="onEmailCodeInput(this)">
+                                <input type="text" class="my-email-code-input" maxlength="1" data-idx="1" oninput="onEmailCodeInput(this)">
+                                <input type="text" class="my-email-code-input" maxlength="1" data-idx="2" oninput="onEmailCodeInput(this)">
+                                <input type="text" class="my-email-code-input" maxlength="1" data-idx="3" oninput="onEmailCodeInput(this)">
+                                <input type="text" class="my-email-code-input" maxlength="1" data-idx="4" oninput="onEmailCodeInput(this)">
+                                <input type="text" class="my-email-code-input" maxlength="1" data-idx="5" oninput="onEmailCodeInput(this)">
+                            </div>
+                            <div class="my-email-timer">남은 시간: <span id="myEmailTimer">03:00</span></div>
+                        </div>
+                        <button class="my-action-btn primary" id="myEmailSendBtn" onclick="sendEmailCode()">인증 메일 발송</button>
+                        <button class="my-action-btn secondary" id="myEmailVerifyBtn" style="display: none;" onclick="verifyEmailCode()">인증 확인</button>
+                    </div>
+                </div>
+
+                <!-- ===== MT5 계정 관리 상세 페이지 ===== -->
+                <div class="my-view" id="myView-mt5">
+                    <div class="my-sub-header">
+                        <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
+                        <span class="my-sub-title">MT5 계정 관리</span>
+                    </div>
+                    <div class="my-sub-body">
+                        <div class="my-detail-section">
+                            <div class="my-mt5-status-card">
+                                <div class="my-mt5-status-header">
+                                    <span class="my-mt5-badge" id="myMt5StatusBadge">연결됨</span>
+                                    <span class="my-mt5-mode" id="myMt5ModeBadge">Demo</span>
+                                </div>
+                                <div class="my-mt5-info-grid">
+                                    <div class="my-mt5-info-item">
+                                        <span class="my-mt5-info-label">로그인</span>
+                                        <span class="my-mt5-info-value" id="myMt5Login">-</span>
+                                    </div>
+                                    <div class="my-mt5-info-item">
+                                        <span class="my-mt5-info-label">서버</span>
+                                        <span class="my-mt5-info-value" id="myMt5Server">-</span>
+                                    </div>
+                                    <div class="my-mt5-info-item">
+                                        <span class="my-mt5-info-label">잔액</span>
+                                        <span class="my-mt5-info-value" id="myMt5Balance">-</span>
+                                    </div>
+                                    <div class="my-mt5-info-item">
+                                        <span class="my-mt5-info-label">레버리지</span>
+                                        <span class="my-mt5-info-value" id="myMt5Leverage">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="my-detail-section">
+                            <div class="my-section-title">계정 전환</div>
+                            <div class="my-mt5-switch-row">
+                                <div class="my-mt5-switch-item active" id="myMt5DemoSwitch" onclick="switchMt5Account('demo')">
+                                    <span class="material-icons-round">school</span>
+                                    <span>Demo</span>
+                                </div>
+                                <div class="my-mt5-switch-item" id="myMt5LiveSwitch" onclick="switchMt5Account('live')">
+                                    <span class="material-icons-round">rocket_launch</span>
+                                    <span>Live</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="my-action-btn secondary" onclick="refreshMt5Connection()"><span class="material-icons-round" style="font-size:16px; margin-right:6px;">refresh</span>연결 새로고침</button>
+                    </div>
+                </div>
+
+                <!-- ===== 로그인 기록 상세 페이지 ===== -->
+                <div class="my-view" id="myView-loginHistory">
+                    <div class="my-sub-header">
+                        <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
+                        <span class="my-sub-title">로그인 기록</span>
+                    </div>
+                    <div class="my-sub-body">
+                        <div class="my-detail-section">
+                            <div class="my-login-history-list" id="myLoginHistoryList">
+                                <div class="my-login-history-item current">
+                                    <div class="my-login-history-icon"><span class="material-icons-round">smartphone</span></div>
+                                    <div class="my-login-history-info">
+                                        <div class="my-login-history-device">현재 기기 <span class="my-login-current-badge">현재 세션</span></div>
+                                        <div class="my-login-history-meta">iOS · Seoul, Korea · 방금 전</div>
+                                    </div>
+                                </div>
+                                <div class="my-login-history-item">
+                                    <div class="my-login-history-icon"><span class="material-icons-round">computer</span></div>
+                                    <div class="my-login-history-info">
+                                        <div class="my-login-history-device">Chrome · Windows</div>
+                                        <div class="my-login-history-meta">Seoul, Korea · 2일 전</div>
+                                    </div>
+                                </div>
+                                <div class="my-login-history-item">
+                                    <div class="my-login-history-icon"><span class="material-icons-round">smartphone</span></div>
+                                    <div class="my-login-history-info">
+                                        <div class="my-login-history-device">Safari · iPhone</div>
+                                        <div class="my-login-history-meta">Seoul, Korea · 5일 전</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="my-action-btn danger" onclick="logoutAllDevices()">모든 기기에서 로그아웃</button>
+                    </div>
+                </div>
+
                 <!-- ===== 상세 페이지 공통 플레이스홀더 ===== -->
                 <div class="my-view" id="myView-detail">
                     <div class="my-sub-header">

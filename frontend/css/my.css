@@ -669,3 +669,385 @@
     font-size: 16px;
     color: var(--text-dim);
 }
+
+/* ========================================
+   상세 페이지 공통 스타일
+   ======================================== */
+
+.my-detail-section {
+    background: var(--bg-secondary);
+    border-radius: 14px;
+    border: 1px solid var(--border-color);
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.my-section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+    letter-spacing: -0.2px;
+}
+
+/* 폼 스타일 */
+.my-form-group {
+    margin-bottom: 16px;
+}
+
+.my-form-group:last-child {
+    margin-bottom: 0;
+}
+
+.my-form-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+}
+
+.my-form-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.my-form-input {
+    width: 100%;
+    height: 44px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 0 40px 0 14px;
+    font-size: 14px;
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.my-form-input:focus {
+    border-color: var(--accent-cyan);
+}
+
+.my-form-input::placeholder {
+    color: var(--text-muted);
+}
+
+.my-form-toggle-pw {
+    position: absolute;
+    right: 12px;
+    cursor: pointer;
+    color: var(--text-dim);
+}
+
+.my-form-toggle-pw .material-icons-round {
+    font-size: 18px;
+}
+
+.my-form-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 6px;
+}
+
+/* 액션 버튼 */
+.my-action-btn {
+    width: 100%;
+    height: 48px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    transition: all 0.2s;
+}
+
+.my-action-btn:last-child {
+    margin-bottom: 0;
+}
+
+.my-action-btn.primary {
+    background: var(--accent-cyan);
+    color: #000;
+}
+
+.my-action-btn.primary:active {
+    background: #00c8dc;
+}
+
+.my-action-btn.secondary {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.my-action-btn.secondary:active {
+    background: var(--bg-tertiary);
+}
+
+.my-action-btn.danger {
+    background: rgba(239, 83, 80, 0.15);
+    color: var(--sell-color);
+    border: 1px solid var(--sell-color);
+}
+
+.my-action-btn.danger:active {
+    background: rgba(239, 83, 80, 0.25);
+}
+
+/* 이메일 인증 스타일 */
+.my-email-status {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 14px;
+}
+
+.my-email-status > .material-icons-round {
+    font-size: 36px;
+    color: var(--accent-cyan);
+}
+
+.my-email-status-text {
+    flex: 1;
+}
+
+.my-email-addr {
+    font-size: 15px;
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.my-email-state {
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.my-email-state.unverified {
+    color: var(--sell-color);
+}
+
+.my-email-state.verified {
+    color: var(--buy-color);
+}
+
+.my-email-desc {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.5;
+}
+
+.my-email-code-row {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 8px;
+}
+
+.my-email-code-input {
+    width: 42px;
+    height: 50px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    text-align: center;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+    outline: none;
+}
+
+.my-email-code-input:focus {
+    border-color: var(--accent-cyan);
+}
+
+.my-email-timer {
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 12px;
+}
+
+.my-email-timer span {
+    color: var(--accent-cyan);
+    font-weight: 600;
+}
+
+/* MT5 계정 관리 스타일 */
+.my-mt5-status-card {
+    text-align: center;
+}
+
+.my-mt5-status-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.my-mt5-badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    background: rgba(38, 166, 154, 0.2);
+    color: var(--buy-color);
+}
+
+.my-mt5-badge.disconnected {
+    background: rgba(239, 83, 80, 0.15);
+    color: var(--sell-color);
+}
+
+.my-mt5-mode {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    background: rgba(0, 230, 255, 0.15);
+    color: var(--accent-cyan);
+}
+
+.my-mt5-mode.live {
+    background: rgba(239, 83, 80, 0.15);
+    color: var(--sell-color);
+}
+
+.my-mt5-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.my-mt5-info-item {
+    background: var(--bg-tertiary);
+    border-radius: 10px;
+    padding: 12px;
+    text-align: left;
+}
+
+.my-mt5-info-label {
+    display: block;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.my-mt5-info-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.my-mt5-switch-row {
+    display: flex;
+    gap: 10px;
+}
+
+.my-mt5-switch-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 14px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.my-mt5-switch-item .material-icons-round {
+    font-size: 24px;
+    color: var(--text-dim);
+}
+
+.my-mt5-switch-item span:last-child {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-dim);
+}
+
+.my-mt5-switch-item.active {
+    border-color: var(--accent-cyan);
+    background: rgba(0, 230, 255, 0.08);
+}
+
+.my-mt5-switch-item.active .material-icons-round,
+.my-mt5-switch-item.active span:last-child {
+    color: var(--accent-cyan);
+}
+
+/* 로그인 기록 스타일 */
+.my-login-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.my-login-history-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--bg-tertiary);
+    border-radius: 12px;
+}
+
+.my-login-history-item.current {
+    border: 1px solid var(--accent-cyan);
+    background: rgba(0, 230, 255, 0.05);
+}
+
+.my-login-history-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.my-login-history-icon .material-icons-round {
+    font-size: 20px;
+    color: var(--text-dim);
+}
+
+.my-login-history-item.current .my-login-history-icon .material-icons-round {
+    color: var(--accent-cyan);
+}
+
+.my-login-history-info {
+    flex: 1;
+}
+
+.my-login-history-device {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.my-login-current-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--accent-cyan);
+    color: #000;
+    font-weight: 600;
+}
+
+.my-login-history-meta {
+    font-size: 12px;
+    color: var(--text-muted);
+}

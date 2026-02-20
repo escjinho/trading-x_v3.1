@@ -216,7 +216,7 @@ function openMyDetail(detail) {
         appInfo: '앱 정보'
     };
 
-    // 전용 뷰가 있는지 확인 (추후 단계에서 추가됨)
+    // 전용 뷰가 있는지 확인
     const dedicatedView = document.getElementById('myView-' + detail);
     if (dedicatedView) {
         // 전용 뷰로 이동
@@ -228,6 +228,10 @@ function openMyDetail(detail) {
         dedicatedView.classList.add('active');
         myPageStack.push(detail);
         document.getElementById('page-my').scrollTop = 0;
+
+        // 상세 페이지 초기화
+        if (typeof initDetailView === 'function') initDetailView(detail);
+
         console.log('[MyTab] Navigate to detail:', detail, 'Stack:', myPageStack);
         return;
     }
@@ -293,6 +297,226 @@ function resetMyTab() {
     if (mainView) mainView.classList.add('active');
     // 스택 리셋
     myPageStack = ['main'];
+}
+
+// ========== 비밀번호 변경 ==========
+function togglePwVisibility(inputId, toggleEl) {
+    const input = document.getElementById(inputId);
+    const icon = toggleEl.querySelector('.material-icons-round');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.textContent = 'visibility';
+    } else {
+        input.type = 'password';
+        icon.textContent = 'visibility_off';
+    }
+}
+
+function changePassword() {
+    const current = document.getElementById('myCurrentPw').value;
+    const newPw = document.getElementById('myNewPw').value;
+    const confirm = document.getElementById('myConfirmPw').value;
+
+    if (!current || !newPw || !confirm) {
+        if (typeof showToast === 'function') showToast('모든 필드를 입력해주세요', 'error');
+        return;
+    }
+
+    if (newPw.length < 8) {
+        if (typeof showToast === 'function') showToast('비밀번호는 8자 이상이어야 합니다', 'error');
+        return;
+    }
+
+    if (newPw !== confirm) {
+        if (typeof showToast === 'function') showToast('새 비밀번호가 일치하지 않습니다', 'error');
+        return;
+    }
+
+    // TODO: API 연동
+    if (typeof showToast === 'function') showToast('비밀번호가 변경되었습니다', 'success');
+
+    // 입력 필드 초기화
+    document.getElementById('myCurrentPw').value = '';
+    document.getElementById('myNewPw').value = '';
+    document.getElementById('myConfirmPw').value = '';
+
+    myGoBack();
+}
+
+// ========== 이메일 인증 ==========
+let emailTimerInterval = null;
+let emailTimerSeconds = 180;
+
+function initEmailView() {
+    const email = localStorage.getItem('user_email') || 'user@example.com';
+    const emailEl = document.getElementById('myEmailAddr');
+    if (emailEl) emailEl.textContent = email;
+}
+
+function sendEmailCode() {
+    // 코드 입력 섹션 표시
+    document.getElementById('myEmailCodeSection').style.display = 'block';
+    document.getElementById('myEmailSendBtn').style.display = 'none';
+    document.getElementById('myEmailVerifyBtn').style.display = 'flex';
+
+    // 타이머 시작
+    emailTimerSeconds = 180;
+    updateEmailTimer();
+    emailTimerInterval = setInterval(() => {
+        emailTimerSeconds--;
+        updateEmailTimer();
+        if (emailTimerSeconds <= 0) {
+            clearInterval(emailTimerInterval);
+            if (typeof showToast === 'function') showToast('인증 시간이 만료되었습니다', 'error');
+            resetEmailView();
+        }
+    }, 1000);
+
+    // 첫 번째 입력칸에 포커스
+    const firstInput = document.querySelector('.my-email-code-input[data-idx="0"]');
+    if (firstInput) firstInput.focus();
+
+    if (typeof showToast === 'function') showToast('인증 메일이 발송되었습니다', 'success');
+}
+
+function updateEmailTimer() {
+    const min = Math.floor(emailTimerSeconds / 60).toString().padStart(2, '0');
+    const sec = (emailTimerSeconds % 60).toString().padStart(2, '0');
+    const timerEl = document.getElementById('myEmailTimer');
+    if (timerEl) timerEl.textContent = `${min}:${sec}`;
+}
+
+function onEmailCodeInput(input) {
+    const idx = parseInt(input.dataset.idx);
+    const value = input.value;
+
+    // 숫자만 허용
+    input.value = value.replace(/[^0-9]/g, '');
+
+    // 다음 칸으로 이동
+    if (input.value && idx < 5) {
+        const nextInput = document.querySelector(`.my-email-code-input[data-idx="${idx + 1}"]`);
+        if (nextInput) nextInput.focus();
+    }
+}
+
+function verifyEmailCode() {
+    const inputs = document.querySelectorAll('.my-email-code-input');
+    let code = '';
+    inputs.forEach(input => code += input.value);
+
+    if (code.length !== 6) {
+        if (typeof showToast === 'function') showToast('6자리 코드를 입력해주세요', 'error');
+        return;
+    }
+
+    // TODO: API 연동
+    clearInterval(emailTimerInterval);
+
+    // 인증 완료 상태 업데이트
+    const stateEl = document.getElementById('myEmailState');
+    const iconEl = document.getElementById('myEmailStatusIcon');
+    if (stateEl) {
+        stateEl.textContent = '인증됨';
+        stateEl.className = 'my-email-state verified';
+    }
+    if (iconEl) iconEl.textContent = 'mark_email_read';
+
+    if (typeof showToast === 'function') showToast('이메일 인증이 완료되었습니다', 'success');
+
+    setTimeout(() => myGoBack(), 1000);
+}
+
+function resetEmailView() {
+    document.getElementById('myEmailCodeSection').style.display = 'none';
+    document.getElementById('myEmailSendBtn').style.display = 'flex';
+    document.getElementById('myEmailVerifyBtn').style.display = 'none';
+    document.querySelectorAll('.my-email-code-input').forEach(input => input.value = '');
+}
+
+// ========== MT5 계정 관리 ==========
+function initMt5View() {
+    const demo = typeof isDemo !== 'undefined' ? isDemo : true;
+
+    // 상태 배지
+    const statusBadge = document.getElementById('myMt5StatusBadge');
+    const modeBadge = document.getElementById('myMt5ModeBadge');
+
+    if (modeBadge) {
+        modeBadge.textContent = demo ? 'Demo' : 'Live';
+        modeBadge.className = 'my-mt5-mode' + (demo ? '' : ' live');
+    }
+
+    // 스위치 버튼 상태
+    const demoSwitch = document.getElementById('myMt5DemoSwitch');
+    const liveSwitch = document.getElementById('myMt5LiveSwitch');
+    if (demoSwitch && liveSwitch) {
+        demoSwitch.classList.toggle('active', demo);
+        liveSwitch.classList.toggle('active', !demo);
+    }
+
+    // 계정 정보 (TODO: API 연동)
+    const loginEl = document.getElementById('myMt5Login');
+    const serverEl = document.getElementById('myMt5Server');
+    const balanceEl = document.getElementById('myMt5Balance');
+    const leverageEl = document.getElementById('myMt5Leverage');
+
+    if (loginEl) loginEl.textContent = demo ? '5001234' : '-';
+    if (serverEl) serverEl.textContent = demo ? 'TradingX-Demo' : 'TradingX-Live';
+    if (balanceEl) balanceEl.textContent = demo ? '$10,000.00' : '-';
+    if (leverageEl) leverageEl.textContent = '1:100';
+}
+
+function switchMt5Account(mode) {
+    if (mode === 'demo') {
+        if (typeof switchToDemo === 'function') switchToDemo();
+        else if (typeof isDemo !== 'undefined') isDemo = true;
+    } else {
+        if (typeof switchToLive === 'function') switchToLive();
+        else if (typeof isDemo !== 'undefined') isDemo = false;
+    }
+
+    initMt5View();
+    updateMyModeDisplay();
+
+    if (typeof showToast === 'function') {
+        showToast(mode === 'demo' ? '📚 Demo 모드로 전환' : '🚀 Live 모드로 전환', 'success');
+    }
+}
+
+function refreshMt5Connection() {
+    if (typeof showToast === 'function') showToast('연결을 새로고침합니다...', 'info');
+
+    // TODO: 실제 연결 새로고침 로직
+    setTimeout(() => {
+        initMt5View();
+        if (typeof showToast === 'function') showToast('연결이 갱신되었습니다', 'success');
+    }, 1000);
+}
+
+// ========== 로그인 기록 ==========
+function logoutAllDevices() {
+    if (confirm('모든 기기에서 로그아웃 하시겠습니까?\n현재 기기도 로그아웃됩니다.')) {
+        // TODO: API 연동
+        if (typeof logout === 'function') {
+            logout();
+        } else {
+            if (typeof showToast === 'function') showToast('모든 기기에서 로그아웃되었습니다', 'success');
+        }
+    }
+}
+
+// ========== 상세 페이지 진입 시 초기화 ==========
+// openMyDetail 함수에서 호출됨
+function initDetailView(detail) {
+    switch (detail) {
+        case 'email':
+            initEmailView();
+            break;
+        case 'mt5':
+            initMt5View();
+            break;
+    }
 }
 
 // ========== 페이지 로드 시 초기화 ==========
