@@ -820,3 +820,39 @@ document.addEventListener('DOMContentLoaded', initMyTab);
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
     initMyTab();
 }
+
+// ========== 체결 알림 설정 ==========
+function toggleTradeAlert(el) {
+    el.classList.toggle('active');
+    const key = el.getAttribute('data-key');
+    if (key) {
+        localStorage.setItem(key, el.classList.contains('active') ? '1' : '0');
+    }
+}
+
+function initTradeAlertToggles() {
+    const view = document.getElementById('myView-trAlert');
+    if (!view) return;
+    view.querySelectorAll('.my-toggle[data-key]').forEach(toggle => {
+        const key = toggle.getAttribute('data-key');
+        const saved = localStorage.getItem(key);
+        if (saved === '0') {
+            toggle.classList.remove('active');
+        } else if (saved === '1') {
+            toggle.classList.add('active');
+        }
+    });
+}
+
+// openMyDetail에서 trAlert 진입 시 초기화
+(function() {
+    const origOpenDetail = window.openMyDetail;
+    if (origOpenDetail) {
+        window.openMyDetail = function(detail) {
+            origOpenDetail(detail);
+            if (detail === 'trAlert') {
+                setTimeout(initTradeAlertToggles, 50);
+            }
+        };
+    }
+})();

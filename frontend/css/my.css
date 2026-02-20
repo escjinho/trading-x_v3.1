@@ -2120,3 +2120,76 @@
     white-space: nowrap;
     flex-shrink: 0;
 }
+
+/* ========================================
+   체결 알림 이력
+   ======================================== */
+.my-tr-alert-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.my-tr-alert-item.last {
+    border-bottom: none;
+}
+
+.my-tr-alert-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.my-tr-alert-icon .material-icons-round {
+    font-size: 16px;
+}
+
+.my-tr-alert-icon.buy {
+    background: rgba(0, 180, 80, 0.1);
+}
+.my-tr-alert-icon.buy .material-icons-round {
+    color: var(--buy-color);
+}
+
+.my-tr-alert-icon.sell {
+    background: rgba(168, 85, 247, 0.1);
+}
+.my-tr-alert-icon.sell .material-icons-round {
+    color: #a855f7;
+}
+
+.my-tr-alert-icon.deposit {
+    background: rgba(0, 212, 255, 0.08);
+}
+.my-tr-alert-icon.deposit .material-icons-round {
+    color: var(--accent-cyan);
+}
+
+.my-tr-alert-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.my-tr-alert-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.my-tr-alert-desc {
+    font-size: 11px;
+    color: var(--text-dim);
+}
+
+.my-tr-alert-time {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: 'Consolas', 'SF Mono', monospace;
+    flex-shrink: 0;
+}

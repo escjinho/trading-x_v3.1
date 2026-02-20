@@ -2452,6 +2452,108 @@
                     </div>
                 </div>
 
+                <!-- ===== 체결 알림 설정 ===== -->
+                <div class="my-view" id="myView-trAlert">
+                    <div class="my-sub-header">
+                        <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
+                        <span class="my-sub-title">체결 알림 설정</span>
+                    </div>
+                    <div class="my-sub-body">
+                        <!-- 거래 알림 -->
+                        <div style="font-size: 11px; color: var(--text-dim); letter-spacing: 0.5px; margin-bottom: 8px; text-transform: uppercase;">거래 알림</div>
+                        <div class="my-detail-card" style="margin-bottom: 14px;">
+                            <div class="my-noti-item">
+                                <div>
+                                    <div class="my-noti-label">주문 체결</div>
+                                    <div class="my-noti-desc">매수/매도 주문이 체결되면 알림</div>
+                                </div>
+                                <div class="my-toggle active" data-key="tr_order" onclick="toggleTradeAlert(this)"><div class="my-toggle-knob"></div></div>
+                            </div>
+                            <div class="my-noti-item">
+                                <div>
+                                    <div class="my-noti-label">포지션 청산</div>
+                                    <div class="my-noti-desc">TP/SL 또는 수동 청산 시 알림</div>
+                                </div>
+                                <div class="my-toggle active" data-key="tr_close" onclick="toggleTradeAlert(this)"><div class="my-toggle-knob"></div></div>
+                            </div>
+                            <div class="my-noti-item last">
+                                <div>
+                                    <div class="my-noti-label">자동청산 (로스컷)</div>
+                                    <div class="my-noti-desc">마진 부족으로 강제 청산 시 알림</div>
+                                </div>
+                                <div class="my-toggle active" data-key="tr_losscut" onclick="toggleTradeAlert(this)"><div class="my-toggle-knob"></div></div>
+                            </div>
+                        </div>
+
+                        <!-- 자산 알림 -->
+                        <div style="font-size: 11px; color: var(--text-dim); letter-spacing: 0.5px; margin-bottom: 8px; text-transform: uppercase;">자산 알림</div>
+                        <div class="my-detail-card" style="margin-bottom: 14px;">
+                            <div class="my-noti-item">
+                                <div>
+                                    <div class="my-noti-label">입금 확인</div>
+                                    <div class="my-noti-desc">입금이 확인되면 알림</div>
+                                </div>
+                                <div class="my-toggle active" data-key="tr_deposit" onclick="toggleTradeAlert(this)"><div class="my-toggle-knob"></div></div>
+                            </div>
+                            <div class="my-noti-item last">
+                                <div>
+                                    <div class="my-noti-label">출금 완료</div>
+                                    <div class="my-noti-desc">출금 처리가 완료되면 알림</div>
+                                </div>
+                                <div class="my-toggle active" data-key="tr_withdraw" onclick="toggleTradeAlert(this)"><div class="my-toggle-knob"></div></div>
+                            </div>
+                        </div>
+
+                        <!-- 알림 방식 -->
+                        <div style="font-size: 11px; color: var(--text-dim); letter-spacing: 0.5px; margin-bottom: 8px; text-transform: uppercase;">알림 방식</div>
+                        <div class="my-detail-card" style="margin-bottom: 14px;">
+                            <div class="my-noti-item">
+                                <div>
+                                    <div class="my-noti-label">사운드</div>
+                                    <div class="my-noti-desc">체결 시 효과음 재생</div>
+                                </div>
+                                <div class="my-toggle active" data-key="tr_sound" onclick="toggleTradeAlert(this)"><div class="my-toggle-knob"></div></div>
+                            </div>
+                            <div class="my-noti-item last">
+                                <div>
+                                    <div class="my-noti-label">진동</div>
+                                    <div class="my-noti-desc">모바일에서 진동 알림</div>
+                                </div>
+                                <div class="my-toggle" data-key="tr_vibrate" onclick="toggleTradeAlert(this)"><div class="my-toggle-knob"></div></div>
+                            </div>
+                        </div>
+
+                        <!-- 알림 이력 미리보기 -->
+                        <div style="font-size: 11px; color: var(--text-dim); letter-spacing: 0.5px; margin-bottom: 8px; text-transform: uppercase;">최근 알림</div>
+                        <div class="my-detail-card">
+                            <div class="my-tr-alert-item">
+                                <div class="my-tr-alert-icon buy"><span class="material-icons-round">swap_vert</span></div>
+                                <div class="my-tr-alert-content">
+                                    <div class="my-tr-alert-title">EURUSD Buy 체결</div>
+                                    <div class="my-tr-alert-desc">0.10 Lot @ 1.08452</div>
+                                </div>
+                                <div class="my-tr-alert-time">14:32</div>
+                            </div>
+                            <div class="my-tr-alert-item">
+                                <div class="my-tr-alert-icon sell"><span class="material-icons-round">check_circle</span></div>
+                                <div class="my-tr-alert-content">
+                                    <div class="my-tr-alert-title">GBPJPY Sell 청산</div>
+                                    <div class="my-tr-alert-desc">+$99.00 (TP 도달)</div>
+                                </div>
+                                <div class="my-tr-alert-time">11:15</div>
+                            </div>
+                            <div class="my-tr-alert-item last">
+                                <div class="my-tr-alert-icon deposit"><span class="material-icons-round">south_west</span></div>
+                                <div class="my-tr-alert-content">
+                                    <div class="my-tr-alert-title">입금 확인</div>
+                                    <div class="my-tr-alert-desc">+$500.00</div>
+                                </div>
+                                <div class="my-tr-alert-time">02.18</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- ===== 상세 페이지 공통 플레이스홀더 ===== -->
                 <div class="my-view" id="myView-detail">
                     <div class="my-sub-header">
