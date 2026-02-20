@@ -457,6 +457,7 @@
     background: #00d2ff;
     z-index: 10;
     pointer-events: none;
+    transition: left 0.1s ease-out, top 0.1s ease-out;
     transform: translate(-50%, -50%);
 }
 
