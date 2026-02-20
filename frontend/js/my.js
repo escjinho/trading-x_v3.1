@@ -345,7 +345,20 @@ function changePassword() {
 
 // ========== 이메일 인증 ==========
 let emailTimerInterval = null;
-let emailTimerSeconds = 180;
+let emailTimerSeconds = 300; // 5분
+
+// ========== API 헬퍼 ==========
+function getApiUrl() {
+    const loc = window.location;
+    if (loc.hostname === 'localhost' || loc.hostname === '127.0.0.1') {
+        return 'http://localhost:8000/api';
+    }
+    return loc.protocol + '//' + loc.host + '/api';
+}
+
+function getCurrentUserEmail() {
+    return localStorage.getItem('user_email') || '';
+}
 
 function initEmailView() {
     const email = localStorage.getItem('user_email') || 'user@example.com';
@@ -353,30 +366,70 @@ function initEmailView() {
     if (emailEl) emailEl.textContent = email;
 }
 
-function sendEmailCode() {
-    // 코드 입력 섹션 표시
-    document.getElementById('myEmailCodeSection').style.display = 'block';
-    document.getElementById('myEmailSendBtn').style.display = 'none';
-    document.getElementById('myEmailVerifyBtn').style.display = 'flex';
+async function sendEmailCode() {
+    const email = getCurrentUserEmail();
+    if (!email) {
+        showToast('로그인 정보를 확인할 수 없습니다', 'error');
+        return;
+    }
 
-    // 타이머 시작
-    emailTimerSeconds = 180;
-    updateEmailTimer();
-    emailTimerInterval = setInterval(() => {
-        emailTimerSeconds--;
-        updateEmailTimer();
-        if (emailTimerSeconds <= 0) {
-            clearInterval(emailTimerInterval);
-            if (typeof showToast === 'function') showToast('인증 시간이 만료되었습니다', 'error');
-            resetEmailView();
+    // 버튼 비활성화 (중복 클릭 방지)
+    const sendBtn = document.getElementById('myEmailSendBtn');
+    if (sendBtn) sendBtn.disabled = true;
+
+    try {
+        const API_URL = getApiUrl();
+        const res = await fetch(API_URL + '/auth/email/send-code', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            showToast(data.detail || '발송 실패', 'error');
+            if (sendBtn) sendBtn.disabled = false;
+            return;
         }
-    }, 1000);
 
-    // 첫 번째 입력칸에 포커스
-    const firstInput = document.querySelector('.my-email-code-input[data-idx="0"]');
-    if (firstInput) firstInput.focus();
+        // 테스트 모드일 때 코드 표시 (개발용)
+        if (data.test_mode && data.test_code) {
+            console.log('[TEST] 인증코드:', data.test_code);
+            showToast('테스트 모드: ' + data.test_code, 'info');
+        } else {
+            showToast('인증코드가 발송되었습니다', 'success');
+        }
 
-    if (typeof showToast === 'function') showToast('인증 메일이 발송되었습니다', 'success');
+        // 코드 입력 섹션 표시
+        document.getElementById('myEmailCodeSection').style.display = 'block';
+        document.getElementById('myEmailSendBtn').style.display = 'none';
+        document.getElementById('myEmailVerifyBtn').style.display = 'flex';
+
+        // 타이머 시작 (5분)
+        if (emailTimerInterval) clearInterval(emailTimerInterval);
+        emailTimerSeconds = 300;
+        updateEmailTimer();
+        emailTimerInterval = setInterval(() => {
+            emailTimerSeconds--;
+            updateEmailTimer();
+            if (emailTimerSeconds <= 0) {
+                clearInterval(emailTimerInterval);
+                showToast('인증코드가 만료되었습니다', 'error');
+                resetEmailView();
+            }
+        }, 1000);
+
+        // 입력 필드 초기화 및 포커스
+        document.querySelectorAll('.my-email-code-input').forEach(inp => inp.value = '');
+        const firstInput = document.querySelector('.my-email-code-input[data-idx="0"]');
+        if (firstInput) firstInput.focus();
+
+    } catch (err) {
+        console.error('이메일 인증코드 발송 오류:', err);
+        showToast('서버 연결 실패', 'error');
+        if (sendBtn) sendBtn.disabled = false;
+    }
 }
 
 function updateEmailTimer() {
@@ -400,39 +453,103 @@ function onEmailCodeInput(input) {
     }
 }
 
-function verifyEmailCode() {
+async function verifyEmailCode() {
+    const email = getCurrentUserEmail();
+    if (!email) {
+        showToast('로그인 정보를 확인할 수 없습니다', 'error');
+        return;
+    }
+
+    // 6자리 코드 수집
     const inputs = document.querySelectorAll('.my-email-code-input');
     let code = '';
     inputs.forEach(input => code += input.value);
 
     if (code.length !== 6) {
-        if (typeof showToast === 'function') showToast('6자리 코드를 입력해주세요', 'error');
+        showToast('6자리 코드를 입력해주세요', 'error');
         return;
     }
 
-    // TODO: API 연동
-    clearInterval(emailTimerInterval);
+    // 버튼 비활성화
+    const verifyBtn = document.getElementById('myEmailVerifyBtn');
+    if (verifyBtn) verifyBtn.disabled = true;
 
-    // 인증 완료 상태 업데이트
-    const stateEl = document.getElementById('myEmailState');
-    const iconEl = document.getElementById('myEmailStatusIcon');
-    if (stateEl) {
-        stateEl.textContent = '인증됨';
-        stateEl.className = 'my-email-state verified';
+    try {
+        const API_URL = getApiUrl();
+        const res = await fetch(API_URL + '/auth/email/verify-code', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email, code: code })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            // 타이머 정지
+            if (emailTimerInterval) {
+                clearInterval(emailTimerInterval);
+                emailTimerInterval = null;
+            }
+
+            // 인증 완료 상태 업데이트
+            const stateEl = document.getElementById('myEmailState');
+            const iconEl = document.getElementById('myEmailStatusIcon');
+            if (stateEl) {
+                stateEl.textContent = '인증됨';
+                stateEl.className = 'my-email-state verified';
+            }
+            if (iconEl) iconEl.textContent = 'mark_email_read';
+
+            // 메인 화면 이메일 경고 숨기기
+            const warningEl = document.getElementById('myEmailWarning');
+            if (warningEl) warningEl.style.display = 'none';
+
+            showToast('이메일 인증이 완료되었습니다 ✓', 'success');
+
+            setTimeout(() => myGoBack(), 1000);
+        } else {
+            showToast(data.message || data.detail || '인증 실패', 'error');
+            if (verifyBtn) verifyBtn.disabled = false;
+
+            // 실패 시 입력 흔들기 애니메이션
+            const codeRow = document.querySelector('.my-email-code-row');
+            if (codeRow) {
+                codeRow.style.animation = 'none';
+                codeRow.offsetHeight; // reflow
+                codeRow.style.animation = 'shake 0.3s ease';
+            }
+        }
+    } catch (err) {
+        console.error('인증코드 검증 오류:', err);
+        showToast('서버 연결 실패', 'error');
+        if (verifyBtn) verifyBtn.disabled = false;
     }
-    if (iconEl) iconEl.textContent = 'mark_email_read';
-
-    if (typeof showToast === 'function') showToast('이메일 인증이 완료되었습니다', 'success');
-
-    setTimeout(() => myGoBack(), 1000);
 }
 
 function resetEmailView() {
     document.getElementById('myEmailCodeSection').style.display = 'none';
-    document.getElementById('myEmailSendBtn').style.display = 'flex';
+    const sendBtn = document.getElementById('myEmailSendBtn');
+    if (sendBtn) {
+        sendBtn.style.display = 'flex';
+        sendBtn.disabled = false;
+    }
     document.getElementById('myEmailVerifyBtn').style.display = 'none';
     document.querySelectorAll('.my-email-code-input').forEach(input => input.value = '');
 }
+
+// 이메일 코드 입력 백스페이스 핸들링
+document.addEventListener('keydown', function(e) {
+    if (e.target.matches('.my-email-code-input') && e.key === 'Backspace' && !e.target.value) {
+        const idx = parseInt(e.target.dataset.idx);
+        if (idx > 0) {
+            const prevInput = document.querySelector(`.my-email-code-input[data-idx="${idx - 1}"]`);
+            if (prevInput) {
+                prevInput.focus();
+                prevInput.value = '';
+            }
+        }
+    }
+});
 
 // ========== MT5 계정 관리 ==========
 function initMt5View() {
