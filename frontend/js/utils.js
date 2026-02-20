@@ -13,6 +13,33 @@ function _detectNotiType(message) {
     if (!message || typeof message !== 'string') return null;
     var m = message.toLowerCase();
 
+    // ★★★ 버그 수정 4: 에러/실패 메시지는 항상 표시 ★★★
+    if (m.indexOf('실패') !== -1 || m.indexOf('error') !== -1 || m.indexOf('오류') !== -1 ||
+        m.indexOf('확인할 수 없') !== -1 || m.indexOf('필요합니다') !== -1 ||
+        m.indexOf('timeout') !== -1 || m.indexOf('불안정') !== -1) {
+        return null; // 항상 표시
+    }
+
+    // ★★★ 버그 수정 3: 진행 중 메시지는 항상 표시 ★★★
+    if (m.indexOf('processing') !== -1 || m.indexOf('closing...') !== -1 ||
+        m.indexOf('전송 중') !== -1 || m.indexOf('연결 중') !== -1 ||
+        m.indexOf('계산 중') !== -1 || m.indexOf('확인중') !== -1) {
+        return null; // 항상 표시
+    }
+
+    // ★★★ 버그 수정 1: liquidation을 close보다 먼저 체크 ★★★
+
+    // 자동청산/로스컷 (liquidation) — close보다 먼저!
+    if (m.indexOf('로스컷') !== -1 || m.indexOf('강제 청산') !== -1 || m.indexOf('강제청산') !== -1 ||
+        m.indexOf('liquidat') !== -1) {
+        return 'noti_liquidation';
+    }
+
+    // 마진콜 (margin) — close보다 먼저!
+    if (m.indexOf('마진') !== -1 && (m.indexOf('경고') !== -1 || m.indexOf('부족') !== -1 || m.indexOf('위험') !== -1)) {
+        return 'noti_margin';
+    }
+
     // 주문 체결 (order)
     if (m.indexOf('체결') !== -1 || m.indexOf('buy 실행') !== -1 || m.indexOf('sell 실행') !== -1 ||
         m.indexOf('주문 성공') !== -1 || m.indexOf('quick buy') !== -1 || m.indexOf('quick sell') !== -1) {
@@ -20,18 +47,8 @@ function _detectNotiType(message) {
     }
 
     // 포지션 청산 (close)
-    if (m.indexOf('청산') !== -1 || m.indexOf('closed') !== -1 || m.indexOf('closing') !== -1) {
+    if (m.indexOf('청산') !== -1 || m.indexOf('closed') !== -1) {
         return 'noti_close';
-    }
-
-    // 자동청산/로스컷 (liquidation)
-    if (m.indexOf('로스컷') !== -1 || m.indexOf('강제 청산') !== -1 || m.indexOf('liquidat') !== -1) {
-        return 'noti_liquidation';
-    }
-
-    // 마진콜 (margin)
-    if (m.indexOf('마진') !== -1 && (m.indexOf('경고') !== -1 || m.indexOf('부족') !== -1 || m.indexOf('위험') !== -1)) {
-        return 'noti_margin';
     }
 
     // 입출금 (deposit)
@@ -40,7 +57,7 @@ function _detectNotiType(message) {
         return 'noti_deposit';
     }
 
-    // 공지사항 (notice) — 서버 점검 등
+    // 공지사항 (notice)
     if (m.indexOf('점검') !== -1 || m.indexOf('공지') !== -1) {
         return 'noti_notice';
     }
@@ -58,7 +75,11 @@ function _detectNotiType(message) {
 function _isNotiEnabled(notiKey) {
     if (!notiKey) return true; // 매칭 안 되면 항상 표시
     var stored = localStorage.getItem(notiKey);
-    if (stored === null) return true; // 저장된 값 없으면 기본 ON
+    if (stored === null) {
+        // ★★★ 버그 수정 5: 이벤트는 기본 OFF, 나머지는 기본 ON ★★★
+        if (notiKey === 'noti_event') return false;
+        return true;
+    }
     return stored === 'true';
 }
 
