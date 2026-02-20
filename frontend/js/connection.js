@@ -736,6 +736,9 @@ function connectWebSocket() {
                 const currentSym = window.currentSymbol || 'BTCUSD';
                 qePositions.forEach(qePos => {
                     const posSym = qePos.symbol || '';
+                    // ★ TP/SL 필드 호환 (라이브: tp/sl, 데모: tp_price/sl_price)
+                    const _tp = qePos.tp_price || qePos.tp || 0;
+                    const _sl = qePos.sl_price || qePos.sl || 0;
                     // ★ 딕셔너리에 저장 (모든 종목)
                     if (!QuickEasyPanel._positions[posSym]) {
                         QuickEasyPanel._positions[posSym] = {
@@ -743,7 +746,7 @@ function connectWebSocket() {
                             entry: qePos.entry,
                             volume: qePos.volume,
                             target: qePos.target,
-                            tpsl: (qePos.tp_price && qePos.sl_price) ? { tp: qePos.tp_price, sl: qePos.sl_price } : null,
+                            tpsl: (_tp > 0 && _sl > 0) ? { tp: _tp, sl: _sl } : null,
                             startTime: Date.now(),
                             openedAt: Date.now()
                         };
@@ -752,8 +755,8 @@ function connectWebSocket() {
                     // ★ 현재 보는 종목만 UI 복구
                     if (posSym === currentSym && QuickEasyPanel._posEntryPrice <= 0) {
                         console.log('[WS Demo] 🔄 이지패널 포지션 복구:', posSym);
-                        if (qePos.tp_price && qePos.sl_price) {
-                            window._serverTPSL = { tp: qePos.tp_price, sl: qePos.sl_price };
+                        if (_tp > 0 && _sl > 0) {
+                            window._serverTPSL = { tp: _tp, sl: _sl };
                         }
                         QuickEasyPanel.showPositionView(
                             qePos.type === 'BUY' ? 'BUY' : 'SELL',
@@ -966,6 +969,9 @@ function connectWebSocket() {
             const currentSym = window.currentSymbol || 'BTCUSD';
             qePositions.forEach(qePos => {
                 const posSym = qePos.symbol || '';
+                // ★ TP/SL 필드 호환 (라이브: tp/sl, 데모: tp_price/sl_price)
+                const _tp = qePos.tp_price || qePos.tp || 0;
+                const _sl = qePos.sl_price || qePos.sl || 0;
                 // ★ 딕셔너리에 저장 (모든 종목)
                 if (!QuickEasyPanel._positions[posSym]) {
                     QuickEasyPanel._positions[posSym] = {
@@ -973,7 +979,7 @@ function connectWebSocket() {
                         entry: qePos.entry,
                         volume: qePos.volume,
                         target: qePos.target,
-                        tpsl: (qePos.tp_price && qePos.sl_price) ? { tp: qePos.tp_price, sl: qePos.sl_price } : null,
+                        tpsl: (_tp > 0 && _sl > 0) ? { tp: _tp, sl: _sl } : null,
                         startTime: Date.now(),
                         openedAt: Date.now()
                     };
@@ -982,8 +988,8 @@ function connectWebSocket() {
                 // ★ 현재 보는 종목만 UI 복구
                 if (posSym === currentSym && QuickEasyPanel._posEntryPrice <= 0) {
                     console.log('[WS Live] 🔄 이지패널 포지션 복구:', posSym);
-                    if (qePos.tp_price && qePos.sl_price) {
-                        window._serverTPSL = { tp: qePos.tp_price, sl: qePos.sl_price };
+                    if (_tp > 0 && _sl > 0) {
+                        window._serverTPSL = { tp: _tp, sl: _sl };
                     }
                     QuickEasyPanel.showPositionView(
                         qePos.type === 'BUY' ? 'BUY' : 'SELL',
@@ -2125,6 +2131,9 @@ function switchTradingMode(mode) {
         // ★ 이지패널 포지션 뷰 초기화 (이전 모드 포지션 잔류 방지)
         if (typeof QuickEasyPanel !== 'undefined') {
             QuickEasyPanel._positions = {};  // ★ 모든 종목 포지션 초기화
+            if (typeof QuickEasyPanel._updatePositionBadge === 'function') {
+                QuickEasyPanel._updatePositionBadge();  // ★ 뱃지 숫자 초기화
+            }
             QuickEasyPanel.hidePositionView();
             if (typeof QeTickChart !== 'undefined') QeTickChart._pendingEntryLine = null;
         }
@@ -2204,6 +2213,9 @@ function switchTradingMode(mode) {
                 // ★ 이지패널 포지션 뷰 초기화 (이전 모드 포지션 잔류 방지)
                 if (typeof QuickEasyPanel !== 'undefined') {
                     QuickEasyPanel._positions = {};  // ★ 모든 종목 포지션 초기화
+                    if (typeof QuickEasyPanel._updatePositionBadge === 'function') {
+                        QuickEasyPanel._updatePositionBadge();  // ★ 뱃지 숫자 초기화
+                    }
                     QuickEasyPanel.hidePositionView();
                     if (typeof QeTickChart !== 'undefined') QeTickChart._pendingEntryLine = null;
                 }
