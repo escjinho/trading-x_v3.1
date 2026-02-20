@@ -1623,3 +1623,242 @@
     font-size: 11px;
     color: var(--text-muted);
 }
+
+/* ========================================
+   알림 설정
+   ======================================== */
+.my-noti-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.my-noti-item.last {
+    border-bottom: none;
+}
+
+.my-noti-label {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.my-noti-desc {
+    font-size: 10px;
+    color: var(--text-dim);
+}
+
+/* ========================================
+   라디오 선택 (언어 등)
+   ======================================== */
+.my-radio-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+}
+
+.my-radio-item.last {
+    border-bottom: none;
+}
+
+.my-radio-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.my-radio-label {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.my-radio-check {
+    opacity: 0;
+    color: var(--accent-cyan);
+    transition: opacity 0.2s;
+}
+
+.my-radio-item.selected .my-radio-check {
+    opacity: 1;
+}
+
+.my-radio-item.selected .my-radio-label {
+    color: var(--accent-cyan);
+    font-weight: 600;
+}
+
+/* ========================================
+   테마 선택
+   ======================================== */
+.my-theme-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.my-theme-card {
+    background: var(--bg-tertiary);
+    border-radius: 14px;
+    border: 2px solid var(--border-color);
+    padding: 12px;
+    cursor: pointer;
+    text-align: center;
+    position: relative;
+    transition: border-color 0.2s;
+}
+
+.my-theme-card.selected {
+    border-color: var(--accent-cyan);
+}
+
+.my-theme-preview {
+    border-radius: 8px;
+    height: 80px;
+    margin-bottom: 10px;
+    overflow: hidden;
+}
+
+.my-theme-preview.dark {
+    background: #0a0c10;
+}
+
+.my-theme-preview.light {
+    background: #f3f4f6;
+}
+
+.my-theme-preview-bar {
+    height: 12px;
+}
+
+.my-theme-preview.dark .my-theme-preview-bar {
+    background: #1a1d23;
+}
+
+.my-theme-preview.light .my-theme-preview-bar {
+    background: #e5e7eb;
+}
+
+.my-theme-preview-content {
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.my-theme-preview-line {
+    height: 4px;
+    border-radius: 2px;
+}
+
+.my-theme-preview.dark .my-theme-preview-line {
+    background: #25282f;
+}
+
+.my-theme-preview.light .my-theme-preview-line {
+    background: #d1d5db;
+}
+
+.my-theme-preview-line.w60 { width: 60%; }
+.my-theme-preview-line.w40 { width: 40%; }
+.my-theme-preview-line.w80 { width: 80%; }
+
+.my-theme-label {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.my-theme-check {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.my-theme-check .material-icons-round {
+    font-size: 18px;
+    color: var(--accent-cyan);
+}
+
+.my-theme-card.selected .my-theme-check {
+    opacity: 1;
+}
+
+/* ========================================
+   고객센터
+   ======================================== */
+.my-support-hero {
+    text-align: center;
+    padding: 20px 0 20px;
+}
+
+/* ========================================
+   앱 정보
+   ======================================== */
+.my-app-info-hero {
+    text-align: center;
+    padding: 24px 0 20px;
+}
+
+.my-app-logo {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 12px;
+}
+
+.my-app-name {
+    font-size: 18px;
+    font-weight: 700;
+    font-family: 'Orbitron', sans-serif;
+}
+
+.my-app-version {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.my-app-build {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 2px;
+    font-family: 'Consolas', 'SF Mono', monospace;
+}
+
+.my-app-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.my-app-info-row.last {
+    border-bottom: none;
+}
+
+.my-app-info-label {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.my-app-info-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.my-app-info-value.mono {
+    font-family: 'Consolas', 'SF Mono', monospace;
+}

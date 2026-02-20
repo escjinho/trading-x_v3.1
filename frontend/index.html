@@ -2013,6 +2013,292 @@
                     </div>
                 </div>
 
+                <!-- ===== 알림 설정 ===== -->
+                <div class="my-view" id="myView-notification">
+                    <div class="my-sub-header">
+                        <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
+                        <span class="my-sub-title">알림 설정</span>
+                    </div>
+                    <div class="my-sub-body">
+                        <!-- 체결 알림 -->
+                        <div style="font-size: 11px; color: var(--text-dim); letter-spacing: 0.5px; margin-bottom: 8px; text-transform: uppercase;">체결 알림</div>
+                        <div class="my-detail-card" style="margin-bottom: 14px;">
+                            <div class="my-noti-item">
+                                <div>
+                                    <div class="my-noti-label">주문 체결</div>
+                                    <div class="my-noti-desc">주문이 체결되면 알림을 받습니다</div>
+                                </div>
+                                <div class="my-toggle active" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div>
+                            </div>
+                            <div class="my-noti-item">
+                                <div>
+                                    <div class="my-noti-label">포지션 청산</div>
+                                    <div class="my-noti-desc">포지션이 청산되면 알림을 받습니다</div>
+                                </div>
+                                <div class="my-toggle active" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div>
+                            </div>
+                            <div class="my-noti-item">
+                                <div>
+                                    <div class="my-noti-label">자동청산 (로스컷)</div>
+                                    <div class="my-noti-desc">마진 부족으로 강제 청산 시 알림</div>
+                                </div>
+                                <div class="my-toggle active" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div>
+                            </div>
+                            <div class="my-noti-item last">
+                                <div>
+                                    <div class="my-noti-label">마진콜 경고</div>
+                                    <div class="my-noti-desc">마진 비율이 위험 수준에 도달 시 경고</div>
+                                </div>
+                                <div class="my-toggle active" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div>
+                            </div>
+                        </div>
+                        <!-- 기타 알림 -->
+                        <div style="font-size: 11px; color: var(--text-dim); letter-spacing: 0.5px; margin-bottom: 8px; text-transform: uppercase;">기타</div>
+                        <div class="my-detail-card" style="margin-bottom: 14px;">
+                            <div class="my-noti-item">
+                                <div>
+                                    <div class="my-noti-label">입출금</div>
+                                    <div class="my-noti-desc">입출금 처리 상태 알림</div>
+                                </div>
+                                <div class="my-toggle active" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div>
+                            </div>
+                            <div class="my-noti-item">
+                                <div>
+                                    <div class="my-noti-label">공지사항</div>
+                                    <div class="my-noti-desc">서버 점검, 공지사항 알림</div>
+                                </div>
+                                <div class="my-toggle active" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div>
+                            </div>
+                            <div class="my-noti-item last">
+                                <div>
+                                    <div class="my-noti-label">이벤트 및 프로모션</div>
+                                    <div class="my-noti-desc">이벤트, 프로모션 알림</div>
+                                </div>
+                                <div class="my-toggle" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div>
+                            </div>
+                        </div>
+                        <!-- 사운드 -->
+                        <div style="font-size: 11px; color: var(--text-dim); letter-spacing: 0.5px; margin-bottom: 8px; text-transform: uppercase;">사운드</div>
+                        <div class="my-detail-card">
+                            <div class="my-noti-item last">
+                                <div>
+                                    <div class="my-noti-label">체결 사운드</div>
+                                    <div class="my-noti-desc">체결 시 효과음 재생</div>
+                                </div>
+                                <div class="my-toggle active" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== 언어 설정 ===== -->
+                <div class="my-view" id="myView-language">
+                    <div class="my-sub-header">
+                        <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
+                        <span class="my-sub-title">언어 설정</span>
+                    </div>
+                    <div class="my-sub-body">
+                        <div class="my-detail-card">
+                            <div class="my-radio-item selected" onclick="selectMyLanguage(this, 'ko')">
+                                <div class="my-radio-left">
+                                    <span style="font-size: 18px;">🇰🇷</span>
+                                    <span class="my-radio-label">한국어</span>
+                                </div>
+                                <div class="my-radio-check"><span class="material-icons-round" style="font-size: 18px;">check</span></div>
+                            </div>
+                            <div class="my-radio-item" onclick="selectMyLanguage(this, 'en')">
+                                <div class="my-radio-left">
+                                    <span style="font-size: 18px;">🇺🇸</span>
+                                    <span class="my-radio-label">English</span>
+                                </div>
+                                <div class="my-radio-check"><span class="material-icons-round" style="font-size: 18px;">check</span></div>
+                            </div>
+                            <div class="my-radio-item" onclick="selectMyLanguage(this, 'ja')">
+                                <div class="my-radio-left">
+                                    <span style="font-size: 18px;">🇯🇵</span>
+                                    <span class="my-radio-label">日本語</span>
+                                </div>
+                                <div class="my-radio-check"><span class="material-icons-round" style="font-size: 18px;">check</span></div>
+                            </div>
+                            <div class="my-radio-item" onclick="selectMyLanguage(this, 'zh')">
+                                <div class="my-radio-left">
+                                    <span style="font-size: 18px;">🇨🇳</span>
+                                    <span class="my-radio-label">中文</span>
+                                </div>
+                                <div class="my-radio-check"><span class="material-icons-round" style="font-size: 18px;">check</span></div>
+                            </div>
+                            <div class="my-radio-item last" onclick="selectMyLanguage(this, 'th')">
+                                <div class="my-radio-left">
+                                    <span style="font-size: 18px;">🇹🇭</span>
+                                    <span class="my-radio-label">ภาษาไทย</span>
+                                </div>
+                                <div class="my-radio-check"><span class="material-icons-round" style="font-size: 18px;">check</span></div>
+                            </div>
+                        </div>
+                        <div style="text-align: center; margin-top: 14px; font-size: 11px; color: var(--text-dim);">변경 시 앱이 새로고침됩니다</div>
+                    </div>
+                </div>
+
+                <!-- ===== 테마 ===== -->
+                <div class="my-view" id="myView-theme">
+                    <div class="my-sub-header">
+                        <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
+                        <span class="my-sub-title">테마</span>
+                    </div>
+                    <div class="my-sub-body">
+                        <div class="my-theme-grid">
+                            <div class="my-theme-card selected" onclick="selectMyTheme(this, 'dark')">
+                                <div class="my-theme-preview dark">
+                                    <div class="my-theme-preview-bar"></div>
+                                    <div class="my-theme-preview-content">
+                                        <div class="my-theme-preview-line w60"></div>
+                                        <div class="my-theme-preview-line w40"></div>
+                                        <div class="my-theme-preview-line w80"></div>
+                                    </div>
+                                </div>
+                                <div class="my-theme-label">다크 모드</div>
+                                <div class="my-theme-check"><span class="material-icons-round">check_circle</span></div>
+                            </div>
+                            <div class="my-theme-card" onclick="selectMyTheme(this, 'light')">
+                                <div class="my-theme-preview light">
+                                    <div class="my-theme-preview-bar"></div>
+                                    <div class="my-theme-preview-content">
+                                        <div class="my-theme-preview-line w60"></div>
+                                        <div class="my-theme-preview-line w40"></div>
+                                        <div class="my-theme-preview-line w80"></div>
+                                    </div>
+                                </div>
+                                <div class="my-theme-label">라이트 모드</div>
+                                <div class="my-theme-check"><span class="material-icons-round">check_circle</span></div>
+                            </div>
+                        </div>
+                        <div class="my-deposit-notice" style="margin-top: 16px;">
+                            <span class="material-icons-round" style="font-size: 14px; color: var(--accent-cyan);">info</span>
+                            <span>라이트 모드는 준비 중입니다. 향후 업데이트 예정입니다.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== 고객센터 ===== -->
+                <div class="my-view" id="myView-support">
+                    <div class="my-sub-header">
+                        <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
+                        <span class="my-sub-title">고객센터</span>
+                    </div>
+                    <div class="my-sub-body">
+                        <div class="my-support-hero">
+                            <span class="material-icons-round" style="font-size: 40px; color: var(--accent-cyan); display: block; margin-bottom: 8px;">support_agent</span>
+                            <div style="font-size: 15px; font-weight: 600; margin-bottom: 4px;">무엇을 도와드릴까요?</div>
+                            <div style="font-size: 12px; color: var(--text-muted);">문의 사항이 있으시면 연락해 주세요</div>
+                        </div>
+                        <div class="my-sub-card">
+                            <div class="my-sub-item" onclick="handleSupportAction('telegram')">
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">send</span></div><span class="my-sub-item-label">텔레그램 문의</span></div>
+                                <div class="my-sub-item-right"><span class="my-sub-item-hint">24시간</span><span class="material-icons-round my-sub-item-arrow">chevron_right</span></div>
+                            </div>
+                            <div class="my-sub-item" onclick="handleSupportAction('email')">
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">email</span></div><span class="my-sub-item-label">이메일 문의</span></div>
+                                <div class="my-sub-item-right"><span class="my-sub-item-hint">support@trading-x.ai</span><span class="material-icons-round my-sub-item-arrow">chevron_right</span></div>
+                            </div>
+                            <div class="my-sub-item last" onclick="handleSupportAction('faq')">
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">quiz</span></div><span class="my-sub-item-label">자주 묻는 질문 (FAQ)</span></div>
+                                <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
+                            </div>
+                        </div>
+                        <div style="margin-top: 14px; font-size: 11px; color: var(--text-dim); text-align: center;">운영시간: 평일 09:00 ~ 18:00 (KST)<br>텔레그램은 24시간 운영</div>
+                    </div>
+                </div>
+
+                <!-- ===== 약관 및 정책 ===== -->
+                <div class="my-view" id="myView-terms">
+                    <div class="my-sub-header">
+                        <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
+                        <span class="my-sub-title">약관 및 정책</span>
+                    </div>
+                    <div class="my-sub-body">
+                        <div class="my-sub-card">
+                            <div class="my-sub-item" onclick="handleTermsAction('service')">
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">description</span></div><span class="my-sub-item-label">서비스 이용약관</span></div>
+                                <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
+                            </div>
+                            <div class="my-sub-item" onclick="handleTermsAction('privacy')">
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">privacy_tip</span></div><span class="my-sub-item-label">개인정보 처리방침</span></div>
+                                <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
+                            </div>
+                            <div class="my-sub-item" onclick="handleTermsAction('risk')">
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">warning_amber</span></div><span class="my-sub-item-label">리스크 고지</span></div>
+                                <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
+                            </div>
+                            <div class="my-sub-item last" onclick="handleTermsAction('aml')">
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">gavel</span></div><span class="my-sub-item-label">자금세탁방지 정책 (AML)</span></div>
+                                <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
+                            </div>
+                        </div>
+                        <div style="margin-top: 14px; font-size: 10px; color: #3a4050; text-align: center; line-height: 1.6;">
+                            Trading-X는 GoodFriends CO., LTD에 의해 운영됩니다.<br>
+                            HedgeHood Pty Ltd (ASIC 라이선스) 제휴 브로커
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== 앱 정보 ===== -->
+                <div class="my-view" id="myView-appInfo">
+                    <div class="my-sub-header">
+                        <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
+                        <span class="my-sub-title">앱 정보</span>
+                    </div>
+                    <div class="my-sub-body">
+                        <!-- 앱 로고 + 버전 -->
+                        <div class="my-app-info-hero">
+                            <div class="my-app-logo">
+                                <span style="font-size: 28px; font-weight: 900; font-family: 'Orbitron', sans-serif; color: var(--accent-cyan);">T-X</span>
+                            </div>
+                            <div class="my-app-name">Trading-X</div>
+                            <div class="my-app-version">Version 3.1.0</div>
+                            <div class="my-app-build">Build 2026.02.21</div>
+                        </div>
+                        <!-- 정보 -->
+                        <div class="my-detail-card">
+                            <div class="my-app-info-row">
+                                <span class="my-app-info-label">운영사</span>
+                                <span class="my-app-info-value">GoodFriends CO., LTD</span>
+                            </div>
+                            <div class="my-app-info-row">
+                                <span class="my-app-info-label">제휴 브로커</span>
+                                <span class="my-app-info-value">HedgeHood Pty Ltd</span>
+                            </div>
+                            <div class="my-app-info-row">
+                                <span class="my-app-info-label">라이선스</span>
+                                <span class="my-app-info-value">ASIC (Australia)</span>
+                            </div>
+                            <div class="my-app-info-row">
+                                <span class="my-app-info-label">연결 서버</span>
+                                <span class="my-app-info-value mono" id="myAppServer">trading-x.ai</span>
+                            </div>
+                            <div class="my-app-info-row last">
+                                <span class="my-app-info-label">API</span>
+                                <span class="my-app-info-value mono">MetaAPI v4</span>
+                            </div>
+                        </div>
+                        <!-- 업데이트 & 캐시 -->
+                        <div style="display: flex; gap: 8px; margin-top: 14px;">
+                            <button class="my-action-btn secondary" style="flex: 1; font-size: 12px;" onclick="handleCheckUpdate()">
+                                <span class="material-icons-round" style="font-size: 14px; margin-right: 4px;">system_update</span>
+                                업데이트 확인
+                            </button>
+                            <button class="my-action-btn secondary" style="flex: 1; font-size: 12px;" onclick="handleClearCache()">
+                                <span class="material-icons-round" style="font-size: 14px; margin-right: 4px;">cleaning_services</span>
+                                캐시 삭제
+                            </button>
+                        </div>
+                        <!-- 카피라이트 -->
+                        <div style="text-align: center; margin-top: 24px;">
+                            <div style="font-size: 10px; color: #3a4050;">© 2026 GoodFriends CO., LTD</div>
+                            <div style="font-size: 9px; color: #2a3040; margin-top: 2px;">All rights reserved.</div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- ===== 상세 페이지 공통 플레이스홀더 ===== -->
                 <div class="my-view" id="myView-detail">
                     <div class="my-sub-header">

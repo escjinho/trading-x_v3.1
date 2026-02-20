@@ -619,6 +619,88 @@ function shareInviteCode() {
     }
 }
 
+// ========== 언어 선택 ==========
+function selectMyLanguage(el, lang) {
+    document.querySelectorAll('#myView-language .my-radio-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+    el.classList.add('selected');
+    localStorage.setItem('app_language', lang);
+
+    if (typeof showToast === 'function') {
+        const names = { ko: '한국어', en: 'English', ja: '日本語', zh: '中文', th: 'ภาษาไทย' };
+        showToast('🌐 ' + (names[lang] || lang) + '로 변경되었습니다', 'success');
+    }
+}
+
+// ========== 테마 선택 ==========
+function selectMyTheme(el, theme) {
+    document.querySelectorAll('.my-theme-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    el.classList.add('selected');
+
+    if (theme === 'light') {
+        if (typeof showToast === 'function') {
+            showToast('☀️ 라이트 모드는 준비 중입니다', 'info');
+        }
+        // 다시 다크 선택으로 복원
+        setTimeout(() => {
+            document.querySelectorAll('.my-theme-card').forEach(card => card.classList.remove('selected'));
+            document.querySelector('.my-theme-card')?.classList.add('selected');
+        }, 300);
+        return;
+    }
+
+    localStorage.setItem('app_theme', theme);
+}
+
+// ========== 고객센터 ==========
+function handleSupportAction(type) {
+    if (type === 'telegram') {
+        window.open('https://t.me/tradingx_support', '_blank');
+    } else if (type === 'email') {
+        window.location.href = 'mailto:support@trading-x.ai';
+    } else if (type === 'faq') {
+        if (typeof showToast === 'function') {
+            showToast('📖 FAQ 페이지는 준비 중입니다', 'info');
+        }
+    }
+}
+
+// ========== 약관 ==========
+function handleTermsAction(type) {
+    const urls = {
+        service: 'https://trading-x.ai/terms',
+        privacy: 'https://trading-x.ai/privacy',
+        risk: 'https://trading-x.ai/risk-disclosure',
+        aml: 'https://trading-x.ai/aml-policy'
+    };
+    if (urls[type]) {
+        window.open(urls[type], '_blank');
+    }
+}
+
+// ========== 앱 정보 ==========
+function handleCheckUpdate() {
+    if (typeof showToast === 'function') {
+        showToast('✅ 현재 최신 버전입니다 (v3.1.0)', 'success');
+    }
+}
+
+function handleClearCache() {
+    if (confirm('캐시를 삭제하시겠습니까?')) {
+        if ('caches' in window) {
+            caches.keys().then(names => {
+                names.forEach(name => caches.delete(name));
+            });
+        }
+        if (typeof showToast === 'function') {
+            showToast('🧹 캐시가 삭제되었습니다', 'success');
+        }
+    }
+}
+
 // ========== 페이지 로드 시 초기화 ==========
 document.addEventListener('DOMContentLoaded', initMyTab);
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
