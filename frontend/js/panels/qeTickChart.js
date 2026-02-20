@@ -80,7 +80,7 @@ const QeTickChart = {
                 borderColor: 'rgba(255, 255, 255, 0.06)',
                 timeVisible: true,
                 secondsVisible: true,
-                rightOffset: 3,
+                rightOffset: 5,
                 fixLeftEdge: false,
                 fixRightEdge: false
             },
@@ -192,6 +192,13 @@ const QeTickChart = {
     async loadInitialHistory() {
         this._loadingHistory = true;
 
+        // ★ 이전 줌인 애니메이션 취소 (중복 실행 방지)
+        this._zoomAnimating = false;
+        if (this._initialZoomTimer) {
+            clearTimeout(this._initialZoomTimer);
+            this._initialZoomTimer = null;
+        }
+
         // ★ 종목 변경 시 이전 데이터 즉시 클리어 (점프 방지)
         this.tickData = [];
         if (this.areaSeries) {
@@ -254,15 +261,15 @@ const QeTickChart = {
                     this.chart.timeScale().fitContent();
 
                     // ★ 2초 후 부드러운 애니메이션 줌인 (30분 → 1분 뷰)
-                    setTimeout(() => {
+                    this._initialZoomTimer = setTimeout(() => {
                         if (!this.chart || !this.tickData || this.tickData.length === 0) return;
                         if (this._zoomAnimating) return; // 중복 방지
 
                         this._zoomAnimating = true;
                         const totalBars = this.tickData.length;
-                        const targetVisibleBars = Math.max(15, Math.min(30, totalBars)); // 약 30초 (30틱)
+                        const targetVisibleBars = Math.max(15, Math.min(50, totalBars)); // 약 30초 (30틱)
                         const startVisibleBars = totalBars; // 전체 30분
-                        const rightOffset = 3;
+                        const rightOffset = 5;
 
                         const duration = 1500; // 1.5초 동안 (더 천천히)
                         const steps = 50; // 더 세밀하게
@@ -622,8 +629,8 @@ const QeTickChart = {
 
             this._zoomAnimating = true;
             const totalBars = this.tickData.length;
-            const targetVisibleBars = Math.max(15, Math.min(30, totalBars));
-            const rightOffset = 3;
+            const targetVisibleBars = Math.max(15, Math.min(50, totalBars));
+            const rightOffset = 5;
 
             // 현재 보이는 범위 가져오기
             let currentVisibleBars = totalBars; // fallback
@@ -874,8 +881,8 @@ const QeTickChart = {
 
         // 3. 부드러운 미니 트랜지션 (300ms, 10스텝)
         const snapshotTotal = this.tickData.length; // ★ 스냅샷 고정
-        const targetVisibleBars = Math.max(15, Math.min(30, snapshotTotal));
-        const rightOffset = 3;
+        const targetVisibleBars = Math.max(15, Math.min(50, snapshotTotal));
+        const rightOffset = 5;
 
         // 현재 보이는 범위 가져오기
         let currentVisibleBars = targetVisibleBars;
