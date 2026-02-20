@@ -205,7 +205,7 @@ function openMyDetail(detail) {
         depositDemo: 'Demo 입출금',
         depositLive: 'Live 입출금',
         tradingReport: '트레이딩 리포트',
-        tradeAlert: '체결 알림 설정',
+        trAlert: '체결 알림 설정',
         invite: '친구 초대',
         vip: 'VIP 프로그램',
         notification: '알림 설정',
