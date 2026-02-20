@@ -118,6 +118,15 @@ const QuickEasyPanel = {
     selectSymbol(symbol) {
         const prevSymbol = window.currentSymbol || 'BTCUSD';
 
+        // ★ 종목 변경 시 차트 오버레이 표시 (점프 방지)
+        if (prevSymbol !== symbol && typeof QeTickChart !== 'undefined') {
+            QeTickChart.showChartOverlay();
+            // 안전장치: 3초 후 강제 해제
+            setTimeout(() => {
+                if (typeof QeTickChart !== 'undefined') QeTickChart.hideChartOverlay(0);
+            }, 3000);
+        }
+
         // ★ 현재 포지션 상태 저장 (타이머 시간 포함)
         if (this._posEntryPrice > 0 && this._posSymbol) {
             this._positions[this._posSymbol] = {

@@ -53,6 +53,43 @@ const QeTickChart = {
         'US100.': 2
     },
 
+    // ========== 차트 오버레이 (종목 변경 시 점프 방지) ==========
+    _overlayTimeout: null,
+
+    showChartOverlay() {
+        const overlay = document.getElementById('qeChartOverlay');
+        if (!overlay) return;
+
+        // 기존 타이머 취소
+        if (this._overlayTimeout) {
+            clearTimeout(this._overlayTimeout);
+            this._overlayTimeout = null;
+        }
+
+        overlay.classList.remove('fade-out');
+        overlay.classList.add('active');
+        console.log('[QeTickChart] 차트 오버레이 표시');
+    },
+
+    hideChartOverlay(delay = 200) {
+        const overlay = document.getElementById('qeChartOverlay');
+        if (!overlay) return;
+
+        // 기존 타이머 취소
+        if (this._overlayTimeout) {
+            clearTimeout(this._overlayTimeout);
+        }
+
+        this._overlayTimeout = setTimeout(() => {
+            overlay.classList.add('fade-out');
+            // 페이드아웃 완료 후 완전히 숨김
+            setTimeout(() => {
+                overlay.classList.remove('active', 'fade-out');
+                console.log('[QeTickChart] 차트 오버레이 숨김');
+            }, 300);
+        }, delay);
+    },
+
     init() {
         if (this.initialized) return;
         const container = document.getElementById('qeChartContainer');
@@ -256,12 +293,17 @@ const QeTickChart = {
                                 console.log('[QeTickChart] ★ 히스토리 로딩 후 포지션 라인 재조정:', this._entryData);
                                 this.zoomToShowTPSL(this._entryData.price, this._entryData.tp, this._entryData.sl);
                             }
+
+                            // ★ 줌인 완료 후 오버레이 숨김
+                            this.hideChartOverlay(100);
                         }
                     }, 1000);
                 }
             }
         } catch (e) {
             console.warn('[QeTickChart] 히스토리 로딩 실패:', e);
+            // ★ 실패 시에도 오버레이 숨김
+            this.hideChartOverlay(0);
         } finally {
             this._loadingHistory = false;
             if (this._loadingTimeout) {
