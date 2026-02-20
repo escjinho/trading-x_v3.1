@@ -264,8 +264,8 @@ const QeTickChart = {
                         const startVisibleBars = totalBars; // 전체 30분
                         const rightOffset = 8;
 
-                        const duration = 1000; // 1초 동안
-                        const steps = 30;
+                        const duration = 1500; // 1.5초 동안 (더 천천히)
+                        const steps = 50; // 더 세밀하게
                         const stepTime = duration / steps;
                         let currentStep = 0;
 
@@ -603,18 +603,15 @@ const QeTickChart = {
 
         // ★★★ 최초 진입 시 라인 표시 보장: Y축 강제 업데이트 ★★★
         // 문제: showEntryLine() 호출 시점에 차트 Y축 범위가 아직 라인 가격을 포함하지 않을 수 있음
-        // 해결: 약간의 지연 후 fitContent() + zoomToShowTPSL() 재호출
+        // 해결: 약간의 지연 후 Y축만 조정 (X축은 건드리지 않음!)
         if (this.chart && tpPrice && slPrice) {
             setTimeout(() => {
                 if (!this.chart || !this.areaSeries) return;
-                // 1. 시간축 fitContent로 모든 데이터 표시
-                this.chart.timeScale().fitContent();
-                // 2. Y축 범위 재설정 (라인 포함)
+                // Y축 범위 재설정 (라인 포함) - X축은 현재 뷰 유지
                 this.zoomToShowTPSL(price, tpPrice, slPrice);
-                // 3. 오버레이 위치 업데이트
+                // 오버레이 위치 업데이트
                 this.updateEntryOverlay();
                 this.drawProgressBars();
-                console.log('[QeTickChart] ★ 최초 진입 라인 표시 강제 업데이트 완료');
             }, 100);
         }
     },
@@ -766,19 +763,38 @@ const QeTickChart = {
         }
     },
 
-    // ========== 진입 시 줌아웃 → 자동 복귀 ==========
-    zoomToShowTPSL(entry, tp, sl) {
-        if (!this.chart || !this.areaSeries) return;
+    // ========== 진입 시 Y축만 조정 (X축 유지) ==========
+    zoomToShowTPSL(entryPrice, tpPrice, slPrice) {
+        if (!this.chart || !entryPrice) return;
 
-        const margin = Math.abs(tp - sl) * 0.15;
-        const high = Math.max(tp, sl) + margin;
-        const low = Math.min(tp, sl) - margin;
+        // Y축만 조정 — X축은 절대 건드리지 않음!
+        const prices = [entryPrice];
+        if (tpPrice && tpPrice > 0) prices.push(tpPrice);
+        if (slPrice && slPrice > 0) prices.push(slPrice);
 
-        // 플래그만 세팅 → provider가 자동 반영 (applyOptions 불필요)
-        this._customPriceRange = { minValue: low, maxValue: high };
+        // 현재 표시 중인 최근 틱 데이터 가격도 포함 (차트가 납작해지지 않도록)
+        if (this.tickData && this.tickData.length > 0) {
+            const recentTicks = this.tickData.slice(-20);
+            recentTicks.forEach(t => {
+                if (t.value) prices.push(t.value);
+            });
+        }
 
-        // 3초 후 복원
-        setTimeout(() => this.resetChartView(), 3000);
+        const minPrice = Math.min(...prices);
+        const maxPrice = Math.max(...prices);
+        const padding = (maxPrice - minPrice) * 0.15;
+
+        this._customPriceRange = {
+            minValue: minPrice - padding,
+            maxValue: maxPrice + padding
+        };
+
+        // autoscaleInfoProvider가 _customPriceRange를 사용하도록 강제 리렌더
+        if (this.areaSeries) {
+            this.areaSeries.applyOptions({});
+        }
+
+        // X축은 현재 뷰 그대로 유지! fitContent, setVisibleLogicalRange 호출 금지!
     },
 
     // ========== 차트 초기 상태 완벽 복원 ==========
