@@ -278,6 +278,10 @@ const QeTickChart = {
                             console.log('[QeTickChart] ★ D1 시가:', this.dailyOpen);
                         }
                     } catch(e) { console.warn('[QeTickChart] D1 시가 로딩 실패:', e); }
+
+                    // ★ 데이터 세팅 직후 오버레이 즉시 해제 (차트 표시 시간 단축)
+                    this.hideChartOverlay(50);
+
                     // ★ 1초 후 최근 구간으로 줌인 (40바 + 오른쪽 여백 8)
                     setTimeout(() => {
                         if (this.chart && this.tickData.length > 0) {
@@ -293,9 +297,6 @@ const QeTickChart = {
                                 console.log('[QeTickChart] ★ 히스토리 로딩 후 포지션 라인 재조정:', this._entryData);
                                 this.zoomToShowTPSL(this._entryData.price, this._entryData.tp, this._entryData.sl);
                             }
-
-                            // ★ 줌인 완료 후 오버레이 숨김
-                            this.hideChartOverlay(100);
                         }
                     }, 1000);
                 }
