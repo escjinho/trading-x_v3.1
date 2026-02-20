@@ -260,7 +260,7 @@ const QeTickChart = {
 
                         this._zoomAnimating = true;
                         const totalBars = this.tickData.length;
-                        const targetVisibleBars = Math.min(60, totalBars); // 약 1분 (60틱)
+                        const targetVisibleBars = Math.max(15, Math.min(30, totalBars)); // 약 30초 (30틱)
                         const startVisibleBars = totalBars; // 전체 30분
                         const rightOffset = 8;
 
@@ -614,6 +614,66 @@ const QeTickChart = {
                 this.drawProgressBars();
             }, 100);
         }
+
+        // ★ SL/TP 표시 후 부드럽게 30초 뷰로 줌인
+        setTimeout(() => {
+            if (!this.chart || !this.tickData || this.tickData.length === 0) return;
+            if (this._zoomAnimating) return;
+
+            this._zoomAnimating = true;
+            const totalBars = this.tickData.length;
+            const targetVisibleBars = Math.max(15, Math.min(30, totalBars));
+            const rightOffset = 8;
+
+            // 현재 보이는 범위 가져오기
+            let currentVisibleBars = totalBars; // fallback
+            try {
+                const visibleRange = this.chart.timeScale().getVisibleLogicalRange();
+                if (visibleRange) {
+                    currentVisibleBars = Math.round(visibleRange.to - visibleRange.from);
+                }
+            } catch(e) {}
+
+            // 이미 목표와 비슷하면 애니메이션 불필요
+            if (Math.abs(currentVisibleBars - targetVisibleBars) < 5) {
+                this._zoomAnimating = false;
+                return;
+            }
+
+            const startBars = currentVisibleBars;
+            const duration = 800; // 0.8초
+            const steps = 30;
+            const stepTime = duration / steps;
+            let currentStep = 0;
+
+            const easeInOutCubic = (t) => {
+                return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+            };
+
+            const animateToView = () => {
+                if (!this._zoomAnimating) return;
+                currentStep++;
+                const progress = easeInOutCubic(currentStep / steps);
+                const nowBars = Math.round(
+                    startBars + (targetVisibleBars - startBars) * progress
+                );
+
+                try {
+                    this.chart.timeScale().setVisibleLogicalRange({
+                        from: totalBars - nowBars,
+                        to: totalBars + rightOffset
+                    });
+                } catch(e) {}
+
+                if (currentStep < steps) {
+                    setTimeout(animateToView, stepTime);
+                } else {
+                    this._zoomAnimating = false;
+                }
+            };
+
+            animateToView();
+        }, 1500); // SL/TP 보여준 후 1.5초 뒤 줌인 시작
     },
 
     removeEntryLine() {
@@ -800,6 +860,7 @@ const QeTickChart = {
     // ========== 차트 초기 상태 완벽 복원 ==========
     resetChartView() {
         if (!this.chart || !this.areaSeries) return;
+        if (!this.tickData || this.tickData.length === 0) return;
 
         // 1. 커스텀 가격 범위 해제 → provider가 baseImpl() 호출 → 현재가 중심 autoScale
         this._customPriceRange = null;
@@ -810,11 +871,17 @@ const QeTickChart = {
             scaleMargins: { top: 0.1, bottom: 0.1 }
         });
 
-        // 3. 시간축 복원 (현재가 중심)
-        this.chart.timeScale().scrollToRealTime();
-        this.chart.timeScale().applyOptions({
-            rightOffset: 8
-        });
+        // 3. 시간축: 30초 구간, 현재가 오른쪽 고정 (rightOffset=8)
+        const totalBars = this.tickData.length;
+        const visibleBars = Math.max(15, Math.min(30, totalBars));
+        const rightOffset = 8;
+
+        try {
+            this.chart.timeScale().setVisibleLogicalRange({
+                from: totalBars - visibleBars,
+                to: totalBars + rightOffset
+            });
+        } catch(e) {}
     },
 
     // ========== 종목 변경 시 리셋 ==========
