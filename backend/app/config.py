@@ -20,6 +20,15 @@ class Settings(BaseSettings):
     MT5_ENABLED: bool = True
     mt5_encrypt_key: str = ""  # MT5 비밀번호 AES 암호화 키
 
+    # SMTP 설정 (이메일 인증)
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM: str = "noreply@trading-x.ai"
+    SMTP_FROM_NAME: str = "Trading-X"
+    SMTP_ENABLED: bool = False  # True면 실제 발송, False면 테스트 모드
+
     class Config:
         env_file = ".env"
 

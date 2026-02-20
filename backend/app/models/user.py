@@ -14,6 +14,11 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
+    # ========== 인증 필드 ==========
+    email_verified = Column(Boolean, default=False)        # 이메일 인증 완료 여부
+    phone = Column(String(20), nullable=True)              # 전화번호
+    phone_verified = Column(Boolean, default=False)        # 전화번호 인증 여부
+
     # ========== Demo 모드 필드 ==========
     demo_balance = Column(Float, default=10000.0)      # 데모 잔고
     demo_equity = Column(Float, default=10000.0)       # 데모 자산
