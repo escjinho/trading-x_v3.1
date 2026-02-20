@@ -80,7 +80,7 @@ const QeTickChart = {
                 borderColor: 'rgba(255, 255, 255, 0.06)',
                 timeVisible: true,
                 secondsVisible: true,
-                rightOffset: 7,
+                rightOffset: 8,
                 fixLeftEdge: false,
                 fixRightEdge: false
             },
@@ -278,7 +278,7 @@ const QeTickChart = {
                             const totalBars = this.tickData.length;
                             const targetVisibleBars = Math.max(15, Math.min(50, totalBars));
                             const startVisibleBars = totalBars;
-                            const rightOffset = 7;
+                            const rightOffset = 8;
 
                             const duration = 1500;
                             const steps = 50;
@@ -642,7 +642,7 @@ const QeTickChart = {
             this._zoomAnimating = true;
             const totalBars = this.tickData.length;
             const targetVisibleBars = Math.max(15, Math.min(50, totalBars));
-            const rightOffset = 7;
+            const rightOffset = 8;
 
             // 현재 보이는 범위 가져오기
             let currentVisibleBars = totalBars; // fallback
@@ -894,7 +894,7 @@ const QeTickChart = {
         // 3. 부드러운 미니 트랜지션 (300ms, 10스텝)
         const snapshotTotal = this.tickData.length; // ★ 스냅샷 고정
         const targetVisibleBars = Math.max(15, Math.min(50, snapshotTotal));
-        const rightOffset = 7;
+        const rightOffset = 8;
 
         // 현재 보이는 범위 가져오기
         let currentVisibleBars = targetVisibleBars;
