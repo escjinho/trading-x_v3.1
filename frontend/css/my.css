@@ -2057,9 +2057,9 @@
 
 /* 앱 로고 (이미지 매칭 - [TX] + Trading-X) */
 .my-app-logo-box {
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
+    width: 38px;
+    height: 30px;
+    border-radius: 7px;
     border: 2px solid rgba(0, 212, 255, 0.6);
     background: rgba(0, 212, 255, 0.06);
     display: flex;

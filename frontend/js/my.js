@@ -794,7 +794,8 @@ const openSourceLibs = [
 
 function renderOpenSource() {
     const container = document.getElementById('myOpenSourceList');
-    if (!container || container.children.length > 0) return;
+    if (!container) return;
+    container.innerHTML = '';
 
     openSourceLibs.forEach(([name, ver, license, author]) => {
         const item = document.createElement('div');
@@ -810,7 +811,7 @@ function initDetailView(detail) {
     if (_originalInitDetailView) _originalInitDetailView(detail);
 
     if (detail === 'openSource') {
-        renderOpenSource();
+        setTimeout(renderOpenSource, 50);
     }
 }
 
