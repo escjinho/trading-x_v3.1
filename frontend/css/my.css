@@ -2083,36 +2083,40 @@
     font-weight: 500;
 }
 
-/* 오픈소스 라이선스 아이템 */
+/* 오픈소스 라이선스 아이템 (한 줄 레이아웃) */
 .my-oss-item {
+    display: flex;
+    align-items: center;
     background: var(--bg-tertiary);
     border-radius: 8px;
-    padding: 9px 12px;
+    padding: 10px 12px;
     border: 1px solid var(--border-color);
-    margin-bottom: 3px;
-}
-
-.my-oss-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1px;
+    margin-bottom: 4px;
+    gap: 6px;
 }
 
 .my-oss-name {
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 600;
-}
-
-.my-oss-license {
-    font-size: 8px;
-    padding: 1px 5px;
-    border-radius: 3px;
-    background: var(--bg-secondary);
-    color: var(--text-dim);
+    white-space: nowrap;
 }
 
 .my-oss-meta {
-    font-size: 9px;
+    font-size: 11px;
     color: var(--text-dim);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+}
+
+.my-oss-license {
+    font-size: 9px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.5);
+    white-space: nowrap;
+    flex-shrink: 0;
 }
