@@ -632,10 +632,12 @@ async function loadMT5AccountInfo() {
             var data = await res.json();
             // Demo 계정은 항상 연결됨 상태
             updateMT5Display({
-                account: data.demo_account || 'Demo',
-                server: 'TradingX-Demo',
-                balance: data.balance || data.demo_balance || 10000,
-                leverage: 100
+                account: data.account || ('DEMO-' + (localStorage.getItem('user_id') || '')),
+                server: data.server || 'Demo Server',
+                balance: data.balance || 10000,
+                equity: data.equity || data.balance || 10000,
+                leverage: data.leverage || 500,
+                broker: data.broker || 'Trading-X Demo'
             }, true);
         } else {
             // Live 모드: 먼저 has_mt5 체크 후 mt5 정보 로드

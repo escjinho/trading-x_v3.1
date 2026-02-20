@@ -126,7 +126,10 @@ function switchTradingMode(mode) {
                 isDemo = false;
                 showToast('💎 Live 모드로 전환되었습니다', 'success');
                 fetchAccountData();
-                
+
+                // MT5 상태 갱신 (Live 전환 시)
+                setTimeout(function() { checkAndUpdateMT5Status(); }, 300);
+
             } else {
                 showToast('MT5 계정을 먼저 연결해주세요', 'error');
                 document.getElementById('mt5AccountSection')?.scrollIntoView({ behavior: 'smooth' });
