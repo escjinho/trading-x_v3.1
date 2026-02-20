@@ -80,7 +80,7 @@ const QeTickChart = {
                 borderColor: 'rgba(255, 255, 255, 0.06)',
                 timeVisible: true,
                 secondsVisible: true,
-                rightOffset: 2,
+                rightOffset: 5,
                 fixLeftEdge: false,
                 fixRightEdge: false
             },
@@ -192,12 +192,10 @@ const QeTickChart = {
     async loadInitialHistory() {
         this._loadingHistory = true;
 
-        // ★ 이전 줌인 애니메이션 취소 (중복 실행 방지)
+        // ★ 이전 줌인 시퀀스 전체 취소 (fitContent + 줌인 모두)
         this._zoomAnimating = false;
-        if (this._initialZoomTimer) {
-            clearTimeout(this._initialZoomTimer);
-            this._initialZoomTimer = null;
-        }
+        if (this._initialZoomTimer) { clearTimeout(this._initialZoomTimer); this._initialZoomTimer = null; }
+        if (this._initialZoomSequence) { clearTimeout(this._initialZoomSequence); this._initialZoomSequence = null; }
 
         // ★ 요청 ID: 중복 호출 시 이전 요청 결과 무시
         if (!this._historyRequestId) this._historyRequestId = 0;
@@ -265,59 +263,61 @@ const QeTickChart = {
                         }
                     } catch(e) { console.warn('[QeTickChart] D1 시가 로딩 실패:', e); }
 
-                    // ★ 초기 와이드 뷰 (30분 전체 보이기)
-                    this.chart.timeScale().fitContent();
+                    // ★ fitContent + 줌인을 하나의 취소 가능한 시퀀스로 통합
+                    if (this._initialZoomSequence) clearTimeout(this._initialZoomSequence);
+                    this._initialZoomSequence = setTimeout(() => {
+                        if (!this.chart) return;
+                        this.chart.timeScale().fitContent();
 
-                    // ★ 2초 후 부드러운 애니메이션 줌인 (30분 → 1분 뷰)
-                    this._initialZoomTimer = setTimeout(() => {
-                        if (!this.chart || !this.tickData || this.tickData.length === 0) return;
-                        if (this._zoomAnimating) return; // 중복 방지
+                        if (this._initialZoomTimer) clearTimeout(this._initialZoomTimer);
+                        this._initialZoomTimer = setTimeout(() => {
+                            if (!this.chart || !this.tickData || this.tickData.length === 0) return;
+                            if (this._zoomAnimating) return;
 
-                        this._zoomAnimating = true;
-                        const totalBars = this.tickData.length;
-                        const targetVisibleBars = Math.max(15, Math.min(50, totalBars)); // 약 30초 (30틱)
-                        const startVisibleBars = totalBars; // 전체 30분
-                        const rightOffset = 2;
+                            this._zoomAnimating = true;
+                            const totalBars = this.tickData.length;
+                            const targetVisibleBars = Math.max(15, Math.min(50, totalBars));
+                            const startVisibleBars = totalBars;
+                            const rightOffset = 5;
 
-                        const duration = 1500; // 1.5초 동안 (더 천천히)
-                        const steps = 50; // 더 세밀하게
-                        const stepTime = duration / steps;
-                        let currentStep = 0;
+                            const duration = 1500;
+                            const steps = 50;
+                            const stepTime = duration / steps;
+                            let currentStep = 0;
 
-                        const easeInOutCubic = (t) => {
-                            return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-                        };
+                            const easeInOutCubic = (t) => {
+                                return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+                            };
 
-                        const animateZoom = () => {
-                            if (!this._zoomAnimating) return; // 사용자 터치 시 중단
-                            currentStep++;
-                            const progress = easeInOutCubic(currentStep / steps);
-                            const currentVisibleBars = Math.round(
-                                startVisibleBars + (targetVisibleBars - startVisibleBars) * progress
-                            );
+                            const animateZoom = () => {
+                                if (!this._zoomAnimating) return;
+                                currentStep++;
+                                const progress = easeInOutCubic(currentStep / steps);
+                                const currentVisibleBars = Math.round(
+                                    startVisibleBars + (targetVisibleBars - startVisibleBars) * progress
+                                );
 
-                            try {
-                                this.chart.timeScale().setVisibleLogicalRange({
-                                    from: totalBars - currentVisibleBars,
-                                    to: totalBars + rightOffset
-                                });
-                            } catch(e) {}
+                                try {
+                                    this.chart.timeScale().setVisibleLogicalRange({
+                                        from: totalBars - currentVisibleBars,
+                                        to: totalBars + rightOffset
+                                    });
+                                } catch(e) {}
 
-                            if (currentStep < steps) {
-                                setTimeout(animateZoom, stepTime);
-                            } else {
-                                this._zoomAnimating = false;
-                                console.log('[QeTickChart] ★ 줌인 애니메이션 완료');
-                                // 줌인 완료 후 포지션 라인 재조정
-                                if (this._entryData && this._entryData.tp && this._entryData.sl) {
-                                    console.log('[QeTickChart] ★ 포지션 라인 재조정:', this._entryData);
-                                    this.zoomToShowTPSL(this._entryData.price, this._entryData.tp, this._entryData.sl);
+                                if (currentStep < steps) {
+                                    setTimeout(animateZoom, stepTime);
+                                } else {
+                                    this._zoomAnimating = false;
+                                    console.log('[QeTickChart] ★ 줌인 애니메이션 완료');
+                                    if (this._entryData && this._entryData.tp && this._entryData.sl) {
+                                        this.zoomToShowTPSL(this._entryData.price, this._entryData.tp, this._entryData.sl);
+                                    }
                                 }
-                            }
-                        };
+                            };
 
-                        animateZoom();
-                    }, 2000);
+                            animateZoom();
+                        }, 2000);
+                    }, 50);
                 }
             }
         } catch (e) {
@@ -630,15 +630,19 @@ const QeTickChart = {
             }, 100);
         }
 
-        // ★ SL/TP 표시 후 부드럽게 30초 뷰로 줌인
+        // ★ SL/TP 표시 후 부드럽게 50초 뷰로 줌인
         setTimeout(() => {
             if (!this.chart || !this.tickData || this.tickData.length === 0) return;
-            if (this._zoomAnimating) return;
+
+            // ★ 진행 중인 초기 줌인 취소하고 포지션 줌인으로 전환
+            if (this._initialZoomTimer) { clearTimeout(this._initialZoomTimer); this._initialZoomTimer = null; }
+            if (this._initialZoomSequence) { clearTimeout(this._initialZoomSequence); this._initialZoomSequence = null; }
+            this._zoomAnimating = false;
 
             this._zoomAnimating = true;
             const totalBars = this.tickData.length;
             const targetVisibleBars = Math.max(15, Math.min(50, totalBars));
-            const rightOffset = 2;
+            const rightOffset = 5;
 
             // 현재 보이는 범위 가져오기
             let currentVisibleBars = totalBars; // fallback
@@ -890,7 +894,7 @@ const QeTickChart = {
         // 3. 부드러운 미니 트랜지션 (300ms, 10스텝)
         const snapshotTotal = this.tickData.length; // ★ 스냅샷 고정
         const targetVisibleBars = Math.max(15, Math.min(50, snapshotTotal));
-        const rightOffset = 2;
+        const rightOffset = 5;
 
         // 현재 보이는 범위 가져오기
         let currentVisibleBars = targetVisibleBars;
