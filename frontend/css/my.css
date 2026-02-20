@@ -540,3 +540,132 @@
     border: none;
     width: 100%;
 }
+
+/* ========================================
+   서브페이지 네비게이션 시스템
+   ======================================== */
+
+/* 뷰 시스템 */
+.my-view {
+    display: none;
+}
+
+.my-view.active {
+    display: block;
+    animation: mySlideIn 0.2s ease-out;
+}
+
+.my-view.slide-back {
+    animation: mySlideBack 0.2s ease-out;
+}
+
+@keyframes mySlideIn {
+    from { opacity: 0; transform: translateX(30px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes mySlideBack {
+    from { opacity: 0; transform: translateX(-30px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+/* 서브페이지 헤더 */
+.my-sub-header {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px 18px;
+    gap: 12px;
+}
+
+.my-back-btn {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 4px;
+}
+
+.my-back-btn .material-icons-round {
+    font-size: 20px;
+    color: var(--text-muted);
+}
+
+.my-sub-title {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+}
+
+/* 서브페이지 본문 */
+.my-sub-body {
+    padding: 0 16px 100px;
+}
+
+/* 서브 메뉴 카드 컨테이너 */
+.my-sub-card {
+    background: var(--bg-tertiary);
+    border-radius: 14px;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+/* 서브 메뉴 아이템 */
+.my-sub-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-color);
+    transition: background 0.15s;
+}
+
+.my-sub-item:active {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.my-sub-item.last {
+    border-bottom: none;
+}
+
+.my-sub-item-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.my-sub-icon-box {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.my-sub-icon-box .material-icons-round {
+    font-size: 16px;
+    color: var(--accent-cyan);
+}
+
+.my-sub-item-label {
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: -0.2px;
+}
+
+.my-sub-item-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.my-sub-item-hint {
+    font-size: 12px;
+    color: var(--text-dim);
+}
+
+.my-sub-item-arrow {
+    font-size: 16px;
+    color: var(--text-dim);
+}

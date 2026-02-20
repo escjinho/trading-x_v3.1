@@ -161,12 +161,138 @@ function confirmLogout() {
     }
 }
 
-// ========== 서브페이지 (추후 구현) ==========
+// ========== 네비게이션 스택 ==========
+let myPageStack = ['main'];
+
 function openMySubPage(page) {
-    if (typeof showToast === 'function') {
-        showToast('📌 ' + page + ' 페이지는 준비 중입니다', '');
+    const targetId = 'myView-' + page;
+    const targetEl = document.getElementById(targetId);
+    if (!targetEl) {
+        console.warn('[MyTab] Sub page not found:', targetId);
+        return;
     }
-    console.log('[MyTab] Open sub page:', page);
+
+    // 현재 뷰 숨기기
+    const currentId = myPageStack[myPageStack.length - 1];
+    const currentEl = currentId === 'main'
+        ? document.getElementById('myMainView')
+        : document.getElementById('myView-' + currentId);
+
+    if (currentEl) {
+        currentEl.classList.remove('active', 'slide-back');
+    }
+
+    // 새 뷰 표시
+    targetEl.classList.remove('slide-back');
+    targetEl.classList.add('active');
+
+    // 스택에 추가
+    myPageStack.push(page);
+
+    // 스크롤 상단으로
+    document.getElementById('page-my').scrollTop = 0;
+
+    console.log('[MyTab] Navigate to:', page, 'Stack:', myPageStack);
+}
+
+function openMyDetail(detail) {
+    // 상세 페이지 타이틀 매핑
+    const titles = {
+        password: '비밀번호 변경',
+        email: '이메일 인증',
+        mt5: 'MT5 계정 관리',
+        loginHistory: '로그인 기록',
+        depositDemo: 'Demo 입출금',
+        depositLive: 'Live 입출금',
+        tradingReport: '트레이딩 리포트',
+        tradeAlert: '체결 알림 설정',
+        invite: '친구 초대',
+        vip: 'VIP 프로그램',
+        notification: '알림 설정',
+        language: '언어 설정',
+        theme: '테마',
+        support: '고객센터',
+        terms: '약관 및 정책',
+        appInfo: '앱 정보'
+    };
+
+    // 전용 뷰가 있는지 확인 (추후 단계에서 추가됨)
+    const dedicatedView = document.getElementById('myView-' + detail);
+    if (dedicatedView) {
+        // 전용 뷰로 이동
+        const currentId = myPageStack[myPageStack.length - 1];
+        const currentEl = document.getElementById('myView-' + currentId);
+        if (currentEl) currentEl.classList.remove('active', 'slide-back');
+
+        dedicatedView.classList.remove('slide-back');
+        dedicatedView.classList.add('active');
+        myPageStack.push(detail);
+        document.getElementById('page-my').scrollTop = 0;
+        console.log('[MyTab] Navigate to detail:', detail, 'Stack:', myPageStack);
+        return;
+    }
+
+    // 전용 뷰 없으면 플레이스홀더 사용
+    const titleEl = document.getElementById('myDetailTitle');
+    if (titleEl) titleEl.textContent = titles[detail] || detail;
+
+    const currentId = myPageStack[myPageStack.length - 1];
+    const currentEl = document.getElementById('myView-' + currentId);
+    if (currentEl) currentEl.classList.remove('active', 'slide-back');
+
+    const detailView = document.getElementById('myView-detail');
+    if (detailView) {
+        detailView.classList.remove('slide-back');
+        detailView.classList.add('active');
+    }
+
+    myPageStack.push('detail');
+    document.getElementById('page-my').scrollTop = 0;
+    console.log('[MyTab] Navigate to detail (placeholder):', detail, 'Stack:', myPageStack);
+}
+
+function myGoBack() {
+    if (myPageStack.length <= 1) return;
+
+    // 현재 뷰 숨기기
+    const currentId = myPageStack.pop();
+    const currentEl = currentId === 'main'
+        ? document.getElementById('myMainView')
+        : (currentId === 'detail'
+            ? document.getElementById('myView-detail')
+            : document.getElementById('myView-' + currentId));
+
+    if (currentEl) {
+        currentEl.classList.remove('active', 'slide-back');
+    }
+
+    // 이전 뷰 표시 (뒤로가기 애니메이션)
+    const prevId = myPageStack[myPageStack.length - 1];
+    const prevEl = prevId === 'main'
+        ? document.getElementById('myMainView')
+        : document.getElementById('myView-' + prevId);
+
+    if (prevEl) {
+        prevEl.classList.add('active', 'slide-back');
+    }
+
+    // 스크롤 상단으로
+    document.getElementById('page-my').scrollTop = 0;
+
+    console.log('[MyTab] Go back to:', prevId, 'Stack:', myPageStack);
+}
+
+// My 탭 진입 시 메인으로 리셋
+function resetMyTab() {
+    // 모든 뷰 숨기기
+    document.querySelectorAll('#page-my .my-view').forEach(v => {
+        v.classList.remove('active', 'slide-back');
+    });
+    // 메인 뷰 표시
+    const mainView = document.getElementById('myMainView');
+    if (mainView) mainView.classList.add('active');
+    // 스택 리셋
+    myPageStack = ['main'];
 }
 
 // ========== 페이지 로드 시 초기화 ==========

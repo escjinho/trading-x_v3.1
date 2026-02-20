@@ -1345,98 +1345,240 @@
             
             <!-- ========== My 탭 ========== -->
             <div class="page" id="page-my">
-                <!-- 히어로 -->
-                <div class="my-hero">
-                    <!-- 프로필 + 설정 -->
-                    <div class="my-hero-top">
-                        <div class="my-profile-row">
-                            <div class="my-avatar" id="myAvatar">J</div>
-                            <div class="my-profile-info">
-                                <div class="my-profile-name" id="myProfileName">Trader</div>
-                                <div class="my-profile-email" id="myProfileEmail">-</div>
+                <!-- ===== 메인 뷰 ===== -->
+                <div class="my-view active" id="myMainView">
+                    <!-- 히어로 -->
+                    <div class="my-hero">
+                        <!-- 프로필 + 설정 -->
+                        <div class="my-hero-top">
+                            <div class="my-profile-row">
+                                <div class="my-avatar" id="myAvatar">J</div>
+                                <div class="my-profile-info">
+                                    <div class="my-profile-name" id="myProfileName">Trader</div>
+                                    <div class="my-profile-email" id="myProfileEmail">-</div>
+                                </div>
+                            </div>
+                            <div class="my-settings-btn" onclick="openMySettings()">
+                                <span class="material-icons-round">settings</span>
                             </div>
                         </div>
-                        <div class="my-settings-btn" onclick="openMySettings()">
-                            <span class="material-icons-round">settings</span>
+
+                        <!-- 통합 글로우 박스 -->
+                        <div class="my-glow-box">
+                            <div class="my-glow-row">
+                                <!-- 모드 -->
+                                <div class="my-glow-item">
+                                    <div class="my-glow-label">Mode</div>
+                                    <div class="my-mode-value" onclick="openModeSwitch()">
+                                        <div class="my-mode-dot" id="myModeDot"></div>
+                                        <span class="my-mode-text" id="myModeText">Demo</span>
+                                        <span class="material-icons-round my-mode-switch">swap_horiz</span>
+                                    </div>
+                                </div>
+                                <div class="my-glow-divider"></div>
+                                <!-- 거래 -->
+                                <div class="my-glow-item trades">
+                                    <div class="my-glow-label">Trades</div>
+                                    <div class="my-trades-value">
+                                        <span class="my-trades-count" id="myTradesCount">0</span>
+                                        <span class="my-trades-sep">|</span>
+                                        <span class="my-trades-lots"><span id="myTradesLots">0.00</span> <span class="my-trades-lots-unit">Lots</span></span>
+                                    </div>
+                                </div>
+                                <div class="my-glow-divider"></div>
+                                <!-- 등급 -->
+                                <div class="my-glow-item">
+                                    <div class="my-glow-label">Grade</div>
+                                    <span class="my-grade-text" id="myGradeText">Standard</span>
+                                </div>
+                            </div>
+                            <!-- 프로그레스 -->
+                            <div class="my-progress-row">
+                                <div class="my-progress-bar">
+                                    <div class="my-progress-fill" id="myProgressFill" style="width: 0%"></div>
+                                </div>
+                                <span class="my-progress-text" id="myProgressText">Silver · 100회 남음</span>
+                            </div>
+                        </div>
+
+                        <!-- 이메일 경고 -->
+                        <div class="my-warning-banner" id="myEmailWarning" style="display: none;">
+                            <span class="material-icons-round">warning_amber</span>
+                            <span class="my-warning-text">이메일 인증이 필요합니다</span>
+                            <span class="my-warning-action">인증 →</span>
                         </div>
                     </div>
 
-                    <!-- 통합 글로우 박스 -->
-                    <div class="my-glow-box">
-                        <div class="my-glow-row">
-                            <!-- 모드 -->
-                            <div class="my-glow-item">
-                                <div class="my-glow-label">Mode</div>
-                                <div class="my-mode-value" onclick="openModeSwitch()">
-                                    <div class="my-mode-dot" id="myModeDot"></div>
-                                    <span class="my-mode-text" id="myModeText">Demo</span>
-                                    <span class="material-icons-round my-mode-switch">swap_horiz</span>
-                                </div>
-                            </div>
-                            <div class="my-glow-divider"></div>
-                            <!-- 거래 -->
-                            <div class="my-glow-item trades">
-                                <div class="my-glow-label">Trades</div>
-                                <div class="my-trades-value">
-                                    <span class="my-trades-count" id="myTradesCount">0</span>
-                                    <span class="my-trades-sep">|</span>
-                                    <span class="my-trades-lots"><span id="myTradesLots">0.00</span> <span class="my-trades-lots-unit">Lots</span></span>
-                                </div>
-                            </div>
-                            <div class="my-glow-divider"></div>
-                            <!-- 등급 -->
-                            <div class="my-glow-item">
-                                <div class="my-glow-label">Grade</div>
-                                <span class="my-grade-text" id="myGradeText">Standard</span>
-                            </div>
+                    <!-- 메인 메뉴 -->
+                    <div class="my-menu-section">
+                        <div class="my-menu-card" onclick="openMySubPage('account')">
+                            <div class="my-menu-left"><span class="material-icons-round">person</span><span class="my-menu-label">내 계정</span></div>
+                            <span class="material-icons-round my-menu-arrow">chevron_right</span>
                         </div>
-                        <!-- 프로그레스 -->
-                        <div class="my-progress-row">
-                            <div class="my-progress-bar">
-                                <div class="my-progress-fill" id="myProgressFill" style="width: 0%"></div>
-                            </div>
-                            <span class="my-progress-text" id="myProgressText">Silver · 100회 남음</span>
+                        <div class="my-menu-card" onclick="openMySubPage('deposit')">
+                            <div class="my-menu-left"><span class="material-icons-round">account_balance_wallet</span><span class="my-menu-label">입금 / 출금</span></div>
+                            <span class="material-icons-round my-menu-arrow">chevron_right</span>
                         </div>
-                    </div>
+                        <div class="my-menu-card" onclick="openMySubPage('trading')">
+                            <div class="my-menu-left"><span class="material-icons-round">assessment</span><span class="my-menu-label">트레이딩</span></div>
+                            <span class="material-icons-round my-menu-arrow">chevron_right</span>
+                        </div>
+                        <div class="my-menu-card" onclick="openMySubPage('social')">
+                            <div class="my-menu-left"><span class="material-icons-round">card_giftcard</span><span class="my-menu-label">소셜 & 멤버쉽</span></div>
+                            <span class="material-icons-round my-menu-arrow">chevron_right</span>
+                        </div>
+                        <div class="my-menu-card" onclick="openMySubPage('general')">
+                            <div class="my-menu-left"><span class="material-icons-round">tune</span><span class="my-menu-label">일반</span></div>
+                            <span class="material-icons-round my-menu-arrow">chevron_right</span>
+                        </div>
+                        <div class="my-menu-card logout" onclick="confirmLogout()">
+                            <div class="my-menu-left"><span class="material-icons-round">logout</span><span class="my-menu-label">로그아웃</span></div>
+                            <span class="material-icons-round my-menu-arrow">chevron_right</span>
+                        </div>
 
-                    <!-- 이메일 경고 -->
-                    <div class="my-warning-banner" id="myEmailWarning" style="display: none;">
-                        <span class="material-icons-round">warning_amber</span>
-                        <span class="my-warning-text">이메일 인증이 필요합니다</span>
-                        <span class="my-warning-action">인증 →</span>
+                        <div class="my-footer">
+                            <div class="my-footer-version">Trading-X v3.1.0</div>
+                            <div class="my-footer-copy">© 2026 GoodFriends CO., LTD All rights reserved.</div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- 메인 메뉴 -->
-                <div class="my-menu-section">
-                    <div class="my-menu-card" onclick="openMySubPage('account')">
-                        <div class="my-menu-left"><span class="material-icons-round">person</span><span class="my-menu-label">내 계정</span></div>
-                        <span class="material-icons-round my-menu-arrow">chevron_right</span>
+                <!-- ===== 내 계정 서브페이지 ===== -->
+                <div class="my-view" id="myView-account">
+                    <div class="my-sub-header">
+                        <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
+                        <span class="my-sub-title">내 계정</span>
                     </div>
-                    <div class="my-menu-card" onclick="openMySubPage('deposit')">
-                        <div class="my-menu-left"><span class="material-icons-round">account_balance_wallet</span><span class="my-menu-label">입금 / 출금</span></div>
-                        <span class="material-icons-round my-menu-arrow">chevron_right</span>
+                    <div class="my-sub-body">
+                        <div class="my-sub-card">
+                            <div class="my-sub-item" onclick="openMyDetail('password')">
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">lock</span></div><span class="my-sub-item-label">비밀번호 변경</span></div>
+                                <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
+                            </div>
+                            <div class="my-sub-item" onclick="openMyDetail('email')">
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">mark_email_unread</span></div><span class="my-sub-item-label">이메일 인증</span></div>
+                                <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
+                            </div>
+                            <div class="my-sub-item" onclick="openMyDetail('mt5')">
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">cable</span></div><span class="my-sub-item-label">MT5 계정 관리</span></div>
+                                <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
+                            </div>
+                            <div class="my-sub-item last" onclick="openMyDetail('loginHistory')">
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">history</span></div><span class="my-sub-item-label">로그인 기록</span></div>
+                                <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="my-menu-card" onclick="openMySubPage('trading')">
-                        <div class="my-menu-left"><span class="material-icons-round">assessment</span><span class="my-menu-label">트레이딩</span></div>
-                        <span class="material-icons-round my-menu-arrow">chevron_right</span>
-                    </div>
-                    <div class="my-menu-card" onclick="openMySubPage('social')">
-                        <div class="my-menu-left"><span class="material-icons-round">card_giftcard</span><span class="my-menu-label">소셜 & 멤버쉽</span></div>
-                        <span class="material-icons-round my-menu-arrow">chevron_right</span>
-                    </div>
-                    <div class="my-menu-card" onclick="openMySubPage('general')">
-                        <div class="my-menu-left"><span class="material-icons-round">tune</span><span class="my-menu-label">일반</span></div>
-                        <span class="material-icons-round my-menu-arrow">chevron_right</span>
-                    </div>
-                    <div class="my-menu-card logout" onclick="confirmLogout()">
-                        <div class="my-menu-left"><span class="material-icons-round">logout</span><span class="my-menu-label">로그아웃</span></div>
-                        <span class="material-icons-round my-menu-arrow">chevron_right</span>
-                    </div>
+                </div>
 
-                    <div class="my-footer">
-                        <div class="my-footer-version">Trading-X v3.1.0</div>
-                        <div class="my-footer-copy">© 2026 GoodFriends CO., LTD All rights reserved.</div>
+                <!-- ===== 입금/출금 서브페이지 ===== -->
+                <div class="my-view" id="myView-deposit">
+                    <div class="my-sub-header">
+                        <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
+                        <span class="my-sub-title">입금 / 출금</span>
+                    </div>
+                    <div class="my-sub-body">
+                        <div class="my-sub-card">
+                            <div class="my-sub-item" onclick="openMyDetail('depositDemo')">
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">school</span></div><span class="my-sub-item-label">Demo 입출금</span></div>
+                                <div class="my-sub-item-right"><span class="my-sub-item-hint">$10,000</span><span class="material-icons-round my-sub-item-arrow">chevron_right</span></div>
+                            </div>
+                            <div class="my-sub-item last" onclick="openMyDetail('depositLive')">
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">trending_up</span></div><span class="my-sub-item-label">Live 입출금</span></div>
+                                <div class="my-sub-item-right"><span class="my-sub-item-hint">HedgeHood</span><span class="material-icons-round my-sub-item-arrow">chevron_right</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== 트레이딩 서브페이지 ===== -->
+                <div class="my-view" id="myView-trading">
+                    <div class="my-sub-header">
+                        <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
+                        <span class="my-sub-title">트레이딩</span>
+                    </div>
+                    <div class="my-sub-body">
+                        <div class="my-sub-card">
+                            <div class="my-sub-item" onclick="openMyDetail('tradingReport')">
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">bar_chart</span></div><span class="my-sub-item-label">트레이딩 리포트</span></div>
+                                <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
+                            </div>
+                            <div class="my-sub-item last" onclick="openMyDetail('tradeAlert')">
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">notifications_active</span></div><span class="my-sub-item-label">체결 알림 설정</span></div>
+                                <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== 소셜 & 멤버쉽 서브페이지 ===== -->
+                <div class="my-view" id="myView-social">
+                    <div class="my-sub-header">
+                        <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
+                        <span class="my-sub-title">소셜 & 멤버쉽</span>
+                    </div>
+                    <div class="my-sub-body">
+                        <div class="my-sub-card">
+                            <div class="my-sub-item" onclick="openMyDetail('invite')">
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">person_add</span></div><span class="my-sub-item-label">친구 초대</span></div>
+                                <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
+                            </div>
+                            <div class="my-sub-item last" onclick="openMyDetail('vip')">
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">workspace_premium</span></div><span class="my-sub-item-label">VIP 프로그램</span></div>
+                                <div class="my-sub-item-right"><span class="my-sub-item-hint">Standard</span><span class="material-icons-round my-sub-item-arrow">chevron_right</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== 일반 서브페이지 ===== -->
+                <div class="my-view" id="myView-general">
+                    <div class="my-sub-header">
+                        <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
+                        <span class="my-sub-title">일반</span>
+                    </div>
+                    <div class="my-sub-body">
+                        <div class="my-sub-card">
+                            <div class="my-sub-item" onclick="openMyDetail('notification')">
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">notifications</span></div><span class="my-sub-item-label">알림 설정</span></div>
+                                <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
+                            </div>
+                            <div class="my-sub-item" onclick="openMyDetail('language')">
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">language</span></div><span class="my-sub-item-label">언어 설정</span></div>
+                                <div class="my-sub-item-right"><span class="my-sub-item-hint">한국어</span><span class="material-icons-round my-sub-item-arrow">chevron_right</span></div>
+                            </div>
+                            <div class="my-sub-item" onclick="openMyDetail('theme')">
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">dark_mode</span></div><span class="my-sub-item-label">테마</span></div>
+                                <div class="my-sub-item-right"><span class="my-sub-item-hint">다크 모드</span><span class="material-icons-round my-sub-item-arrow">chevron_right</span></div>
+                            </div>
+                            <div class="my-sub-item" onclick="openMyDetail('support')">
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">support_agent</span></div><span class="my-sub-item-label">고객센터</span></div>
+                                <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
+                            </div>
+                            <div class="my-sub-item" onclick="openMyDetail('terms')">
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">description</span></div><span class="my-sub-item-label">약관 및 정책</span></div>
+                                <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
+                            </div>
+                            <div class="my-sub-item last" onclick="openMyDetail('appInfo')">
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">info</span></div><span class="my-sub-item-label">앱 정보</span></div>
+                                <div class="my-sub-item-right"><span class="my-sub-item-hint">v3.1.0</span><span class="material-icons-round my-sub-item-arrow">chevron_right</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== 상세 페이지 공통 플레이스홀더 ===== -->
+                <div class="my-view" id="myView-detail">
+                    <div class="my-sub-header">
+                        <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
+                        <span class="my-sub-title" id="myDetailTitle">상세</span>
+                    </div>
+                    <div class="my-sub-body">
+                        <div style="text-align: center; padding: 60px 20px;">
+                            <span class="material-icons-round" style="font-size: 48px; color: var(--text-dim); margin-bottom: 16px; display: block;">construction</span>
+                            <div style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">준비 중입니다</div>
+                            <div style="font-size: 13px; color: var(--text-muted);">이 기능은 곧 업데이트 될 예정입니다</div>
+                        </div>
                     </div>
                 </div>
             </div>

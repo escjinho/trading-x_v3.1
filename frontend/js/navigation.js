@@ -61,6 +61,14 @@ document.querySelectorAll('.nav-item').forEach(item => {
                 if (typeof softRefresh === 'function') {
                     softRefresh('nav_home');
                 }
+            } else if (page === 'my') {
+                // ★★★ My 탭 진입 시 메인 뷰로 리셋 ★★★
+                if (typeof resetMyTab === 'function') {
+                    resetMyTab();
+                }
+                if (typeof initMyTab === 'function') {
+                    initMyTab();
+                }
             }
         });
     }
