@@ -34,6 +34,23 @@ const OpenPositions = {
         }
     },
 
+    // ★★★ 모드 전환 시 전체 초기화 (데모↔라이브) ★★★
+    clearAll() {
+        console.log('[OpenPositions] clearAll - 모드 전환 초기화');
+        this._positions = [];
+        this._selected.clear();
+        this._closeMode = false;
+        this._longPressTimer = null;
+        this._longPressId = null;
+        this.render();
+        this._updateBarVisibility();
+        const countEl = document.getElementById('openPosCount');
+        if (countEl) {
+            countEl.textContent = '0';
+            countEl.style.display = 'none';
+        }
+    },
+
     // ========== Account 탭 + Open Positions 탭 활성 여부 체크 ==========
     _isVisible() {
         const accountPage = document.getElementById('page-account');
@@ -271,13 +288,19 @@ const OpenPositions = {
         const sheet = document.getElementById('closeConfirmSheet');
         const content = document.getElementById('closeConfirmContent');
         const executeBtn = document.getElementById('closeConfirmExecute');
-        if (!sheet || !content) return;
+        console.log('[OpenPositions] showConfirmSheet 호출:', type, posId, 'sheet:', !!sheet, 'content:', !!content);
+        if (!sheet || !content) {
+            console.error('[OpenPositions] showConfirmSheet - sheet 또는 content 없음!');
+            return;
+        }
 
         this._pendingCloseType = type;
         this._pendingCloseId = posId;
 
         if (type === 'single') {
-            const pos = this._positions.find(p => p.id === posId);
+            // ★★★ String 비교로 통일 ★★★
+            const pos = this._positions.find(p => String(p.id) === String(posId));
+            console.log('[OpenPositions] showConfirmSheet - pos found:', pos ? pos.symbol : 'NOT FOUND');
             if (!pos) return;
 
             const isBuy = pos.type === 'BUY' || pos.type === 0;
@@ -342,12 +365,17 @@ const OpenPositions = {
     // ========== 개별 청산 (롱프레스) ==========
     closeSingle(posId) {
         console.log('[OpenPositions] closeSingle - posId:', posId, 'type:', typeof posId);
-        console.log('[OpenPositions] closeSingle - _positions:', this._positions.map(p => ({ id: p.id, type: typeof p.id, symbol: p.symbol })));
+        console.log('[OpenPositions] closeSingle - _positions count:', this._positions.length);
 
-        const pos = this._positions.find(p => p.id === posId || p.id == posId);
+        // ★★★ String 비교로 통일 ★★★
+        const strId = String(posId);
+        const pos = this._positions.find(p => String(p.id) === strId);
         console.log('[OpenPositions] closeSingle - found pos:', pos ? pos.symbol : 'NOT FOUND');
 
-        if (!pos) return;
+        if (!pos) {
+            console.error('[OpenPositions] closeSingle - 포지션 없음! posId:', posId);
+            return;
+        }
         this.showConfirmSheet('single', posId);
     },
 

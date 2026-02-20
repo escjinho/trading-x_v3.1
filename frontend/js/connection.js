@@ -2077,15 +2077,20 @@ function switchTradingMode(mode) {
         const demoControl = document.getElementById('demoControlCard');
         if (demoControl) demoControl.style.display = 'block';
         
-        isDemo = true;
+        isDemo = true; window.isDemo = true;
         // ★★★ 모드 전환 시 히스토리 캐시 + 패널 리셋 ★★★
         window._weekHistoryData = null;
         window._todayPLFixed = null;
         if (typeof resetTradingPanel === 'function') resetTradingPanel();
+        // ★★★ Open Positions 초기화 (이전 모드 포지션 잔류 방지) ★★★
+        if (typeof OpenPositions !== 'undefined' && OpenPositions.clearAll) {
+            OpenPositions.clearAll();
+        }
         // ★ 이지패널 포지션 뷰 초기화 (이전 모드 포지션 잔류 방지)
         if (typeof QuickEasyPanel !== 'undefined') {
+            QuickEasyPanel._positions = {};  // ★ 모든 종목 포지션 초기화
             QuickEasyPanel.hidePositionView();
-            QeTickChart._pendingEntryLine = null;
+            if (typeof QeTickChart !== 'undefined') QeTickChart._pendingEntryLine = null;
         }
         showToast('Demo 모드로 전환되었습니다', 'demo');
         updateHeroCTA('demo_with_live');
@@ -2151,15 +2156,20 @@ function switchTradingMode(mode) {
                 const demoControl = document.getElementById('demoControlCard');
                 if (demoControl) demoControl.style.display = 'none';
                 
-                isDemo = false;
+                isDemo = false; window.isDemo = false;
                 // ★★★ 모드 전환 시 히스토리 캐시 + 패널 리셋 ★★★
                 window._weekHistoryData = null;
                 window._todayPLFixed = null;
                 if (typeof resetTradingPanel === 'function') resetTradingPanel();
+                // ★★★ Open Positions 초기화 (이전 모드 포지션 잔류 방지) ★★★
+                if (typeof OpenPositions !== 'undefined' && OpenPositions.clearAll) {
+                    OpenPositions.clearAll();
+                }
                 // ★ 이지패널 포지션 뷰 초기화 (이전 모드 포지션 잔류 방지)
                 if (typeof QuickEasyPanel !== 'undefined') {
+                    QuickEasyPanel._positions = {};  // ★ 모든 종목 포지션 초기화
                     QuickEasyPanel.hidePositionView();
-                    QeTickChart._pendingEntryLine = null;
+                    if (typeof QeTickChart !== 'undefined') QeTickChart._pendingEntryLine = null;
                 }
                 showToast('Live 모드로 전환되었습니다', 'success');
                 updateHeroCTA('live');
