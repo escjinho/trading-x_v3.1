@@ -101,6 +101,34 @@ function toggleNicknameEdit() {
 
 function toggleMyNoti(el) {
     el.classList.toggle('active');
+
+    // ★★★ localStorage에 설정 저장 ★★★
+    var key = el.getAttribute('data-noti-key');
+    if (key) {
+        var isOn = el.classList.contains('active');
+        localStorage.setItem(key, isOn ? 'true' : 'false');
+    }
+}
+
+// 알림 설정 페이지 진입 시 저장된 설정 로드
+function initNotificationSettings() {
+    var toggles = document.querySelectorAll('.my-toggle[data-noti-key]');
+    toggles.forEach(function(toggle) {
+        var key = toggle.getAttribute('data-noti-key');
+        if (!key) return;
+
+        var stored = localStorage.getItem(key);
+        if (stored === null) {
+            // 저장된 값 없으면 현재 HTML 상태 유지 (기본값)
+            return;
+        }
+
+        if (stored === 'true') {
+            toggle.classList.add('active');
+        } else {
+            toggle.classList.remove('active');
+        }
+    });
 }
 
 // ========== 모드 전환 모달 ==========
@@ -231,6 +259,11 @@ function openMyDetail(detail) {
 
         // 상세 페이지 초기화
         if (typeof initDetailView === 'function') initDetailView(detail);
+
+        // ★ 알림 설정 페이지면 저장된 설정 로드
+        if (detail === 'notification') {
+            initNotificationSettings();
+        }
 
         console.log('[MyTab] Navigate to detail:', detail, 'Stack:', myPageStack);
         return;

@@ -6,37 +6,99 @@ function getModeLabel(magic) {
     return 'V5';
 }
 
-// ========== Toast ==========
+// ========== Toast (스마트 알림 시스템) ==========
+
+// 메시지 키워드 → 알림 타입 매핑
+function _detectNotiType(message) {
+    if (!message || typeof message !== 'string') return null;
+    var m = message.toLowerCase();
+
+    // 주문 체결 (order)
+    if (m.indexOf('체결') !== -1 || m.indexOf('buy 실행') !== -1 || m.indexOf('sell 실행') !== -1 ||
+        m.indexOf('주문 성공') !== -1 || m.indexOf('quick buy') !== -1 || m.indexOf('quick sell') !== -1) {
+        return 'noti_order';
+    }
+
+    // 포지션 청산 (close)
+    if (m.indexOf('청산') !== -1 || m.indexOf('closed') !== -1 || m.indexOf('closing') !== -1) {
+        return 'noti_close';
+    }
+
+    // 자동청산/로스컷 (liquidation)
+    if (m.indexOf('로스컷') !== -1 || m.indexOf('강제 청산') !== -1 || m.indexOf('liquidat') !== -1) {
+        return 'noti_liquidation';
+    }
+
+    // 마진콜 (margin)
+    if (m.indexOf('마진') !== -1 && (m.indexOf('경고') !== -1 || m.indexOf('부족') !== -1 || m.indexOf('위험') !== -1)) {
+        return 'noti_margin';
+    }
+
+    // 입출금 (deposit)
+    if (m.indexOf('충전') !== -1 || m.indexOf('리셋') !== -1 || m.indexOf('입금') !== -1 ||
+        m.indexOf('출금') !== -1 || m.indexOf('인출') !== -1) {
+        return 'noti_deposit';
+    }
+
+    // 공지사항 (notice) — 서버 점검 등
+    if (m.indexOf('점검') !== -1 || m.indexOf('공지') !== -1) {
+        return 'noti_notice';
+    }
+
+    // 이벤트/프로모션 (event)
+    if (m.indexOf('이벤트') !== -1 || m.indexOf('프로모션') !== -1) {
+        return 'noti_event';
+    }
+
+    // 매칭 안 되면 null (항상 표시)
+    return null;
+}
+
+// 알림 설정 체크 (OFF면 false 반환)
+function _isNotiEnabled(notiKey) {
+    if (!notiKey) return true; // 매칭 안 되면 항상 표시
+    var stored = localStorage.getItem(notiKey);
+    if (stored === null) return true; // 저장된 값 없으면 기본 ON
+    return stored === 'true';
+}
+
 function showToast(message, type, duration) {
-    const toast = document.getElementById('toast');
+    var toast = document.getElementById('toast');
     if (!toast) return;
 
+    // ★★★ 스마트 알림: 메시지 키워드로 타입 감지 → 설정 체크 ★★★
+    var notiType = _detectNotiType(message);
+    if (notiType && !_isNotiEnabled(notiType)) {
+        // 설정이 OFF면 토스트 표시하지 않음
+        return;
+    }
+
     // 타입 정규화
-    const t = type === '' || !type ? 'info' : type;
-    const dur = duration || (t === 'error' ? 4000 : 3000);
+    var t = type === '' || !type ? 'info' : type;
+    var dur = duration || (t === 'error' ? 4000 : 3000);
 
     // 멀티라인 지원: \n → 두 줄 (title + message)
-    const parts = message.split('\n');
-    let contentHtml = '';
+    var parts = message.split('\n');
+    var contentHtml = '';
     if (parts.length > 1) {
-        contentHtml = `<div class="toast-content"><div class="toast-title">${parts[0]}</div><div class="toast-message">${parts.slice(1).join('<br>')}</div></div>`;
+        contentHtml = '<div class="toast-content"><div class="toast-title">' + parts[0] + '</div><div class="toast-message">' + parts.slice(1).join('<br>') + '</div></div>';
     } else {
-        contentHtml = `<div class="toast-content"><div class="toast-title">${message}</div></div>`;
+        contentHtml = '<div class="toast-content"><div class="toast-title">' + message + '</div></div>';
     }
 
     toast.className = 'toast ' + t;
     toast.innerHTML = contentHtml;
 
     // 애니메이션: 약간의 딜레이 후 show 추가
-    requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
+    requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
             toast.classList.add('show');
         });
     });
 
     // 이전 타이머 취소
     if (window._toastTimer) clearTimeout(window._toastTimer);
-    window._toastTimer = setTimeout(() => {
+    window._toastTimer = setTimeout(function() {
         toast.classList.remove('show');
     }, dur);
 }
@@ -165,24 +227,23 @@ function getSymbolInfo(symbol) {
     return symbolMap[symbol] || defaultInfo;
 }
 
-// ========== 사운드 재생 (개선된 버전) ==========
+// ========== 사운드 재생 (스마트 알림 연동) ==========
 function playSound(type) {
+    // ★★★ 체결 사운드 설정 체크 ★★★
+    if (!_isNotiEnabled('noti_sound')) return;
+
     try {
-        // ★ 전역 AudioContext 재사용 (브라우저 정책 대응)
         if (!window._audioContext) {
             window._audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
-        const audioContext = window._audioContext;
+        var audioContext = window._audioContext;
 
-        // ★ AudioContext가 suspended 상태면 resume 시도
         if (audioContext.state === 'suspended') {
-            audioContext.resume().then(() => {
-                console.log('[Sound] AudioContext resumed');
-            });
+            audioContext.resume();
         }
 
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
+        var oscillator = audioContext.createOscillator();
+        var gainNode = audioContext.createGain();
 
         oscillator.connect(gainNode);
         gainNode.connect(audioContext.destination);
@@ -197,8 +258,6 @@ function playSound(type) {
 
         oscillator.start(audioContext.currentTime);
         oscillator.stop(audioContext.currentTime + 0.3);
-
-        console.log('[Sound] Played:', type);
     } catch (e) {
         console.error('[Sound] Error:', e.message);
     }

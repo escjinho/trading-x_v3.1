@@ -2034,28 +2034,28 @@
                                     <div class="my-noti-label">주문 체결</div>
                                     <div class="my-noti-desc">주문이 체결되면 알림을 받습니다</div>
                                 </div>
-                                <div class="my-toggle active" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div>
+                                <div class="my-toggle active" data-noti-key="noti_order" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div>
                             </div>
                             <div class="my-noti-item">
                                 <div>
                                     <div class="my-noti-label">포지션 청산</div>
                                     <div class="my-noti-desc">포지션이 청산되면 알림을 받습니다</div>
                                 </div>
-                                <div class="my-toggle active" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div>
+                                <div class="my-toggle active" data-noti-key="noti_close" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div>
                             </div>
                             <div class="my-noti-item">
                                 <div>
                                     <div class="my-noti-label">자동청산 (로스컷)</div>
                                     <div class="my-noti-desc">마진 부족으로 강제 청산 시 알림</div>
                                 </div>
-                                <div class="my-toggle active" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div>
+                                <div class="my-toggle active" data-noti-key="noti_liquidation" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div>
                             </div>
                             <div class="my-noti-item last">
                                 <div>
                                     <div class="my-noti-label">마진콜 경고</div>
                                     <div class="my-noti-desc">마진 비율이 위험 수준에 도달 시 경고</div>
                                 </div>
-                                <div class="my-toggle active" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div>
+                                <div class="my-toggle active" data-noti-key="noti_margin" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div>
                             </div>
                         </div>
                         <!-- 기타 알림 -->
@@ -2066,21 +2066,21 @@
                                     <div class="my-noti-label">입출금</div>
                                     <div class="my-noti-desc">입출금 처리 상태 알림</div>
                                 </div>
-                                <div class="my-toggle active" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div>
+                                <div class="my-toggle active" data-noti-key="noti_deposit" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div>
                             </div>
                             <div class="my-noti-item">
                                 <div>
                                     <div class="my-noti-label">공지사항</div>
                                     <div class="my-noti-desc">서버 점검, 공지사항 알림</div>
                                 </div>
-                                <div class="my-toggle active" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div>
+                                <div class="my-toggle active" data-noti-key="noti_notice" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div>
                             </div>
                             <div class="my-noti-item last">
                                 <div>
                                     <div class="my-noti-label">이벤트 및 프로모션</div>
                                     <div class="my-noti-desc">이벤트, 프로모션 알림</div>
                                 </div>
-                                <div class="my-toggle" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div>
+                                <div class="my-toggle" data-noti-key="noti_event" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div>
                             </div>
                         </div>
                         <!-- 사운드 -->
@@ -2091,7 +2091,7 @@
                                     <div class="my-noti-label">체결 사운드</div>
                                     <div class="my-noti-desc">체결 시 효과음 재생</div>
                                 </div>
-                                <div class="my-toggle active" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div>
+                                <div class="my-toggle active" data-noti-key="noti_sound" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div>
                             </div>
                         </div>
                     </div>
@@ -3305,10 +3305,10 @@
     <script src="js/state.js?v=1771533971"></script>
     <script src="js/auth.js?v=1771533971"></script>
     <script src="js/api.js?v=1771533971"></script>
-    <script src="js/utils.js?v=1771533971"></script>
+    <script src="js/utils.js?v=1771631177"></script>
     <script src="js/watchlist.js?v=1771533971"></script>
     <script src="js/navigation.js?v=1771533971"></script>
-    <script src="js/my.js?v=1771630041"></script>
+    <script src="js/my.js?v=1771631177"></script>
 
     <!-- Chart Panels (모듈화) -->
     <script src="js/panels/gaugePanel.js?v=1771533971"></script>
