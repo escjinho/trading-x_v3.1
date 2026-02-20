@@ -959,6 +959,42 @@ function connectWebSocket() {
             OpenPositions.updatePositions(data.positions);
         }
 
+        // ★★★ Quick&Easy 포지션 복구 (positions 배열에서 magic=100003 찾기) ★★★
+        // 라이브 모드 전환 후에도 QE 포지션 UI가 복구되도록 함
+        if (typeof QuickEasyPanel !== 'undefined' && data.positions && Array.isArray(data.positions)) {
+            const qePositions = data.positions.filter(p => p.magic == 100003);
+            const currentSym = window.currentSymbol || 'BTCUSD';
+            qePositions.forEach(qePos => {
+                const posSym = qePos.symbol || '';
+                // ★ 딕셔너리에 저장 (모든 종목)
+                if (!QuickEasyPanel._positions[posSym]) {
+                    QuickEasyPanel._positions[posSym] = {
+                        side: qePos.type === 'BUY' ? 'BUY' : 'SELL',
+                        entry: qePos.entry,
+                        volume: qePos.volume,
+                        target: qePos.target,
+                        tpsl: (qePos.tp_price && qePos.sl_price) ? { tp: qePos.tp_price, sl: qePos.sl_price } : null,
+                        startTime: Date.now(),
+                        openedAt: Date.now()
+                    };
+                    QuickEasyPanel._updatePositionBadge();
+                }
+                // ★ 현재 보는 종목만 UI 복구
+                if (posSym === currentSym && QuickEasyPanel._posEntryPrice <= 0) {
+                    console.log('[WS Live] 🔄 이지패널 포지션 복구:', posSym);
+                    if (qePos.tp_price && qePos.sl_price) {
+                        window._serverTPSL = { tp: qePos.tp_price, sl: qePos.sl_price };
+                    }
+                    QuickEasyPanel.showPositionView(
+                        qePos.type === 'BUY' ? 'BUY' : 'SELL',
+                        qePos.entry,
+                        qePos.volume,
+                        qePos.target
+                    );
+                }
+            });
+        }
+
         // Current P&L 업데이트 (전체 포지션 손익 합계 — BuySell + V5 + QE)
         if (accCurrentPL) {
             let currentProfit = 0;
