@@ -155,16 +155,18 @@ const OpenPositions = {
             // 진입 시간 (라이브: time, 데모: opened_at)
             const timeStr = this._formatTime(pos.opened_at || pos.time);
 
-            // 체크박스 (청산 모드일 때)
+            // ★★★ pos.id를 문자열로 통일 (라이브 모드에서 문자열 ID 지원) ★★★
+            const safeId = String(pos.id).replace(/'/g, "\\'");
+            const strId = String(pos.id);
+
+            // 체크박스 (청산 모드일 때) - ★ safeId로 따옴표 처리
+            const isSelected = this._selected.has(strId);
             const checkboxHtml = this._closeMode
-                ? '<div class="open-pos-checkbox ' + (this._selected.has(pos.id) ? 'checked' : '') + '" onclick="OpenPositions.toggleSelect(' + pos.id + ', event)"></div>'
+                ? `<div class="open-pos-checkbox ${isSelected ? 'checked' : ''}" onclick="OpenPositions.toggleSelect('${safeId}', event); event.stopPropagation();"></div>`
                 : '';
 
             // 선택 상태
-            const selectedClass = this._selected.has(pos.id) ? ' selected' : '';
-
-            // ★★★ pos.id를 따옴표로 감싸기 (라이브 모드에서 문자열 ID 지원) ★★★
-            const safeId = String(pos.id).replace(/'/g, "\\'");
+            const selectedClass = isSelected ? ' selected' : '';
 
             html += `
             <div class="open-pos-card ${cardClass}${selectedClass}" data-pos-id="${pos.id}"
@@ -468,17 +470,19 @@ const OpenPositions = {
 
     toggleSelect(posId, event) {
         if (event) event.stopPropagation();
-        if (this._selected.has(posId)) {
-            this._selected.delete(posId);
+        // ★★★ 문자열로 통일 (라이브 ID는 문자열) ★★★
+        const strId = String(posId);
+        if (this._selected.has(strId)) {
+            this._selected.delete(strId);
         } else {
-            this._selected.add(posId);
+            this._selected.add(strId);
         }
         // 체크박스 UI 즉시 반영
-        const card = document.querySelector('.open-pos-card[data-pos-id="' + posId + '"]');
+        const card = document.querySelector(`.open-pos-card[data-pos-id="${posId}"]`);
         if (card) {
-            card.classList.toggle('selected', this._selected.has(posId));
+            card.classList.toggle('selected', this._selected.has(strId));
             const cb = card.querySelector('.open-pos-checkbox');
-            if (cb) cb.classList.toggle('checked', this._selected.has(posId));
+            if (cb) cb.classList.toggle('checked', this._selected.has(strId));
         }
         this._updateCloseButton();
     },
@@ -487,7 +491,8 @@ const OpenPositions = {
         if (this._selected.size === this._positions.length) {
             this._selected.clear();
         } else {
-            this._positions.forEach(p => this._selected.add(p.id));
+            // ★★★ 문자열로 통일 ★★★
+            this._positions.forEach(p => this._selected.add(String(p.id)));
         }
         this.render();
         this._updateCloseButton();
