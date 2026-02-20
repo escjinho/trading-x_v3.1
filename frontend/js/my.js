@@ -2,7 +2,6 @@
    Trading-X My Tab
    히어로, 설정, 모드 전환
    ======================================== */
-console.log('[MyTab] my.js loaded successfully');
 
 // ========== 초기화 ==========
 function initMyTab() {
@@ -166,7 +165,6 @@ function confirmLogout() {
 let myPageStack = ['main'];
 
 function openMySubPage(page) {
-    console.log('[MyTab] openMySubPage called with:', page);
     const targetId = 'myView-' + page;
     const targetEl = document.getElementById(targetId);
     if (!targetEl) {
@@ -349,15 +347,7 @@ function changePassword() {
 let emailTimerInterval = null;
 let emailTimerSeconds = 300; // 5분
 
-// ========== API 헬퍼 ==========
-function getApiUrl() {
-    const loc = window.location;
-    if (loc.hostname === 'localhost' || loc.hostname === '127.0.0.1') {
-        return 'http://localhost:8000/api';
-    }
-    return loc.protocol + '//' + loc.host + '/api';
-}
-
+// 현재 로그인한 사용자 이메일
 function getCurrentUserEmail() {
     return localStorage.getItem('user_email') || '';
 }
@@ -380,7 +370,7 @@ async function sendEmailCode() {
     if (sendBtn) sendBtn.disabled = true;
 
     try {
-        const API_URL = getApiUrl();
+        // API_URL은 config.js에서 전역 정의됨
         const res = await fetch(API_URL + '/auth/email/send-code', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -477,7 +467,7 @@ async function verifyEmailCode() {
     if (verifyBtn) verifyBtn.disabled = true;
 
     try {
-        const API_URL = getApiUrl();
+        // API_URL은 config.js에서 전역 정의됨
         const res = await fetch(API_URL + '/auth/email/verify-code', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
