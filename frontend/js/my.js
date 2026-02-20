@@ -588,35 +588,97 @@ document.addEventListener('keydown', function(e) {
 
 // ========== MT5 계정 관리 ==========
 function initMt5View() {
-    const demo = typeof isDemo !== 'undefined' ? isDemo : true;
+    var demo = typeof isDemo !== 'undefined' ? isDemo : true;
 
-    // 상태 배지
-    const statusBadge = document.getElementById('myMt5StatusBadge');
-    const modeBadge = document.getElementById('myMt5ModeBadge');
-
+    // 모드 배지
+    var modeBadge = document.getElementById('myMt5ModeBadge');
     if (modeBadge) {
         modeBadge.textContent = demo ? 'Demo' : 'Live';
         modeBadge.className = 'my-mt5-mode' + (demo ? '' : ' live');
     }
 
     // 스위치 버튼 상태
-    const demoSwitch = document.getElementById('myMt5DemoSwitch');
-    const liveSwitch = document.getElementById('myMt5LiveSwitch');
+    var demoSwitch = document.getElementById('myMt5DemoSwitch');
+    var liveSwitch = document.getElementById('myMt5LiveSwitch');
     if (demoSwitch && liveSwitch) {
         demoSwitch.classList.toggle('active', demo);
         liveSwitch.classList.toggle('active', !demo);
     }
 
-    // 계정 정보 (TODO: API 연동)
-    const loginEl = document.getElementById('myMt5Login');
-    const serverEl = document.getElementById('myMt5Server');
-    const balanceEl = document.getElementById('myMt5Balance');
-    const leverageEl = document.getElementById('myMt5Leverage');
+    // API에서 계정 정보 로드
+    loadMT5AccountInfo();
+}
 
-    if (loginEl) loginEl.textContent = demo ? '5001234' : '-';
-    if (serverEl) serverEl.textContent = demo ? 'TradingX-Demo' : 'TradingX-Live';
-    if (balanceEl) balanceEl.textContent = demo ? '$10,000.00' : '-';
-    if (leverageEl) leverageEl.textContent = '1:100';
+// MT5 계정 정보 로드 (API 연동)
+async function loadMT5AccountInfo() {
+    var token = localStorage.getItem('access_token') || '';
+    if (!token) {
+        updateMT5Display(null, false);
+        return;
+    }
+
+    try {
+        // 계정 목록 조회
+        var res = await fetch(API_URL + '/accounts/', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        if (!res.ok) {
+            updateMT5Display(null, false);
+            return;
+        }
+
+        var accounts = await res.json();
+
+        if (accounts && accounts.length > 0) {
+            var acc = accounts[0];
+            updateMT5Display(acc, true);
+        } else {
+            updateMT5Display(null, false);
+        }
+    } catch (err) {
+        console.error('[MT5] 계정 정보 로드 오류:', err);
+        updateMT5Display(null, false);
+    }
+}
+
+// MT5 UI 업데이트
+function updateMT5Display(account, connected) {
+    var statusBadge = document.getElementById('myMt5StatusBadge');
+    var loginEl = document.getElementById('myMt5Login');
+    var serverEl = document.getElementById('myMt5Server');
+    var balanceEl = document.getElementById('myMt5Balance');
+    var leverageEl = document.getElementById('myMt5Leverage');
+
+    if (connected && account) {
+        // 연결됨 상태
+        if (statusBadge) {
+            statusBadge.textContent = '연결됨';
+            statusBadge.style.background = 'rgba(0, 200, 83, 0.15)';
+            statusBadge.style.color = 'var(--buy-color)';
+        }
+        if (loginEl) loginEl.textContent = account.account_number || account.mt5_account_number || '-';
+        if (serverEl) serverEl.textContent = account.server || account.mt5_server || '-';
+        if (balanceEl) {
+            var bal = account.balance || account.mt5_balance;
+            balanceEl.textContent = bal ? ('$' + Number(bal).toLocaleString()) : '-';
+        }
+        if (leverageEl) {
+            var lev = account.leverage || account.mt5_leverage;
+            leverageEl.textContent = lev ? ('1:' + lev) : '-';
+        }
+    } else {
+        // 미연결 상태
+        if (statusBadge) {
+            statusBadge.textContent = '미연결';
+            statusBadge.style.background = 'rgba(220, 53, 69, 0.15)';
+            statusBadge.style.color = 'var(--sell-color)';
+        }
+        if (loginEl) loginEl.textContent = '-';
+        if (serverEl) serverEl.textContent = '-';
+        if (balanceEl) balanceEl.textContent = '-';
+        if (leverageEl) leverageEl.textContent = '-';
+    }
 }
 
 function switchMt5Account(mode) {
@@ -636,14 +698,15 @@ function switchMt5Account(mode) {
     }
 }
 
-function refreshMt5Connection() {
-    if (typeof showToast === 'function') showToast('연결을 새로고침합니다...', 'info');
+async function refreshMt5Connection() {
+    showToast('연결을 새로고침합니다...', 'info');
 
-    // TODO: 실제 연결 새로고침 로직
-    setTimeout(() => {
-        initMt5View();
-        if (typeof showToast === 'function') showToast('연결이 갱신되었습니다', 'success');
-    }, 1000);
+    try {
+        await loadMT5AccountInfo();
+        showToast('연결이 갱신되었습니다', 'success');
+    } catch (err) {
+        showToast('새로고침 실패', 'error');
+    }
 }
 
 // ========== 로그인 기록 ==========
