@@ -312,35 +312,78 @@ function togglePwVisibility(inputId, toggleEl) {
     }
 }
 
-function changePassword() {
-    const current = document.getElementById('myCurrentPw').value;
+async function changePassword() {
+    const currentPw = document.getElementById('myCurrentPw').value;
     const newPw = document.getElementById('myNewPw').value;
-    const confirm = document.getElementById('myConfirmPw').value;
+    const confirmPw = document.getElementById('myConfirmPw').value;
 
-    if (!current || !newPw || !confirm) {
-        if (typeof showToast === 'function') showToast('모든 필드를 입력해주세요', 'error');
+    // 유효성 검사
+    if (!currentPw) {
+        showToast('현재 비밀번호를 입력해주세요', 'error');
         return;
     }
-
+    if (!newPw) {
+        showToast('새 비밀번호를 입력해주세요', 'error');
+        return;
+    }
     if (newPw.length < 8) {
-        if (typeof showToast === 'function') showToast('비밀번호는 8자 이상이어야 합니다', 'error');
+        showToast('비밀번호는 8자 이상이어야 합니다', 'error');
+        return;
+    }
+    if (!/[a-zA-Z]/.test(newPw) || !/[0-9]/.test(newPw)) {
+        showToast('영문과 숫자를 모두 포함해주세요', 'error');
+        return;
+    }
+    if (newPw !== confirmPw) {
+        showToast('새 비밀번호가 일치하지 않습니다', 'error');
+        return;
+    }
+    if (currentPw === newPw) {
+        showToast('현재와 다른 비밀번호를 입력해주세요', 'error');
         return;
     }
 
-    if (newPw !== confirm) {
-        if (typeof showToast === 'function') showToast('새 비밀번호가 일치하지 않습니다', 'error');
-        return;
+    // API 호출
+    try {
+        const token = localStorage.getItem('access_token') || '';
+        if (!token) {
+            showToast('로그인이 필요합니다', 'error');
+            return;
+        }
+
+        const res = await fetch(API_URL + '/auth/password/change', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({
+                current_password: currentPw,
+                new_password: newPw
+            })
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            showToast('비밀번호가 변경되었습니다! ✓', 'success');
+
+            // 입력 필드 초기화
+            document.getElementById('myCurrentPw').value = '';
+            document.getElementById('myNewPw').value = '';
+            document.getElementById('myConfirmPw').value = '';
+
+            // 1초 후 뒤로가기
+            setTimeout(function() {
+                myGoBack();
+            }, 1000);
+        } else {
+            showToast(data.detail || '비밀번호 변경 실패', 'error');
+        }
+    } catch (err) {
+        console.error('비밀번호 변경 오류:', err);
+        showToast('서버 연결 실패', 'error');
     }
-
-    // TODO: API 연동
-    if (typeof showToast === 'function') showToast('비밀번호가 변경되었습니다', 'success');
-
-    // 입력 필드 초기화
-    document.getElementById('myCurrentPw').value = '';
-    document.getElementById('myNewPw').value = '';
-    document.getElementById('myConfirmPw').value = '';
-
-    myGoBack();
 }
 
 // ========== 이메일 인증 ==========
