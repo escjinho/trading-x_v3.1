@@ -506,6 +506,40 @@ function logoutAllDevices() {
     }
 }
 
+// ========== Demo 입출금 ==========
+let selectedDemoAmount = 10000;
+
+function selectDemoAmount(amount) {
+    selectedDemoAmount = amount;
+    document.querySelectorAll('.my-deposit-amount-btn').forEach(btn => {
+        const btnAmount = parseInt(btn.textContent.replace(/[$,]/g, ''));
+        btn.classList.toggle('selected', btnAmount === amount);
+    });
+}
+
+function handleDemoDeposit() {
+    const balEl = document.getElementById('myDemoBalance');
+    if (!balEl) return;
+
+    const current = parseFloat(balEl.textContent.replace(/[$,]/g, '')) || 0;
+    const newBal = Math.min(current + selectedDemoAmount, 100000);
+    balEl.textContent = '$' + newBal.toLocaleString('en-US', { minimumFractionDigits: 2 });
+
+    if (typeof showToast === 'function') {
+        showToast('✅ $' + selectedDemoAmount.toLocaleString() + ' 충전 완료!', 'success');
+    }
+}
+
+function handleDemoReset() {
+    const balEl = document.getElementById('myDemoBalance');
+    if (balEl) {
+        balEl.textContent = '$10,000.00';
+    }
+    if (typeof showToast === 'function') {
+        showToast('🔄 데모 잔고가 $10,000으로 리셋되었습니다', 'info');
+    }
+}
+
 // ========== 상세 페이지 진입 시 초기화 ==========
 // openMyDetail 함수에서 호출됨
 function initDetailView(detail) {
@@ -515,6 +549,14 @@ function initDetailView(detail) {
             break;
         case 'mt5':
             initMt5View();
+            break;
+        case 'depositDemo':
+            // 금액 선택 초기화
+            selectedDemoAmount = 10000;
+            document.querySelectorAll('.my-deposit-amount-btn').forEach(btn => {
+                const btnAmount = parseInt(btn.textContent.replace(/[$,]/g, ''));
+                btn.classList.toggle('selected', btnAmount === 10000);
+            });
             break;
     }
 }

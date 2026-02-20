@@ -1051,3 +1051,256 @@
     font-size: 12px;
     color: var(--text-muted);
 }
+
+/* ========================================
+   입출금 상세 페이지
+   ======================================== */
+
+/* 잔고 히어로 카드 */
+.my-deposit-hero {
+    border-radius: 18px;
+    padding: 24px;
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.my-deposit-hero.demo {
+    background: linear-gradient(145deg, var(--bg-tertiary), var(--bg-secondary));
+    border: 1px solid rgba(0, 212, 255, 0.25);
+    box-shadow: 0 0 24px rgba(0, 212, 255, 0.12);
+}
+
+.my-deposit-hero.live {
+    background: linear-gradient(145deg, var(--bg-tertiary), var(--bg-secondary));
+    border: 1px solid rgba(0, 180, 80, 0.25);
+    box-shadow: 0 0 20px rgba(0, 180, 80, 0.1);
+    padding: 20px;
+}
+
+.my-deposit-hero-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.my-deposit-broker-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.my-deposit-broker-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--buy-color);
+    box-shadow: 0 0 6px var(--buy-color);
+}
+
+.my-deposit-broker-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--buy-color);
+}
+
+.my-deposit-account-num {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: 'Consolas', 'SF Mono', monospace;
+}
+
+.my-deposit-hero-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+}
+
+.my-deposit-hero-amount {
+    font-size: 34px;
+    font-weight: 700;
+    font-family: 'Consolas', 'SF Mono', monospace;
+    margin-top: 4px;
+    color: var(--text-primary);
+}
+
+.my-deposit-hero-amount.live {
+    font-size: 32px;
+}
+
+.my-deposit-hero-sub {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 4px;
+}
+
+.my-deposit-hero-stats {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-top: 10px;
+}
+
+.my-deposit-stat-label {
+    font-size: 10px;
+    color: var(--text-dim);
+}
+
+.my-deposit-stat-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-family: 'Consolas', 'SF Mono', monospace;
+}
+
+.my-deposit-stat-value.cyan {
+    color: var(--accent-cyan);
+}
+
+/* 금액 선택 그리드 */
+.my-deposit-amount-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.my-deposit-amount-btn {
+    padding: 12px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-family: 'Consolas', 'SF Mono', monospace;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.my-deposit-amount-btn.selected {
+    border-color: var(--accent-cyan);
+    background: rgba(0, 212, 255, 0.08);
+    color: var(--accent-cyan);
+}
+
+.my-deposit-amount-btn:active {
+    transform: scale(0.97);
+}
+
+/* 안내 문구 */
+.my-deposit-notice {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+    padding: 12px 14px;
+    background: rgba(0, 212, 255, 0.06);
+    border: 1px solid rgba(0, 212, 255, 0.15);
+    border-radius: 10px;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+/* 입금/출금 가이드 카드 */
+.my-deposit-guide-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.my-deposit-guide-card {
+    flex: 1;
+    padding: 16px 12px;
+    background: var(--bg-tertiary);
+    border-radius: 14px;
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    text-align: center;
+    transition: background 0.15s;
+}
+
+.my-deposit-guide-card:active {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.my-deposit-guide-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 8px;
+}
+
+.my-deposit-guide-icon.deposit {
+    background: rgba(0, 180, 80, 0.1);
+}
+
+.my-deposit-guide-icon.deposit .material-icons-round {
+    font-size: 20px;
+    color: var(--buy-color);
+}
+
+.my-deposit-guide-icon.withdraw {
+    background: rgba(168, 85, 247, 0.1);
+}
+
+.my-deposit-guide-icon.withdraw .material-icons-round {
+    font-size: 20px;
+    color: #a855f7;
+}
+
+.my-deposit-guide-label {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* 입출금 내역 */
+.my-deposit-history-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.my-deposit-history-item {
+    background: var(--bg-tertiary);
+    border-radius: 10px;
+    padding: 11px 14px;
+    border: 1px solid var(--border-color);
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.my-deposit-history-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.my-deposit-history-type {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.my-deposit-history-meta {
+    font-size: 10px;
+    color: var(--text-dim);
+}
+
+.my-deposit-history-amount {
+    font-size: 14px;
+    font-weight: 700;
+    font-family: 'Consolas', 'SF Mono', monospace;
+}
+
+.my-deposit-history-amount.positive {
+    color: var(--buy-color);
+}
+
+.my-deposit-history-amount.negative {
+    color: var(--sell-color);
+}

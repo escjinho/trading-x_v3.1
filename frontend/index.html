@@ -1722,6 +1722,138 @@
                     </div>
                 </div>
 
+                <!-- ===== Demo 입출금 ===== -->
+                <div class="my-view" id="myView-depositDemo">
+                    <div class="my-sub-header">
+                        <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
+                        <span class="my-sub-title">Demo 입출금</span>
+                    </div>
+                    <div class="my-sub-body">
+                        <!-- 잔고 카드 -->
+                        <div class="my-deposit-hero demo">
+                            <div class="my-deposit-hero-label">DEMO BALANCE</div>
+                            <div class="my-deposit-hero-amount" id="myDemoBalance">$10,000.00</div>
+                            <div class="my-deposit-hero-sub">최대 $100,000</div>
+                        </div>
+                        <!-- 금액 선택 -->
+                        <div class="my-deposit-amount-grid">
+                            <div class="my-deposit-amount-btn" onclick="selectDemoAmount(5000)">$5,000</div>
+                            <div class="my-deposit-amount-btn selected" onclick="selectDemoAmount(10000)">$10,000</div>
+                            <div class="my-deposit-amount-btn" onclick="selectDemoAmount(50000)">$50,000</div>
+                            <div class="my-deposit-amount-btn" onclick="selectDemoAmount(100000)">$100,000</div>
+                        </div>
+                        <!-- 버튼 -->
+                        <div style="display: flex; gap: 10px; margin-top: 16px;">
+                            <button class="my-action-btn primary" style="flex: 1;" onclick="handleDemoDeposit()">
+                                <span class="material-icons-round" style="font-size: 16px; margin-right: 4px;">add</span>
+                                충전
+                            </button>
+                            <button class="my-action-btn secondary" style="flex: 1;" onclick="handleDemoReset()">
+                                <span class="material-icons-round" style="font-size: 16px; margin-right: 4px;">refresh</span>
+                                잔고 리셋
+                            </button>
+                        </div>
+                        <!-- 안내 -->
+                        <div class="my-deposit-notice">
+                            <span class="material-icons-round" style="font-size: 14px; color: var(--accent-cyan);">info</span>
+                            <span>데모 잔고는 가상 자금이며 실제 거래에 영향을 주지 않습니다</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== Live 입출금 ===== -->
+                <div class="my-view" id="myView-depositLive">
+                    <div class="my-sub-header">
+                        <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
+                        <span class="my-sub-title">Live 입출금</span>
+                    </div>
+                    <div class="my-sub-body">
+                        <!-- 잔고 카드 -->
+                        <div class="my-deposit-hero live">
+                            <div class="my-deposit-hero-top">
+                                <div class="my-deposit-broker-row">
+                                    <div class="my-deposit-broker-dot"></div>
+                                    <span class="my-deposit-broker-name">HedgeHood</span>
+                                </div>
+                                <span class="my-deposit-account-num" id="myLiveAccount">935001712</span>
+                            </div>
+                            <div class="my-deposit-hero-label">LIVE BALANCE</div>
+                            <div class="my-deposit-hero-amount live" id="myLiveBalance">$8,752.50</div>
+                            <div class="my-deposit-hero-stats">
+                                <div class="my-deposit-stat">
+                                    <div class="my-deposit-stat-label">Equity</div>
+                                    <div class="my-deposit-stat-value cyan" id="myLiveEquity">$8,890.30</div>
+                                </div>
+                                <div class="my-deposit-stat">
+                                    <div class="my-deposit-stat-label">Free Margin</div>
+                                    <div class="my-deposit-stat-value" id="myLiveFreeMargin">$7,452.00</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 입금/출금 가이드 -->
+                        <div class="my-deposit-guide-row">
+                            <div class="my-deposit-guide-card" onclick="openMyDetail('depositGuide')">
+                                <div class="my-deposit-guide-icon deposit">
+                                    <span class="material-icons-round">south_west</span>
+                                </div>
+                                <div class="my-deposit-guide-label">입금 가이드</div>
+                            </div>
+                            <div class="my-deposit-guide-card" onclick="openMyDetail('withdrawGuide')">
+                                <div class="my-deposit-guide-icon withdraw">
+                                    <span class="material-icons-round">north_east</span>
+                                </div>
+                                <div class="my-deposit-guide-label">출금 가이드</div>
+                            </div>
+                        </div>
+
+                        <!-- 입출금 내역 -->
+                        <div class="my-deposit-history-title">입출금 내역</div>
+                        <div id="myDepositHistoryList">
+                            <div class="my-deposit-history-item">
+                                <div class="my-deposit-history-left">
+                                    <span class="material-icons-round" style="font-size: 15px; color: var(--buy-color);">south_west</span>
+                                    <div>
+                                        <div class="my-deposit-history-type">입금</div>
+                                        <div class="my-deposit-history-meta">Bank · 02.18 14:32</div>
+                                    </div>
+                                </div>
+                                <span class="my-deposit-history-amount positive">+$500.00</span>
+                            </div>
+                            <div class="my-deposit-history-item">
+                                <div class="my-deposit-history-left">
+                                    <span class="material-icons-round" style="font-size: 15px; color: var(--sell-color);">north_east</span>
+                                    <div>
+                                        <div class="my-deposit-history-type">출금</div>
+                                        <div class="my-deposit-history-meta">Bank · 02.15 09:20</div>
+                                    </div>
+                                </div>
+                                <span class="my-deposit-history-amount negative">-$200.00</span>
+                            </div>
+                            <div class="my-deposit-history-item">
+                                <div class="my-deposit-history-left">
+                                    <span class="material-icons-round" style="font-size: 15px; color: var(--buy-color);">south_west</span>
+                                    <div>
+                                        <div class="my-deposit-history-type">입금</div>
+                                        <div class="my-deposit-history-meta">Card · 02.10 11:45</div>
+                                    </div>
+                                </div>
+                                <span class="my-deposit-history-amount positive">+$1,000.00</span>
+                            </div>
+                            <div class="my-deposit-history-item">
+                                <div class="my-deposit-history-left">
+                                    <span class="material-icons-round" style="font-size: 15px; color: var(--buy-color);">south_west</span>
+                                    <div>
+                                        <div class="my-deposit-history-type">입금</div>
+                                        <div class="my-deposit-history-meta">E-Wallet · 02.05 16:30</div>
+                                    </div>
+                                </div>
+                                <span class="my-deposit-history-amount positive">+$300.00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- ===== 상세 페이지 공통 플레이스홀더 ===== -->
                 <div class="my-view" id="myView-detail">
                     <div class="my-sub-header">
