@@ -169,6 +169,11 @@ const QuickEasyPanel = {
         // ★ 새 종목에 저장된 포지션 있으면 복원
         const savedPos = this._positions[symbol];
         if (savedPos) {
+            // ★★★ tpsl이 있으면 _serverTPSL에 먼저 설정 (showPositionView에서 사용) ★★★
+            if (savedPos.tpsl && savedPos.tpsl.tp > 0 && savedPos.tpsl.sl > 0) {
+                window._serverTPSL = { tp: savedPos.tpsl.tp, sl: savedPos.tpsl.sl };
+                console.log('[QE] 종목 변경 복원 - tpsl 설정:', window._serverTPSL);
+            }
             this.showPositionView(
                 savedPos.side,
                 savedPos.entry,
@@ -450,7 +455,17 @@ const QuickEasyPanel = {
                 }
 
                 // 포지션 뷰로 전환 (진입가격 + SL/TP 라인 표시 포함)
-                const entryPrice = this.getEntryPrice();
+                // ★ entryPrice fallback: allPrices → API 응답 → 마지막 틱
+                let entryPrice = this.getEntryPrice();
+                if (!entryPrice || entryPrice <= 0) {
+                    entryPrice = result.openPrice || result.entry || result.price || 0;
+                    console.log('[QE] entryPrice fallback:', entryPrice);
+                }
+                if (!entryPrice || entryPrice <= 0) {
+                    // 최후 수단: QeTickChart의 마지막 가격
+                    entryPrice = (typeof QeTickChart !== 'undefined' && QeTickChart.lastPrice) || 0;
+                    console.log('[QE] entryPrice lastPrice fallback:', entryPrice);
+                }
                 this.showPositionView(side, entryPrice);
                 // 버튼 4초 비활성화 (중복 진입 방지)
                 const buyBtn = document.getElementById('qeBuyBtn');
@@ -517,9 +532,22 @@ const QuickEasyPanel = {
 
     // TP/SL 가격 계산
     calcTPSL(entryPrice, side, volume, target, symbol) {
+        // ★★★ window._serverTPSL이 있으면 우선 사용 (서버 값이 정확함) ★★★
+        // 단, 여기서는 소비하지 않고 참조만 (showPositionView에서 소비)
+        // profitPerPoint 계산 실패 시 fallback으로 사용
+
         const spec = this.SYMBOL_SPECS[symbol] || { tick_size: 0.01, tick_value: 0.01, contract_size: 1 };
         const profitPerPoint = volume * spec.tick_value / spec.tick_size;
-        if (profitPerPoint <= 0) return { tp: 0, sl: 0 };
+
+        if (profitPerPoint <= 0 || !entryPrice || entryPrice <= 0 || !target || target <= 0) {
+            console.warn('[QE] calcTPSL 계산 불가 - profitPerPoint:', profitPerPoint, 'entry:', entryPrice, 'target:', target);
+            // ★ _serverTPSL이 있으면 그 값 반환
+            if (window._serverTPSL && window._serverTPSL.tp > 0 && window._serverTPSL.sl > 0) {
+                console.log('[QE] calcTPSL fallback to _serverTPSL:', window._serverTPSL);
+                return { tp: window._serverTPSL.tp, sl: window._serverTPSL.sl };
+            }
+            return { tp: 0, sl: 0 };
+        }
 
         // ★ TP/SL 대칭: 동일 거리
         // TP 도달 시: WIN = target - spread (payout %)

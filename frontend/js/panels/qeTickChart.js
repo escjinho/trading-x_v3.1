@@ -250,6 +250,12 @@ const QeTickChart = {
                                 from: totalBars - visibleBars,
                                 to: totalBars + 8
                             });
+
+                            // ★★★ Fix 3: 히스토리 로딩 완료 후 포지션이 있으면 줌아웃하여 라인 표시 ★★★
+                            if (this._entryData && this._entryData.tp && this._entryData.sl) {
+                                console.log('[QeTickChart] ★ 히스토리 로딩 후 포지션 라인 재조정:', this._entryData);
+                                this.zoomToShowTPSL(this._entryData.price, this._entryData.tp, this._entryData.sl);
+                            }
                         }
                     }, 1000);
                 }
