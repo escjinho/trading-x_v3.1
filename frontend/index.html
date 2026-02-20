@@ -2236,6 +2236,7 @@
                 </div>
 
                 <!-- ===== 앱 정보 ===== -->
+                <!-- ===== 앱 정보 ===== -->
                 <div class="my-view" id="myView-appInfo">
                     <div class="my-sub-header">
                         <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
@@ -2243,18 +2244,20 @@
                     </div>
                     <div class="my-sub-body">
                         <!-- 앱 로고 (이미지 매칭) -->
-                        <div class="my-app-info-hero">
-                            <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 8px;">
+                        <div class="my-app-info-hero" style="padding-top: 30px; padding-bottom: 28px;">
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 14px;">
                                 <div class="my-app-logo-box">
                                     <span class="my-app-logo-text">TX</span>
                                 </div>
                                 <span class="my-app-name">Trading-X</span>
                             </div>
                             <div class="my-app-subtitle">PROFESSIONAL TRADING PLATFORM</div>
-                            <div class="my-app-version">v3.1.0</div>
-                            <div class="my-app-build">Build 2026.02.21</div>
+                            <div style="margin-top: 12px;">
+                                <div style="font-size: 11px; font-weight: 600; color: var(--accent-cyan);">v3.1.0</div>
+                                <div style="font-size: 9px; color: var(--text-dim); margin-top: 2px; font-family: 'Consolas', 'SF Mono', monospace;">Build 2026.02.21</div>
+                            </div>
                         </div>
-                        <!-- 정보 -->
+                        <!-- 정보 리스트 -->
                         <div class="my-detail-card">
                             <div class="my-app-info-row">
                                 <span class="my-app-info-label">개발사</span>
@@ -2276,9 +2279,13 @@
                                 <span class="my-app-info-label">API</span>
                                 <span class="my-app-info-value mono">MetaAPI v4</span>
                             </div>
-                            <div class="my-app-info-row last">
+                            <div class="my-app-info-row">
                                 <span class="my-app-info-label">고객지원</span>
                                 <span class="my-app-info-value" style="color: var(--accent-cyan);">support@trading-x.ai</span>
+                            </div>
+                            <div class="my-app-info-row last" onclick="openMyDetail('openSource')" style="cursor: pointer;">
+                                <span class="my-app-info-label">오픈소스 라이선스</span>
+                                <span class="material-icons-round" style="font-size: 16px; color: var(--text-dim);">chevron_right</span>
                             </div>
                         </div>
                         <!-- 업데이트 & 캐시 -->
@@ -2291,13 +2298,6 @@
                                 <span class="material-icons-round" style="font-size: 14px;">cleaning_services</span>
                                 캐시 삭제
                             </button>
-                        </div>
-                        <!-- 오픈소스 라이선스 -->
-                        <div class="my-sub-card" style="margin-top: 14px;">
-                            <div class="my-sub-item last" onclick="openMyDetail('openSource')">
-                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">code</span></div><span class="my-sub-item-label">오픈소스 라이선스</span></div>
-                                <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
-                            </div>
                         </div>
                         <!-- 카피라이트 -->
                         <div style="text-align: center; margin-top: 24px;">

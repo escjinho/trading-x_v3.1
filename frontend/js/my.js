@@ -743,10 +743,10 @@ function openNoticeDetail(id) {
 
 // ========== 약관 상세 ==========
 const termsData = {
-    service: { title: '서비스 이용약관', body: '제1조 (목적)\n본 약관은 GOODFRIENDS CO., LTD(이하 "회사")가 운영하는 Trading-X 서비스의 이용 조건 및 절차에 관한 사항을 규정함을 목적으로 합니다.\n\n제2조 (용어의 정의)\n1. "서비스"란 회사가 제공하는 MT5 연동 트레이딩 플랫폼을 말합니다.\n2. "회원"이란 본 약관에 동의하고 서비스를 이용하는 자를 말합니다.\n\n제3조 (약관의 효력)\n본 약관은 서비스 화면에 게시하거나 기타의 방법으로 회원에게 공지함으로써 효력이 발생합니다.\n\n제4조 (서비스의 제공)\n회사는 다음의 서비스를 제공합니다.\n1. MT5 계정 연동 및 거래\n2. 실시간 시세 및 차트\n3. 포지션 관리 및 알림' },
+    service: { title: '서비스 이용약관', body: '제1조 (목적)\n이 약관은 GOODFRIENDS CO., LTD가 제공하는 Trading-X 서비스의 이용에 관한 사항을 규정합니다.\n\n제2조 (정의)\n① "서비스"란 MT5 연동 트레이딩 플랫폼 Trading-X를 말합니다.\n② "이용자"란 이 약관에 따라 서비스를 이용하는 자를 말합니다.\n③ "계정"이란 이메일과 비밀번호 조합을 말합니다.\n\n제3조 (약관의 효력)\n① 서비스 화면에 게시함으로써 효력을 발생합니다.\n② 관련 법령 범위에서 개정할 수 있습니다.\n\n제4조 (서비스의 제공)\n① MT5 연동, 데모 거래, 분석 및 리포트 서비스를 제공합니다.\n② 연중무휴 24시간 제공을 원칙으로 합니다.\n\n제5조 (이용자의 의무)\n① 타인 정보 도용 및 허위 등록 금지\n② 불법 활동 금지\n③ 계정 정보 관리 책임\n\n제6조 (면책사항)\n① 거래 손실에 대해 책임을 지지 않습니다.\n② 원금 손실 위험이 있습니다.\n③ 브로커 시스템 장애로 인한 손해에 대해 책임을 지지 않습니다.' },
     privacy: { title: '개인정보 처리방침', body: '1. 개인정보의 수집 및 이용 목적\n회사는 다음의 목적을 위해 개인정보를 처리합니다.\n• 회원 가입 및 관리\n• 서비스 제공 및 운영\n• 마케팅 및 광고 활용\n\n2. 수집하는 개인정보 항목\n• 필수: 이메일, 비밀번호\n• 선택: 닉네임, 전화번호\n\n3. 개인정보의 보유 및 이용기간\n회원 탈퇴 시까지 또는 법령에서 정한 기간까지 보유합니다.\n\n4. 개인정보의 파기\n보유 기간이 만료된 개인정보는 지체 없이 파기합니다.\n\n5. 개인정보 보호책임자\n이메일: privacy@trading-x.ai' },
     risk: { title: '투자 위험 고지', body: '⚠️ 투자 위험 고지\n\n파생상품(CFD) 거래는 높은 수준의 위험을 수반합니다.\n\n• 레버리지 거래로 인해 원금 이상의 손실이 발생할 수 있습니다.\n• 시장 변동성으로 인해 예상치 못한 손실이 발생할 수 있습니다.\n• 과거 수익률이 미래 수익을 보장하지 않습니다.\n\n본 서비스는 투자 조언을 제공하지 않습니다. 모든 투자 결정은 본인의 책임 하에 이루어집니다.\n\n거래를 시작하기 전 충분한 학습과 이해가 필요합니다. 감당할 수 있는 금액만 투자하시기 바랍니다.' },
-    aml: { title: '자금세탁방지 정책 (AML)', body: 'GOODFRIENDS CO., LTD는 자금세탁 및 테러자금조달 방지를 위해 다음의 정책을 시행합니다.\n\n1. 고객확인제도 (KYC)\n• 신규 회원은 본인 인증을 완료해야 합니다.\n• 의심 거래 발생 시 추가 인증을 요청할 수 있습니다.\n\n2. 의심거래 보고\n• 의심스러운 거래는 관련 기관에 보고됩니다.\n• 허위 정보 제공 시 계정이 정지될 수 있습니다.\n\n3. 거래 모니터링\n• 모든 거래는 자동 모니터링됩니다.\n• 비정상적인 패턴 감지 시 조사가 진행됩니다.\n\n4. 제재 준수\n• 국제 제재 대상과의 거래는 금지됩니다.' },
+    aml: { title: '자금세탁방지 정책 (AML)', body: 'GOODFRIENDS CO., LTD는 자금세탁방지 및 테러자금조달방지를 위해 아래 정책을 시행합니다.\n\n1. 목적\n본 정책은 Trading-X 서비스를 통한 자금세탁, 테러자금조달 및 기타 불법 금융활동을 예방하기 위함입니다.\n\n2. 고객확인(KYC)\n① 회원가입 시 이메일 인증을 실시합니다.\n② 라이브 계정 이용 시 본인 확인 절차를 진행합니다.\n③ 필요 시 추가 신원확인 서류를 요청할 수 있습니다.\n\n3. 의심거래 모니터링\n① 비정상적 입출금 패턴을 상시 모니터링합니다.\n② 의심 거래 발견 시 계정을 일시 정지할 수 있습니다.\n③ 관련 법령에 따라 당국에 보고할 수 있습니다.\n\n4. 기록 보관\n① 거래 기록을 관련 법령에서 정한 기간 동안 보관합니다.\n② 고객확인 서류는 관계 종료 후 5년간 보관합니다.\n\n5. 금지 행위\n① 타인 명의 계정 사용\n② 불법 자금 유입 시도\n③ 허위 정보 제공\n④ 다중 계정을 통한 자금 이동\n\n6. 위반 시 조치\n① 계정 정지 및 해지\n② 관련 당국 보고\n③ 법적 조치\n\n7. 문의\nAML 관련 문의: compliance@trading-x.ai' },
     marketing: { title: '마케팅 정보 수신 동의', body: '마케팅 정보 수신 동의\n\n수신 동의 시 다음의 정보를 받으실 수 있습니다.\n\n• 이벤트 및 프로모션 안내\n• 신규 기능 업데이트 소식\n• 투자 관련 뉴스레터\n• 맞춤형 서비스 제안\n\n수신 방법: 앱 푸시, 이메일, SMS\n\n동의 철회는 My > 일반 > 알림 설정에서 언제든지 가능합니다.\n\n※ 필수 공지사항(서버 점검, 약관 변경 등)은 동의 여부와 관계없이 발송됩니다.' }
 };
 
@@ -777,28 +777,31 @@ function handleContactTelegram() {
 }
 
 // ========== 오픈소스 라이선스 ==========
-const ossLibraries = [
-    { name: 'Lightweight Charts', license: 'Apache 2.0', version: 'v4.1.0' },
-    { name: 'Material Icons', license: 'Apache 2.0', version: '-' },
-    { name: 'MetaAPI SDK', license: 'MIT', version: 'v28.0' },
-    { name: 'Socket.IO', license: 'MIT', version: 'v4.6' },
-    { name: 'Chart.js', license: 'MIT', version: 'v4.4' },
-    { name: 'Axios', license: 'MIT', version: 'v1.6' }
+// ========== 오픈소스 라이선스 ==========
+const openSourceLibs = [
+    ["React", "18.x", "MIT", "Meta"],
+    ["FastAPI", "0.100+", "MIT", "S. Ramírez"],
+    ["MetaAPI SDK", "27.x", "SEE LICENSE", "MetaApi"],
+    ["Chart.js", "4.x", "MIT", "Contributors"],
+    ["PostgreSQL", "15+", "PostgreSQL", "PGDG"],
+    ["SQLAlchemy", "2.x", "MIT", "M. Bayer"],
+    ["Redis", "7.x", "BSD-3", "Redis Ltd."],
+    ["Tailwind", "3.x", "MIT", "Tailwind Labs"],
+    ["Material Icons", "-", "Apache 2.0", "Google"],
+    ["Pydantic", "2.x", "MIT", "S. Colvin"],
+    ["bcrypt", "4.x", "Apache 2.0", "OpenBSD"]
 ];
 
-function initOpenSourceView() {
+function renderOpenSource() {
     const container = document.getElementById('myOpenSourceList');
-    if (!container) return;
+    if (!container || container.children.length > 0) return;
 
-    container.innerHTML = ossLibraries.map(lib => `
-        <div class="my-oss-item">
-            <div class="my-oss-top">
-                <span class="my-oss-name">${lib.name}</span>
-                <span class="my-oss-license">${lib.license}</span>
-            </div>
-            <div class="my-oss-meta">${lib.version}</div>
-        </div>
-    `).join('');
+    openSourceLibs.forEach(([name, ver, license, author]) => {
+        const item = document.createElement('div');
+        item.className = 'my-oss-item';
+        item.innerHTML = '<div class="my-oss-top"><span class="my-oss-name">' + name + '</span><span class="my-oss-license">' + license + '</span></div><div class="my-oss-meta">' + ver + ' · ' + author + '</div>';
+        container.appendChild(item);
+    });
 }
 
 // initDetailView 확장
@@ -807,7 +810,7 @@ function initDetailView(detail) {
     if (_originalInitDetailView) _originalInitDetailView(detail);
 
     if (detail === 'openSource') {
-        initOpenSourceView();
+        renderOpenSource();
     }
 }
 
