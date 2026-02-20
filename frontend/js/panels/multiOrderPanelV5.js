@@ -495,7 +495,7 @@ async function v5BuyFor(panelId) {
             const result = await apiCall(`/mt5/order?symbol=${panel.symbol}&order_type=BUY&volume=${panel.lot}&target=0&magic=${V5_MAGIC_NUMBER}`, 'POST');
             if (result?.success) {
                 playSound('buy');
-                showToast('✅ 주문 성공!', 'success');
+                showToast(`✅ [Chart] ${panel.symbol} BUY ${panel.lot}lot 체결`, 'success');
                 setTimeout(() => updateMultiOrderPanelV5(), 500);
             } else {
                 showToast(result?.message || '주문 실패', 'error');
@@ -537,7 +537,7 @@ async function v5SellFor(panelId) {
             const result = await apiCall(`/mt5/order?symbol=${panel.symbol}&order_type=SELL&volume=${panel.lot}&target=0&magic=${V5_MAGIC_NUMBER}`, 'POST');
             if (result?.success) {
                 playSound('sell');
-                showToast('✅ 주문 성공!', 'success');
+                showToast(`✅ [Chart] ${panel.symbol} SELL ${panel.lot}lot 체결`, 'success');
                 setTimeout(() => updateMultiOrderPanelV5(), 500);
             } else {
                 showToast(result?.message || '주문 실패', 'error');

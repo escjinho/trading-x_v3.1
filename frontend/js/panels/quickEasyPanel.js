@@ -441,12 +441,10 @@ const QuickEasyPanel = {
                     playSound(side.toLowerCase());
                 }
 
-                // 성공 토스트
-                const payout = this.getCurrentPayout();
-                const expectedProfit = (target * payout / 100).toFixed(0);
+                // 성공 토스트 (상세)
                 if (typeof showToast === 'function') {
                     showToast(
-                        '⚡ ' + side + ' 주문 체결! Target $' + target + ' (예상수익 $' + expectedProfit + ')',
+                        `✅ [Easy] ${symbol} ${side} ${volume}lot 체결`,
                         'success'
                     );
                 }
@@ -825,8 +823,12 @@ const QuickEasyPanel = {
                 }
             }
 
+            // ★ 상세 청산 토스트 (저장된 포지션 정보 사용)
+            const closedPos = this._positions[symbol];
+            const _side = closedPos?.side || this._posSide || '';
+            const _vol = closedPos?.volume || this._posVolume || 0;
             if (typeof showToast === 'function') {
-                showToast('포지션 청산 완료', 'success');
+                showToast(`🔴 [Easy] ${symbol} ${_side} ${_vol}lot 청산`, 'info');
             }
             if (typeof playSound === 'function') {
                 playSound('close');

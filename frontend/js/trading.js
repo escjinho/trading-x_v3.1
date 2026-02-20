@@ -660,8 +660,9 @@ async function placeBuy() {
             return;
         }
         console.log('[placeBuy] result:', JSON.stringify(result));
-        showToast(result?.success ? '주문 성공!' : friendlyError(result?.message), result?.success ? 'buy' : 'error');
         if (result?.success) {
+            const _lot = calculateLot();
+            showToast(`✅ [Pro] ${currentSymbol} BUY ${_lot}lot 체결`, 'buy');
             playSound('buy');
             window._lastOrderTime = Date.now();  // ★ 마틴 팝업 유효성 체크용
             // ★★★ 포지션 확인 → 쿨다운 즉시 해제 ★★★
@@ -672,6 +673,8 @@ async function placeBuy() {
                 if (typeof loadHistory === 'function') loadHistory();
                 if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
             }, 2000);
+        } else {
+            showToast(friendlyError(result?.message), 'error');
         }
     } catch (e) {
         showToast('Network error', 'error');
@@ -795,8 +798,9 @@ async function placeSell() {
             return;
         }
         console.log('[placeSell] result:', JSON.stringify(result));
-        showToast(result?.success ? '주문 성공!' : friendlyError(result?.message), result?.success ? 'sell' : 'error');
         if (result?.success) {
+            const _lot = calculateLot();
+            showToast(`✅ [Pro] ${currentSymbol} SELL ${_lot}lot 체결`, 'sell');
             playSound('sell');
             window._lastOrderTime = Date.now();  // ★ 마틴 팝업 유효성 체크용
             // ★★★ 포지션 확인 → 쿨다운 즉시 해제 ★★★
@@ -807,6 +811,8 @@ async function placeSell() {
                 if (typeof loadHistory === 'function') loadHistory();
                 if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
             }, 2000);
+        } else {
+            showToast(friendlyError(result?.message), 'error');
         }
     } catch (e) {
         showToast('Network error', 'error');
@@ -820,6 +826,11 @@ async function closePosition() {
         closeDemoPosition();
         return;
     }
+
+    // ★★★ 청산 전 포지션 정보 저장 (토스트용) ★★★
+    const _closingPos = window.lastLivePosition || {};
+    const _closingType = _closingPos.type === 'BUY' || _closingPos.type === 0 ? 'BUY' : 'SELL';
+    const _closingLot = _closingPos.volume || calculateLot();
 
     // ★★★ 게이지 프리즈 + 이중 팝업 방지 ★★★
     window._userClosing = true;
@@ -866,7 +877,7 @@ async function closePosition() {
 
             if (currentMode === 'martin' && martinEnabled) {
                 // ★★★ 마틴 모드: 즉시 알림 → 팝업 내부에서 폴링 ★★★
-                showToast('포지션 청산 완료! 마틴 단계 계산 중...', 'info');
+                showToast(`🔴 [Pro] ${currentSymbol} ${_closingType} ${_closingLot}lot 청산`, 'info');
 
                 setTimeout(async () => {
                     window._martinStateUpdating = true;
@@ -930,11 +941,9 @@ async function closePosition() {
 
             } else {
                 // Basic/NoLimit 모드 — close API profit 바로 사용
-                if (apiProfit >= 0) {
-                    showToast(`청산 손익: +$${apiProfit.toFixed(2)}`, 'success');
-                } else {
-                    showToast(`청산 손익: -$${Math.abs(apiProfit).toFixed(2)}`, 'error');
-                }
+                const _plSign = apiProfit >= 0 ? '+' : '-';
+                const _plAbs = Math.abs(apiProfit).toFixed(2);
+                showToast(`🔴 [Pro] ${currentSymbol} ${_closingType} ${_closingLot}lot 청산 (${_plSign}$${_plAbs})`, apiProfit >= 0 ? 'success' : 'info');
                 updateTodayPL(apiProfit);
                 setTimeout(() => {
                     if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
@@ -1031,6 +1040,11 @@ async function placeDemoOrder(orderType) {
 
 // ========== Demo 모드 청산 ==========
 async function closeDemoPosition() {
+    // ★★★ 청산 전 포지션 정보 저장 (토스트용) ★★★
+    const _closingPos = window.demoPosition || {};
+    const _closingType = _closingPos.type || 'BUY';
+    const _closingLot = _closingPos.volume || calculateLot();
+
     // ★★★ 청산 전 마지막 trade ID 저장 (이전 trade 필터용) ★★★
     let _lastDemoTradeId = '';
     try {
@@ -1089,11 +1103,9 @@ async function closeDemoPosition() {
             } else {
                 // Basic/NoLimit 모드
                 updateTodayPL(profit);
-                if (profit >= 0) {
-                    showToast(`청산 손익: +$${profit.toFixed(2)}`, 'success');
-                } else {
-                    showToast(`청산 손익: -$${Math.abs(profit).toFixed(2)}`, 'error');
-                }
+                const _plSign = profit >= 0 ? '+' : '-';
+                const _plAbs = Math.abs(profit).toFixed(2);
+                showToast(`🔴 [Pro] ${currentSymbol} ${_closingType} ${_closingLot}lot 청산 (${_plSign}$${_plAbs})`, profit >= 0 ? 'success' : 'info');
             }
             
             updatePositionUI(false, null);

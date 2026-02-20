@@ -1,3 +1,11 @@
+// ========== Magic → Mode Label 변환 ==========
+function getModeLabel(magic) {
+    if (magic == 100001) return 'Pro';
+    if (magic == 100003) return 'Easy';
+    if (magic == 100002) return 'Chart';
+    return 'V5';
+}
+
 // ========== Toast ==========
 function showToast(message, type, duration) {
     const toast = document.getElementById('toast');

@@ -380,10 +380,12 @@ const OpenPositions = {
     },
 
     async _executeCloseSingle(posId) {
-        // ★ 청산 전 포지션 정보 저장 (패널 업데이트용)
+        // ★ 청산 전 포지션 정보 저장 (패널 업데이트용 + 토스트용)
         const pos = this._positions.find(p => p.id === posId || p.id == posId);
         const posMagic = pos ? pos.magic : null;
         const posSymbol = pos ? pos.symbol : null;
+        const posType = pos ? (pos.type === 'BUY' || pos.type === 0 || pos.type === 'POSITION_TYPE_BUY' ? 'BUY' : 'SELL') : '';
+        const posVolume = pos ? pos.volume : 0;
 
         // Demo/Live 분기
         // ★★★ 데모: ticket (정수), 라이브: position_id (문자열) ★★★
@@ -409,7 +411,10 @@ const OpenPositions = {
             console.log('[OpenPositions] Close response:', resp);
 
             if (resp && resp.success !== false) {
-                showToast('포지션이 청산되었습니다', 'success');
+                // ★ 상세 청산 토스트 + 사운드
+                const _mode = (typeof getModeLabel === 'function') ? getModeLabel(posMagic) : 'Pro';
+                showToast(`🔴 [${_mode}] ${posSymbol} ${posType} ${posVolume}lot 청산`, 'info');
+                if (typeof playSound === 'function') playSound('close');
                 // Today P/L 업데이트
                 if (resp.profit !== undefined && typeof updateTodayPL === 'function') {
                     updateTodayPL(resp.profit);
@@ -545,10 +550,11 @@ const OpenPositions = {
         const count = ids.length;
         let successCount = 0;
 
-        // ★ 청산 전 포지션 정보 저장 (패널 업데이트용)
+        // ★ 청산 전 포지션 정보 저장 (패널 업데이트용 + 토스트용)
         const posInfos = ids.map(posId => {
             const pos = this._positions.find(p => p.id === posId || p.id == posId);
-            return { posId, magic: pos?.magic, symbol: pos?.symbol };
+            const posType = pos ? (pos.type === 'BUY' || pos.type === 0 || pos.type === 'POSITION_TYPE_BUY' ? 'BUY' : 'SELL') : '';
+            return { posId, magic: pos?.magic, symbol: pos?.symbol, type: posType, volume: pos?.volume || 0 };
         });
 
         console.log('[OpenPositions] _executeCloseMultiple:', {
@@ -590,7 +596,9 @@ const OpenPositions = {
             }
         }
 
-        showToast(successCount + '/' + count + ' 포지션 청산 완료', 'success');
+        // ★ 복수 청산 완료 토스트 + 사운드
+        showToast(`🔴 ${successCount}/${count} 포지션 청산 완료`, 'info');
+        if (typeof playSound === 'function') playSound('close');
         this.cancelCloseMode();
     }
 };
