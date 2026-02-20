@@ -2,6 +2,7 @@
    Trading-X My Tab
    히어로, 설정, 모드 전환
    ======================================== */
+console.log('[MyTab] my.js loaded successfully');
 
 // ========== 초기화 ==========
 function initMyTab() {
@@ -165,6 +166,7 @@ function confirmLogout() {
 let myPageStack = ['main'];
 
 function openMySubPage(page) {
+    console.log('[MyTab] openMySubPage called with:', page);
     const targetId = 'myView-' + page;
     const targetEl = document.getElementById(targetId);
     if (!targetEl) {
