@@ -448,28 +448,6 @@
     bottom: 0;
 }
 
-/* 종목 변경 시 차트 오버레이 */
-.qe-chart-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: #131722;
-    z-index: 50;
-    display: none;
-    opacity: 1;
-    transition: opacity 0.3s ease;
-}
-
-.qe-chart-overlay.active {
-    display: block;
-}
-
-.qe-chart-overlay.fade-out {
-    opacity: 0;
-}
-
 /* ========== 현재가 펄스 마커 ========== */
 .qe-pulse-marker {
     position: absolute;
