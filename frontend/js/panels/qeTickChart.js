@@ -7,7 +7,7 @@ const QeTickChart = {
     chart: null,
     areaSeries: null,
     tickData: [],
-    maxTicks: 80,           // 화면에 보이는 최대 포인트
+    maxTicks: 300,          // 화면에 보이는 최대 포인트 (100틱 히스토리 + 여유)
     lastPrice: 0,
     openPrice: 0,           // 히스토리 첫 가격 (fallback)
     dailyOpen: 0,          // ★ D1 캔들 시가 (실제 일일 등락용)
@@ -240,7 +240,7 @@ const QeTickChart = {
         const KST_OFFSET = 9 * 3600;
         try {
             if (typeof apiCall !== 'function') return;
-            const data = await apiCall('/mt5/candles/' + symbol + '?timeframe=M1&count=10');
+            const data = await apiCall('/mt5/candles/' + symbol + '?timeframe=M1&count=25');
             if (data && data.candles && data.candles.length > 0) {
                 const historyTicks = [];
                 const candles = data.candles.slice(-10);
@@ -287,16 +287,16 @@ const QeTickChart = {
                     // ★ 데이터 세팅 직후 오버레이 즉시 해제 (차트 표시 시간 단축)
                     this.hideChartOverlay(50);
 
-                    // ★ 3초 후 부드러운 애니메이션 줌인
+                    // ★ 2초 후 부드러운 애니메이션 줌인
                     setTimeout(() => {
                         if (this.chart && this.tickData.length > 0) {
                             const totalBars = this.tickData.length;
-                            const targetVisibleBars = Math.min(40, totalBars);
-                            const startVisibleBars = totalBars; // 시작: 전체 보기
+                            const targetVisibleBars = 40; // 줌인 목표: 항상 40바
+                            const startVisibleBars = totalBars; // 시작: 전체 보기 (100틱)
                             const rightOffset = 8;
 
-                            const duration = 1000; // 1초 동안 줌인
-                            const steps = 30; // 30단계 (약 33ms 간격)
+                            const duration = 1200; // 1.2초 동안 줌인
+                            const steps = 36; // 36단계 (약 33ms 간격)
                             const stepTime = duration / steps;
                             let currentStep = 0;
 
@@ -343,7 +343,7 @@ const QeTickChart = {
 
                             animateZoom();
                         }
-                    }, 3000); // 3초 후 시작
+                    }, 2000); // 2초 후 시작
                 }
             }
         } catch (e) {
@@ -644,20 +644,26 @@ const QeTickChart = {
         // ★ rAF 트래킹 루프 시작
         if (this._startTracking) this._startTracking();
 
-        // ★★★ 최초 진입 시 라인 표시 보장: Y축 강제 업데이트 ★★★
+        // ★★★ 최초 진입 시 라인 표시 보장: Y축만 강제 업데이트 ★★★
         // 문제: showEntryLine() 호출 시점에 차트 Y축 범위가 아직 라인 가격을 포함하지 않을 수 있음
-        // 해결: 약간의 지연 후 fitContent() + zoomToShowTPSL() 재호출
+        // 해결: 약간의 지연 후 Y축만 조정 (X축 40바 뷰 유지!)
         if (this.chart && tpPrice && slPrice) {
             setTimeout(() => {
                 if (!this.chart || !this.areaSeries) return;
-                // 1. 시간축 fitContent로 모든 데이터 표시
-                this.chart.timeScale().fitContent();
+                // 1. X축은 40바 뷰 유지 (fitContent 사용하지 않음!)
+                const totalBars = this.tickData.length;
+                if (totalBars > 40) {
+                    this.chart.timeScale().setVisibleLogicalRange({
+                        from: totalBars - 40,
+                        to: totalBars + 8
+                    });
+                }
                 // 2. Y축 범위 재설정 (라인 포함)
                 this.zoomToShowTPSL(price, tpPrice, slPrice);
                 // 3. 오버레이 위치 업데이트
                 this.updateEntryOverlay();
                 this.drawProgressBars();
-                console.log('[QeTickChart] ★ 최초 진입 라인 표시 강제 업데이트 완료');
+                console.log('[QeTickChart] ★ 최초 진입 라인 표시 강제 업데이트 완료 (40바 뷰 유지)');
             }, 100);
         }
     },
@@ -697,6 +703,15 @@ const QeTickChart = {
         if (this._progressCanvas) {
             this._progressCanvas.remove();
             this._progressCanvas = null;
+        }
+
+        // ★ 포지션 종료 시 Y축 autoScale로 복원 (40바 뷰 유지)
+        this._customPriceRange = null;
+        if (this.chart) {
+            this.chart.priceScale('right').applyOptions({
+                autoScale: true,
+                scaleMargins: { top: 0.1, bottom: 0.1 }
+            });
         }
     },
 
@@ -813,32 +828,48 @@ const QeTickChart = {
     zoomToShowTPSL(entry, tp, sl) {
         if (!this.chart || !this.areaSeries) return;
 
-        const margin = Math.abs(tp - sl) * 0.15;
-        const high = Math.max(tp, sl) + margin;
-        const low = Math.min(tp, sl) - margin;
+        // Y축만 조정 — X축은 건드리지 않음 (40바 뷰 유지)
+        const prices = [entry, tp, sl].filter(p => p && p > 0);
+        if (prices.length === 0) return;
+
+        const minPrice = Math.min(...prices);
+        const maxPrice = Math.max(...prices);
+        const margin = (maxPrice - minPrice) * 0.15; // 15% 여백
 
         // 플래그만 세팅 → provider가 자동 반영 (applyOptions 불필요)
-        this._customPriceRange = { minValue: low, maxValue: high };
+        this._customPriceRange = { minValue: minPrice - margin, maxValue: maxPrice + margin };
 
-        // 3초 후 복원
-        setTimeout(() => this.resetChartView(), 3000);
+        // ★ 포지션 유지 중에는 자동 복원하지 않음! (removeEntryLine에서 처리)
+        // 기존의 3초 후 resetChartView() 제거
     },
 
-    // ========== 차트 초기 상태 완벽 복원 ==========
+    // ========== 차트 초기 상태 완벽 복원 (40바 뷰 유지) ==========
     resetChartView() {
         if (!this.chart || !this.areaSeries) return;
 
-        // 1. 커스텀 가격 범위 해제 → provider가 baseImpl() 호출 → 현재가 중심 autoScale
-        this._customPriceRange = null;
+        // 포지션이 있으면 Y축 유지, 없으면 autoScale
+        if (!this._entryData || !this._entryData.tp || !this._entryData.sl) {
+            // 1. 커스텀 가격 범위 해제 → provider가 baseImpl() 호출 → 현재가 중심 autoScale
+            this._customPriceRange = null;
 
-        // 2. 가격축 자동스케일 + 마진 복원
-        this.chart.priceScale('right').applyOptions({
-            autoScale: true,
-            scaleMargins: { top: 0.1, bottom: 0.1 }
-        });
+            // 2. 가격축 자동스케일 + 마진 복원
+            this.chart.priceScale('right').applyOptions({
+                autoScale: true,
+                scaleMargins: { top: 0.1, bottom: 0.1 }
+            });
+        }
+        // 포지션 있으면 Y축 범위 유지 (_customPriceRange 그대로)
 
-        // 3. 시간축 복원 (현재가 중심)
-        this.chart.timeScale().scrollToRealTime();
+        // 3. X축: 40바 뷰 유지 (fitContent 사용하지 않음!)
+        const totalBars = this.tickData.length;
+        if (totalBars > 40) {
+            this.chart.timeScale().setVisibleLogicalRange({
+                from: totalBars - 40,
+                to: totalBars + 8
+            });
+        } else {
+            this.chart.timeScale().scrollToRealTime();
+        }
         this.chart.timeScale().applyOptions({
             rightOffset: 8
         });
