@@ -1304,3 +1304,322 @@
 .my-deposit-history-amount.negative {
     color: var(--sell-color);
 }
+
+/* ========================================
+   친구 초대
+   ======================================== */
+.my-invite-hero {
+    text-align: center;
+    padding: 24px 0 20px;
+}
+
+.my-invite-icon-area {
+    position: relative;
+    display: inline-flex;
+    margin-bottom: 14px;
+}
+
+.my-invite-person {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.my-invite-person .material-icons-round {
+    font-size: 28px;
+    color: var(--text-muted);
+}
+
+.my-invite-plus {
+    position: absolute;
+    bottom: -2px;
+    right: -6px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--accent-cyan);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.my-invite-plus .material-icons-round {
+    font-size: 14px;
+    color: #0a0c10;
+}
+
+.my-invite-hero-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.my-invite-hero-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.6;
+}
+
+.my-invite-code-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+}
+
+.my-invite-code {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--accent-cyan);
+    font-family: 'Consolas', 'SF Mono', monospace;
+}
+
+.my-invite-copy-btn {
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 4px;
+    transition: color 0.2s;
+}
+
+.my-invite-copy-btn:active {
+    color: var(--accent-cyan);
+}
+
+/* 보상 안내 */
+.my-invite-reward-section {
+    margin-top: 20px;
+}
+
+.my-invite-reward-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.my-invite-reward-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+}
+
+.my-invite-reward-card {
+    background: var(--bg-tertiary);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    padding: 14px 8px;
+    text-align: center;
+}
+
+.my-invite-reward-label {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 6px;
+}
+
+.my-invite-reward-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-family: 'Consolas', 'SF Mono', monospace;
+    margin-top: 2px;
+}
+
+/* 초대 현황 */
+.my-invite-stats-section {
+    margin-top: 20px;
+}
+
+.my-invite-stats-row {
+    display: flex;
+    gap: 8px;
+}
+
+.my-invite-stat-box {
+    flex: 1;
+    background: var(--bg-tertiary);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    padding: 14px 8px;
+    text-align: center;
+}
+
+.my-invite-stat-num {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-family: 'Consolas', 'SF Mono', monospace;
+}
+
+.my-invite-stat-num.success {
+    color: var(--buy-color);
+}
+
+.my-invite-stat-num.cyan {
+    color: var(--accent-cyan);
+}
+
+.my-invite-stat-label {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 4px;
+}
+
+/* ========================================
+   VIP 프로그램
+   ======================================== */
+.my-vip-current {
+    background: linear-gradient(145deg, var(--bg-tertiary), var(--bg-secondary));
+    border-radius: 18px;
+    border: 1px solid rgba(0, 212, 255, 0.2);
+    padding: 24px 20px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.my-vip-current-badge {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(0, 212, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 10px;
+}
+
+.my-vip-current-badge .material-icons-round {
+    font-size: 26px;
+    color: var(--accent-cyan);
+}
+
+.my-vip-current-grade {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.my-vip-current-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+}
+
+.my-vip-progress-wrap {
+    max-width: 240px;
+    margin: 0 auto;
+}
+
+.my-vip-progress-bar {
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.my-vip-progress-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--accent-cyan), #7dd3fc);
+    transition: width 0.5s ease;
+}
+
+.my-vip-progress-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    font-size: 10px;
+    color: var(--text-dim);
+}
+
+/* 등급 리스트 */
+.my-vip-tier-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.my-vip-tier {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    background: var(--bg-tertiary);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.my-vip-tier.active {
+    border-color: rgba(0, 212, 255, 0.3);
+    background: rgba(0, 212, 255, 0.04);
+}
+
+.my-vip-tier-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.my-vip-tier-badge {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.my-vip-tier-badge .material-icons-round {
+    font-size: 16px;
+}
+
+.my-vip-tier-badge.standard {
+    background: rgba(156, 163, 175, 0.15);
+}
+.my-vip-tier-badge.standard .material-icons-round {
+    color: #9ca3af;
+}
+
+.my-vip-tier-badge.silver {
+    background: rgba(192, 192, 210, 0.15);
+}
+.my-vip-tier-badge.silver .material-icons-round {
+    color: #c0c0d2;
+}
+
+.my-vip-tier-badge.gold {
+    background: rgba(255, 215, 0, 0.12);
+}
+.my-vip-tier-badge.gold .material-icons-round {
+    color: #ffd700;
+}
+
+.my-vip-tier-badge.platinum {
+    background: rgba(168, 85, 247, 0.12);
+}
+.my-vip-tier-badge.platinum .material-icons-round {
+    color: #a855f7;
+}
+
+.my-vip-tier-name {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.my-vip-tier-req {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 1px;
+}
+
+.my-vip-tier-benefit {
+    font-size: 11px;
+    color: var(--text-muted);
+}

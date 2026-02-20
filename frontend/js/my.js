@@ -561,6 +561,64 @@ function initDetailView(detail) {
     }
 }
 
+// ========== 친구 초대 ==========
+function copyInviteCode() {
+    const code = document.getElementById('myInviteCode');
+    if (!code) return;
+
+    const text = code.textContent;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+            if (typeof showToast === 'function') {
+                showToast('📋 추천 코드가 복사되었습니다: ' + text, 'success');
+            }
+        }).catch(() => {
+            fallbackCopyInviteCode(text);
+        });
+    } else {
+        fallbackCopyInviteCode(text);
+    }
+}
+
+function fallbackCopyInviteCode(text) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+        document.execCommand('copy');
+        if (typeof showToast === 'function') {
+            showToast('📋 추천 코드가 복사되었습니다: ' + text, 'success');
+        }
+    } catch (e) {
+        if (typeof showToast === 'function') {
+            showToast('복사에 실패했습니다. 직접 복사해주세요.', 'error');
+        }
+    }
+    document.body.removeChild(textarea);
+}
+
+function shareInviteCode() {
+    const code = document.getElementById('myInviteCode');
+    const text = code ? code.textContent : 'TRADEX';
+    const shareData = {
+        title: 'Trading-X 초대',
+        text: 'Trading-X에서 함께 트레이딩해요! 추천코드: ' + text,
+        url: 'https://trading-x.ai?ref=' + text
+    };
+
+    if (navigator.share) {
+        navigator.share(shareData).catch(() => {
+            copyInviteCode();
+        });
+    } else {
+        copyInviteCode();
+    }
+}
+
 // ========== 페이지 로드 시 초기화 ==========
 document.addEventListener('DOMContentLoaded', initMyTab);
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
