@@ -609,7 +609,7 @@ function initMt5View() {
     loadMT5AccountInfo();
 }
 
-// MT5 계정 정보 로드 (API 연동)
+// MT5 계정 정보 로드 (home.js와 동일한 방식)
 async function loadMT5AccountInfo() {
     var token = localStorage.getItem('access_token') || '';
     if (!token) {
@@ -617,24 +617,53 @@ async function loadMT5AccountInfo() {
         return;
     }
 
+    var demo = typeof isDemo !== 'undefined' ? isDemo : true;
+
     try {
-        // 계정 목록 조회
-        var res = await fetch(API_URL + '/accounts/', {
-            headers: { 'Authorization': 'Bearer ' + token }
-        });
-
-        if (!res.ok) {
-            updateMT5Display(null, false);
-            return;
-        }
-
-        var accounts = await res.json();
-
-        if (accounts && accounts.length > 0) {
-            var acc = accounts[0];
-            updateMT5Display(acc, true);
+        if (demo) {
+            // Demo 모드: /api/demo/account-info
+            var res = await fetch(API_URL + '/demo/account-info', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (!res.ok) {
+                updateMT5Display(null, false);
+                return;
+            }
+            var data = await res.json();
+            // Demo 계정은 항상 연결됨 상태
+            updateMT5Display({
+                account: data.demo_account || 'Demo',
+                server: 'TradingX-Demo',
+                balance: data.balance || data.demo_balance || 10000,
+                leverage: 100
+            }, true);
         } else {
-            updateMT5Display(null, false);
+            // Live 모드: 먼저 has_mt5 체크 후 mt5 정보 로드
+            var demoRes = await fetch(API_URL + '/demo/account-info', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            var demoData = await demoRes.json();
+
+            if (demoData.has_mt5) {
+                // MT5 연결됨 - 상세 정보 로드
+                var mt5Res = await fetch(API_URL + '/mt5/account-info', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (mt5Res.ok) {
+                    var mt5Data = await mt5Res.json();
+                    updateMT5Display({
+                        account: mt5Data.account,
+                        server: mt5Data.server,
+                        balance: mt5Data.balance,
+                        leverage: mt5Data.leverage,
+                        broker: mt5Data.broker
+                    }, true);
+                } else {
+                    updateMT5Display(null, false);
+                }
+            } else {
+                updateMT5Display(null, false);
+            }
         }
     } catch (err) {
         console.error('[MT5] 계정 정보 로드 오류:', err);
@@ -657,14 +686,14 @@ function updateMT5Display(account, connected) {
             statusBadge.style.background = 'rgba(0, 200, 83, 0.15)';
             statusBadge.style.color = 'var(--buy-color)';
         }
-        if (loginEl) loginEl.textContent = account.account_number || account.mt5_account_number || '-';
-        if (serverEl) serverEl.textContent = account.server || account.mt5_server || '-';
+        if (loginEl) loginEl.textContent = account.account || '-';
+        if (serverEl) serverEl.textContent = account.server || '-';
         if (balanceEl) {
-            var bal = account.balance || account.mt5_balance;
-            balanceEl.textContent = bal ? ('$' + Number(bal).toLocaleString()) : '-';
+            var bal = account.balance;
+            balanceEl.textContent = bal ? ('$' + Number(bal).toLocaleString(undefined, {minimumFractionDigits: 2})) : '-';
         }
         if (leverageEl) {
-            var lev = account.leverage || account.mt5_leverage;
+            var lev = account.leverage;
             leverageEl.textContent = lev ? ('1:' + lev) : '-';
         }
     } else {
