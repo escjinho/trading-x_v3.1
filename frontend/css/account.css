@@ -79,37 +79,90 @@
     display: block;
 }
 
-/* ========== Trade History 리스트 (한 줄 레이아웃) ========== */
+/* ========== Trade History 리스트 (3컬럼 레이아웃) ========== */
 .history-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 0;
+    padding: 12px 5px;
     border-bottom: 1px solid var(--border-color);
     gap: 8px;
+    font-size: 14px;
 }
 
 .history-item:last-child {
     border-bottom: none;
 }
 
+/* 왼쪽: 종목 + BUY/SELL + 랏수 */
+.history-left {
+    flex-shrink: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.history-left .buy {
+    color: var(--buy-color);
+    font-weight: 600;
+}
+
+.history-left .sell {
+    color: var(--sell-color);
+    font-weight: 600;
+}
+
+.history-left .lot {
+    color: var(--text-muted);
+    font-weight: 400;
+    font-size: 13px;
+}
+
+/* 중앙: 청산 시간 */
+.history-center {
+    flex: 1;
+    text-align: center;
+    color: rgba(255,255,255,0.4);
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+/* 오른쪽: 손익 */
+.history-right {
+    flex-shrink: 0;
+    text-align: right;
+    min-width: 80px;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.history-right.profit-positive {
+    color: var(--buy-color);
+}
+
+.history-right.profit-negative {
+    color: var(--sell-color);
+}
+
+/* ★ 기존 클래스 호환 (다른 곳에서 사용 중) */
 .history-symbol-type {
     display: flex;
     align-items: center;
     gap: 5px;
-    min-width: 130px;
-    margin-left: 5px;
     flex-shrink: 0;
 }
 
 .history-symbol {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--text-primary);
 }
 
 .history-type {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 600;
     padding: 1px 4px;
     border-radius: 3px;
@@ -134,25 +187,25 @@
 }
 
 .history-time {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--text-muted);
     white-space: nowrap;
 }
 
 .history-divider-text {
     color: rgba(255, 255, 255, 0.2);
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .history-volume {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--text-muted);
     white-space: nowrap;
 }
 
 .history-profit {
-    font-size: 15px;
-    font-weight: bold;
+    font-size: 16px;
+    font-weight: 700;
     min-width: 80px;
     text-align: right;
     margin-right: 5px;
@@ -248,10 +301,12 @@
 
 .open-pos-symbol {
     color: var(--text-primary);
+    font-size: 15px;
+    font-weight: 600;
 }
 
 .open-pos-type {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
 }
 
@@ -259,7 +314,7 @@
 .open-pos-type.sell { color: var(--sell-color); }
 
 .open-pos-volume {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--text-muted);
 }
 
@@ -283,7 +338,7 @@
 }
 
 .open-pos-profit {
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 700;
     text-align: right;
 }
@@ -296,18 +351,18 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    font-size: 11px;
+    font-size: 13px;
     color: var(--text-muted);
 }
 
 .open-pos-time {
     font-family: 'Roboto Mono', monospace;
-    font-size: 10.5px;
+    font-size: 12px;
 }
 
 .open-pos-prices {
     font-family: 'Roboto Mono', monospace;
-    font-size: 10.5px;
+    font-size: 12px;
 }
 
 .open-pos-arrow {
