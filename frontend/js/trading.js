@@ -1165,9 +1165,10 @@ let currentFilter = 'all';
 // ★★★ Today P/L 고정값 및 Week 데이터 보존 ★★★
 if (window._todayPLFixed === undefined) window._todayPLFixed = null;      // 오늘 P/L 고정값
 if (window._weekHistoryData === undefined) window._weekHistoryData = null;   // Week 데이터 보존
+if (window._historyRetryCount === undefined) window._historyRetryCount = 0;  // 재시도 카운트
 
 async function loadHistory(period = null) {
-    // ★★★ 중복 호출 방지 (5초 타임아웃) ★★★
+    // ★★★ 중복 호출 방지 (성공 시 5초, 실패 시 즉시 해제) ★★★
     if (window._historyLoading && window._historyLoadingTime) {
         if (Date.now() - window._historyLoadingTime > 5000) {
             window._historyLoading = false;
@@ -1188,6 +1189,8 @@ async function loadHistory(period = null) {
         endpoint += `?period=${requestPeriod}`;
     }
     console.log('[loadHistory] endpoint:', endpoint);
+
+    let _loadSuccess = false;
 
     try {
         const data = await apiCall(endpoint);
@@ -1227,11 +1230,38 @@ async function loadHistory(period = null) {
                 updateAccountInfoFromHistory(allHistoryData);
             }
             console.log('[loadHistory] ✅ 렌더링 완료');
+            _loadSuccess = true;
+            window._historyRetryCount = 0;  // 성공 시 재시도 카운트 리셋
         } else {
             console.log('[loadHistory] ⚠️ 데이터 없음 또는 에러:', data);
             document.getElementById('historyList').innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 80px; font-size: 0.85em;">No trade history</p>';
+            _loadSuccess = true;  // 빈 데이터도 성공 처리
+            window._historyRetryCount = 0;
         }
-    } finally {
+    } catch (err) {
+        console.error('[loadHistory] ❌ API 호출 실패:', err);
+        // ★★★ 실패 시 즉시 해제 + 재시도 로직 ★★★
+        window._historyLoading = false;
+        if (window._historyRetryCount < 3) {
+            window._historyRetryCount++;
+            console.log(`[loadHistory] 🔄 재시도 ${window._historyRetryCount}/3 (3초 후)`);
+            setTimeout(() => {
+                loadHistory(period);
+            }, 3000);
+        } else {
+            console.log('[loadHistory] ❌ 최대 재시도 횟수 초과');
+            window._historyRetryCount = 0;
+        }
+        return;
+    }
+
+    // ★★★ 성공 시에만 5초간 중복 방지 유지 ★★★
+    if (_loadSuccess) {
+        // _historyLoading = true 유지, 5초 후 해제
+        setTimeout(() => {
+            window._historyLoading = false;
+        }, 5000);
+    } else {
         window._historyLoading = false;
     }
 }

@@ -403,6 +403,12 @@ function connectWebSocket() {
         }
         _wsHasConnectedBefore = true;
 
+        // ★★★ 첫 연결 시 히스토리 즉시 로드 (Live 모드) ★★★
+        if (!isDemo && typeof loadHistory === 'function') {
+            console.log('[WS] 🔄 첫 연결 - 히스토리 로드 시작');
+            setTimeout(() => loadHistory(), 500);
+        }
+
         // ★★★ 하트비트 모니터 시작 ★★★
         lastWsMessageTime = Date.now();
         wsConnectionStartTime = Date.now();
@@ -1064,11 +1070,16 @@ function connectWebSocket() {
                     const typeColor = (h.type === 0 || h.type === 'BUY') ? 'var(--buy-color)' : 'var(--sell-color)';
                     const symbol = h.symbol || '';
                     const volume = h.volume || 0;
-                    // 시간 포맷팅 (Unix timestamp -> 시:분)
+                    // 시간 포맷팅 (Unix timestamp 또는 문자열 모두 지원)
                     let timeStr = '';
                     if (h.time) {
-                        const date = new Date(h.time * 1000);
-                        timeStr = date.toLocaleTimeString('ko-KR', {hour: '2-digit', minute: '2-digit'});
+                        if (typeof h.time === 'number') {
+                            const date = new Date(h.time * 1000);
+                            timeStr = date.toLocaleTimeString('ko-KR', {hour: '2-digit', minute: '2-digit'});
+                        } else {
+                            // 이미 문자열 형식 (MM/DD HH:MM)
+                            timeStr = h.time;
+                        }
                     }
                     html += `<div class="history-item">
                         <div style="flex:1;display:flex;align-items:center;gap:8px;margin-left:5px;">
@@ -1081,6 +1092,21 @@ function connectWebSocket() {
                     </div>`;
                 });
                 container.innerHTML = html;
+
+                // ★★★ WS history로부터 Today P/L 계산 (Demo/Live 공통) ★★★
+                const now_ws = new Date();
+                const todayStr_ws = `${String(now_ws.getMonth() + 1).padStart(2, '0')}/${String(now_ws.getDate()).padStart(2, '0')}`;
+                let todayPL_ws = 0;
+                data.history.forEach(h => {
+                    const timeStr = typeof h.time === 'string' ? h.time : '';
+                    if (timeStr.startsWith(todayStr_ws)) {
+                        todayPL_ws += h.profit || 0;
+                    }
+                });
+                if (window._todayPLFixed === null || window._todayPLFixed === undefined) {
+                    window._todayPLFixed = todayPL_ws;
+                    console.log('[WS] Today P/L 초기화:', window._todayPLFixed);
+                }
             }
         }
 

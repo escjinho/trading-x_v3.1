@@ -1944,6 +1944,10 @@ async def demo_websocket_endpoint(websocket: WebSocket):
 
     symbols_list = ["BTCUSD", "EURUSD.r", "USDJPY.r", "XAUUSD.r", "US100.", "GBPUSD.r", "AUDUSD.r", "USDCAD.r", "ETHUSD"]
 
+    # ★★★ 히스토리 주기적 전송 (첫 연결 + 30초마다) ★★★
+    _ws_loop_count = 0
+    _last_history_time = 0
+
     while True:
         try:
             realtime = None  # ★ 추가
@@ -2316,6 +2320,40 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                 "position": demo_position,
                 "positions": positions_data
             }
+
+            # ★★★ 히스토리 주기적 전송 (첫 연결 + 30초마다) ★★★
+            _ws_loop_count += 1
+            _should_send_history = (_ws_loop_count == 1) or (time.time() - _last_history_time >= 30)
+            if _should_send_history and user_id:
+                try:
+                    from ..database import SessionLocal
+                    hist_db = SessionLocal()
+                    try:
+                        trades = hist_db.query(DemoTrade).filter(
+                            DemoTrade.user_id == user_id,
+                            DemoTrade.is_closed == True
+                        ).order_by(DemoTrade.closed_at.desc()).limit(50).all()
+
+                        ws_history = []
+                        for t in trades:
+                            ws_history.append({
+                                "id": t.id,
+                                "symbol": t.symbol,
+                                "type": t.trade_type,
+                                "volume": t.volume,
+                                "entry": t.entry_price,
+                                "exit": t.exit_price,
+                                "profit": t.profit,
+                                "time": (t.closed_at + timedelta(hours=9)).strftime("%m/%d %H:%M") if t.closed_at else ""
+                            })
+                        data["history"] = ws_history
+                        _last_history_time = time.time()
+                        if _ws_loop_count == 1:
+                            print(f"[DEMO WS] 📜 첫 연결 히스토리 전송: {len(ws_history)}건")
+                    finally:
+                        hist_db.close()
+                except Exception as hist_err:
+                    print(f"[DEMO WS] ⚠️ 히스토리 조회 오류: {hist_err}")
 
             # ★ 자동청산 정보가 있으면 응답에 포함
             if auto_closed_info:
