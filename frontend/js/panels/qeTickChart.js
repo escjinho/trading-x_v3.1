@@ -20,6 +20,7 @@ const QeTickChart = {
     slPriceLine: null,       // SL 라인
     _autoReturnTimer: null,  // 자동복귀 타이머
     _userInteracting: false, // 사용자 조작 중
+    _zoomAnimating: false,   // 줌인 애니메이션 진행 중
     _customPriceRange: null, // 줌아웃 시 커스텀 가격 범위 (플래그)
     initialized: false,
     _loadingHistory: false,  // 히스토리 로딩 중 플래그
@@ -188,6 +189,7 @@ const QeTickChart = {
         // 터치/마우스 조작 감지
         container.addEventListener('touchstart', () => {
             this._userInteracting = true;
+            this._zoomAnimating = false; // 줌인 애니메이션 중단
             if (this._autoReturnTimer) clearTimeout(this._autoReturnTimer);
         }, { passive: true });
         container.addEventListener('touchend', () => {
@@ -279,26 +281,69 @@ const QeTickChart = {
                         }
                     } catch(e) { console.warn('[QeTickChart] D1 시가 로딩 실패:', e); }
 
+                    // ★ 초기 와이드 뷰 설정 (전체 데이터 보이기)
+                    this.chart.timeScale().fitContent();
+
                     // ★ 데이터 세팅 직후 오버레이 즉시 해제 (차트 표시 시간 단축)
                     this.hideChartOverlay(50);
 
-                    // ★ 1초 후 최근 구간으로 줌인 (40바 + 오른쪽 여백 8)
+                    // ★ 3초 후 부드러운 애니메이션 줌인
                     setTimeout(() => {
                         if (this.chart && this.tickData.length > 0) {
                             const totalBars = this.tickData.length;
-                            const visibleBars = Math.min(40, totalBars);
-                            this.chart.timeScale().setVisibleLogicalRange({
-                                from: totalBars - visibleBars,
-                                to: totalBars + 8
-                            });
+                            const targetVisibleBars = Math.min(40, totalBars);
+                            const startVisibleBars = totalBars; // 시작: 전체 보기
+                            const rightOffset = 8;
 
-                            // ★★★ Fix 3: 히스토리 로딩 완료 후 포지션이 있으면 줌아웃하여 라인 표시 ★★★
-                            if (this._entryData && this._entryData.tp && this._entryData.sl) {
-                                console.log('[QeTickChart] ★ 히스토리 로딩 후 포지션 라인 재조정:', this._entryData);
-                                this.zoomToShowTPSL(this._entryData.price, this._entryData.tp, this._entryData.sl);
-                            }
+                            const duration = 1000; // 1초 동안 줌인
+                            const steps = 30; // 30단계 (약 33ms 간격)
+                            const stepTime = duration / steps;
+                            let currentStep = 0;
+
+                            // easeInOutCubic 이징 함수 (부드러운 가감속)
+                            const easeInOutCubic = (t) => {
+                                return t < 0.5
+                                    ? 4 * t * t * t
+                                    : 1 - Math.pow(-2 * t + 2, 3) / 2;
+                            };
+
+                            this._zoomAnimating = true;
+
+                            const animateZoom = () => {
+                                // 사용자 터치 또는 종목 변경 시 중단
+                                if (!this._zoomAnimating) return;
+
+                                currentStep++;
+                                const progress = easeInOutCubic(currentStep / steps);
+                                const currentVisibleBars = Math.round(
+                                    startVisibleBars + (targetVisibleBars - startVisibleBars) * progress
+                                );
+
+                                try {
+                                    this.chart.timeScale().setVisibleLogicalRange({
+                                        from: totalBars - currentVisibleBars,
+                                        to: totalBars + rightOffset
+                                    });
+                                } catch(e) {}
+
+                                if (currentStep < steps) {
+                                    setTimeout(animateZoom, stepTime);
+                                } else {
+                                    // 줌인 완료
+                                    this._zoomAnimating = false;
+                                    console.log('[QeTickChart] ★ 줌인 애니메이션 완료');
+
+                                    // 포지션 라인 재조정
+                                    if (this._entryData && this._entryData.tp && this._entryData.sl) {
+                                        console.log('[QeTickChart] ★ 히스토리 로딩 후 포지션 라인 재조정:', this._entryData);
+                                        this.zoomToShowTPSL(this._entryData.price, this._entryData.tp, this._entryData.sl);
+                                    }
+                                }
+                            };
+
+                            animateZoom();
                         }
-                    }, 1000);
+                    }, 3000); // 3초 후 시작
                 }
             }
         } catch (e) {
@@ -801,6 +846,9 @@ const QeTickChart = {
 
     // ========== 종목 변경 시 리셋 ==========
     reset() {
+        // 기존 줌인 애니메이션 중단
+        this._zoomAnimating = false;
+
         this.tickData = [];
         this.lastPrice = 0;
         this.openPrice = 0;
