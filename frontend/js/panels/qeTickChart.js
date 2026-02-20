@@ -7,7 +7,7 @@ const QeTickChart = {
     chart: null,
     areaSeries: null,
     tickData: [],
-    maxTicks: 80,           // 화면에 보이는 최대 포인트
+    maxTicks: 200,          // 화면에 보이는 최대 포인트 (120틱 초기 + 여유)
     lastPrice: 0,
     openPrice: 0,           // 히스토리 첫 가격 (fallback)
     dailyOpen: 0,          // ★ D1 캔들 시가 (실제 일일 등락용)
@@ -151,6 +151,7 @@ const QeTickChart = {
         // 터치/마우스 조작 감지
         container.addEventListener('touchstart', () => {
             this._userInteracting = true;
+            this._zoomAnimating = false; // 줌인 애니메이션 중단
             if (this._autoReturnTimer) clearTimeout(this._autoReturnTimer);
         }, { passive: true });
         container.addEventListener('touchend', () => {
@@ -190,6 +191,13 @@ const QeTickChart = {
 
     async loadInitialHistory() {
         this._loadingHistory = true;
+
+        // ★ 종목 변경 시 이전 데이터 즉시 클리어 (점프 방지)
+        this.tickData = [];
+        if (this.areaSeries) {
+            this.areaSeries.setData([]);
+        }
+
         // ★ 안전장치: 5초 후 강제 해제 (API 지연/실패 대비)
         this._loadingTimeout = setTimeout(() => {
             if (this._loadingHistory) {
@@ -201,10 +209,10 @@ const QeTickChart = {
         const KST_OFFSET = 9 * 3600;
         try {
             if (typeof apiCall !== 'function') return;
-            const data = await apiCall('/mt5/candles/' + symbol + '?timeframe=M1&count=10');
+            const data = await apiCall('/mt5/candles/' + symbol + '?timeframe=M1&count=30');
             if (data && data.candles && data.candles.length > 0) {
                 const historyTicks = [];
-                const candles = data.candles.slice(-10);
+                const candles = data.candles.slice(-30);
                 candles.forEach(c => {
                     // 각 캔들의 open, high, low, close를 4개 틱으로 분해
                     const baseTime = c.time + KST_OFFSET;
@@ -241,23 +249,60 @@ const QeTickChart = {
                             console.log('[QeTickChart] ★ D1 시가:', this.dailyOpen);
                         }
                     } catch(e) { console.warn('[QeTickChart] D1 시가 로딩 실패:', e); }
-                    // ★ 1초 후 최근 구간으로 줌인 (40바 + 오른쪽 여백 8)
-                    setTimeout(() => {
-                        if (this.chart && this.tickData.length > 0) {
-                            const totalBars = this.tickData.length;
-                            const visibleBars = Math.min(40, totalBars);
-                            this.chart.timeScale().setVisibleLogicalRange({
-                                from: totalBars - visibleBars,
-                                to: totalBars + 8
-                            });
 
-                            // ★★★ Fix 3: 히스토리 로딩 완료 후 포지션이 있으면 줌아웃하여 라인 표시 ★★★
-                            if (this._entryData && this._entryData.tp && this._entryData.sl) {
-                                console.log('[QeTickChart] ★ 히스토리 로딩 후 포지션 라인 재조정:', this._entryData);
-                                this.zoomToShowTPSL(this._entryData.price, this._entryData.tp, this._entryData.sl);
+                    // ★ 초기 와이드 뷰 (30분 전체 보이기)
+                    this.chart.timeScale().fitContent();
+
+                    // ★ 2초 후 부드러운 애니메이션 줌인 (30분 → 1분 뷰)
+                    setTimeout(() => {
+                        if (!this.chart || !this.tickData || this.tickData.length === 0) return;
+                        if (this._zoomAnimating) return; // 중복 방지
+
+                        this._zoomAnimating = true;
+                        const totalBars = this.tickData.length;
+                        const targetVisibleBars = Math.min(60, totalBars); // 약 1분 (60틱)
+                        const startVisibleBars = totalBars; // 전체 30분
+                        const rightOffset = 8;
+
+                        const duration = 1000; // 1초 동안
+                        const steps = 30;
+                        const stepTime = duration / steps;
+                        let currentStep = 0;
+
+                        const easeInOutCubic = (t) => {
+                            return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+                        };
+
+                        const animateZoom = () => {
+                            if (!this._zoomAnimating) return; // 사용자 터치 시 중단
+                            currentStep++;
+                            const progress = easeInOutCubic(currentStep / steps);
+                            const currentVisibleBars = Math.round(
+                                startVisibleBars + (targetVisibleBars - startVisibleBars) * progress
+                            );
+
+                            try {
+                                this.chart.timeScale().setVisibleLogicalRange({
+                                    from: totalBars - currentVisibleBars,
+                                    to: totalBars + rightOffset
+                                });
+                            } catch(e) {}
+
+                            if (currentStep < steps) {
+                                setTimeout(animateZoom, stepTime);
+                            } else {
+                                this._zoomAnimating = false;
+                                console.log('[QeTickChart] ★ 줌인 애니메이션 완료');
+                                // 줌인 완료 후 포지션 라인 재조정
+                                if (this._entryData && this._entryData.tp && this._entryData.sl) {
+                                    console.log('[QeTickChart] ★ 포지션 라인 재조정:', this._entryData);
+                                    this.zoomToShowTPSL(this._entryData.price, this._entryData.tp, this._entryData.sl);
+                                }
                             }
-                        }
-                    }, 1000);
+                        };
+
+                        animateZoom();
+                    }, 2000);
                 }
             }
         } catch (e) {
