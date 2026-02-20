@@ -601,26 +601,26 @@ function initMt5View() {
         if (liveBtn) { liveBtn.classList.remove('active', 'live-active'); }
         if (demoCheck) demoCheck.style.display = 'flex';
         if (liveCheck) liveCheck.style.display = 'none';
-        if (modeStatus) modeStatus.innerHTML = '<span class="my-mt5-status-dot demo"></span><span>Currently in <strong>Demo Mode</strong> - Practice with virtual $10,000</span>';
+        if (modeStatus) { modeStatus.classList.remove('live'); modeStatus.innerHTML = '<span class="my-mt5-status-dot demo"></span><span>Currently in <strong>Demo Mode</strong> - Practice with virtual $10,000</span>'; }
     } else {
-        if (liveBtn) { liveBtn.classList.add('active', 'live-active'); }
-        if (demoBtn) { demoBtn.classList.remove('active'); }
+        if (liveBtn) { liveBtn.classList.remove('active'); liveBtn.classList.add('live-active'); }
+        if (demoBtn) { demoBtn.classList.remove('active', 'live-active'); }
         if (liveCheck) liveCheck.style.display = 'flex';
         if (demoCheck) demoCheck.style.display = 'none';
-        if (modeStatus) modeStatus.innerHTML = '<span class="my-mt5-status-dot live"></span><span>Currently in <strong>Live Mode</strong> - Real trading active</span>';
+        if (modeStatus) { modeStatus.classList.add('live'); modeStatus.innerHTML = '<span class="my-mt5-status-dot live"></span><span>Currently in <strong>Live Mode</strong> - Real trading active</span>'; }
     }
 
     loadMT5AccountInfo();
 }
 
-// ★★★ MT5 계정 정보 로드 — 홈 화면 DOM에서 직접 읽기 ★★★
+// ★★★ MT5 계정 정보 로드 — 홈 DOM 우선, 없으면 API fallback ★★★
 function loadMT5AccountInfo() {
     var readHome = function(id) {
         var el = document.getElementById(id);
-        return el ? el.textContent.trim() : '-';
+        return el ? el.textContent.trim() : '';
     };
 
-    updateMT5Display({
+    var data = {
         broker: readHome('homeBroker'),
         account: readHome('homeAccount'),
         leverage: readHome('homeLeverage'),
@@ -629,17 +629,101 @@ function loadMT5AccountInfo() {
         equity: readHome('homeEquity'),
         freeMargin: readHome('homeFreeMargin'),
         positions: readHome('homePositions')
-    });
+    };
+
+    // 홈 DOM에 데이터가 아직 없으면 (-, 빈값, $0.00) API fallback
+    var hasData = data.broker && data.broker !== '-' && data.broker !== '';
+    if (!hasData) {
+        // API fallback으로 직접 가져오기
+        var tkn = localStorage.getItem('access_token') || '';
+        if (!tkn) { updateMT5Display(null); return; }
+        var apiUrl = (typeof API_URL !== 'undefined') ? API_URL : '/api';
+
+        fetch(apiUrl + '/demo/account-info', {
+            headers: { 'Authorization': 'Bearer ' + tkn }
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(demoData) {
+            if (demoData.has_mt5) {
+                fetch(apiUrl + '/mt5/account-info', {
+                    headers: { 'Authorization': 'Bearer ' + tkn }
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(mt5Data) {
+                    var fmt = function(v) {
+                        var n = parseFloat(v) || 0;
+                        return '$' + n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+                    };
+                    updateMT5Display({
+                        broker: mt5Data.broker || demoData.broker || '-',
+                        account: mt5Data.account || demoData.account || '-',
+                        leverage: mt5Data.leverage ? ('1:' + mt5Data.leverage) : '-',
+                        server: mt5Data.server || demoData.server || '-',
+                        balance: fmt(mt5Data.balance || demoData.balance),
+                        equity: fmt(mt5Data.equity || demoData.equity),
+                        freeMargin: fmt(mt5Data.free_margin || demoData.free_margin),
+                        positions: (mt5Data.positions_count || demoData.positions_count || 0).toString()
+                    });
+                })
+                .catch(function() {
+                    var fmt = function(v) {
+                        var n = parseFloat(v) || 0;
+                        return '$' + n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+                    };
+                    updateMT5Display({
+                        broker: demoData.broker || '-',
+                        account: demoData.account || '-',
+                        leverage: demoData.leverage ? ('1:' + demoData.leverage) : '-',
+                        server: demoData.server || '-',
+                        balance: fmt(demoData.balance),
+                        equity: fmt(demoData.equity),
+                        freeMargin: fmt(demoData.free_margin),
+                        positions: (demoData.positions_count || 0).toString()
+                    });
+                });
+            } else {
+                var fmt = function(v) {
+                    var n = parseFloat(v) || 0;
+                    return '$' + n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+                };
+                updateMT5Display({
+                    broker: demoData.broker || 'Trading-X Demo',
+                    account: demoData.account || '-',
+                    leverage: demoData.leverage ? ('1:' + demoData.leverage) : '1:100',
+                    server: demoData.server || 'TradingX-Demo',
+                    balance: fmt(demoData.balance || 10000),
+                    equity: fmt(demoData.equity || demoData.balance || 10000),
+                    freeMargin: fmt(demoData.free_margin || demoData.balance || 10000),
+                    positions: (demoData.positions_count || 0).toString()
+                });
+            }
+        })
+        .catch(function() { updateMT5Display(null); });
+        return;
+    }
+
+    // 홈 DOM에 데이터가 있으면 그대로 사용
+    updateMT5Display(data);
 }
 
-// ★★★ MT5 UI 업데이트 — 홈 화면 데이터 그대로 표시 ★★★
+// ★★★ MT5 UI 업데이트 ★★★
 function updateMT5Display(data) {
-    if (!data) return;
-
     var set = function(id, val) {
         var el = document.getElementById(id);
         if (el) el.textContent = val || '-';
     };
+
+    if (!data) {
+        set('myMt5Broker', '-');
+        set('myMt5Account', '-');
+        set('myMt5Leverage', '-');
+        set('myMt5Server', '-');
+        set('myMt5Balance', '-');
+        set('myMt5Equity', '-');
+        set('myMt5FreeMargin', '-');
+        set('myMt5Positions', '0');
+        return;
+    }
 
     set('myMt5Broker', data.broker);
     set('myMt5Account', data.account);
@@ -670,13 +754,13 @@ function switchMyMt5Mode(mode) {
         if (liveBtn) { liveBtn.classList.remove('active', 'live-active'); }
         if (demoCheck) demoCheck.style.display = 'flex';
         if (liveCheck) liveCheck.style.display = 'none';
-        if (modeStatus) modeStatus.innerHTML = '<span class="my-mt5-status-dot demo"></span><span>Currently in <strong>Demo Mode</strong> - Practice with virtual $10,000</span>';
+        if (modeStatus) { modeStatus.classList.remove('live'); modeStatus.innerHTML = '<span class="my-mt5-status-dot demo"></span><span>Currently in <strong>Demo Mode</strong> - Practice with virtual $10,000</span>'; }
     } else {
-        if (liveBtn) { liveBtn.classList.add('active', 'live-active'); }
-        if (demoBtn) { demoBtn.classList.remove('active'); }
+        if (liveBtn) { liveBtn.classList.remove('active'); liveBtn.classList.add('live-active'); }
+        if (demoBtn) { demoBtn.classList.remove('active', 'live-active'); }
         if (liveCheck) liveCheck.style.display = 'flex';
         if (demoCheck) demoCheck.style.display = 'none';
-        if (modeStatus) modeStatus.innerHTML = '<span class="my-mt5-status-dot live"></span><span>Currently in <strong>Live Mode</strong> - Real trading active</span>';
+        if (modeStatus) { modeStatus.classList.add('live'); modeStatus.innerHTML = '<span class="my-mt5-status-dot live"></span><span>Currently in <strong>Live Mode</strong> - Real trading active</span>'; }
     }
 
     // 모드 전환 후 홈 DOM 데이터가 갱신될 시간을 주고 다시 읽기
