@@ -80,7 +80,7 @@ const QeTickChart = {
                 borderColor: 'rgba(255, 255, 255, 0.06)',
                 timeVisible: true,
                 secondsVisible: true,
-                rightOffset: 8,
+                rightOffset: 3,
                 fixLeftEdge: false,
                 fixRightEdge: false
             },
@@ -262,7 +262,7 @@ const QeTickChart = {
                         const totalBars = this.tickData.length;
                         const targetVisibleBars = Math.max(15, Math.min(30, totalBars)); // 약 30초 (30틱)
                         const startVisibleBars = totalBars; // 전체 30분
-                        const rightOffset = 8;
+                        const rightOffset = 3;
 
                         const duration = 1500; // 1.5초 동안 (더 천천히)
                         const steps = 50; // 더 세밀하게
@@ -623,7 +623,7 @@ const QeTickChart = {
             this._zoomAnimating = true;
             const totalBars = this.tickData.length;
             const targetVisibleBars = Math.max(15, Math.min(30, totalBars));
-            const rightOffset = 8;
+            const rightOffset = 3;
 
             // 현재 보이는 범위 가져오기
             let currentVisibleBars = totalBars; // fallback
@@ -673,7 +673,7 @@ const QeTickChart = {
             };
 
             animateToView();
-        }, 1500); // SL/TP 보여준 후 1.5초 뒤 줌인 시작
+        }, 500); // SL/TP 보여준 후 0.5초 뒤 줌인 시작 (번쩍임 방지)
     },
 
     removeEntryLine() {
@@ -857,10 +857,11 @@ const QeTickChart = {
         // X축은 현재 뷰 그대로 유지! fitContent, setVisibleLogicalRange 호출 금지!
     },
 
-    // ========== 차트 초기 상태 완벽 복원 ==========
+    // ========== 차트 초기 상태 완벽 복원 (부드러운 트랜지션) ==========
     resetChartView() {
         if (!this.chart || !this.areaSeries) return;
         if (!this.tickData || this.tickData.length === 0) return;
+        if (this._zoomAnimating) return; // ★ 애니메이션 중 뷰 변경 방지
 
         // 1. 커스텀 가격 범위 해제 → provider가 baseImpl() 호출 → 현재가 중심 autoScale
         this._customPriceRange = null;
@@ -871,17 +872,64 @@ const QeTickChart = {
             scaleMargins: { top: 0.1, bottom: 0.1 }
         });
 
-        // 3. 시간축: 30초 구간, 현재가 오른쪽 고정 (rightOffset=8)
-        const totalBars = this.tickData.length;
-        const visibleBars = Math.max(15, Math.min(30, totalBars));
-        const rightOffset = 8;
+        // 3. 부드러운 미니 트랜지션 (300ms, 10스텝)
+        const snapshotTotal = this.tickData.length; // ★ 스냅샷 고정
+        const targetVisibleBars = Math.max(15, Math.min(30, snapshotTotal));
+        const rightOffset = 3;
 
+        // 현재 보이는 범위 가져오기
+        let currentVisibleBars = targetVisibleBars;
         try {
-            this.chart.timeScale().setVisibleLogicalRange({
-                from: totalBars - visibleBars,
-                to: totalBars + rightOffset
-            });
+            const visibleRange = this.chart.timeScale().getVisibleLogicalRange();
+            if (visibleRange) {
+                currentVisibleBars = Math.round(visibleRange.to - visibleRange.from);
+            }
         } catch(e) {}
+
+        // 이미 목표와 비슷하면 즉시 설정
+        if (Math.abs(currentVisibleBars - targetVisibleBars) < 3) {
+            try {
+                this.chart.timeScale().setVisibleLogicalRange({
+                    from: snapshotTotal - targetVisibleBars,
+                    to: snapshotTotal + rightOffset
+                });
+            } catch(e) {}
+            return;
+        }
+
+        // ★ 미니 트랜지션 애니메이션
+        this._zoomAnimating = true;
+        const startBars = currentVisibleBars;
+        const duration = 300;
+        const steps = 10;
+        const stepTime = duration / steps;
+        let currentStep = 0;
+
+        const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+
+        const animateReset = () => {
+            if (!this._zoomAnimating) return;
+            currentStep++;
+            const progress = easeOut(currentStep / steps);
+            const nowBars = Math.round(
+                startBars + (targetVisibleBars - startBars) * progress
+            );
+
+            try {
+                this.chart.timeScale().setVisibleLogicalRange({
+                    from: snapshotTotal - nowBars,
+                    to: snapshotTotal + rightOffset
+                });
+            } catch(e) {}
+
+            if (currentStep < steps) {
+                setTimeout(animateReset, stepTime);
+            } else {
+                this._zoomAnimating = false;
+            }
+        };
+
+        animateReset();
     },
 
     // ========== 종목 변경 시 리셋 ==========
