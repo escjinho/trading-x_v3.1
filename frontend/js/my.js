@@ -590,155 +590,113 @@ document.addEventListener('keydown', function(e) {
 function initMt5View() {
     var demo = typeof isDemo !== 'undefined' ? isDemo : true;
 
-    // 모드 배지
-    var modeBadge = document.getElementById('myMt5ModeBadge');
-    if (modeBadge) {
-        modeBadge.textContent = demo ? 'Demo' : 'Live';
-        modeBadge.className = 'my-mt5-mode' + (demo ? '' : ' live');
+    var demoBtn = document.getElementById('myMt5DemoBtn');
+    var liveBtn = document.getElementById('myMt5LiveBtn');
+    var demoCheck = document.getElementById('myMt5DemoCheck');
+    var liveCheck = document.getElementById('myMt5LiveCheck');
+    var modeStatus = document.getElementById('myMt5ModeStatus');
+
+    if (demo) {
+        if (demoBtn) { demoBtn.classList.add('active'); demoBtn.classList.remove('live-active'); }
+        if (liveBtn) { liveBtn.classList.remove('active', 'live-active'); }
+        if (demoCheck) demoCheck.style.display = 'flex';
+        if (liveCheck) liveCheck.style.display = 'none';
+        if (modeStatus) modeStatus.innerHTML = '<span class="my-mt5-status-dot demo"></span><span>Currently in <strong>Demo Mode</strong> - Practice with virtual $10,000</span>';
+    } else {
+        if (liveBtn) { liveBtn.classList.add('active', 'live-active'); }
+        if (demoBtn) { demoBtn.classList.remove('active'); }
+        if (liveCheck) liveCheck.style.display = 'flex';
+        if (demoCheck) demoCheck.style.display = 'none';
+        if (modeStatus) modeStatus.innerHTML = '<span class="my-mt5-status-dot live"></span><span>Currently in <strong>Live Mode</strong> - Real trading active</span>';
     }
 
-    // 스위치 버튼 상태
-    var demoSwitch = document.getElementById('myMt5DemoSwitch');
-    var liveSwitch = document.getElementById('myMt5LiveSwitch');
-    if (demoSwitch && liveSwitch) {
-        demoSwitch.classList.toggle('active', demo);
-        liveSwitch.classList.toggle('active', !demo);
-    }
-
-    // API에서 계정 정보 로드
     loadMT5AccountInfo();
 }
 
-// MT5 계정 정보 로드 (home.js와 동일한 방식)
-async function loadMT5AccountInfo() {
-    var token = localStorage.getItem('access_token') || '';
-    if (!token) {
-        updateMT5Display(null, false);
-        return;
-    }
+// ★★★ MT5 계정 정보 로드 — 홈 화면 DOM에서 직접 읽기 ★★★
+function loadMT5AccountInfo() {
+    var readHome = function(id) {
+        var el = document.getElementById(id);
+        return el ? el.textContent.trim() : '-';
+    };
 
-    var demo = typeof isDemo !== 'undefined' ? isDemo : true;
-
-    try {
-        if (demo) {
-            // Demo 모드: /api/demo/account-info
-            var res = await fetch(API_URL + '/demo/account-info', {
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-            if (!res.ok) {
-                updateMT5Display(null, false);
-                return;
-            }
-            var data = await res.json();
-            // Demo 계정은 항상 연결됨 상태
-            updateMT5Display({
-                account: data.account || ('DEMO-' + (localStorage.getItem('user_id') || '')),
-                server: data.server || 'Demo Server',
-                balance: data.balance || 10000,
-                equity: data.equity || data.balance || 10000,
-                leverage: data.leverage || 500,
-                broker: data.broker || 'Trading-X Demo'
-            }, true);
-        } else {
-            // Live 모드: 먼저 has_mt5 체크 후 mt5 정보 로드
-            var demoRes = await fetch(API_URL + '/demo/account-info', {
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-            var demoData = await demoRes.json();
-
-            if (demoData.has_mt5) {
-                // MT5 연결됨 - 상세 정보 로드
-                var mt5Res = await fetch(API_URL + '/mt5/account-info', {
-                    headers: { 'Authorization': 'Bearer ' + token }
-                });
-                if (mt5Res.ok) {
-                    var mt5Data = await mt5Res.json();
-                    updateMT5Display({
-                        account: mt5Data.account,
-                        server: mt5Data.server,
-                        balance: mt5Data.balance,
-                        leverage: mt5Data.leverage,
-                        broker: mt5Data.broker
-                    }, true);
-                } else {
-                    updateMT5Display(null, false);
-                }
-            } else {
-                updateMT5Display(null, false);
-            }
-        }
-    } catch (err) {
-        console.error('[MT5] 계정 정보 로드 오류:', err);
-        updateMT5Display(null, false);
-    }
+    updateMT5Display({
+        broker: readHome('homeBroker'),
+        account: readHome('homeAccount'),
+        leverage: readHome('homeLeverage'),
+        server: readHome('homeServer'),
+        balance: readHome('homeBalance'),
+        equity: readHome('homeEquity'),
+        freeMargin: readHome('homeFreeMargin'),
+        positions: readHome('homePositions')
+    });
 }
 
-// MT5 UI 업데이트
-function updateMT5Display(account, connected) {
-    var statusBadge = document.getElementById('myMt5StatusBadge');
-    var loginEl = document.getElementById('myMt5Login');
-    var serverEl = document.getElementById('myMt5Server');
-    var balanceEl = document.getElementById('myMt5Balance');
-    var leverageEl = document.getElementById('myMt5Leverage');
+// ★★★ MT5 UI 업데이트 — 홈 화면 데이터 그대로 표시 ★★★
+function updateMT5Display(data) {
+    if (!data) return;
 
-    if (connected && account) {
-        // 연결됨 상태
-        if (statusBadge) {
-            statusBadge.textContent = '연결됨';
-            statusBadge.style.background = 'rgba(0, 200, 83, 0.15)';
-            statusBadge.style.color = 'var(--buy-color)';
-        }
-        if (loginEl) loginEl.textContent = account.account || '-';
-        if (serverEl) serverEl.textContent = account.server || '-';
-        if (balanceEl) {
-            var bal = account.balance;
-            balanceEl.textContent = bal ? ('$' + Number(bal).toLocaleString(undefined, {minimumFractionDigits: 2})) : '-';
-        }
-        if (leverageEl) {
-            var lev = account.leverage;
-            leverageEl.textContent = lev ? ('1:' + lev) : '-';
-        }
-    } else {
-        // 미연결 상태
-        if (statusBadge) {
-            statusBadge.textContent = '미연결';
-            statusBadge.style.background = 'rgba(220, 53, 69, 0.15)';
-            statusBadge.style.color = 'var(--sell-color)';
-        }
-        if (loginEl) loginEl.textContent = '-';
-        if (serverEl) serverEl.textContent = '-';
-        if (balanceEl) balanceEl.textContent = '-';
-        if (leverageEl) leverageEl.textContent = '-';
-    }
+    var set = function(id, val) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = val || '-';
+    };
+
+    set('myMt5Broker', data.broker);
+    set('myMt5Account', data.account);
+    set('myMt5Leverage', data.leverage);
+    set('myMt5Server', data.server);
+    set('myMt5Balance', data.balance);
+    set('myMt5Equity', data.equity);
+    set('myMt5FreeMargin', data.freeMargin);
+    set('myMt5Positions', data.positions);
 }
 
-function switchMt5Account(mode) {
+// ★★★ My 페이지에서 모드 전환 ★★★
+function switchMyMt5Mode(mode) {
+    // 홈 화면의 실제 모드 전환 호출
+    if (typeof switchTradingMode === 'function') {
+        switchTradingMode(mode);
+    }
+
+    // My 페이지 UI 갱신
+    var demoBtn = document.getElementById('myMt5DemoBtn');
+    var liveBtn = document.getElementById('myMt5LiveBtn');
+    var demoCheck = document.getElementById('myMt5DemoCheck');
+    var liveCheck = document.getElementById('myMt5LiveCheck');
+    var modeStatus = document.getElementById('myMt5ModeStatus');
+
     if (mode === 'demo') {
-        if (typeof switchToDemo === 'function') switchToDemo();
-        else if (typeof isDemo !== 'undefined') isDemo = true;
+        if (demoBtn) { demoBtn.classList.add('active'); demoBtn.classList.remove('live-active'); }
+        if (liveBtn) { liveBtn.classList.remove('active', 'live-active'); }
+        if (demoCheck) demoCheck.style.display = 'flex';
+        if (liveCheck) liveCheck.style.display = 'none';
+        if (modeStatus) modeStatus.innerHTML = '<span class="my-mt5-status-dot demo"></span><span>Currently in <strong>Demo Mode</strong> - Practice with virtual $10,000</span>';
     } else {
-        if (typeof switchToLive === 'function') switchToLive();
-        else if (typeof isDemo !== 'undefined') isDemo = false;
+        if (liveBtn) { liveBtn.classList.add('active', 'live-active'); }
+        if (demoBtn) { demoBtn.classList.remove('active'); }
+        if (liveCheck) liveCheck.style.display = 'flex';
+        if (demoCheck) demoCheck.style.display = 'none';
+        if (modeStatus) modeStatus.innerHTML = '<span class="my-mt5-status-dot live"></span><span>Currently in <strong>Live Mode</strong> - Real trading active</span>';
     }
 
-    initMt5View();
-    updateMyModeDisplay();
-
-    if (typeof showToast === 'function') {
-        showToast(mode === 'demo' ? '📚 Demo 모드로 전환' : '🚀 Live 모드로 전환', 'success');
-    }
+    // 모드 전환 후 홈 DOM 데이터가 갱신될 시간을 주고 다시 읽기
+    setTimeout(function() { loadMT5AccountInfo(); }, 800);
 }
 
-async function refreshMt5Connection() {
-    showToast('연결을 새로고침합니다...', 'info');
-
-    try {
-        await loadMT5AccountInfo();
-        showToast('연결이 갱신되었습니다', 'success');
-    } catch (err) {
-        showToast('새로고침 실패', 'error');
+// ★★★ 연결 새로고침 ★★★
+function refreshMyMt5Info() {
+    showToast('계정 정보를 갱신합니다...', 'info');
+    // 홈 화면 데이터 갱신 트리거
+    if (typeof checkAndUpdateMT5Status === 'function') {
+        checkAndUpdateMT5Status();
     }
+    // 약간 딜레이 후 DOM에서 다시 읽기
+    setTimeout(function() { loadMT5AccountInfo(); }, 1000);
 }
+
+// 호환성: 기존 함수명 래핑
+function switchMt5Account(mode) { switchMyMt5Mode(mode); }
+function refreshMt5Connection() { refreshMyMt5Info(); }
 
 // ========== 로그인 기록 ==========
 function logoutAllDevices() {

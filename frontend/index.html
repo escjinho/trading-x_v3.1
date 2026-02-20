@@ -67,7 +67,7 @@
         <link rel="stylesheet" href="css/quickeasy.css?v=1771533773">
     <link rel="stylesheet" href="css/chart.css?v=1771533773">
     <link rel="stylesheet" href="css/account.css?v=1771533773">
-    <link rel="stylesheet" href="css/my.css?v=1771533773">
+    <link rel="stylesheet" href="css/my.css?v=1771629271">
 </head>
 <body>
     <div class="app">
@@ -1643,46 +1643,54 @@
                         <span class="my-sub-title">MT5 계정 관리</span>
                     </div>
                     <div class="my-sub-body">
-                        <div class="my-detail-section">
-                            <div class="my-mt5-status-card">
-                                <div class="my-mt5-status-header">
-                                    <span class="my-mt5-badge" id="myMt5StatusBadge">연결됨</span>
-                                    <span class="my-mt5-mode" id="myMt5ModeBadge">Demo</span>
-                                </div>
-                                <div class="my-mt5-info-grid">
-                                    <div class="my-mt5-info-item">
-                                        <span class="my-mt5-info-label">로그인</span>
-                                        <span class="my-mt5-info-value" id="myMt5Login">-</span>
-                                    </div>
-                                    <div class="my-mt5-info-item">
-                                        <span class="my-mt5-info-label">서버</span>
-                                        <span class="my-mt5-info-value" id="myMt5Server">-</span>
-                                    </div>
-                                    <div class="my-mt5-info-item">
-                                        <span class="my-mt5-info-label">잔액</span>
-                                        <span class="my-mt5-info-value" id="myMt5Balance">-</span>
-                                    </div>
-                                    <div class="my-mt5-info-item">
-                                        <span class="my-mt5-info-label">레버리지</span>
-                                        <span class="my-mt5-info-value" id="myMt5Leverage">-</span>
-                                    </div>
-                                </div>
+                        <!-- Trading Mode 카드 -->
+                        <div class="my-mt5-card">
+                            <div class="my-mt5-card-title">
+                                <span class="material-icons-round" style="color: #00d4ff; font-size: 18px;">swap_horiz</span>
+                                <span>Trading Mode</span>
+                            </div>
+                            <div class="my-mt5-mode-btns">
+                                <button class="my-mt5-mode-btn active" id="myMt5DemoBtn" onclick="switchMyMt5Mode('demo')">
+                                    <div class="my-mt5-mode-name">DEMO</div>
+                                    <div class="my-mt5-mode-desc">Practice Trading</div>
+                                    <div class="my-mt5-mode-check" id="myMt5DemoCheck">✓</div>
+                                </button>
+                                <button class="my-mt5-mode-btn" id="myMt5LiveBtn" onclick="switchMyMt5Mode('live')">
+                                    <div class="my-mt5-mode-name">LIVE</div>
+                                    <div class="my-mt5-mode-desc">Real Trading</div>
+                                    <div class="my-mt5-mode-check" id="myMt5LiveCheck" style="display:none;">✓</div>
+                                </button>
+                            </div>
+                            <div class="my-mt5-mode-status" id="myMt5ModeStatus">
+                                <span class="my-mt5-status-dot demo"></span>
+                                <span>Currently in <strong>Demo Mode</strong> - Practice with virtual $10,000</span>
                             </div>
                         </div>
-                        <div class="my-detail-section">
-                            <div class="my-section-title">계정 전환</div>
-                            <div class="my-mt5-switch-row">
-                                <div class="my-mt5-switch-item active" id="myMt5DemoSwitch" onclick="switchMt5Account('demo')">
-                                    <span class="material-icons-round">school</span>
-                                    <span>Demo</span>
-                                </div>
-                                <div class="my-mt5-switch-item" id="myMt5LiveSwitch" onclick="switchMt5Account('live')">
-                                    <span class="material-icons-round">rocket_launch</span>
-                                    <span>Live</span>
-                                </div>
+
+                        <!-- Account Overview 카드 -->
+                        <div class="my-mt5-card">
+                            <div class="my-mt5-card-title">
+                                <span class="material-icons-round" style="color: #00d4ff; font-size: 18px;">account_balance</span>
+                                <span>Account Overview</span>
+                            </div>
+                            <div class="my-mt5-info-box">
+                                <div class="my-mt5-info-row"><span class="my-mt5-info-label">Broker</span><span class="my-mt5-info-value" id="myMt5Broker">-</span></div>
+                                <div class="my-mt5-info-row"><span class="my-mt5-info-label">Account</span><span class="my-mt5-info-value" id="myMt5Account">-</span></div>
+                                <div class="my-mt5-info-row"><span class="my-mt5-info-label">Leverage</span><span class="my-mt5-info-value" id="myMt5Leverage">-</span></div>
+                                <div class="my-mt5-info-row" style="border-bottom:none;"><span class="my-mt5-info-label">Server</span><span class="my-mt5-info-value" id="myMt5Server">-</span></div>
+                            </div>
+                            <div class="my-mt5-balance-box">
+                                <div class="my-mt5-info-row"><span class="my-mt5-info-label">Balance</span><span class="my-mt5-info-value" id="myMt5Balance">-</span></div>
+                                <div class="my-mt5-info-row"><span class="my-mt5-info-label">Equity</span><span class="my-mt5-info-value" id="myMt5Equity">-</span></div>
+                                <div class="my-mt5-info-row"><span class="my-mt5-info-label">Free Margin</span><span class="my-mt5-info-value" id="myMt5FreeMargin">-</span></div>
+                                <div class="my-mt5-info-row" style="border-bottom:none;"><span class="my-mt5-info-label">Open Positions</span><span class="my-mt5-info-value" id="myMt5Positions">0</span></div>
                             </div>
                         </div>
-                        <button class="my-action-btn secondary" onclick="refreshMt5Connection()"><span class="material-icons-round" style="font-size:16px; margin-right:6px;">refresh</span>연결 새로고침</button>
+
+                        <!-- 연결 새로고침 버튼 -->
+                        <button class="my-action-btn secondary" onclick="refreshMyMt5Info()" style="margin-top:12px;">
+                            <span class="material-icons-round" style="font-size:16px;margin-right:6px;">refresh</span>연결 새로고침
+                        </button>
                     </div>
                 </div>
 
@@ -3300,7 +3308,7 @@
     <script src="js/utils.js?v=1771533971"></script>
     <script src="js/watchlist.js?v=1771533971"></script>
     <script src="js/navigation.js?v=1771533971"></script>
-    <script src="js/my.js?v=1771625585"></script>
+    <script src="js/my.js?v=1771629271"></script>
 
     <!-- Chart Panels (모듈화) -->
     <script src="js/panels/gaugePanel.js?v=1771533971"></script>
@@ -4759,7 +4767,7 @@
     <script src="js/account.js?v=1771535585"></script>
     <script src="js/trading.js?v=1771535585"></script>
     <script src="js/openPositions.js?v=1771536618"></script>
-    <script src="js/connection.js?v=1771535585"></script>
+    <script src="js/connection.js?v=1771629271"></script>
     <script src="js/init.js?v=1771533971"></script>
 </body>
 </html>

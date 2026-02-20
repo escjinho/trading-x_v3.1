@@ -2274,6 +2274,13 @@ function switchTradingMode(mode) {
                 showToast('Live 모드로 전환되었습니다', 'success');
                 updateHeroCTA('live');
 
+                // ★★★ MT5 계정 연결 상태 UI 즉시 갱신 ★★★
+                setTimeout(function() {
+                    if (typeof checkAndUpdateMT5Status === 'function') {
+                        checkAndUpdateMT5Status();
+                    }
+                }, 500);
+
                 // ★ WebSocket 재연결 (Demo → Live URL로 변경)
                 if (ws) {
                     intentionalClose = true;
@@ -2307,12 +2314,34 @@ function switchTradingMode(mode) {
 }
 
 async function checkMT5Connection() {
-    console.log("[checkUserMode] About to try connectWebSocket - Live mode");
-            try {
+    try {
         const response = await fetch(`${API_URL}/demo/account-info`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.json();
+
+        if (data.has_mt5) {
+            try {
+                const mt5Response = await fetch(`${API_URL}/mt5/account-info`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const mt5Data = await mt5Response.json();
+                updateMT5AccountUI(true, {
+                    broker: mt5Data.broker,
+                    account: mt5Data.account,
+                    server: mt5Data.server,
+                    leverage: mt5Data.leverage
+                });
+            } catch (e2) {
+                updateMT5AccountUI(true, {
+                    broker: data.broker || 'Live Account',
+                    account: data.account || '-',
+                    server: data.server || '-',
+                    leverage: data.leverage || 500
+                });
+            }
+        }
+
         return data.has_mt5 || false;
     } catch (e) {
         return false;
