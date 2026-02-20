@@ -735,43 +735,56 @@ function connectWebSocket() {
                 OpenPositions.updatePositions(data.positions);
             }
 
-            // ★★★ Quick&Easy 포지션 복구 (positions 배열에서 magic=100003 찾기) ★★★
-            // data.position 유무와 상관없이 독립적으로 체크
+            // ★★★ Quick&Easy 포지션 동기화 (완전 교체 방식 — MT5 실제 데이터로) ★★★
             if (typeof QuickEasyPanel !== 'undefined' && data.positions && Array.isArray(data.positions)) {
-                const qePositions = data.positions.filter(p => p.magic == 100003);
                 const currentSym = window.currentSymbol || 'BTCUSD';
-                qePositions.forEach(qePos => {
+
+                // ★★★ 1단계: magic=100003 포지션만 모아서 새 객체 생성 ★★★
+                const newQePositions = {};
+                data.positions.filter(p => p.magic == 100003).forEach(qePos => {
                     const posSym = qePos.symbol || '';
-                    // ★ TP/SL 필드 호환 (라이브: tp/sl, 데모: tp_price/sl_price)
                     const _tp = qePos.tp_price || qePos.tp || 0;
                     const _sl = qePos.sl_price || qePos.sl || 0;
-                    // ★ 딕셔너리에 저장 (모든 종목)
-                    if (!QuickEasyPanel._positions[posSym]) {
-                        QuickEasyPanel._positions[posSym] = {
-                            side: qePos.type === 'BUY' ? 'BUY' : 'SELL',
-                            entry: qePos.entry,
-                            volume: qePos.volume,
-                            target: qePos.target,
-                            tpsl: (_tp > 0 && _sl > 0) ? { tp: _tp, sl: _sl } : null,
-                            startTime: Date.now(),
-                            openedAt: Date.now()
-                        };
-                        QuickEasyPanel._updatePositionBadge();
+                    newQePositions[posSym] = {
+                        id: qePos.id || qePos.ticket,
+                        side: qePos.type === 'BUY' ? 'BUY' : 'SELL',
+                        entry: qePos.entry || qePos.openPrice || 0,
+                        volume: qePos.volume,
+                        target: qePos.target || 0,
+                        profit: qePos.profit || 0,
+                        tpsl: (_tp > 0 && _sl > 0) ? { tp: _tp, sl: _sl } : null,
+                        startTime: Date.now(),
+                        openedAt: Date.now()
+                    };
+                });
+
+                // ★★★ 2단계: 기존 _positions 완전 교체 (MT5에서 사라진 포지션 자동 삭제) ★★★
+                const prevCount = Object.keys(QuickEasyPanel._positions).length;
+                const newCount = Object.keys(newQePositions).length;
+                QuickEasyPanel._positions = newQePositions;
+                if (prevCount !== newCount) {
+                    console.log(`[WS Demo] 🔄 QE 포지션 동기화: ${prevCount}개 → ${newCount}개`);
+                }
+                QuickEasyPanel._updatePositionBadge();
+
+                // ★★★ 3단계: 현재 보는 종목 UI 복구 (조건 완화) ★★★
+                const currentQePos = newQePositions[currentSym];
+                if (currentQePos) {
+                    // TP/SL 값 설정
+                    if (currentQePos.tpsl) {
+                        window._serverTPSL = currentQePos.tpsl;
                     }
-                    // ★ 현재 보는 종목만 UI 복구
-                    if (posSym === currentSym && QuickEasyPanel._posEntryPrice <= 0) {
-                        console.log('[WS Demo] 🔄 이지패널 포지션 복구:', posSym);
-                        if (_tp > 0 && _sl > 0) {
-                            window._serverTPSL = { tp: _tp, sl: _sl };
-                        }
+                    // UI 복구 (항상 최신 데이터로 갱신)
+                    if (QuickEasyPanel._posEntryPrice <= 0) {
+                        console.log('[WS Demo] 🔄 이지패널 포지션 복구:', currentSym);
                         QuickEasyPanel.showPositionView(
-                            qePos.type === 'BUY' ? 'BUY' : 'SELL',
-                            qePos.entry,
-                            qePos.volume,
-                            qePos.target
+                            currentQePos.side,
+                            currentQePos.entry,
+                            currentQePos.volume,
+                            currentQePos.target
                         );
                     }
-                });
+                }
             }
 
             // ★★★ Demo Today P/L — _todayPLFixed 단일 소스 ★★★
@@ -968,43 +981,56 @@ function connectWebSocket() {
             OpenPositions.updatePositions(data.positions);
         }
 
-        // ★★★ Quick&Easy 포지션 복구 (positions 배열에서 magic=100003 찾기) ★★★
-        // 라이브 모드 전환 후에도 QE 포지션 UI가 복구되도록 함
+        // ★★★ Quick&Easy 포지션 동기화 (완전 교체 방식 — MT5 실제 데이터로) ★★★
         if (typeof QuickEasyPanel !== 'undefined' && data.positions && Array.isArray(data.positions)) {
-            const qePositions = data.positions.filter(p => p.magic == 100003);
             const currentSym = window.currentSymbol || 'BTCUSD';
-            qePositions.forEach(qePos => {
+
+            // ★★★ 1단계: magic=100003 포지션만 모아서 새 객체 생성 ★★★
+            const newQePositions = {};
+            data.positions.filter(p => p.magic == 100003).forEach(qePos => {
                 const posSym = qePos.symbol || '';
-                // ★ TP/SL 필드 호환 (라이브: tp/sl, 데모: tp_price/sl_price)
                 const _tp = qePos.tp_price || qePos.tp || 0;
                 const _sl = qePos.sl_price || qePos.sl || 0;
-                // ★ 딕셔너리에 저장 (모든 종목)
-                if (!QuickEasyPanel._positions[posSym]) {
-                    QuickEasyPanel._positions[posSym] = {
-                        side: qePos.type === 'BUY' ? 'BUY' : 'SELL',
-                        entry: qePos.entry,
-                        volume: qePos.volume,
-                        target: qePos.target,
-                        tpsl: (_tp > 0 && _sl > 0) ? { tp: _tp, sl: _sl } : null,
-                        startTime: Date.now(),
-                        openedAt: Date.now()
-                    };
-                    QuickEasyPanel._updatePositionBadge();
+                newQePositions[posSym] = {
+                    id: qePos.id || qePos.ticket,
+                    side: qePos.type === 'BUY' ? 'BUY' : 'SELL',
+                    entry: qePos.entry || qePos.openPrice || 0,
+                    volume: qePos.volume,
+                    target: qePos.target || 0,
+                    profit: qePos.profit || 0,
+                    tpsl: (_tp > 0 && _sl > 0) ? { tp: _tp, sl: _sl } : null,
+                    startTime: Date.now(),
+                    openedAt: Date.now()
+                };
+            });
+
+            // ★★★ 2단계: 기존 _positions 완전 교체 (MT5에서 사라진 포지션 자동 삭제) ★★★
+            const prevCount = Object.keys(QuickEasyPanel._positions).length;
+            const newCount = Object.keys(newQePositions).length;
+            QuickEasyPanel._positions = newQePositions;
+            if (prevCount !== newCount) {
+                console.log(`[WS Live] 🔄 QE 포지션 동기화: ${prevCount}개 → ${newCount}개`);
+            }
+            QuickEasyPanel._updatePositionBadge();
+
+            // ★★★ 3단계: 현재 보는 종목 UI 복구 (조건 완화) ★★★
+            const currentQePos = newQePositions[currentSym];
+            if (currentQePos) {
+                // TP/SL 값 설정
+                if (currentQePos.tpsl) {
+                    window._serverTPSL = currentQePos.tpsl;
                 }
-                // ★ 현재 보는 종목만 UI 복구
-                if (posSym === currentSym && QuickEasyPanel._posEntryPrice <= 0) {
-                    console.log('[WS Live] 🔄 이지패널 포지션 복구:', posSym);
-                    if (_tp > 0 && _sl > 0) {
-                        window._serverTPSL = { tp: _tp, sl: _sl };
-                    }
+                // UI 복구 (항상 최신 데이터로 갱신)
+                if (QuickEasyPanel._posEntryPrice <= 0) {
+                    console.log('[WS Live] 🔄 이지패널 포지션 복구:', currentSym);
                     QuickEasyPanel.showPositionView(
-                        qePos.type === 'BUY' ? 'BUY' : 'SELL',
-                        qePos.entry,
-                        qePos.volume,
-                        qePos.target
+                        currentQePos.side,
+                        currentQePos.entry,
+                        currentQePos.volume,
+                        currentQePos.target
                     );
                 }
-            });
+            }
         }
 
         // Current P&L 업데이트 (전체 포지션 손익 합계 — BuySell + V5 + QE)

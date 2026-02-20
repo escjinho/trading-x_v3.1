@@ -3293,6 +3293,11 @@ async def websocket_endpoint(websocket: WebSocket):
                 _sync_interval = 30 if _has_streaming else (5 if _user_has_position else 30)
                 _should_sync = (current_time - last_user_metaapi_sync) > _sync_interval
 
+                # ★★★ 첫 연결 시 강제 즉시 동기화 (stale 캐시 방지) ★★★
+                if last_user_metaapi_sync == 0:
+                    _should_sync = True
+                    print(f"[LIVE WS] User {user_id} 첫 연결 - 강제 동기화 실행")
+
                 # ★ 주문 직후 빠른 동기화 (예약된 시간 도달 시)
                 if _user_sync_soon_at and current_time >= _user_sync_soon_at[0]:
                     _should_sync = True
