@@ -97,6 +97,7 @@
 /* 왼쪽: 종목 + BUY/SELL + 랏수 */
 .history-left {
     flex-shrink: 0;
+    min-width: 165px;
     font-size: 14px;
     font-weight: 600;
     color: var(--text-primary);
@@ -124,7 +125,8 @@
 /* 중앙: 청산 시간 */
 .history-center {
     flex: 1;
-    text-align: center;
+    text-align: left;
+    padding-left: 10px;
     color: rgba(255,255,255,0.4);
     font-size: 12px;
     white-space: nowrap;
@@ -139,11 +141,13 @@
     font-weight: 700;
 }
 
-.history-right.profit-positive {
+.history-right.profit-positive,
+.history-right.positive {
     color: var(--buy-color);
 }
 
-.history-right.profit-negative {
+.history-right.profit-negative,
+.history-right.negative {
     color: var(--sell-color);
 }
 

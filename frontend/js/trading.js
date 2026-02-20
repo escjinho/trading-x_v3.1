@@ -1618,7 +1618,7 @@ function renderFilteredHistory() {
         let html = '';
         filtered.forEach(h => {
             const profitClass = h.profit > 0 ? 'positive' : h.profit < 0 ? 'negative' : 'neutral';
-            const profitSign = h.profit > 0 ? '+' : '';
+            const profitSign = h.profit > 0 ? '+' : h.profit < 0 ? '-' : '';
             const typeColor = h.type === 'BUY' ? 'var(--buy-color)' : 'var(--sell-color)';
             
             // 가격 포맷팅 (종목별 소수점 자릿수)
@@ -1649,7 +1649,7 @@ function renderFilteredHistory() {
             html += `<div class="history-item">
                 <span class="history-left">${h.symbol} <span class="${typeClass}">${h.type}</span> <span class="lot">${h.volume}lot</span></span>
                 <span class="history-center">${h.time}</span>
-                <span class="history-right ${profitClass}">${profitSign}$${h.profit.toFixed(2)}</span>
+                <span class="history-right ${profitClass}">${profitSign}$${Math.abs(h.profit).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
             </div>`;
         });
         container.innerHTML = html;
