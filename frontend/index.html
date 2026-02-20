@@ -67,6 +67,7 @@
         <link rel="stylesheet" href="css/quickeasy.css?v=1771533773">
     <link rel="stylesheet" href="css/chart.css?v=1771533773">
     <link rel="stylesheet" href="css/account.css?v=1771533773">
+    <link rel="stylesheet" href="css/my.css?v=1771533773">
 </head>
 <body>
     <div class="app">
@@ -1344,22 +1345,133 @@
             
             <!-- ========== My 탭 ========== -->
             <div class="page" id="page-my">
-                <div class="profile-header">
-                    <div class="profile-avatar"><span class="material-icons-round" style="font-size: 48px;">account_circle</span></div>
-                    <div class="profile-name" id="profileName">Trader</div>
-                    <div class="profile-level">Standard Member</div>
-                </div>
-                <div class="menu-item"><div class="menu-left"><span class="menu-icon"><span class="material-icons-round">person</span></span><span>My Account</span></div><span class="menu-arrow">›</span></div>
-                <div class="menu-item"><div class="menu-left"><span class="menu-icon"><span class="material-icons-round">account_balance</span></span><span>Deposit / Withdraw</span></div><span class="menu-arrow">›</span></div>
-                <div class="menu-item"><div class="menu-left"><span class="menu-icon"><span class="material-icons-round">tune</span></span><span>Trading Settings</span></div><span class="menu-arrow">›</span></div>
-                <div class="menu-item"><div class="menu-left"><span class="menu-icon"><span class="material-icons-round">security</span></span><span>Security</span></div><span class="menu-arrow">›</span></div>
-                <div class="menu-item"><div class="menu-left"><span class="menu-icon"><span class="material-icons-round">help_outline</span></span><span>Help & Support</span></div><span class="menu-arrow">›</span></div>
-                <div class="menu-item" onclick="logout()" style="margin-top: 20px; border-color: var(--sell-color);">
-                    <div class="menu-left">
-                        <span class="menu-icon"><span class="material-icons-round" style="color: var(--sell-color);">logout</span></span>
-                        <span style="color: var(--sell-color);">Logout</span>
+                <!-- 히어로 -->
+                <div class="my-hero">
+                    <!-- 프로필 + 설정 -->
+                    <div class="my-hero-top">
+                        <div class="my-profile-row">
+                            <div class="my-avatar" id="myAvatar">J</div>
+                            <div class="my-profile-info">
+                                <div class="my-profile-name" id="myProfileName">Trader</div>
+                                <div class="my-profile-email" id="myProfileEmail">-</div>
+                            </div>
+                        </div>
+                        <div class="my-settings-btn" onclick="openMySettings()">
+                            <span class="material-icons-round">settings</span>
+                        </div>
                     </div>
-                    <span class="menu-arrow" style="color: var(--sell-color);">›</span>
+
+                    <!-- 통합 글로우 박스 -->
+                    <div class="my-glow-box">
+                        <div class="my-glow-row">
+                            <!-- 모드 -->
+                            <div class="my-glow-item">
+                                <div class="my-glow-label">Mode</div>
+                                <div class="my-mode-value" onclick="openModeSwitch()">
+                                    <div class="my-mode-dot" id="myModeDot"></div>
+                                    <span class="my-mode-text" id="myModeText">Demo</span>
+                                    <span class="material-icons-round my-mode-switch">swap_horiz</span>
+                                </div>
+                            </div>
+                            <div class="my-glow-divider"></div>
+                            <!-- 거래 -->
+                            <div class="my-glow-item trades">
+                                <div class="my-glow-label">Trades</div>
+                                <div class="my-trades-value">
+                                    <span class="my-trades-count" id="myTradesCount">0</span>
+                                    <span class="my-trades-sep">|</span>
+                                    <span class="my-trades-lots"><span id="myTradesLots">0.00</span> <span class="my-trades-lots-unit">Lots</span></span>
+                                </div>
+                            </div>
+                            <div class="my-glow-divider"></div>
+                            <!-- 등급 -->
+                            <div class="my-glow-item">
+                                <div class="my-glow-label">Grade</div>
+                                <span class="my-grade-text" id="myGradeText">Standard</span>
+                            </div>
+                        </div>
+                        <!-- 프로그레스 -->
+                        <div class="my-progress-row">
+                            <div class="my-progress-bar">
+                                <div class="my-progress-fill" id="myProgressFill" style="width: 0%"></div>
+                            </div>
+                            <span class="my-progress-text" id="myProgressText">Silver · 100회 남음</span>
+                        </div>
+                    </div>
+
+                    <!-- 이메일 경고 -->
+                    <div class="my-warning-banner" id="myEmailWarning" style="display: none;">
+                        <span class="material-icons-round">warning_amber</span>
+                        <span class="my-warning-text">이메일 인증이 필요합니다</span>
+                        <span class="my-warning-action">인증 →</span>
+                    </div>
+                </div>
+
+                <!-- 메인 메뉴 -->
+                <div class="my-menu-section">
+                    <div class="my-menu-card" onclick="openMySubPage('account')">
+                        <div class="my-menu-left"><span class="material-icons-round">person</span><span class="my-menu-label">내 계정</span></div>
+                        <span class="material-icons-round my-menu-arrow">chevron_right</span>
+                    </div>
+                    <div class="my-menu-card" onclick="openMySubPage('deposit')">
+                        <div class="my-menu-left"><span class="material-icons-round">account_balance_wallet</span><span class="my-menu-label">입금 / 출금</span></div>
+                        <span class="material-icons-round my-menu-arrow">chevron_right</span>
+                    </div>
+                    <div class="my-menu-card" onclick="openMySubPage('trading')">
+                        <div class="my-menu-left"><span class="material-icons-round">assessment</span><span class="my-menu-label">트레이딩</span></div>
+                        <span class="material-icons-round my-menu-arrow">chevron_right</span>
+                    </div>
+                    <div class="my-menu-card" onclick="openMySubPage('social')">
+                        <div class="my-menu-left"><span class="material-icons-round">card_giftcard</span><span class="my-menu-label">소셜 & 멤버쉽</span></div>
+                        <span class="material-icons-round my-menu-arrow">chevron_right</span>
+                    </div>
+                    <div class="my-menu-card" onclick="openMySubPage('general')">
+                        <div class="my-menu-left"><span class="material-icons-round">tune</span><span class="my-menu-label">일반</span></div>
+                        <span class="material-icons-round my-menu-arrow">chevron_right</span>
+                    </div>
+                    <div class="my-menu-card logout" onclick="confirmLogout()">
+                        <div class="my-menu-left"><span class="material-icons-round">logout</span><span class="my-menu-label">로그아웃</span></div>
+                        <span class="material-icons-round my-menu-arrow">chevron_right</span>
+                    </div>
+
+                    <div class="my-footer">
+                        <div class="my-footer-version">Trading-X v3.1.0</div>
+                        <div class="my-footer-copy">© 2026 GoodFriends CO., LTD All rights reserved.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- My 탭 설정 모달 -->
+            <div class="my-settings-overlay" id="mySettingsOverlay" onclick="closeMySettings()">
+                <div class="my-settings-modal" onclick="event.stopPropagation()">
+                    <div class="my-settings-header">
+                        <span class="my-settings-title">설정</span>
+                        <span class="my-settings-close" onclick="closeMySettings()"><span class="material-icons-round" style="font-size:20px;">close</span></span>
+                    </div>
+                    <div class="my-settings-label">Nickname</div>
+                    <div class="my-settings-input-row">
+                        <input type="text" id="myNicknameInput" value="Trader" readonly>
+                        <span class="edit-btn" onclick="toggleNicknameEdit()"><span class="material-icons-round" style="font-size:16px;" id="myNicknameEditIcon">edit</span></span>
+                    </div>
+                    <div class="my-settings-label">Notifications</div>
+                    <div class="my-settings-noti-list">
+                        <div class="my-settings-noti-item"><span class="my-settings-noti-label">거래 체결</span><div class="my-toggle active" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div></div>
+                        <div class="my-settings-noti-item"><span class="my-settings-noti-label">입출금</span><div class="my-toggle active" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div></div>
+                        <div class="my-settings-noti-item"><span class="my-settings-noti-label">공지사항</span><div class="my-toggle active" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div></div>
+                        <div class="my-settings-noti-item"><span class="my-settings-noti-label">이벤트</span><div class="my-toggle" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- My 탭 모드 전환 모달 -->
+            <div class="my-mode-overlay" id="myModeOverlay" onclick="closeModeSwitch()">
+                <div class="my-mode-modal" onclick="event.stopPropagation()">
+                    <div class="my-mode-emoji" id="myModeEmoji">📚</div>
+                    <div class="my-mode-title" id="myModeTitle">MT5 Demo 모드</div>
+                    <div class="my-mode-desc" id="myModeDesc">데모 모드로 전환합니다.
+가상 자금으로 연습하세요.</div>
+                    <div class="my-mode-confirm-btn to-demo" id="myModeConfirmBtn" onclick="confirmModeSwitch()">Demo 모드 전환</div>
+                    <div class="my-mode-cancel-btn" onclick="closeModeSwitch()">취소</div>
                 </div>
             </div>
         </div>
@@ -2088,6 +2200,7 @@
     <script src="js/utils.js?v=1771533971"></script>
     <script src="js/watchlist.js?v=1771533971"></script>
     <script src="js/navigation.js?v=1771533971"></script>
+    <script src="js/my.js?v=1771533971"></script>
 
     <!-- Chart Panels (모듈화) -->
     <script src="js/panels/gaugePanel.js?v=1771533971"></script>
