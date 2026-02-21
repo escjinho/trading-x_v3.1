@@ -1555,19 +1555,32 @@ function updateHistorySummary() {
     const winRate = totalTrades > 0 ? (wins / totalTrades * 100) : 0;
     
     // UI 업데이트
-    const winRateEl = document.getElementById('summaryWinRate');
+    const winLoseSummaryEl = document.getElementById('summaryWinLose');
     const volumeEl = document.getElementById('summaryVolume');
     const plEl = document.getElementById('summaryPL');
-    
-    if (winRateEl) {
-        winRateEl.textContent = winRate.toFixed(1) + '%';
-        // 승률에 따른 색상 (50% 이상이면 녹색, 미만이면 빨간색)
-        if (winRate >= 50) {
-            winRateEl.className = 'history-summary-value positive';
-        } else if (totalTrades > 0) {
-            winRateEl.className = 'history-summary-value negative';
+
+    // ★ Trade History 서머리: Win / Lose 표시
+    if (winLoseSummaryEl) {
+        winLoseSummaryEl.textContent = wins + ' / ' + losses;
+        if (wins > losses) {
+            winLoseSummaryEl.className = 'history-summary-value positive';
+        } else if (losses > wins) {
+            winLoseSummaryEl.className = 'history-summary-value negative';
         } else {
-            winRateEl.className = 'history-summary-value';
+            winLoseSummaryEl.className = 'history-summary-value';
+        }
+    }
+
+    // ★ Account Info: Win Rate 표시 (기간별 연동)
+    const accWinRateEl = document.getElementById('accWinRate');
+    if (accWinRateEl) {
+        accWinRateEl.textContent = winRate.toFixed(1) + '%';
+        if (winRate >= 50) {
+            accWinRateEl.className = 'summary-value positive';
+        } else if (totalTrades > 0) {
+            accWinRateEl.className = 'summary-value negative';
+        } else {
+            accWinRateEl.className = 'summary-value neutral';
         }
     }
     
