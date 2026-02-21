@@ -1204,14 +1204,25 @@ async function loadLoginHistory() {
                 deviceName = r.browser + ' · ' + r.os;
             }
 
-            // 메타 정보
+            // 메타 정보 (모바일: 국가만 / 데스크톱: 도시+국가)
+            var locDisplay = '';
+            if (r.location) {
+                if (r.device_type === 'mobile' || r.device_type === 'tablet') {
+                    // 모바일: "Seoul, South Korea" → "South Korea"만 표시
+                    var locParts = r.location.split(', ');
+                    locDisplay = locParts.length > 1 ? locParts[locParts.length - 1] : r.location;
+                } else {
+                    // 데스크톱/기타: 전체 표시 (도시+국가)
+                    locDisplay = r.location;
+                }
+            }
+
             var meta = '';
             if (isCurrent) {
-                var locStr = r.location || '';
-                meta = r.browser + ' · ' + r.os + (locStr ? ' · ' + locStr : '') + ' · 방금 전';
+                meta = r.browser + ' · ' + r.os + (locDisplay ? ' · ' + locDisplay : '') + ' · 방금 전';
             } else {
                 var parts = [];
-                if (r.location) parts.push(r.location);
+                if (locDisplay) parts.push(locDisplay);
                 parts.push(r.time_str);
                 meta = parts.join(' · ');
             }
