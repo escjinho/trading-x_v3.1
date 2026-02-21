@@ -1634,20 +1634,18 @@ function openNoticeDetail(id) {
 
 // ========== 약관 상세 ==========
 const termsData = {
-    service: { title: '서비스 이용약관', body: '제1조 (목적)\n이 약관은 GOODFRIENDS CO., LTD가 제공하는 Trading-X 서비스의 이용에 관한 사항을 규정합니다.\n\n제2조 (정의)\n① "서비스"란 MT5 연동 트레이딩 플랫폼 Trading-X를 말합니다.\n② "이용자"란 이 약관에 따라 서비스를 이용하는 자를 말합니다.\n③ "계정"이란 이메일과 비밀번호 조합을 말합니다.\n\n제3조 (약관의 효력)\n① 서비스 화면에 게시함으로써 효력을 발생합니다.\n② 관련 법령 범위에서 개정할 수 있습니다.\n\n제4조 (서비스의 제공)\n① MT5 연동, 데모 거래, 분석 및 리포트 서비스를 제공합니다.\n② 연중무휴 24시간 제공을 원칙으로 합니다.\n\n제5조 (이용자의 의무)\n① 타인 정보 도용 및 허위 등록 금지\n② 불법 활동 금지\n③ 계정 정보 관리 책임\n\n제6조 (면책사항)\n① 거래 손실에 대해 책임을 지지 않습니다.\n② 원금 손실 위험이 있습니다.\n③ 브로커 시스템 장애로 인한 손해에 대해 책임을 지지 않습니다.' },
-    privacy: { title: '개인정보 처리방침', body: '1. 개인정보의 수집 및 이용 목적\n회사는 다음의 목적을 위해 개인정보를 처리합니다.\n• 회원 가입 및 관리\n• 서비스 제공 및 운영\n• 마케팅 및 광고 활용\n\n2. 수집하는 개인정보 항목\n• 필수: 이메일, 비밀번호\n• 선택: 닉네임, 전화번호\n\n3. 개인정보의 보유 및 이용기간\n회원 탈퇴 시까지 또는 법령에서 정한 기간까지 보유합니다.\n\n4. 개인정보의 파기\n보유 기간이 만료된 개인정보는 지체 없이 파기합니다.\n\n5. 개인정보 보호책임자\n이메일: privacy@trading-x.ai' },
-    risk: { title: '투자 위험 고지', body: '⚠️ 투자 위험 고지\n\n파생상품(CFD) 거래는 높은 수준의 위험을 수반합니다.\n\n• 레버리지 거래로 인해 원금 이상의 손실이 발생할 수 있습니다.\n• 시장 변동성으로 인해 예상치 못한 손실이 발생할 수 있습니다.\n• 과거 수익률이 미래 수익을 보장하지 않습니다.\n\n본 서비스는 투자 조언을 제공하지 않습니다. 모든 투자 결정은 본인의 책임 하에 이루어집니다.\n\n거래를 시작하기 전 충분한 학습과 이해가 필요합니다. 감당할 수 있는 금액만 투자하시기 바랍니다.' },
-    aml: { title: '자금세탁방지 정책 (AML)', body: 'GOODFRIENDS CO., LTD는 자금세탁방지 및 테러자금조달방지를 위해 아래 정책을 시행합니다.\n\n1. 목적\n본 정책은 Trading-X 서비스를 통한 자금세탁, 테러자금조달 및 기타 불법 금융활동을 예방하기 위함입니다.\n\n2. 고객확인(KYC)\n① 회원가입 시 이메일 인증을 실시합니다.\n② 라이브 계정 이용 시 본인 확인 절차를 진행합니다.\n③ 필요 시 추가 신원확인 서류를 요청할 수 있습니다.\n\n3. 의심거래 모니터링\n① 비정상적 입출금 패턴을 상시 모니터링합니다.\n② 의심 거래 발견 시 계정을 일시 정지할 수 있습니다.\n③ 관련 법령에 따라 당국에 보고할 수 있습니다.\n\n4. 기록 보관\n① 거래 기록을 관련 법령에서 정한 기간 동안 보관합니다.\n② 고객확인 서류는 관계 종료 후 5년간 보관합니다.\n\n5. 금지 행위\n① 타인 명의 계정 사용\n② 불법 자금 유입 시도\n③ 허위 정보 제공\n④ 다중 계정을 통한 자금 이동\n\n6. 위반 시 조치\n① 계정 정지 및 해지\n② 관련 당국 보고\n③ 법적 조치\n\n7. 문의\nAML 관련 문의: compliance@trading-x.ai' },
-    marketing: { title: '마케팅 정보 수신 동의', body: '마케팅 정보 수신 동의\n\n수신 동의 시 다음의 정보를 받으실 수 있습니다.\n\n• 이벤트 및 프로모션 안내\n• 신규 기능 업데이트 소식\n• 투자 관련 뉴스레터\n• 맞춤형 서비스 제안\n\n수신 방법: 앱 푸시, 이메일, SMS\n\n동의 철회는 My > 일반 > 알림 설정에서 언제든지 가능합니다.\n\n※ 필수 공지사항(서버 점검, 약관 변경 등)은 동의 여부와 관계없이 발송됩니다.' }
+    risk: { title: '투자 위험 고지', body: '<h3 style="color:#00d4ff;margin-bottom:8px;">⚠️ 투자 위험 고지</h3><p>외환(FX) 및 CFD 거래는 높은 수준의 위험을 수반하며, 투자 원금의 일부 또는 전부를 잃을 수 있습니다.</p><h3 style="color:#00d4ff;margin:16px 0 8px;">레버리지 위험</h3><p>레버리지를 사용하는 거래는 잠재적 이익뿐만 아니라 손실도 확대할 수 있습니다. 거래를 시작하기 전에 자신의 투자 목적, 경험 수준, 위험 허용 범위를 신중히 고려하십시오.</p><h3 style="color:#00d4ff;margin:16px 0 8px;">주요 위험 사항</h3><ul style="margin-left:16px;"><li>시장 변동성으로 인한 급격한 가격 변동</li><li>레버리지로 인한 예치금 초과 손실 가능성</li><li>기술적 장애(시스템 오류, 네트워크 지연)로 인한 주문 미체결</li><li>주말·공휴일 갭 발생으로 인한 예상 외 손실</li><li>유동성 부족 시 슬리피지 발생</li></ul><h3 style="color:#00d4ff;margin:16px 0 8px;">면책 사항</h3><p>Trading-X는 투자 조언을 제공하지 않습니다. 서비스 내 어떠한 정보도 투자 권유로 해석되어서는 안 됩니다. EA(Expert Advisor)의 과거 성과는 미래 수익을 보장하지 않으며, 모든 거래 결정과 그 결과에 대한 책임은 전적으로 이용자에게 있습니다.</p><p style="margin-top:16px;color:rgba(255,255,255,0.4);font-size:12px;">시행일: 2026년 1월 5일 | ㈜굳프렌즈</p>' },
+    aml: { title: '자금세탁방지 정책 (AML)', body: '<h3 style="color:#00d4ff;margin-bottom:8px;">자금세탁방지 정책</h3><p>㈜굳프렌즈는 자금세탁 및 테러자금 조달을 방지하기 위해 관련 법령을 준수하며, 다음과 같은 정책을 시행합니다.</p><h3 style="color:#00d4ff;margin:16px 0 8px;">기본 원칙</h3><ul style="margin-left:16px;"><li>Trading-X는 주문 편의 도구이며, 이용자의 자금을 직접 보유·수탁·관리하지 않습니다</li><li>모든 자금의 입출금은 이용자가 선택한 MT5 브로커를 통해 이루어집니다</li><li>회사는 서비스가 불법 목적으로 이용되는 것을 금지합니다</li></ul><h3 style="color:#00d4ff;margin:16px 0 8px;">금지 행위</h3><ul style="margin-left:16px;"><li>자금세탁, 테러자금 조달 등 불법 자금 이동에 서비스 이용</li><li>타인 명의 또는 허위 정보를 이용한 계정 생성</li><li>범죄 수익의 은닉 또는 위장을 위한 거래</li><li>제재 대상 국가·개인과의 거래에 서비스 이용</li></ul><h3 style="color:#00d4ff;margin:16px 0 8px;">회사의 조치</h3><ul style="margin-left:16px;"><li>의심스러운 활동 발견 시 계정 이용 제한 또는 정지</li><li>관련 법령에 따라 수사기관에 협조</li><li>KYC(고객확인) 절차는 연동 브로커에서 수행하며, Trading-X는 브로커의 KYC 결과에 의존합니다</li></ul><p style="margin-top:16px;color:rgba(255,255,255,0.4);font-size:12px;">시행일: 2026년 1월 5일 | ㈜굳프렌즈</p>' },
+    marketing: { title: '마케팅 정보 수신 동의', body: '<h3 style="color:#00d4ff;margin-bottom:8px;">마케팅 정보 수신 안내</h3><p>동의 시 다음의 정보를 받으실 수 있습니다.</p><h3 style="color:#00d4ff;margin:16px 0 8px;">수신 내용</h3><ul style="margin-left:16px;"><li>이벤트 및 프로모션 안내</li><li>신규 기능 업데이트 소식</li><li>투자 관련 뉴스레터</li><li>맞춤형 서비스 제안</li></ul><h3 style="color:#00d4ff;margin:16px 0 8px;">수신 방법</h3><p>앱 푸시 알림, 이메일</p><h3 style="color:#00d4ff;margin:16px 0 8px;">동의 철회</h3><p>동의 철회는 My &gt; 일반 &gt; 알림 설정에서 언제든지 가능합니다.</p><p style="margin-top:16px;color:rgba(255,255,255,0.4);font-size:12px;">※ 필수 공지사항(서버 점검, 약관 변경 등)은 동의 여부와 관계없이 발송됩니다.</p>' }
 };
 
 function openTermsDetail(type) {
+    if (type === 'service') { window.open('terms.html', '_blank'); return; }
+    if (type === 'privacy') { window.open('privacy.html', '_blank'); return; }
     const data = termsData[type];
     if (!data) return;
-
     document.getElementById('myTermsDetailTitle').textContent = data.title;
-    document.getElementById('myTermsDetailBody').textContent = data.body;
-
+    document.getElementById('myTermsDetailBody').innerHTML = data.body;
     openMyDetail('termsDetail');
 }
 
