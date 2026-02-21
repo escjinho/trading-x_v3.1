@@ -4,7 +4,7 @@ Demo 모드 API - 모의투자 기능
 Trading-X Backend
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, WebSocket, Query
+from fastapi import APIRouter, Depends, HTTPException, status, WebSocket, Query, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
@@ -1299,13 +1299,25 @@ async def reset_demo_balance(
 # ========== 데모 잔고 충전 ==========
 @router.post("/topup")
 async def topup_demo_balance(
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """데모 잔고 충전 ($10,000 추가, 최대 $100,000)"""
+    """데모 잔고 충전 (금액 선택 가능, 최대 $100,000)"""
+    # 요청에서 금액 읽기 (없으면 기본 10000)
+    try:
+        body = await request.json()
+        topup_amount = float(body.get("amount", 10000))
+    except:
+        topup_amount = 10000.0
+    
+    # 유효성 검사
+    allowed_amounts = [5000, 10000, 50000, 100000]
+    if topup_amount not in allowed_amounts:
+        topup_amount = 10000.0
+    
     current_balance = current_user.demo_balance or 10000.0
     max_balance = 100000.0
-    topup_amount = 10000.0
     
     if current_balance >= max_balance:
         return JSONResponse({

@@ -1185,6 +1185,22 @@ function logoutAllDevices() {
 // ========== Demo 입출금 ==========
 let selectedDemoAmount = 10000;
 
+async function loadDemoBalance() {
+    try {
+        var tkn = localStorage.getItem('access_token');
+        var res = await fetch(API_URL + '/demo/account', {
+            headers: { 'Authorization': 'Bearer ' + tkn }
+        });
+        var data = await res.json();
+        var balEl = document.getElementById('myDemoBalance');
+        if (balEl && data.balance !== undefined) {
+            balEl.textContent = '$' + Number(data.balance).toLocaleString('en-US', { minimumFractionDigits: 2 });
+        }
+    } catch (e) {
+        console.error('데모 잔고 로드 오류:', e);
+    }
+}
+
 function selectDemoAmount(amount) {
     selectedDemoAmount = amount;
     document.querySelectorAll('.my-deposit-amount-btn').forEach(btn => {
@@ -1193,26 +1209,56 @@ function selectDemoAmount(amount) {
     });
 }
 
-function handleDemoDeposit() {
-    const balEl = document.getElementById('myDemoBalance');
-    if (!balEl) return;
-
-    const current = parseFloat(balEl.textContent.replace(/[$,]/g, '')) || 0;
-    const newBal = Math.min(current + selectedDemoAmount, 100000);
-    balEl.textContent = '$' + newBal.toLocaleString('en-US', { minimumFractionDigits: 2 });
-
-    if (typeof showToast === 'function') {
-        showToast('✅ $' + selectedDemoAmount.toLocaleString() + ' 충전 완료!', 'success');
+async function handleDemoDeposit() {
+    try {
+        var tkn = localStorage.getItem('access_token');
+        var res = await fetch(API_URL + '/demo/topup', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + tkn
+            },
+            body: JSON.stringify({ amount: selectedDemoAmount })
+        });
+        var data = await res.json();
+        if (data.success) {
+            // My 탭 잔고 표시 업데이트
+            var balEl = document.getElementById('myDemoBalance');
+            if (balEl) balEl.textContent = '$' + Number(data.balance).toLocaleString('en-US', { minimumFractionDigits: 2 });
+            // 홈 화면 데모 데이터도 갱신
+            if (typeof fetchDemoData === 'function') fetchDemoData();
+            showToast(data.message, 'success');
+        } else {
+            showToast(data.message, 'error');
+        }
+    } catch (e) {
+        console.error('충전 오류:', e);
+        showToast('충전 실패', 'error');
     }
 }
 
-function handleDemoReset() {
-    const balEl = document.getElementById('myDemoBalance');
-    if (balEl) {
-        balEl.textContent = '$10,000.00';
-    }
-    if (typeof showToast === 'function') {
-        showToast('🔄 데모 잔고가 $10,000으로 리셋되었습니다', 'info');
+async function handleDemoReset() {
+    if (!confirm('정말 잔고를 $10,000로 초기화하시겠습니까?\n모든 포지션과 거래 기록이 삭제됩니다.')) return;
+
+    try {
+        var tkn = localStorage.getItem('access_token');
+        var res = await fetch(API_URL + '/demo/reset', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + tkn }
+        });
+        var data = await res.json();
+        if (data.success) {
+            var balEl = document.getElementById('myDemoBalance');
+            if (balEl) balEl.textContent = '$10,000.00';
+            // 홈 화면 데모 데이터도 갱신
+            if (typeof fetchDemoData === 'function') fetchDemoData();
+            showToast(data.message, 'success');
+        } else {
+            showToast(data.message, 'error');
+        }
+    } catch (e) {
+        console.error('리셋 오류:', e);
+        showToast('리셋 실패', 'error');
     }
 }
 
@@ -1233,6 +1279,8 @@ function initDetailView(detail) {
                 const btnAmount = parseInt(btn.textContent.replace(/[$,]/g, ''));
                 btn.classList.toggle('selected', btnAmount === 10000);
             });
+            // 실제 잔고 로드
+            loadDemoBalance();
             break;
         case 'openSource':
             setTimeout(renderOpenSource, 50);
