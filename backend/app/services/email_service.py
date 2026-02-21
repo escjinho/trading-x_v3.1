@@ -55,8 +55,10 @@ def verify_code(email: str, code: str) -> dict:
     remaining = 5 - stored["attempts"]
     return {"success": False, "message": f"인증코드가 일치하지 않습니다 (남은 시도: {remaining}회)"}
 
-def send_verification_email(email: str, code: str) -> dict:
+def send_verification_email(email: str, code: str, name: str = "") -> dict:
     """이메일 발송 (SMTP 설정 시 실제 발송, 미설정 시 테스트 모드)"""
+
+    display_name = name or email.split("@")[0]
 
     if not settings.SMTP_ENABLED or not settings.SMTP_HOST:
         # 테스트 모드: 콘솔 출력 + API 응답에 코드 포함
@@ -66,27 +68,101 @@ def send_verification_email(email: str, code: str) -> dict:
     try:
         # HTML 이메일 본문
         html_body = f"""
-        <div style="max-width:480px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0d1117;color:#e6edf3;padding:32px;border-radius:12px;">
-            <div style="text-align:center;margin-bottom:24px;">
-                <div style="display:inline-flex;align-items:center;gap:8px;">
-                    <div style="width:32px;height:24px;border-radius:6px;border:2px solid #00d4ff;display:inline-flex;align-items:center;justify-content:center;">
-                        <span style="font-size:12px;font-weight:800;color:#e8eaed;">TX</span>
+        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:520px;margin:0 auto;">
+          <tr>
+            <td style="background:linear-gradient(180deg,#0a0e17 0%,#111827 100%);border-radius:16px;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td style="padding:40px 40px 16px;text-align:center;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">
+                      <tr>
+                        <td style="width:38px;height:30px;border-radius:7px;border:2px solid rgba(0,212,255,0.6);background:rgba(0,212,255,0.06);text-align:center;vertical-align:middle;">
+                          <span style="font-size:16px;font-weight:800;color:#e8eaed;letter-spacing:0.5px;">TX</span>
+                        </td>
+                        <td style="padding-left:10px;vertical-align:middle;">
+                          <span style="font-size:18px;font-weight:700;color:#ffffff;letter-spacing:1px;">Trading-X</span>
+                        </td>
+                      </tr>
+                    </table>
+                    <div style="margin-top:10px;font-size:10px;color:rgba(255,255,255,0.3);letter-spacing:3px;font-weight:500;">PROFESSIONAL TRADING PLATFORM</div>
+                  </td>
+                </tr>
+              </table>
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                <tr><td style="padding:0 40px;"><div style="height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.25),transparent);"></div></td></tr>
+              </table>
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td style="padding:30px 40px 10px;">
+                    <div style="font-size:16px;font-weight:600;color:#ffffff;margin-bottom:24px;text-align:center;">이메일 인증코드</div>
+                    <div style="font-size:14px;color:rgba(255,255,255,0.7);line-height:1.8;margin-bottom:28px;">
+                      <span style="color:#ffffff;font-weight:500;">{display_name}</span>님, 안녕하세요.<br><br>
+                      Trading-X 이메일 인증을 위한 코드입니다.<br>
+                      아래 인증코드를 입력하여 본인 확인을 완료해주세요.
                     </div>
-                    <span style="font-size:20px;font-weight:700;color:#e6edf3;">Trading-X</span>
-                </div>
-            </div>
-            <div style="text-align:center;margin-bottom:24px;">
-                <div style="font-size:15px;color:#8b949e;margin-bottom:16px;">이메일 인증코드</div>
-                <div style="font-size:36px;font-weight:700;letter-spacing:8px;color:#00d4ff;background:#161b22;padding:16px 24px;border-radius:8px;border:1px solid #30363d;display:inline-block;">{code}</div>
-            </div>
-            <div style="text-align:center;font-size:12px;color:#484f58;">
-                <p>이 코드는 5분간 유효합니다.</p>
-                <p>본인이 요청하지 않았다면 이 메일을 무시해주세요.</p>
-            </div>
-            <div style="text-align:center;margin-top:24px;padding-top:16px;border-top:1px solid #21262d;font-size:10px;color:#30363d;">
-                &copy; 2026 GOODFRIENDS CO., LTD &middot; trading-x.ai
-            </div>
-        </div>
+                  </td>
+                </tr>
+              </table>
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td style="padding:0 40px 10px;text-align:center;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;width:100%;">
+                      <tr>
+                        <td style="background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.25);border-radius:12px;padding:24px 20px;text-align:center;">
+                          <div style="font-family:'Courier New',Consolas,monospace;font-size:36px;font-weight:700;color:#00d4ff;letter-spacing:12px;">{code}</div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td style="padding:12px 40px 28px;text-align:center;">
+                    <div style="font-size:12px;color:rgba(255,255,255,0.4);">이 코드는 <span style="color:#00d4ff;">5분간</span> 유효합니다.</div>
+                  </td>
+                </tr>
+              </table>
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                <tr><td style="padding:0 40px;"><div style="height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.06),transparent);"></div></td></tr>
+              </table>
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td style="padding:24px 40px 16px;">
+                    <div style="font-size:12px;color:rgba(255,255,255,0.45);line-height:1.8;">
+                      본인이 요청하지 않은 경우, 계정 보안을 위해<br>즉시 비밀번호를 변경하시기 바랍니다.
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 40px 20px;">
+                    <div style="font-size:12px;color:rgba(255,255,255,0.45);line-height:1.8;">
+                      문의사항이 있으시면 <a href="mailto:support@trading-x.ai" style="color:#00d4ff;text-decoration:none;">support@trading-x.ai</a>로 연락해주세요.<br>
+                      감사합니다.<br>
+                      <span style="color:rgba(255,255,255,0.6);font-weight:500;">Trading-X 팀</span>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td style="padding:4px 40px 20px;text-align:center;">
+                    <a href="https://www.trading-x.ai" style="font-size:12px;color:rgba(0,212,255,0.5);text-decoration:none;letter-spacing:0.5px;">www.trading-x.ai</a>
+                  </td>
+                </tr>
+              </table>
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td style="padding:16px 40px 24px;text-align:center;border-top:1px solid rgba(255,255,255,0.06);">
+                    <div style="font-size:11px;color:rgba(255,255,255,0.35);line-height:1.6;">
+                      &copy; 2026 GOODFRIENDS CO., LTD &middot; trading-x.ai
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
         """
 
         msg = MIMEMultipart("alternative")

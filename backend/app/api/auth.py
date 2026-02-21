@@ -128,9 +128,13 @@ def send_email_code(request: EmailVerifyRequest, db: Session = Depends(get_db)):
             detail="유효하지 않은 이메일 형식입니다"
         )
 
+    # 사용자 이름 조회
+    user = db.query(User).filter(User.email == request.email).first()
+    user_name = user.name if user and user.name else ""
+
     # 인증코드 생성 및 발송
     code = generate_verification_code(request.email)
-    result = send_verification_email(request.email, code)
+    result = send_verification_email(request.email, code, name=user_name)
 
     response = {"message": "인증코드가 발송되었습니다", "email": request.email}
 
