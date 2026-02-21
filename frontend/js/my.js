@@ -425,11 +425,18 @@ function confirmModeSwitch() {
 }
 
 // ========== 로그아웃 확인 ==========
-function confirmLogout() {
-    if (confirm('정말 로그아웃 하시겠습니까?')) {
-        if (typeof logout === 'function') {
-            logout();
-        }
+async function confirmLogout() {
+    var confirmed = await showTxConfirm({
+        type: 'danger',
+        icon: 'logout',
+        title: '로그아웃',
+        message: '정말 로그아웃 하시겠습니까?',
+        confirmText: '로그아웃',
+        cancelText: '취소',
+        confirmStyle: 'confirm-danger'
+    });
+    if (confirmed && typeof logout === 'function') {
+        logout();
     }
 }
 
