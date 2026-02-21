@@ -646,6 +646,28 @@
     padding: 18px 15px;
 }
 
+.acc-info-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.5), transparent) !important;
+    z-index: 1;
+}
+
+.acc-info-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.5), transparent) !important;
+    z-index: 1;
+}
+
 .acc-info-top {
     margin-bottom: 20px;
     padding-bottom: 16px;
@@ -655,7 +677,7 @@
 .acc-info-equity-row {
     display: flex;
     align-items: baseline;
-    gap: 20px;
+    justify-content: space-between;
 }
 
 .acc-info-equity-label {
