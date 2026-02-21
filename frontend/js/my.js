@@ -249,6 +249,9 @@ function toggleNicknameEdit() {
         // 닉네임 저장
         const nameEl = document.getElementById('myProfileName');
         if (nameEl) nameEl.textContent = input.value;
+        // 아바타 첫 글자 업데이트
+        const avatarEl = document.getElementById('myAvatar');
+        if (avatarEl && input.value) avatarEl.textContent = input.value.charAt(0).toUpperCase();
         localStorage.setItem('user_nickname', input.value);
     }
 }
@@ -403,7 +406,9 @@ function openMyDetail(detail) {
     if (dedicatedView) {
         // 전용 뷰로 이동
         const currentId = myPageStack[myPageStack.length - 1];
-        const currentEl = document.getElementById('myView-' + currentId);
+        const currentEl = currentId === 'main'
+            ? document.getElementById('myMainView')
+            : document.getElementById('myView-' + currentId);
         if (currentEl) currentEl.classList.remove('active', 'slide-back');
 
         dedicatedView.classList.remove('slide-back');
