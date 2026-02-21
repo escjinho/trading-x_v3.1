@@ -1320,8 +1320,8 @@
 }
 
 .my-invite-person {
-    width: 62px;
-    height: 62px;
+    width: 80px;
+    height: 80px;
     border-radius: 50%;
     background: var(--bg-tertiary);
     border: 1px solid var(--border-color);
@@ -1331,7 +1331,7 @@
 }
 
 .my-invite-person .material-icons-round {
-    font-size: 34px;
+    font-size: 44px;
     color: var(--text-muted);
 }
 
@@ -1339,8 +1339,8 @@
     position: absolute;
     bottom: -2px;
     right: -6px;
-    width: 22px;
-    height: 22px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     background: var(--accent-cyan);
     display: flex;
@@ -1354,13 +1354,13 @@
 }
 
 .my-invite-hero-title {
-    font-size: 22px;
+    font-size: 24px;
     font-weight: 600;
     margin-bottom: 6px;
 }
 
 .my-invite-hero-desc {
-    font-size: 12px;
+    font-size: 14px;
     color: var(--text-muted);
     line-height: 1.6;
 }
@@ -2889,65 +2889,94 @@
 }
 .my-invite-share-btn:active { opacity: 0.7; }
 
-/* 보상 안내 카드 */
+/* Coming Soon 글로우 카드 (Live 색상) */
 .my-invite-notice-card {
-    background: var(--bg-tertiary);
-    border-radius: 16px;
-    border: 1px solid rgba(0, 212, 255, 0.12);
-    padding: 24px 20px;
+    position: relative;
+    background: linear-gradient(160deg, rgba(0,180,80,0.06) 0%, rgba(0,180,80,0.01) 40%, var(--bg-tertiary) 100%);
+    border-radius: 20px;
+    border: 1px solid rgba(0,180,80,0.15);
+    padding: 28px 22px;
     text-align: center;
+    overflow: hidden;
+}
+.my-invite-notice-card::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: radial-gradient(circle at 30% 20%, rgba(0,180,80,0.05) 0%, transparent 50%);
+    pointer-events: none;
 }
 
 .my-invite-notice-icon {
     width: 52px;
     height: 52px;
-    border-radius: 50%;
-    background: rgba(0, 212, 255, 0.08);
+    border-radius: 16px;
+    background: rgba(0,180,80,0.1);
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 14px;
+    margin: 0 auto 16px;
+    position: relative;
 }
 .my-invite-notice-icon .material-icons-round {
     font-size: 26px;
-    color: var(--accent-cyan);
+    color: var(--buy-color);
+}
+.my-invite-notice-icon::after {
+    content: '';
+    position: absolute;
+    top: -3px; right: -3px;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: #00c853;
+    border: 2px solid var(--bg-tertiary);
+    animation: invite-pulse 2s infinite;
+}
+@keyframes invite-pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.4); opacity: 0.6; }
 }
 
 .my-invite-notice-title {
-    font-size: 15px;
+    font-size: 17px;
     font-weight: 700;
-    color: #fff;
     margin-bottom: 10px;
+    line-height: 1.4;
+    color: #fff;
+}
+.my-invite-notice-title span {
+    color: var(--buy-color);
 }
 
 .my-invite-notice-desc {
     font-size: 12px;
     color: var(--text-muted);
     line-height: 1.8;
-    margin-bottom: 16px;
+    margin-bottom: 18px;
 }
 
 .my-invite-notice-tags {
     display: flex;
-    flex-wrap: wrap;
     gap: 8px;
     justify-content: center;
+    flex-wrap: wrap;
 }
 
 .my-invite-notice-tag {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
     font-size: 11px;
-    color: var(--text-dim);
-    padding: 5px 12px;
+    color: var(--buy-color);
+    padding: 6px 14px;
     border-radius: 20px;
-    background: rgba(0, 212, 255, 0.04);
-    border: 1px solid rgba(0, 212, 255, 0.1);
+    background: rgba(0,180,80,0.06);
+    border: 1px solid rgba(0,180,80,0.12);
 }
 .my-invite-notice-tag .material-icons-round {
     font-size: 13px;
-    color: var(--accent-cyan);
+    color: var(--buy-color);
 }
 
 /* QR 모달 */
