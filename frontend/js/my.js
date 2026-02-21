@@ -599,13 +599,37 @@ function getCurrentUserEmail() {
 }
 
 function initEmailView() {
-    // 1순위: 프로필에 이미 표시된 이메일, 2순위: localStorage, 3순위: fallback
-    const profileEmail = document.getElementById('myProfileEmail');
-    const email = (profileEmail && profileEmail.textContent && profileEmail.textContent !== '-')
-        ? profileEmail.textContent
-        : (localStorage.getItem('user_email') || '');
     const emailEl = document.getElementById('myEmailAddr');
-    if (emailEl) emailEl.textContent = email || '이메일을 불러올 수 없습니다';
+    
+    // 1순위: 프로필 DOM
+    const profileEmail = document.getElementById('myProfileEmail');
+    if (profileEmail && profileEmail.textContent && profileEmail.textContent !== '-') {
+        if (emailEl) emailEl.textContent = profileEmail.textContent;
+        return;
+    }
+    
+    // 2순위: localStorage
+    const stored = localStorage.getItem('user_email');
+    if (stored) {
+        if (emailEl) emailEl.textContent = stored;
+        return;
+    }
+    
+    // 3순위: API 직접 호출
+    const tkn = localStorage.getItem('access_token');
+    if (tkn) {
+        fetch((typeof API_URL !== 'undefined' ? API_URL : '') + '/auth/me', {
+            headers: { 'Authorization': 'Bearer ' + tkn }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            if (d.email) {
+                if (emailEl) emailEl.textContent = d.email;
+                localStorage.setItem('user_email', d.email);
+            }
+        })
+        .catch(function(e) { console.error('이메일 조회 실패:', e); });
+    }
 }
 
 async function sendEmailCode() {
