@@ -3058,3 +3058,94 @@
 #myView-password .my-form-label {
     color: var(--text-primary);
 }
+
+/* ===== 커스텀 확인 다이얼로그 ===== */
+.tx-dialog-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 99999;
+    opacity: 0;
+    animation: txFadeIn 0.2s ease forwards;
+    padding: 24px;
+}
+@keyframes txFadeIn { to { opacity: 1; } }
+
+.tx-dialog {
+    background: linear-gradient(160deg, #1a2035, #141824);
+    border: 1px solid rgba(0, 212, 255, 0.15);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 340px;
+    overflow: hidden;
+    transform: scale(0.9);
+    animation: txPopIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(0, 212, 255, 0.05);
+}
+@keyframes txPopIn { to { transform: scale(1); } }
+
+.tx-dialog-icon {
+    display: flex;
+    justify-content: center;
+    padding-top: 28px;
+    padding-bottom: 4px;
+}
+.tx-dialog-icon-circle {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+}
+.tx-dialog-icon-circle.warn {
+    background: rgba(255, 170, 0, 0.12);
+    border: 1px solid rgba(255, 170, 0, 0.25);
+}
+.tx-dialog-icon-circle.warn .material-icons-round { color: #ffaa00; font-size: 28px; }
+.tx-dialog-icon-circle.danger {
+    background: rgba(255, 68, 68, 0.12);
+    border: 1px solid rgba(255, 68, 68, 0.25);
+}
+.tx-dialog-icon-circle.danger .material-icons-round { color: #ff4444; font-size: 28px; }
+.tx-dialog-icon-circle.info {
+    background: rgba(0, 212, 255, 0.12);
+    border: 1px solid rgba(0, 212, 255, 0.25);
+}
+.tx-dialog-icon-circle.info .material-icons-round { color: #00d4ff; font-size: 28px; }
+.tx-dialog-icon-circle.success {
+    background: rgba(0, 200, 80, 0.12);
+    border: 1px solid rgba(0, 200, 80, 0.25);
+}
+.tx-dialog-icon-circle.success .material-icons-round { color: #00c850; font-size: 28px; }
+
+.tx-dialog-body {
+    padding: 16px 24px 24px;
+    text-align: center;
+}
+.tx-dialog-title {
+    font-size: 17px; font-weight: 700; color: #ffffff; margin-bottom: 8px;
+}
+.tx-dialog-message {
+    font-size: 13.5px; color: #8a8f9e; line-height: 1.5;
+}
+.tx-dialog-actions {
+    display: flex; gap: 10px; padding: 0 24px 24px;
+}
+.tx-dialog-btn {
+    flex: 1; padding: 13px; border-radius: 12px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    border: none; transition: all 0.15s ease;
+}
+.tx-dialog-btn:active { transform: scale(0.97); }
+.tx-dialog-btn.cancel {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #8a8f9e;
+}
+.tx-dialog-btn.confirm-danger { background: linear-gradient(135deg, #ff4444, #ff6b6b); color: #fff; }
+.tx-dialog-btn.confirm-warn { background: linear-gradient(135deg, #ff8c00, #ffaa00); color: #000; }
+.tx-dialog-btn.confirm-primary { background: linear-gradient(135deg, #00d4ff, #00b8e6); color: #000; }
+.tx-dialog-btn.confirm-success { background: linear-gradient(135deg, #00b450, #00d46a); color: #fff; }
