@@ -1139,6 +1139,9 @@ function initDetailView(detail) {
                 btn.classList.toggle('selected', btnAmount === 10000);
             });
             break;
+        case 'openSource':
+            setTimeout(renderOpenSource, 50);
+            break;
     }
 }
 
@@ -1440,15 +1443,7 @@ function renderOpenSource() {
     });
 }
 
-// initDetailView 확장
-const _originalInitDetailView = typeof initDetailView === 'function' ? initDetailView : null;
-function initDetailView(detail) {
-    if (_originalInitDetailView) _originalInitDetailView(detail);
 
-    if (detail === 'openSource') {
-        setTimeout(renderOpenSource, 50);
-    }
-}
 
 // ========== 페이지 로드 시 초기화 ==========
 document.addEventListener('DOMContentLoaded', initMyTab);
