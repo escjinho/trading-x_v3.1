@@ -1,3 +1,32 @@
+// ★★★ Current P/L 번쩍임 방지 래퍼 ★★★
+let _lastValidPL = null;
+let _lastPLUpdateTime = 0;
+function safeUpdateCurrentPL(element, profit) {
+    if (!element) return;
+    const now = Date.now();
+
+    // $0.00으로 변경 시, 이전 값이 0이 아니었고 500ms 이내면 무시 (일시적 null 대응)
+    if (profit === 0 && _lastValidPL !== null && _lastValidPL !== 0 && (now - _lastPLUpdateTime) < 500) {
+        return; // 이전 값 유지
+    }
+
+    // 유효한 값이면 저장
+    if (profit !== 0) {
+        _lastValidPL = profit;
+    }
+    _lastPLUpdateTime = now;
+
+    const newText = profit > 0
+        ? '+$' + profit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})
+        : profit < 0 ? '-$' + Math.abs(profit).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '$0.00';
+    const newColor = profit > 0 ? 'var(--buy-color)' : profit < 0 ? 'var(--sell-color)' : 'var(--text-primary)';
+
+    if (element.textContent !== newText) {
+        element.textContent = newText;
+        element.style.color = newColor;
+    }
+}
+
 // ★★★ 프론트엔드 실시간 P/L 계산 (MetaAPI 캐시 지연 해소) ★★★
 const SYMBOL_SPECS = {
     'BTCUSD':   { tick_size: 0.01,    tick_value: 0.01, contract_size: 1 },
@@ -671,16 +700,7 @@ function connectWebSocket() {
                 } else if (data.position && data.position.profit !== undefined) {
                     pl = data.position.profit || 0;
                 }
-                if (pl > 0) {
-                    accCurrentPL.textContent = '+$' + pl.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                    accCurrentPL.style.color = 'var(--buy-color)';
-                } else if (pl < 0) {
-                    accCurrentPL.textContent = '-$' + Math.abs(pl).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                    accCurrentPL.style.color = 'var(--sell-color)';
-                } else {
-                    accCurrentPL.textContent = '$0.00';
-                    accCurrentPL.style.color = 'var(--text-primary)';
-                }
+                safeUpdateCurrentPL(accCurrentPL, pl);
             }
             if ('leverage' in data) {
                 const accLeverage = document.getElementById('accLeverage');
@@ -1180,24 +1200,7 @@ function connectWebSocket() {
                 }
             }
 
-            // ★ 번쩍임 방지: 포지션 데이터 일시 누락 시 이전 P/L 유지
-            if (!hasAnyPosition && window._lastLiveCurrentPL !== undefined && window._lastLiveCurrentPL !== 0) {
-                currentProfit = window._lastLiveCurrentPL;
-            }
-            if (hasAnyPosition) {
-                window._lastLiveCurrentPL = currentProfit;
-            }
-
-            // 깜빡임 방지: 값이 변경된 경우에만 업데이트
-            const newText = currentProfit > 0
-                ? '+$' + currentProfit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})
-                : currentProfit < 0 ? '-$' + Math.abs(currentProfit).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '$0.00';
-            const newColor = currentProfit > 0 ? 'var(--buy-color)' : currentProfit < 0 ? 'var(--sell-color)' : 'var(--text-primary)';
-            
-            if (accCurrentPL.textContent !== newText) {
-                accCurrentPL.textContent = newText;
-                accCurrentPL.style.color = newColor;
-            }
+            safeUpdateCurrentPL(accCurrentPL, currentProfit);
         }
 
         // ★★★ 라이브 모드 Today P/L — _todayPLFixed 단일 소스 ★★★
@@ -1689,15 +1692,7 @@ async function fetchAccountData() {
                     });
                 }
                 
-                // 값이 변경된 경우에만 업데이트 (깜빡임 방지)
-                const newText = currentProfit > 0
-                    ? '+$' + currentProfit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})
-                    : currentProfit < 0 ? '-$' + Math.abs(currentProfit).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '$0.00';
-                
-                if (accCurrentPL.textContent !== newText) {
-                    accCurrentPL.textContent = newText;
-                    accCurrentPL.style.color = currentProfit > 0 ? 'var(--buy-color)' : currentProfit < 0 ? 'var(--sell-color)' : 'var(--text-primary)';
-                }
+                safeUpdateCurrentPL(accCurrentPL, currentProfit);
             }
             
             // ★★★ 시그널 게이지 + 인디케이터 (1~3초 랜덤 간격 큐에 위임) ★★★
@@ -2119,16 +2114,7 @@ async function fetchDemoData() {
                     currentProfit = data.position.profit || 0;
                 }
 
-                if (currentProfit > 0) {
-                    accCurrentPL.textContent = '+$' + currentProfit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                    accCurrentPL.style.color = 'var(--buy-color)';
-                } else if (currentProfit < 0) {
-                    accCurrentPL.textContent = '-$' + Math.abs(currentProfit).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                    accCurrentPL.style.color = 'var(--sell-color)';
-                } else {
-                    accCurrentPL.textContent = '$0.00';
-                    accCurrentPL.style.color = 'var(--text-primary)';
-                }
+                safeUpdateCurrentPL(accCurrentPL, currentProfit);
             }
 
             // 포지션 정보
