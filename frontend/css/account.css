@@ -626,12 +626,15 @@
 }
 
 .acc-info-top {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
     margin-bottom: 20px;
     padding-bottom: 16px;
     border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.acc-info-equity-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
 }
 
 .acc-info-equity-label {
@@ -649,7 +652,8 @@
 }
 
 .acc-info-cpl {
-    text-align: right;
+    text-align: left;
+    margin-bottom: 2px;
 }
 
 .acc-info-cpl-label {
@@ -659,7 +663,7 @@
 }
 
 .acc-info-cpl-value {
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 600;
     color: rgba(255,255,255,0.9);
 }
@@ -698,7 +702,7 @@
 }
 
 .acc-info-item-value {
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 600;
     color: rgba(255,255,255,0.9);
 }
