@@ -590,6 +590,11 @@ let emailTimerSeconds = 300; // 5분
 
 // 현재 로그인한 사용자 이메일
 function getCurrentUserEmail() {
+    // 1순위: 프로필 DOM, 2순위: localStorage
+    const profileEl = document.getElementById('myProfileEmail');
+    if (profileEl && profileEl.textContent && profileEl.textContent !== '-') {
+        return profileEl.textContent;
+    }
     return localStorage.getItem('user_email') || '';
 }
 
