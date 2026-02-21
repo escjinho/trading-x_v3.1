@@ -32,7 +32,8 @@ function initMyTab() {
         .then(function(res) { return res.json(); })
         .then(function(data) {
             if (data.email) {
-                // 프로필 업데이트
+                // 프로필 업데이트 + localStorage 동기화
+                localStorage.setItem('user_email', data.email);
                 var displayName = data.name || data.email.split('@')[0];
                 if (nameEl) nameEl.textContent = displayName;
                 if (emailEl) emailEl.textContent = data.email;
