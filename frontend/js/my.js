@@ -1188,7 +1188,7 @@ let selectedDemoAmount = 10000;
 async function loadDemoBalance() {
     try {
         var tkn = localStorage.getItem('access_token');
-        var res = await fetch(API_URL + '/demo/account', {
+        var res = await fetch(API_URL + '/demo/account-info', {
             headers: { 'Authorization': 'Bearer ' + tkn }
         });
         var data = await res.json();
