@@ -420,12 +420,29 @@ function openMyDetail(detail) {
         // 상세 페이지 초기화
         if (typeof initDetailView === 'function') initDetailView(detail);
         
-        // 이메일 인증 페이지: 프로필에서 이메일 강제 세팅
+        // 이메일 인증 페이지: 프로필에서 이메일 강제 세팅 + 인증 상태 체크
         if (detail === 'email') {
             var pEmail = document.getElementById('myProfileEmail');
             var eAddr = document.getElementById('myEmailAddr');
             if (pEmail && eAddr && pEmail.textContent && pEmail.textContent !== '-') {
                 eAddr.textContent = pEmail.textContent;
+            }
+            var stateEl = document.getElementById('myEmailState');
+            var sendBtn = document.getElementById('myEmailSendBtn');
+            var verifyBtn = document.getElementById('myEmailVerifyBtn');
+            var resendBtn = document.getElementById('myEmailResendBtn');
+            var codeSection = document.getElementById('myEmailCodeSection');
+            var statusIcon = document.getElementById('myEmailStatusIcon');
+            if (stateEl && stateEl.textContent.trim() === '인증됨') {
+                stateEl.className = 'my-email-state verified';
+                if (statusIcon) statusIcon.textContent = 'mark_email_read';
+                if (sendBtn) sendBtn.style.display = 'none';
+                if (verifyBtn) verifyBtn.style.display = 'none';
+                if (resendBtn) resendBtn.style.display = 'none';
+                if (codeSection) codeSection.style.display = 'none';
+            } else {
+                if (sendBtn) sendBtn.style.display = '';
+                if (statusIcon) statusIcon.textContent = 'mark_email_unread';
             }
         }
 
@@ -696,6 +713,10 @@ async function sendEmailCode() {
         }, 1000);
 
         // 입력 필드 초기화 및 포커스
+        // 재발송 버튼 표시
+        const resendBtn = document.getElementById('myEmailResendBtn');
+        if (resendBtn) resendBtn.style.display = '';
+        
         document.querySelectorAll('.my-email-code-input').forEach(inp => inp.value = '');
         const firstInput = document.querySelector('.my-email-code-input[data-idx="0"]');
         if (firstInput) firstInput.focus();
