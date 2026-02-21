@@ -291,9 +291,12 @@ async def get_my_profile(
     return {
         "email": current_user.email,
         "name": current_user.name or current_user.email.split("@")[0],
+        "real_name": current_user.real_name or "",
+        "birth_date": current_user.birth_date or "",
+        "nationality": current_user.nationality or "",
         "created_at": str(current_user.created_at) if current_user.created_at else None,
         "email_verified": current_user.email_verified or False,
-        "phone": current_user.phone,
+        "phone": current_user.phone or "",
         "phone_verified": current_user.phone_verified or False,
         "has_mt5_account": current_user.has_mt5_account or False,
         "is_admin": current_user.is_admin or False,
@@ -365,3 +368,87 @@ def verify_phone_code_endpoint(request: PhoneCodeVerifyRequest, db: Session = De
         db.commit()
 
     return {"success": True, "message": result["message"]}
+
+
+# ========== 개인정보 관리 ==========
+class PasswordVerifyRequest(BaseModel):
+    password: str
+
+class PersonalInfoUpdateRequest(BaseModel):
+    real_name: str = ""
+    name: str = ""
+    phone: str = ""
+    birth_date: str = ""
+    nationality: str = ""
+    password: str  # 저장 시 비밀번호 확인
+
+@router.post("/profile/verify-password")
+def verify_profile_password(
+    request: PasswordVerifyRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """개인정보 진입 시 비밀번호 확인"""
+    if not verify_password(request.password, current_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="비밀번호가 올바르지 않습니다"
+        )
+    return {
+        "success": True,
+        "data": {
+            "email": current_user.email,
+            "name": current_user.name or "",
+            "real_name": current_user.real_name or "",
+            "phone": current_user.phone or "",
+            "birth_date": current_user.birth_date or "",
+            "nationality": current_user.nationality or "",
+            "email_verified": current_user.email_verified or False,
+            "phone_verified": current_user.phone_verified or False,
+            "created_at": str(current_user.created_at) if current_user.created_at else None
+        }
+    }
+
+@router.put("/profile/personal")
+def update_personal_info(
+    request: PersonalInfoUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """개인정보 수정 (비밀번호 재확인 필요)"""
+    # 비밀번호 확인
+    if not verify_password(request.password, current_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="비밀번호가 올바르지 않습니다"
+        )
+
+    # 정보 업데이트
+    if request.real_name is not None:
+        current_user.real_name = request.real_name.strip()
+    if request.name is not None:
+        current_user.name = request.name.strip()
+    if request.phone is not None:
+        current_user.phone = request.phone.replace("-", "").replace(" ", "").strip()
+    if request.birth_date is not None:
+        current_user.birth_date = request.birth_date.strip()
+    if request.nationality is not None:
+        current_user.nationality = request.nationality.strip()
+
+    db.commit()
+    db.refresh(current_user)
+
+    return {
+        "success": True,
+        "message": "개인정보가 저장되었습니다",
+        "data": {
+            "email": current_user.email,
+            "name": current_user.name or "",
+            "real_name": current_user.real_name or "",
+            "phone": current_user.phone or "",
+            "birth_date": current_user.birth_date or "",
+            "nationality": current_user.nationality or "",
+            "email_verified": current_user.email_verified or False,
+            "phone_verified": current_user.phone_verified or False,
+        }
+    }

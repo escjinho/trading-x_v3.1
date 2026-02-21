@@ -16,6 +16,9 @@ class User(Base):
 
     # ========== 인증 필드 ==========
     email_verified = Column(Boolean, default=False)        # 이메일 인증 완료 여부
+    real_name = Column(String(50), nullable=True)            # 실명
+    birth_date = Column(String(10), nullable=True)            # 생년월일 (YYYY-MM-DD)
+    nationality = Column(String(10), nullable=True)           # 국적 코드 (KR, US 등)
     phone = Column(String(20), nullable=True)              # 전화번호
     phone_verified = Column(Boolean, default=False)        # 전화번호 인증 여부
 

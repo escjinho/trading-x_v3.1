@@ -393,6 +393,7 @@ function openMyDetail(detail) {
         password: '비밀번호 변경',
         email: '이메일 인증',
         phone: '전화번호 인증',
+        personalInfo: '개인정보',
         mt5: 'MT5 계정 관리',
         loginHistory: '로그인 기록',
         depositDemo: 'Demo 입출금',
@@ -1146,6 +1147,9 @@ function initDetailView(detail) {
         case 'phone':
             initPhoneView();
             break;
+        case 'personalInfo':
+            piResetView();
+            break;
     }
 }
 
@@ -1445,6 +1449,213 @@ function renderOpenSource() {
         item.innerHTML = '<div class="my-oss-top"><span class="my-oss-name">' + name + '</span><span class="my-oss-license">' + license + '</span></div><div class="my-oss-meta">' + ver + ' · ' + author + '</div>';
         container.appendChild(item);
     });
+}
+
+
+
+// ========== 개인정보 관리 ==========
+let piUserData = null;
+
+const nationalityNames = {
+    'KR': '🇰🇷 대한민국', 'US': '🇺🇸 미국', 'JP': '🇯🇵 일본', 'CN': '🇨🇳 중국',
+    'VN': '🇻🇳 베트남', 'TH': '🇹🇭 태국', 'PH': '🇵🇭 필리핀', 'MY': '🇲🇾 말레이시아',
+    'SG': '🇸🇬 싱가포르', 'AU': '🇦🇺 호주', 'GB': '🇬🇧 영국', 'OTHER': '기타'
+};
+
+function piResetView() {
+    document.getElementById('piPasswordGate').style.display = '';
+    document.getElementById('piViewMode').style.display = 'none';
+    document.getElementById('piEditMode').style.display = 'none';
+    var modal = document.getElementById('piPasswordModal');
+    if (modal) modal.style.display = 'none';
+    var pwInput = document.getElementById('piGatePassword');
+    if (pwInput) pwInput.value = '';
+    piUserData = null;
+}
+
+async function piVerifyPassword() {
+    var pw = document.getElementById('piGatePassword').value;
+    if (!pw) { showToast('비밀번호를 입력해주세요', 'error'); return; }
+
+    try {
+        var res = await fetch(API_URL + '/auth/profile/verify-password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+            },
+            body: JSON.stringify({ password: pw })
+        });
+        var data = await res.json();
+
+        if (!res.ok) {
+            showToast(data.detail || '비밀번호가 올바르지 않습니다', 'error');
+            return;
+        }
+
+        piUserData = data.data;
+        piRenderViewMode();
+        document.getElementById('piPasswordGate').style.display = 'none';
+        document.getElementById('piViewMode').style.display = '';
+
+    } catch (err) {
+        console.error('비밀번호 확인 오류:', err);
+        showToast('오류가 발생했습니다', 'error');
+    }
+}
+
+function piRenderViewMode() {
+    var d = piUserData;
+    if (!d) return;
+
+    document.getElementById('piEmail').textContent = d.email || '-';
+
+    var ca = d.created_at;
+    if (ca) {
+        var dt = new Date(ca);
+        document.getElementById('piCreatedAt').textContent = dt.getFullYear() + '.' + String(dt.getMonth()+1).padStart(2,'0') + '.' + String(dt.getDate()).padStart(2,'0');
+    }
+
+    document.getElementById('piRealName').textContent = d.real_name || '미등록';
+    document.getElementById('piRealName').style.color = d.real_name ? 'var(--text-primary)' : 'var(--text-dim)';
+    document.getElementById('piRealName').style.fontStyle = d.real_name ? 'normal' : 'italic';
+
+    document.getElementById('piNickname').textContent = d.name || '-';
+
+    var bd = d.birth_date;
+    if (bd) {
+        document.getElementById('piBirthDate').textContent = bd.replace(/-/g, '.');
+        document.getElementById('piBirthDate').style.color = 'var(--text-primary)';
+        document.getElementById('piBirthDate').style.fontStyle = 'normal';
+    } else {
+        document.getElementById('piBirthDate').textContent = '미등록';
+        document.getElementById('piBirthDate').style.color = 'var(--text-dim)';
+        document.getElementById('piBirthDate').style.fontStyle = 'italic';
+    }
+
+    var nat = d.nationality;
+    if (nat && nationalityNames[nat]) {
+        document.getElementById('piNationality').textContent = nationalityNames[nat];
+        document.getElementById('piNationality').style.color = 'var(--text-primary)';
+        document.getElementById('piNationality').style.fontStyle = 'normal';
+    } else {
+        document.getElementById('piNationality').textContent = '미등록';
+        document.getElementById('piNationality').style.color = 'var(--text-dim)';
+        document.getElementById('piNationality').style.fontStyle = 'italic';
+    }
+
+    // 이메일 인증 배지
+    var emailBadge = document.getElementById('piEmailBadge');
+    if (d.email_verified) {
+        emailBadge.textContent = '인증됨';
+        emailBadge.style.background = 'rgba(0,212,164,0.15)';
+        emailBadge.style.color = '#00d4a4';
+    } else {
+        emailBadge.textContent = '미인증';
+        emailBadge.style.background = 'rgba(255,77,106,0.15)';
+        emailBadge.style.color = '#ff4d6a';
+    }
+
+    // 전화번호 + 인증 배지
+    var phoneNum = document.getElementById('piPhoneNum');
+    var phoneBadge = document.getElementById('piPhoneBadge');
+    if (d.phone) {
+        phoneNum.textContent = formatPhone(d.phone);
+        phoneNum.style.color = 'var(--text-primary)';
+    } else {
+        phoneNum.textContent = '미등록';
+        phoneNum.style.color = 'var(--text-dim)';
+    }
+    if (d.phone_verified) {
+        phoneBadge.textContent = '인증됨';
+        phoneBadge.style.background = 'rgba(0,212,164,0.15)';
+        phoneBadge.style.color = '#00d4a4';
+    } else {
+        phoneBadge.textContent = '미인증';
+        phoneBadge.style.background = 'rgba(255,77,106,0.15)';
+        phoneBadge.style.color = '#ff4d6a';
+    }
+}
+
+function piShowEditMode() {
+    var d = piUserData;
+    if (!d) return;
+
+    document.getElementById('piEditEmail').value = d.email || '';
+    document.getElementById('piEditRealName').value = d.real_name || '';
+    document.getElementById('piEditNickname').value = d.name || '';
+    document.getElementById('piEditPhone').value = d.phone || '';
+    document.getElementById('piEditBirthDate').value = d.birth_date || '';
+    document.getElementById('piEditNationality').value = d.nationality || '';
+
+    document.getElementById('piViewMode').style.display = 'none';
+    document.getElementById('piEditMode').style.display = '';
+}
+
+function piCancelEdit() {
+    document.getElementById('piEditMode').style.display = 'none';
+    document.getElementById('piViewMode').style.display = '';
+}
+
+function piSaveInfo() {
+    // 비밀번호 재확인 모달 열기
+    var modal = document.getElementById('piPasswordModal');
+    modal.style.display = 'flex';
+    document.getElementById('piSavePassword').value = '';
+    document.getElementById('piSavePassword').focus();
+}
+
+function piCloseModal() {
+    document.getElementById('piPasswordModal').style.display = 'none';
+}
+
+async function piConfirmSave() {
+    var pw = document.getElementById('piSavePassword').value;
+    if (!pw) { showToast('비밀번호를 입력해주세요', 'error'); return; }
+
+    var body = {
+        real_name: document.getElementById('piEditRealName').value,
+        name: document.getElementById('piEditNickname').value,
+        phone: document.getElementById('piEditPhone').value,
+        birth_date: document.getElementById('piEditBirthDate').value,
+        nationality: document.getElementById('piEditNationality').value,
+        password: pw
+    };
+
+    try {
+        var res = await fetch(API_URL + '/auth/profile/personal', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+            },
+            body: JSON.stringify(body)
+        });
+        var data = await res.json();
+
+        if (!res.ok) {
+            showToast(data.detail || '저장에 실패했습니다', 'error');
+            return;
+        }
+
+        piCloseModal();
+        piUserData = data.data;
+        piRenderViewMode();
+        document.getElementById('piEditMode').style.display = 'none';
+        document.getElementById('piViewMode').style.display = '';
+
+        // 프로필 닉네임 동기화
+        var profileName = document.getElementById('myProfileName');
+        if (profileName && data.data.name) profileName.textContent = data.data.name;
+        var avatarEl = document.getElementById('myAvatar');
+        if (avatarEl && data.data.name) avatarEl.textContent = data.data.name.charAt(0).toUpperCase();
+
+        showToast('개인정보가 저장되었습니다 ✓', 'success');
+
+    } catch (err) {
+        console.error('개인정보 저장 오류:', err);
+        showToast('저장 중 오류가 발생했습니다', 'error');
+    }
 }
 
 // ========== 전화번호 인증 ==========

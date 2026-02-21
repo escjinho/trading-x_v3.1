@@ -63,11 +63,11 @@
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css?v=1771698276">
-        <link rel="stylesheet" href="css/quickeasy.css?v=1771698276">
-    <link rel="stylesheet" href="css/chart.css?v=1771698276">
-    <link rel="stylesheet" href="css/account.css?v=1771698276">
-    <link rel="stylesheet" href="css/my.css?v=1771698276">
+    <link rel="stylesheet" href="css/styles.css?v=1771699498">
+        <link rel="stylesheet" href="css/quickeasy.css?v=1771699498">
+    <link rel="stylesheet" href="css/chart.css?v=1771699498">
+    <link rel="stylesheet" href="css/account.css?v=1771699498">
+    <link rel="stylesheet" href="css/my.css?v=1771699498">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
@@ -1448,6 +1448,10 @@
                     </div>
                     <div class="my-sub-body">
                         <div class="my-sub-card">
+                            <div class="my-sub-item" onclick="openMyDetail('personalInfo')">
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">badge</span></div><span class="my-sub-item-label">개인정보</span></div>
+                                <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
+                            </div>
                             <div class="my-sub-item" onclick="openMyDetail('password')">
                                 <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">lock</span></div><span class="my-sub-item-label">비밀번호 변경</span></div>
                                 <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
@@ -1638,7 +1642,144 @@
                     </div>
                 </div>
 
-                <!-- ===== 전화번호 인증 상세 페이지 ===== -->
+                <!-- ===== 개인정보 상세 페이지 ===== -->
+                <div class="my-view" id="myView-personalInfo">
+                    <div class="my-sub-header">
+                        <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
+                        <span class="my-sub-title">개인정보</span>
+                    </div>
+                    <div class="my-sub-body">
+                        <!-- STEP 1: 비밀번호 확인 -->
+                        <div id="piPasswordGate" style="text-align:center;padding-top:40px;">
+                            <div style="width:72px;height:72px;border-radius:50%;background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+                                <span class="material-icons-round" style="font-size:32px;color:var(--accent-cyan);">lock_person</span>
+                            </div>
+                            <div style="font-size:18px;font-weight:600;color:var(--text-primary);margin-bottom:8px;">본인 확인</div>
+                            <div style="font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:32px;">개인정보 보호를 위해<br>비밀번호를 입력해주세요.</div>
+                            <div style="margin-bottom:12px;">
+                                <input type="password" id="piGatePassword" class="my-form-input" placeholder="비밀번호 입력" style="text-align:center;">
+                            </div>
+                            <button class="my-action-btn primary" onclick="piVerifyPassword()">확인</button>
+                        </div>
+
+                        <!-- STEP 2: 개인정보 열람 -->
+                        <div id="piViewMode" style="display:none;">
+                            <div class="my-sub-card" style="margin-bottom:12px;">
+                                <div style="padding:12px 16px 6px;font-size:13px;font-weight:600;color:var(--accent-cyan);letter-spacing:0.5px;">기본 정보</div>
+                                <div class="my-sub-item last" style="cursor:default;border-bottom:none;">
+                                    <span style="font-size:13px;color:var(--text-secondary);">이메일</span>
+                                    <span id="piEmail" style="font-size:14px;color:var(--text-primary);font-weight:500;">-</span>
+                                </div>
+                                <div class="my-sub-item last" style="cursor:default;border-bottom:none;">
+                                    <span style="font-size:13px;color:var(--text-secondary);">가입일</span>
+                                    <span id="piCreatedAt" style="font-size:14px;color:var(--text-primary);font-weight:500;">-</span>
+                                </div>
+                            </div>
+
+                            <div class="my-sub-card" style="margin-bottom:12px;">
+                                <div style="padding:12px 16px 6px;font-size:13px;font-weight:600;color:var(--accent-cyan);letter-spacing:0.5px;">개인 정보</div>
+                                <div class="my-sub-item" style="cursor:default;">
+                                    <span style="font-size:13px;color:var(--text-secondary);">이름 (실명)</span>
+                                    <span id="piRealName" style="font-size:14px;color:var(--text-primary);font-weight:500;">-</span>
+                                </div>
+                                <div class="my-sub-item" style="cursor:default;">
+                                    <span style="font-size:13px;color:var(--text-secondary);">닉네임</span>
+                                    <span id="piNickname" style="font-size:14px;color:var(--text-primary);font-weight:500;">-</span>
+                                </div>
+                                <div class="my-sub-item" style="cursor:default;">
+                                    <span style="font-size:13px;color:var(--text-secondary);">생년월일</span>
+                                    <span id="piBirthDate" style="font-size:14px;color:var(--text-primary);font-weight:500;">-</span>
+                                </div>
+                                <div class="my-sub-item last" style="cursor:default;border-bottom:none;">
+                                    <span style="font-size:13px;color:var(--text-secondary);">국적</span>
+                                    <span id="piNationality" style="font-size:14px;color:var(--text-primary);font-weight:500;">-</span>
+                                </div>
+                            </div>
+
+                            <div class="my-sub-card" style="margin-bottom:16px;">
+                                <div style="padding:12px 16px 6px;font-size:13px;font-weight:600;color:var(--accent-cyan);letter-spacing:0.5px;">연락처 / 인증</div>
+                                <div class="my-sub-item" style="cursor:default;">
+                                    <span style="font-size:13px;color:var(--text-secondary);">이메일</span>
+                                    <span id="piEmailBadge" style="font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600;">-</span>
+                                </div>
+                                <div class="my-sub-item last" style="cursor:default;border-bottom:none;">
+                                    <span style="font-size:13px;color:var(--text-secondary);">전화번호</span>
+                                    <div style="display:flex;align-items:center;gap:8px;">
+                                        <span id="piPhoneNum" style="font-size:14px;color:var(--text-primary);font-weight:500;">-</span>
+                                        <span id="piPhoneBadge" style="font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600;">-</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button class="my-action-btn primary" onclick="piShowEditMode()">정보 수정</button>
+                        </div>
+
+                        <!-- STEP 3: 개인정보 수정 -->
+                        <div id="piEditMode" style="display:none;">
+                            <div style="display:flex;align-items:center;gap:8px;background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.15);border-radius:10px;padding:10px 14px;margin-bottom:16px;">
+                                <span class="material-icons-round" style="font-size:16px;color:var(--accent-cyan);">info</span>
+                                <span style="font-size:12px;color:var(--text-secondary);line-height:1.5;">수정 완료 후 저장 시 비밀번호를 다시 확인합니다.</span>
+                            </div>
+
+                            <div class="my-detail-section">
+                                <label class="my-form-label">이메일 (변경 불가)</label>
+                                <input type="text" id="piEditEmail" class="my-form-input" readonly style="opacity:0.5;">
+                            </div>
+                            <div class="my-detail-section">
+                                <label class="my-form-label">이름 (실명)</label>
+                                <input type="text" id="piEditRealName" class="my-form-input" placeholder="실명을 입력하세요">
+                            </div>
+                            <div class="my-detail-section">
+                                <label class="my-form-label">닉네임</label>
+                                <input type="text" id="piEditNickname" class="my-form-input" placeholder="닉네임">
+                            </div>
+                            <div class="my-detail-section">
+                                <label class="my-form-label">전화번호</label>
+                                <input type="tel" id="piEditPhone" class="my-form-input" placeholder="01012345678" maxlength="11">
+                            </div>
+                            <div class="my-detail-section">
+                                <label class="my-form-label">생년월일</label>
+                                <input type="date" id="piEditBirthDate" class="my-form-input" style="color-scheme:dark;">
+                            </div>
+                            <div class="my-detail-section">
+                                <label class="my-form-label">국적</label>
+                                <select id="piEditNationality" class="my-form-input" style="color-scheme:dark;">
+                                    <option value="">선택하세요</option>
+                                    <option value="KR">🇰🇷 대한민국</option>
+                                    <option value="US">🇺🇸 미국</option>
+                                    <option value="JP">🇯🇵 일본</option>
+                                    <option value="CN">🇨🇳 중국</option>
+                                    <option value="VN">🇻🇳 베트남</option>
+                                    <option value="TH">🇹🇭 태국</option>
+                                    <option value="PH">🇵🇭 필리핀</option>
+                                    <option value="MY">🇲🇾 말레이시아</option>
+                                    <option value="SG">🇸🇬 싱가포르</option>
+                                    <option value="AU">🇦🇺 호주</option>
+                                    <option value="GB">🇬🇧 영국</option>
+                                    <option value="OTHER">기타</option>
+                                </select>
+                            </div>
+
+                            <button class="my-action-btn primary" onclick="piSaveInfo()" style="margin-top:16px;">변경사항 저장</button>
+                            <button class="my-action-btn secondary" onclick="piCancelEdit()" style="margin-top:8px;background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);">취소</button>
+                        </div>
+
+                        <!-- 비밀번호 재확인 모달 -->
+                        <div id="piPasswordModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:999;display:none;align-items:center;justify-content:center;padding:24px;">
+                            <div style="background:var(--bg-tertiary);border-radius:16px;border:1px solid var(--border-color);padding:24px;width:100%;max-width:340px;">
+                                <div style="font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:6px;">비밀번호 확인</div>
+                                <div style="font-size:12px;color:var(--text-secondary);margin-bottom:20px;">변경사항을 저장하려면 비밀번호를 입력하세요.</div>
+                                <input type="password" id="piSavePassword" class="my-form-input" placeholder="비밀번호 입력" style="margin-bottom:16px;">
+                                <div style="display:flex;gap:8px;">
+                                    <button onclick="piCloseModal()" style="flex:1;padding:12px;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;background:var(--bg-secondary);color:var(--text-secondary);border:1px solid var(--border-color);">취소</button>
+                                    <button onclick="piConfirmSave()" style="flex:1;padding:12px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;background:var(--accent-cyan);color:#000;border:none;">저장</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                                <!-- ===== 전화번호 인증 상세 페이지 ===== -->
                 <div class="my-view" id="myView-phone">
                     <div class="my-sub-header">
                         <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
@@ -3411,36 +3552,36 @@
     </div>
 </div>
 
-    <script src="js/config.js?v=1771698276"></script>
-    <script src="js/state.js?v=1771698276"></script>
-    <script src="js/auth.js?v=1771698276"></script>
-    <script src="js/api.js?v=1771698276"></script>
-    <script src="js/utils.js?v=1771698276"></script>
-    <script src="js/watchlist.js?v=1771698276"></script>
-    <script src="js/navigation.js?v=1771698276"></script>
-    <script src="js/my.js?v=1771698276"></script>
+    <script src="js/config.js?v=1771699498"></script>
+    <script src="js/state.js?v=1771699498"></script>
+    <script src="js/auth.js?v=1771699498"></script>
+    <script src="js/api.js?v=1771699498"></script>
+    <script src="js/utils.js?v=1771699498"></script>
+    <script src="js/watchlist.js?v=1771699498"></script>
+    <script src="js/navigation.js?v=1771699498"></script>
+    <script src="js/my.js?v=1771699498"></script>
 
     <!-- Chart Panels (모듈화) -->
-    <script src="js/panels/gaugePanel.js?v=1771698276"></script>
-    <script src="js/panels/chartGaugePanel.js?v=1771698276"></script>
+    <script src="js/panels/gaugePanel.js?v=1771699498"></script>
+    <script src="js/panels/chartGaugePanel.js?v=1771699498"></script>
 
     <!-- Indicator System -->
-    <script src="js/indicators/config.js?v=1771698276"></script>
-    <script src="js/indicators/calculator.js?v=1771698276"></script>
-    <script src="js/indicators/index.js?v=1771698276"></script>
+    <script src="js/indicators/config.js?v=1771699498"></script>
+    <script src="js/indicators/calculator.js?v=1771699498"></script>
+    <script src="js/indicators/index.js?v=1771699498"></script>
 
     <!-- Chart Type System -->
-    <script src="js/chartTypes/index.js?v=1771698276"></script>
+    <script src="js/chartTypes/index.js?v=1771699498"></script>
 
-    <script src="js/panels/chartPanel.js?v=1771698276"></script>
-    <script src="js/panels/symbolSelectorPanel.js?v=1771698276"></script>
-    <script src="js/panels/randomWalkPanel.js?v=1771698276"></script>
-    <script src="js/panels/multiOrderPanelV5.js?v=1771698276"></script>
-        <script src="js/panels/quickEasyPanel.js?v=1771698276"></script>
-        <script src="js/panels/qeTickChart.js?v=1771698276"></script>
+    <script src="js/panels/chartPanel.js?v=1771699498"></script>
+    <script src="js/panels/symbolSelectorPanel.js?v=1771699498"></script>
+    <script src="js/panels/randomWalkPanel.js?v=1771699498"></script>
+    <script src="js/panels/multiOrderPanelV5.js?v=1771699498"></script>
+        <script src="js/panels/quickEasyPanel.js?v=1771699498"></script>
+        <script src="js/panels/qeTickChart.js?v=1771699498"></script>
 
-    <script src="js/chart.js?v=1771698276"></script>
-    <script src="js/settings.js?v=1771698276"></script>
+    <script src="js/chart.js?v=1771699498"></script>
+    <script src="js/settings.js?v=1771699498"></script>
     <script>
         // ========== 타임프레임 드롭다운 함수 ==========
         function toggleTimeframeDropdown() {
@@ -4891,11 +5032,11 @@
         </div>
     </div>
 
-    <script src="js/market-schedule.js?v=1771698276"></script>
-    <script src="js/account.js?v=1771698276"></script>
-    <script src="js/trading.js?v=1771698276"></script>
-    <script src="js/openPositions.js?v=1771698276"></script>
-    <script src="js/connection.js?v=1771698276"></script>
-    <script src="js/init.js?v=1771698276"></script>
+    <script src="js/market-schedule.js?v=1771699498"></script>
+    <script src="js/account.js?v=1771699498"></script>
+    <script src="js/trading.js?v=1771699498"></script>
+    <script src="js/openPositions.js?v=1771699498"></script>
+    <script src="js/connection.js?v=1771699498"></script>
+    <script src="js/init.js?v=1771699498"></script>
 </body>
 </html>
