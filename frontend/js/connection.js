@@ -1,3 +1,109 @@
+// ★★★ 프론트엔드 실시간 P/L 계산 (MetaAPI 캐시 지연 해소) ★★★
+const SYMBOL_SPECS = {
+    'BTCUSD':   { tick_size: 0.01,    tick_value: 0.01, contract_size: 1 },
+    'ETHUSD':   { tick_size: 0.01,    tick_value: 0.01, contract_size: 1 },
+    'XAUUSD.r': { tick_size: 0.01,    tick_value: 1.0,  contract_size: 100 },
+    'EURUSD.r': { tick_size: 0.00001, tick_value: 1.0,  contract_size: 100000 },
+    'USDJPY.r': { tick_size: 0.001,   tick_value: 0.67, contract_size: 100000 },
+    'GBPUSD.r': { tick_size: 0.00001, tick_value: 1.0,  contract_size: 100000 },
+    'AUDUSD.r': { tick_size: 0.00001, tick_value: 1.0,  contract_size: 100000 },
+    'USDCAD.r': { tick_size: 0.00001, tick_value: 0.74, contract_size: 100000 },
+    'US100.':   { tick_size: 0.01,    tick_value: 0.2,  contract_size: 20 }
+};
+
+// 마지막 MT5 검증 시간
+let _lastMT5PLValidation = 0;
+
+function calculateRealtimePL(position, allPrices) {
+    if (!position || !allPrices) return null;
+
+    const symbol = position.symbol;
+    if (!symbol) return null;
+
+    const priceData = allPrices[symbol];
+    if (!priceData) return null;
+
+    const entry = position.entry || position.openPrice || 0;
+    const volume = position.volume || 0;
+    if (entry <= 0 || volume <= 0) return null;
+
+    // BUY는 bid로, SELL은 ask로 청산 가격 계산
+    let posType = position.type || '';
+    if (typeof posType === 'number') posType = posType === 0 ? 'BUY' : 'SELL';
+    else if (typeof posType === 'string' && posType.includes('BUY')) posType = 'BUY';
+    else posType = 'SELL';
+
+    const currentPrice = posType === 'BUY' ? (priceData.bid || 0) : (priceData.ask || priceData.bid || 0);
+    if (currentPrice <= 0) return null;
+
+    const priceDiff = posType === 'BUY' ? (currentPrice - entry) : (entry - currentPrice);
+
+    const specs = SYMBOL_SPECS[symbol];
+    let profit;
+    if (specs && specs.tick_size > 0) {
+        const ticks = priceDiff / specs.tick_size;
+        profit = ticks * specs.tick_value * volume;
+    } else {
+        // fallback: 스펙 없는 종목은 기존 MetaAPI 값 사용
+        return null;
+    }
+
+    return Math.round(profit * 100) / 100; // 소수점 2자리 반올림
+}
+
+// ★ WS 데이터에 실시간 P/L 덮어쓰기 + 주기적 MT5 검증
+function enrichPositionProfits(data) {
+    if (!data || !data.all_prices) return;
+
+    // 1. 메인 포지션 (magic=100001) P/L 실시간 계산
+    if (data.position) {
+        const calc = calculateRealtimePL(data.position, data.all_prices);
+        if (calc !== null) {
+            data.position._mt5Profit = data.position.profit; // MT5 원본 보존
+            data.position.profit = calc;
+        }
+    }
+
+    // 2. 전체 positions 배열 P/L 실시간 계산
+    if (data.positions && Array.isArray(data.positions)) {
+        data.positions.forEach(pos => {
+            const calc = calculateRealtimePL(pos, data.all_prices);
+            if (calc !== null) {
+                pos._mt5Profit = pos.profit; // MT5 원본 보존
+                pos.profit = calc;
+            }
+        });
+    }
+
+    // 3. Equity도 실시간 계산 (balance + 전체 포지션 profit 합산)
+    if (data.balance !== undefined && data.positions && Array.isArray(data.positions)) {
+        let totalProfit = 0;
+        data.positions.forEach(pos => { totalProfit += pos.profit || 0; });
+        // 메인 포지션이 positions에 없는 경우 별도 합산
+        if (data.position && data.position.profit) {
+            const inPositions = data.positions.some(p => p.id === data.position.ticket || p.ticket === data.position.ticket);
+            if (!inPositions) {
+                totalProfit += data.position.profit;
+            }
+        }
+        data._realtimeEquity = data.balance + totalProfit;
+    }
+
+    // 4. 30초마다 MT5 값과 비교 검증 (로그만)
+    const now = Date.now();
+    if (now - _lastMT5PLValidation > 30000) {
+        _lastMT5PLValidation = now;
+        if (data.position && data.position._mt5Profit !== undefined) {
+            const diff = Math.abs(data.position.profit - data.position._mt5Profit);
+            if (diff > 1) {
+                console.log(`[RealtimePL] ⚠️ MT5 차이: 실시간=${data.position.profit.toFixed(2)}, MT5=${data.position._mt5Profit.toFixed(2)}, 차이=${diff.toFixed(2)}`);
+            } else {
+                console.log(`[RealtimePL] ✅ MT5 일치: 실시간=${data.position.profit.toFixed(2)}, MT5=${data.position._mt5Profit.toFixed(2)}`);
+            }
+        }
+    }
+}
+
 // ========== WebSocket ==========
 let ws = null;
 let wsRetryCount = 0;
@@ -835,7 +941,10 @@ function connectWebSocket() {
         const homeServer = document.getElementById('homeServer');
         if (homeServer) homeServer.textContent = data.server || '-';
 
-        if (homeEquity) homeEquity.textContent = '$' + data.equity.toLocaleString(undefined, {minimumFractionDigits: 2});
+        if (homeEquity) {
+            const displayEquity = data._realtimeEquity || data.equity;
+            homeEquity.textContent = '$' + displayEquity.toLocaleString(undefined, {minimumFractionDigits: 2});
+        }
         if (homeFreeMargin) homeFreeMargin.textContent = '$' + data.free_margin.toLocaleString(undefined, {minimumFractionDigits: 2});
         if (homePositions) homePositions.textContent = data.positions_count;
 
@@ -862,7 +971,12 @@ function connectWebSocket() {
                     }
                 }
         }
-        
+
+        // ★★★ 실시간 P/L 계산 (MetaAPI 캐시 지연 해소) ★★★
+        if (!isDemo) {
+            enrichPositionProfits(data);
+        }
+
         // Chart prices — ★ 장 마감 시 업데이트 차단
         if (!isCurrentMarketClosed() && data.all_prices && data.all_prices[chartSymbol]) {
             const symbolPrice = data.all_prices[chartSymbol];
@@ -960,7 +1074,10 @@ function connectWebSocket() {
         const accCurrentPL = document.getElementById('accCurrentPL');
 
         if (accBalance) accBalance.textContent = '$' + data.balance.toLocaleString(undefined, {minimumFractionDigits: 2});
-        if (accEquity) accEquity.textContent = '$' + data.equity.toLocaleString(undefined, {minimumFractionDigits: 2});
+        if (accEquity) {
+            const displayEquity = data._realtimeEquity || data.equity;
+            accEquity.textContent = '$' + displayEquity.toLocaleString(undefined, {minimumFractionDigits: 2});
+        }
         // Used Margin (사용중인 마진)
         if (accMargin) {
             const newMarginText = '$' + (data.margin || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -1486,19 +1603,25 @@ async function fetchAccountData() {
             try {
         const data = await apiCall('/mt5/account-info');
         if (data) {
+            // ★ 실시간 P/L 계산 (폴링 모드)
+            if (window.allPrices) {
+                data.all_prices = window.allPrices;
+                enrichPositionProfits(data);
+            }
             balance = data.balance;
-            
+
+            const displayEquity = data._realtimeEquity || data.equity || 0;
             document.getElementById('homeBalance').textContent = '$' + (data.balance || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
             document.getElementById('homeBroker').textContent = data.broker || '-';
             document.getElementById('homeAccount').textContent = data.account || '-';
             document.getElementById('homeLeverage').textContent = '1:' + (data.leverage || 0);
             document.getElementById('homeServer').textContent = data.server || '-';
-            document.getElementById('homeEquity').textContent = '$' + (data.equity || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+            document.getElementById('homeEquity').textContent = '$' + displayEquity.toLocaleString(undefined, {minimumFractionDigits: 2});
             document.getElementById('homeFreeMargin').textContent = '$' + (data.free_margin || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
             document.getElementById('homePositions').textContent = data.positions_count || 0;
-            
+
             document.getElementById('tradeBalance').textContent = '$' + Math.round(data.balance || 0).toLocaleString();
-            
+
             const accBalance = document.getElementById('accBalance');
             const accEquity = document.getElementById('accEquity');
             const accMargin = document.getElementById('accMargin');
@@ -1506,7 +1629,7 @@ async function fetchAccountData() {
             const accCurrentPL = document.getElementById('accCurrentPL');
 
             if (accBalance) accBalance.textContent = '$' + (data.balance || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
-            if (accEquity) accEquity.textContent = '$' + (data.equity || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+            if (accEquity) accEquity.textContent = '$' + displayEquity.toLocaleString(undefined, {minimumFractionDigits: 2});
             // Used Margin (사용중인 마진)
             if (accMargin) {
                 const newMarginText = '$' + (data.margin || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
