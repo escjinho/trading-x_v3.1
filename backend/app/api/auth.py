@@ -548,3 +548,23 @@ def get_login_history(
         })
 
     return {"records": result}
+
+
+# ========== 닉네임 변경 (간편) ==========
+class NameUpdateRequest(BaseModel):
+    name: str
+
+@router.post("/profile/update-name")
+def update_name(
+    request: NameUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """닉네임 변경 (히어로 섹션에서 간편 변경)"""
+    new_name = request.name.strip()
+    if not new_name or len(new_name) > 30:
+        raise HTTPException(status_code=400, detail="닉네임은 1~30자로 입력해주세요")
+
+    current_user.name = new_name
+    db.commit()
+    return {"success": True, "name": new_name}

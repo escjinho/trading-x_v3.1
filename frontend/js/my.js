@@ -253,13 +253,35 @@ function toggleNicknameEdit() {
     } else {
         input.readOnly = true;
         icon.textContent = 'edit';
-        // 닉네임 저장
+        // 닉네임 저장 (UI + DB)
+        var newName = input.value.trim();
+        if (!newName) return;
+
         const nameEl = document.getElementById('myProfileName');
-        if (nameEl) nameEl.textContent = input.value;
-        // 아바타 첫 글자 업데이트
+        if (nameEl) nameEl.textContent = newName;
         const avatarEl = document.getElementById('myAvatar');
-        if (avatarEl && input.value) avatarEl.textContent = input.value.charAt(0).toUpperCase();
-        localStorage.setItem('user_nickname', input.value);
+        if (avatarEl) avatarEl.textContent = newName.charAt(0).toUpperCase();
+        localStorage.setItem('user_nickname', newName);
+
+        // DB에 저장 (API 호출)
+        var tkn = localStorage.getItem('access_token');
+        if (tkn) {
+            fetch(API_URL + '/auth/profile/update-name', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + tkn
+                },
+                body: JSON.stringify({ name: newName })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+                if (d.success) {
+                    showToast('닉네임이 변경되었습니다 ✓', 'success');
+                }
+            })
+            .catch(function(e) { console.error('닉네임 저장 오류:', e); });
+        }
     }
 }
 
