@@ -52,14 +52,21 @@ const MarketSchedule = (() => {
             return false;
         }
 
-        const match = dayHours.match(/(\d{2}):(\d{2})\s*-\s*(\d{2}):(\d{2})/);
-        if (!match) return false;
-
-        const openMin = parseInt(match[1]) * 60 + parseInt(match[2]);
-        const closeMin = parseInt(match[3]) * 60 + parseInt(match[4]);
         const currentMin = server.hour * 60 + server.minute;
 
-        return currentMin >= openMin && currentMin <= closeMin;
+        // 복수 세션 지원: "HH:MM - HH:MM, HH:MM - HH:MM, ..."
+        const sessions = dayHours.split(',');
+        for (const session of sessions) {
+            const match = session.trim().match(/(\d{2}):(\d{2})\s*-\s*(\d{2}):(\d{2})/);
+            if (match) {
+                const openMin = parseInt(match[1]) * 60 + parseInt(match[2]);
+                const closeMin = parseInt(match[3]) * 60 + parseInt(match[4]);
+                if (currentMin >= openMin && currentMin <= closeMin) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     function _fallbackCheck(symbol) {
