@@ -3149,3 +3149,8 @@
 .tx-dialog-btn.confirm-warn { background: linear-gradient(135deg, #ff8c00, #ffaa00); color: #000; }
 .tx-dialog-btn.confirm-primary { background: linear-gradient(135deg, #00d4ff, #00b8e6); color: #000; }
 .tx-dialog-btn.confirm-success { background: linear-gradient(135deg, #00b450, #00d46a); color: #fff; }
+
+/* 로그인 기록 - 로그아웃 버튼 여백 */
+#myView-loginHistory .my-action-btn.danger {
+    margin-top: 30px;
+}

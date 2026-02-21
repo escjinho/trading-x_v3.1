@@ -1219,12 +1219,10 @@ async function loadLoginHistory() {
 
             var meta = '';
             if (isCurrent) {
-                meta = r.browser + ' · ' + r.os + (locDisplay ? ' · ' + locDisplay : '') + ' · 방금 전';
+                deviceName = r.browser + ' · ' + r.os;
+                meta = (locDisplay ? locDisplay + ' · ' : '') + '방금 전';
             } else {
-                var parts = [];
-                if (locDisplay) parts.push(locDisplay);
-                parts.push(r.time_str);
-                meta = parts.join(' · ');
+                meta = (locDisplay ? locDisplay + ' · ' : '') + r.time_str;
             }
 
             var badge = isCurrent ? '<span class="my-login-current-badge">현재 세션</span>' : '';
