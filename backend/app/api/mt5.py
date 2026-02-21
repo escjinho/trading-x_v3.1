@@ -87,6 +87,7 @@ async def fetch_binance_candles(symbol: str, timeframe: str, count: int):
     return []
 from ..models.user import User
 from ..models.live_martin_state import LiveMartinState
+from ..models.live_trade import LiveTrade
 from ..utils.security import decode_token
 from ..services.indicator_service import IndicatorService
 from ..services.martin_service import martin_service
@@ -1496,6 +1497,24 @@ async def place_order(
             user_live_cache[current_user.id]["positions"].append(new_position)
             user_live_cache[current_user.id]["updated_at"] = time_module.time()
 
+            # ★★★ LiveTrade DB 기록 (등급 시스템용) ★★★
+            try:
+                live_trade = LiveTrade(
+                    user_id=current_user.id,
+                    symbol=symbol,
+                    trade_type=order_type.upper(),
+                    volume=volume,
+                    position_id=position_id,
+                    entry_price=entry_price,
+                    magic=magic
+                )
+                db.add(live_trade)
+                db.commit()
+                print(f"[LiveTrade] ✅ 기록 저장: user={current_user.id}, {order_type} {symbol} {volume}lot, pos={position_id}")
+            except Exception as lt_err:
+                db.rollback()
+                print(f"[LiveTrade] ⚠️ 기록 실패 (주문은 성공): {lt_err}")
+
             # ★★★ 자동청산용 타겟 저장 ★★★
             if target > 0:
                 user_target_cache[current_user.id] = target
@@ -1619,6 +1638,27 @@ async def close_position(
                 # ★★★ WS 이중 감지 방지 플래그 ★★★
                 user_close_acknowledged[current_user.id] = time_module.time()
                 user_close_acknowledged[f"{current_user.id}_pos_id"] = str(position_id)
+
+                # ★★★ LiveTrade DB 업데이트 (등급 시스템용) ★★★
+                try:
+                    live_trade_record = db.query(LiveTrade).filter(
+                        LiveTrade.user_id == current_user.id,
+                        LiveTrade.position_id == str(position_id),
+                        LiveTrade.is_closed == False
+                    ).first()
+                    if live_trade_record:
+                        live_trade_record.exit_price = result.get('close_price', 0)
+                        live_trade_record.profit = profit
+                        live_trade_record.is_closed = True
+                        live_trade_record.closed_at = datetime.utcnow()
+                        db.commit()
+                        print(f"[LiveTrade] ✅ 청산 기록 업데이트: pos={position_id}, profit=${profit:.2f}")
+                    else:
+                        print(f"[LiveTrade] ⚠️ 해당 포지션 기록 없음: pos={position_id}")
+                except Exception as lt_err:
+                    db.rollback()
+                    print(f"[LiveTrade] ⚠️ 업데이트 실패: {lt_err}")
+
                 print(f"[MetaAPI Close] ✅ 청산 성공: positionId={position_id}, P/L=${profit:.2f}")
                 return JSONResponse({
                     "success": True,
@@ -1714,6 +1754,27 @@ async def close_position(
             # ★★★ WS 이중 감지 방지 플래그 ★★★
             user_close_acknowledged[current_user.id] = time_module.time()
             user_close_acknowledged[f"{current_user.id}_pos_id"] = str(pos_id)
+
+            # ★★★ LiveTrade DB 업데이트 (등급 시스템용) ★★★
+            try:
+                live_trade_record = db.query(LiveTrade).filter(
+                    LiveTrade.user_id == current_user.id,
+                    LiveTrade.position_id == str(pos_id),
+                    LiveTrade.is_closed == False
+                ).first()
+                if live_trade_record:
+                    live_trade_record.exit_price = result.get('close_price', 0)
+                    live_trade_record.profit = profit
+                    live_trade_record.is_closed = True
+                    live_trade_record.closed_at = datetime.utcnow()
+                    db.commit()
+                    print(f"[LiveTrade] ✅ 청산 기록 업데이트: pos={pos_id}, profit=${profit:.2f}")
+                else:
+                    print(f"[LiveTrade] ⚠️ 해당 포지션 기록 없음: pos={pos_id}")
+            except Exception as lt_err:
+                db.rollback()
+                print(f"[LiveTrade] ⚠️ 업데이트 실패: {lt_err}")
+
             print(f"[MetaAPI Close] ✅ 청산 성공: {symbol} P/L=${profit:.2f}")
             return JSONResponse({
                 "success": True,

@@ -7,6 +7,7 @@ from ..database import get_db
 from ..models.user import User
 from ..models.grade_config import GradeConfig
 from ..models.demo_trade import DemoTrade, DemoPosition
+from ..models.live_trade import LiveTrade
 from ..schemas.user import UserCreate, UserLogin, UserResponse, Token
 from ..utils.security import get_password_hash, verify_password, create_access_token, create_refresh_token, decode_token
 from ..services.email_service import generate_verification_code, verify_code, send_verification_email
@@ -195,15 +196,31 @@ async def get_my_profile(
 ):
     """내 프로필 + 등급 + 거래 통계"""
 
-    # 1) 거래 통계 — 완료된 거래의 총 lots 합산
-    total_lots_result = db.query(func.sum(DemoTrade.volume)).filter(
+    # 1) 거래 통계 — Demo + Live 완료된 거래의 총 lots 합산
+    demo_lots_result = db.query(func.sum(DemoTrade.volume)).filter(
         DemoTrade.user_id == current_user.id
     ).scalar()
-    total_lots = float(total_lots_result) if total_lots_result else 0.0
+    demo_lots = float(demo_lots_result) if demo_lots_result else 0.0
 
-    total_trades = db.query(func.count(DemoTrade.id)).filter(
+    live_lots_result = db.query(func.sum(LiveTrade.volume)).filter(
+        LiveTrade.user_id == current_user.id,
+        LiveTrade.is_closed == True
+    ).scalar()
+    live_lots = float(live_lots_result) if live_lots_result else 0.0
+
+    # 등급은 Live 기준으로만 계산
+    total_lots = round(live_lots, 2)
+
+    demo_trades_count = db.query(func.count(DemoTrade.id)).filter(
         DemoTrade.user_id == current_user.id
     ).scalar() or 0
+
+    live_trades_count = db.query(func.count(LiveTrade.id)).filter(
+        LiveTrade.user_id == current_user.id,
+        LiveTrade.is_closed == True
+    ).scalar() or 0
+
+    total_trades = live_trades_count
 
     # 열린 포지션 수
     open_positions = db.query(func.count(DemoPosition.id)).filter(
@@ -279,6 +296,10 @@ async def get_my_profile(
         # 거래 통계
         "total_trades": total_trades,
         "total_lots": round(total_lots, 2),
+        "demo_trades": demo_trades_count,
+        "demo_lots": round(demo_lots, 2),
+        "live_trades": live_trades_count,
+        "live_lots": round(live_lots, 2),
         "open_positions": open_positions,
 
         # 등급
