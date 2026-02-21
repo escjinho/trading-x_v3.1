@@ -40,8 +40,8 @@
 
 .acc-tab {
     flex: 1;
-    text-align: center;
-    padding: 12px 8px;
+    text-align: left;
+    padding: 12px 15px;
     font-size: 15px;
     font-weight: 600;
     color: rgba(255,255,255,0.7);
@@ -360,18 +360,18 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    font-size: 13px;
-    color: var(--text-muted);
+    font-size: 11px;
+    color: rgba(255,255,255,0.3);
 }
 
 .open-pos-time {
-    font-family: 'Roboto Mono', monospace;
-    font-size: 12px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.3);
 }
 
 .open-pos-prices {
-    font-family: 'Roboto Mono', monospace;
-    font-size: 12px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.35);
 }
 
 .open-pos-arrow {
