@@ -13,7 +13,7 @@ const symbolInfoDatabase = {
         swapLong: '-17.76%', swapLongClass: 'negative',
         swapShort: '-11.84%', swapShortClass: 'negative',
         swap3Day: 'Wednesday',
-        hours: { sun: '00:02 - 23:57', mon: '00:02 - 23:57', tue: '00:02 - 23:57', wed: '00:02 - 23:57', thu: '00:02 - 23:57', fri: '00:02 - 23:57', sat: '00:00 - 14:00' }
+        hours: { sun: '00:02 - 23:57', mon: '00:02 - 23:57', tue: '00:02 - 23:57', wed: '00:02 - 23:57', thu: '00:02 - 23:57', fri: '00:02 - 23:57', sat: '00:02 - 09:30, 12:30 - 14:00, 15:00 - 23:57' }
     },
     'EURUSD.r': {
         icon: '€', iconColor: '#0052cc', name: 'Euro/Dollar', desc: 'Euro vs US Dollar',
@@ -70,10 +70,10 @@ const symbolInfoDatabase = {
         lotSize: '1 Contract', tickSize: '0.01', minLot: '0.01 lot', maxLot: '10.00 lot',
         pipSize: '0.01 (2 digits)', stopLevel: '0',
         spread: '유동 스프레드', spreadPips: '~150 pips',
-        swapLong: '-15.0%', swapLongClass: 'negative',
-        swapShort: '-10.0%', swapShortClass: 'negative',
+        swapLong: '-12.16%', swapLongClass: 'negative',
+        swapShort: '-8.11%', swapShortClass: 'negative',
         swap3Day: 'Wednesday',
-        hours: { sun: '00:02 - 23:57', mon: '00:02 - 23:57', tue: '00:02 - 23:57', wed: '00:02 - 23:57', thu: '00:02 - 23:57', fri: '00:02 - 23:57', sat: '00:00 - 14:00' }
+        hours: { sun: '00:02 - 23:57', mon: '00:02 - 23:57', tue: '00:02 - 23:57', wed: '00:02 - 23:57', thu: '00:02 - 23:57', fri: '00:02 - 23:57', sat: '00:02 - 09:30, 12:30 - 14:00, 15:00 - 23:57' }
     }
 };
 
