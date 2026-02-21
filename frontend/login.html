@@ -400,6 +400,28 @@
                 font-size: 29px;
             }
         }
+
+        /* Login Toast */
+        .login-toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(30, 34, 40, 0.95);
+            border: 1px solid rgba(0,212,255,0.3);
+            border-radius: 12px;
+            padding: 24px 36px;
+            text-align: center;
+            z-index: 10000;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .login-toast.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
     </style>
 </head>
 <body>
@@ -482,12 +504,25 @@
             <div class="footer-links">
                 <a href="#">이용약관</a>
                 <a href="#">개인정보처리방침</a>
-                <a href="#">고객센터</a>
+                <a href="javascript:void(0)" onclick="showLoginToast()">고객센터</a>
             </div>
         </div>
     </div>
-    
+
+    <!-- 고객센터 토스트 -->
+    <div class="login-toast" id="loginToast">
+        <span class="material-icons-round" style="font-size:32px; color:#00d4ff;">lock</span>
+        <div style="font-size:15px; font-weight:600; margin-top:8px;">로그인 후 이용 가능합니다</div>
+        <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">My &gt; 고객센터에서 확인하세요</div>
+    </div>
+
     <script>
+        function showLoginToast() {
+            const toast = document.getElementById('loginToast');
+            toast.classList.add('active');
+            setTimeout(() => toast.classList.remove('active'), 2000);
+        }
+
         const getApiUrl = () => {
             const hostname = window.location.hostname;
             if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.startsWith('192.168.') || hostname.startsWith('10.')) {
