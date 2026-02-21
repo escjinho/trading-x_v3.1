@@ -549,7 +549,7 @@ function connectWebSocket() {
             // ★ Demo Margin / Free Margin / Current P/L 업데이트
             if ('margin' in data) {
                 const accMargin = document.getElementById('accMargin');
-                if (accMargin) accMargin.textContent = '$' + (data.margin || 0).toFixed(2);
+                if (accMargin) accMargin.textContent = '$' + (data.margin || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
                 const accFree = document.getElementById('accFree');
                 const freeMargin = (data.balance || 0) - (data.margin || 0);
                 if (accFree) accFree.textContent = '$' + Math.round(freeMargin).toLocaleString();
@@ -566,10 +566,10 @@ function connectWebSocket() {
                     pl = data.position.profit || 0;
                 }
                 if (pl > 0) {
-                    accCurrentPL.textContent = '+$' + pl.toFixed(2);
+                    accCurrentPL.textContent = '+$' + pl.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
                     accCurrentPL.style.color = 'var(--buy-color)';
                 } else if (pl < 0) {
-                    accCurrentPL.textContent = '-$' + Math.abs(pl).toFixed(2);
+                    accCurrentPL.textContent = '-$' + Math.abs(pl).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
                     accCurrentPL.style.color = 'var(--sell-color)';
                 } else {
                     accCurrentPL.textContent = '$0.00';
@@ -794,7 +794,7 @@ function connectWebSocket() {
                 const fixedPL = window._todayPLFixed;
                 const accTodayPL = document.getElementById('accTodayPL');
                 if (accTodayPL) {
-                    const newText = fixedPL > 0 ? '+$' + fixedPL.toFixed(2) : fixedPL < 0 ? '-$' + Math.abs(fixedPL).toFixed(2) : '$0.00';
+                    const newText = fixedPL > 0 ? '+$' + fixedPL.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : fixedPL < 0 ? '-$' + Math.abs(fixedPL).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '$0.00';
                     const newColor = fixedPL > 0 ? 'var(--buy-color)' : fixedPL < 0 ? 'var(--sell-color)' : 'var(--text-primary)';
                     if (accTodayPL.textContent !== newText) {
                         accTodayPL.textContent = newText;
@@ -803,7 +803,7 @@ function connectWebSocket() {
                 }
                 const v5TodayPL = document.getElementById('v5TodayPL');
                 if (v5TodayPL) {
-                    const newV5 = fixedPL > 0 ? '+$' + fixedPL.toFixed(2) : fixedPL < 0 ? '-$' + Math.abs(fixedPL).toFixed(2) : '$0.00';
+                    const newV5 = fixedPL > 0 ? '+$' + fixedPL.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : fixedPL < 0 ? '-$' + Math.abs(fixedPL).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '$0.00';
                     const v5Color = fixedPL > 0 ? 'var(--buy-color)' : fixedPL < 0 ? 'var(--sell-color)' : 'var(--text-primary)';
                     if (v5TodayPL.textContent !== newV5) {
                         v5TodayPL.textContent = newV5;
@@ -963,7 +963,7 @@ function connectWebSocket() {
         if (accEquity) accEquity.textContent = '$' + data.equity.toLocaleString(undefined, {minimumFractionDigits: 2});
         // Used Margin (사용중인 마진)
         if (accMargin) {
-            const newMarginText = '$' + (data.margin || 0).toFixed(2);
+            const newMarginText = '$' + (data.margin || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
             if (accMargin.textContent !== newMarginText) {
                 accMargin.textContent = newMarginText;
             }
@@ -1057,9 +1057,9 @@ function connectWebSocket() {
             }
 
             // 깜빡임 방지: 값이 변경된 경우에만 업데이트
-            const newText = currentProfit > 0 
-                ? '+$' + currentProfit.toFixed(2) 
-                : currentProfit < 0 ? '-$' + Math.abs(currentProfit).toFixed(2) : '$0.00';
+            const newText = currentProfit > 0
+                ? '+$' + currentProfit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})
+                : currentProfit < 0 ? '-$' + Math.abs(currentProfit).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '$0.00';
             const newColor = currentProfit > 0 ? 'var(--buy-color)' : currentProfit < 0 ? 'var(--sell-color)' : 'var(--text-primary)';
             
             if (accCurrentPL.textContent !== newText) {
@@ -1074,7 +1074,7 @@ function connectWebSocket() {
             const fixedPL = window._todayPLFixed;
             const accTodayPL = document.getElementById('accTodayPL');
             if (accTodayPL) {
-                const newText = fixedPL > 0 ? '+$' + fixedPL.toFixed(2) : fixedPL < 0 ? '-$' + Math.abs(fixedPL).toFixed(2) : '$0.00';
+                const newText = fixedPL > 0 ? '+$' + fixedPL.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : fixedPL < 0 ? '-$' + Math.abs(fixedPL).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '$0.00';
                 const newColor = fixedPL > 0 ? 'var(--buy-color)' : fixedPL < 0 ? 'var(--sell-color)' : 'var(--text-primary)';
                 if (accTodayPL.textContent !== newText) {
                     accTodayPL.textContent = newText;
@@ -1509,7 +1509,7 @@ async function fetchAccountData() {
             if (accEquity) accEquity.textContent = '$' + (data.equity || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
             // Used Margin (사용중인 마진)
             if (accMargin) {
-                const newMarginText = '$' + (data.margin || 0).toFixed(2);
+                const newMarginText = '$' + (data.margin || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
                 if (accMargin.textContent !== newMarginText) {
                     accMargin.textContent = newMarginText;
                 }
@@ -1552,9 +1552,9 @@ async function fetchAccountData() {
                 }
                 
                 // 값이 변경된 경우에만 업데이트 (깜빡임 방지)
-                const newText = currentProfit > 0 
-                    ? '+$' + currentProfit.toFixed(2) 
-                    : currentProfit < 0 ? '-$' + Math.abs(currentProfit).toFixed(2) : '$0.00';
+                const newText = currentProfit > 0
+                    ? '+$' + currentProfit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})
+                    : currentProfit < 0 ? '-$' + Math.abs(currentProfit).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '$0.00';
                 
                 if (accCurrentPL.textContent !== newText) {
                     accCurrentPL.textContent = newText;
@@ -1959,14 +1959,14 @@ async function fetchDemoData() {
 
             // Used Margin (사용중인 마진)
             if (accMargin) {
-                accMargin.textContent = '$' + totalMargin.toFixed(2);
+                accMargin.textContent = '$' + totalMargin.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
             }
             // Free Margin (여유 마진 = Balance - Used Margin)
             if (accFree) {
                 const freeMargin = (data.balance || 0) - totalMargin;
                 accFree.textContent = '$' + Math.round(freeMargin).toLocaleString();
             }
-            
+
             // ★ Open Positions 탭 업데이트
             if (typeof OpenPositions !== 'undefined' && data.positions) {
                 OpenPositions.updatePositions(data.positions);
@@ -1980,12 +1980,12 @@ async function fetchDemoData() {
                 } else if (data.position) {
                     currentProfit = data.position.profit || 0;
                 }
-                
+
                 if (currentProfit > 0) {
-                    accCurrentPL.textContent = '+$' + currentProfit.toFixed(2);
+                    accCurrentPL.textContent = '+$' + currentProfit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
                     accCurrentPL.style.color = 'var(--buy-color)';
                 } else if (currentProfit < 0) {
-                    accCurrentPL.textContent = '-$' + Math.abs(currentProfit).toFixed(2);
+                    accCurrentPL.textContent = '-$' + Math.abs(currentProfit).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
                     accCurrentPL.style.color = 'var(--sell-color)';
                 } else {
                     accCurrentPL.textContent = '$0.00';
