@@ -46,7 +46,7 @@ function initMyTab() {
                 }
 
                 // 거래 통계 — 모드별 독립, 등급은 항상 Live 기준
-                var isLive = (typeof currentMode !== 'undefined' && currentMode === 'live');
+                var isLive = (typeof tradingMode !== 'undefined' && tradingMode === 'live');
                 var displayTrades = isLive ? (data.live_trades || 0) : (data.demo_trades || 0);
                 var displayLots = isLive ? (data.live_lots || 0) : (data.demo_lots || 0);
                 updateMyTradeStats(displayTrades, displayLots);
@@ -162,7 +162,7 @@ function renderVipPage(data) {
     var grade = data.grade || { name: 'Standard', badge_color: '#9e9e9e' };
     var nextGrade = data.next_grade;
     var totalLots = data.total_lots || 0;  // 등급 계산용 (항상 Live)
-    var isLive = (typeof currentMode !== 'undefined' && currentMode === 'live');
+    var isLive = (typeof tradingMode !== 'undefined' && tradingMode === 'live');
     var displayLots = isLive ? (data.live_lots || 0) : (data.demo_lots || 0);  // 거래 현황용
     var displayTrades = isLive ? (data.live_trades || 0) : (data.demo_trades || 0);
 
