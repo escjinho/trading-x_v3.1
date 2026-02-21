@@ -426,29 +426,37 @@ function openMyDetail(detail) {
         // 상세 페이지 초기화
         if (typeof initDetailView === 'function') initDetailView(detail);
         
-        // 이메일 인증 페이지: 프로필에서 이메일 강제 세팅 + 인증 상태 체크
+        // 이메일 인증 페이지: 이메일 세팅 + 인증 상태에 따라 UI 완전 전환
         if (detail === 'email') {
             var pEmail = document.getElementById('myProfileEmail');
             var eAddr = document.getElementById('myEmailAddr');
             if (pEmail && eAddr && pEmail.textContent && pEmail.textContent !== '-') {
                 eAddr.textContent = pEmail.textContent;
             }
+            var isVerified = localStorage.getItem('email_verified') === 'true';
             var stateEl = document.getElementById('myEmailState');
             var sendBtn = document.getElementById('myEmailSendBtn');
             var verifyBtn = document.getElementById('myEmailVerifyBtn');
             var resendBtn = document.getElementById('myEmailResendBtn');
             var codeSection = document.getElementById('myEmailCodeSection');
             var statusIcon = document.getElementById('myEmailStatusIcon');
-            if (stateEl && stateEl.textContent.trim() === '인증됨') {
-                stateEl.className = 'my-email-state verified';
+            var descEl = document.querySelector('#myView-email .my-email-desc');
+            if (isVerified) {
+                if (stateEl) { stateEl.textContent = '인증 완료'; stateEl.className = 'my-email-state verified'; }
                 if (statusIcon) statusIcon.textContent = 'mark_email_read';
                 if (sendBtn) sendBtn.style.display = 'none';
                 if (verifyBtn) verifyBtn.style.display = 'none';
                 if (resendBtn) resendBtn.style.display = 'none';
                 if (codeSection) codeSection.style.display = 'none';
+                if (descEl) descEl.innerHTML = '<span style="color:#00d4a4;">✓ 이메일 인증이 완료되었습니다.</span><br>계정 보안이 강화되었으며, 비밀번호 분실 시 복구가 가능합니다.';
             } else {
-                if (sendBtn) sendBtn.style.display = '';
+                if (stateEl) { stateEl.textContent = '미인증'; stateEl.className = 'my-email-state unverified'; }
                 if (statusIcon) statusIcon.textContent = 'mark_email_unread';
+                if (sendBtn) sendBtn.style.display = '';
+                if (verifyBtn) verifyBtn.style.display = 'none';
+                if (resendBtn) resendBtn.style.display = 'none';
+                if (codeSection) codeSection.style.display = 'none';
+                if (descEl) descEl.innerHTML = '이메일 인증을 완료하면 계정 보안이 강화되고,<br>비밀번호 분실 시 복구가 가능합니다.';
             }
         }
 
