@@ -626,12 +626,15 @@
 }
 
 .acc-info-top {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
     margin-bottom: 20px;
     padding-bottom: 16px;
     border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.acc-info-equity-row {
+    display: flex;
+    align-items: baseline;
+    gap: 15px;
 }
 
 .acc-info-equity-label {
@@ -649,15 +652,15 @@
 }
 
 .acc-info-cpl {
-    text-align: right;
-    margin-bottom: 4px;
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    margin-bottom: 2px;
 }
 
 .acc-info-cpl-label {
     font-size: 10px;
     color: rgba(255,255,255,0.3);
-    margin-bottom: 3px;
-    text-align: right;
 }
 
 .acc-info-cpl-value {
