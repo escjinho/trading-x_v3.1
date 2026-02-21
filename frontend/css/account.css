@@ -41,8 +41,8 @@
 .acc-tab {
     flex: 1;
     text-align: center;
-    padding: 10px 8px;
-    font-size: 14px;
+    padding: 12px 8px;
+    font-size: 15px;
     font-weight: 600;
     color: rgba(255,255,255,0.7);
     cursor: pointer;
@@ -84,10 +84,10 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 5px;
-    border-bottom: 1px solid var(--border-color);
+    padding: 11px 5px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
     gap: 8px;
-    font-size: 14px;
+    font-size: 13px;
 }
 
 .history-item:last-child {
@@ -98,28 +98,32 @@
 .history-left {
     flex-shrink: 0;
     min-width: 165px;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
-    color: var(--text-primary);
+    color: rgba(255,255,255,0.9);
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
 }
 
 .history-left .buy {
     color: var(--buy-color);
     font-weight: 600;
+    font-style: italic;
+    font-size: 12px;
 }
 
 .history-left .sell {
     color: var(--sell-color);
     font-weight: 600;
+    font-style: italic;
+    font-size: 12px;
 }
 
 .history-left .lot {
-    color: var(--text-muted);
+    color: rgba(255,255,255,0.35);
     font-weight: 400;
-    font-size: 13px;
+    font-size: 11px;
 }
 
 /* 중앙: 청산 시간 */
@@ -127,8 +131,8 @@
     flex: 1;
     text-align: left;
     padding-left: 10px;
-    color: rgba(255,255,255,0.4);
-    font-size: 12px;
+    color: rgba(255,255,255,0.3);
+    font-size: 11px;
     white-space: nowrap;
 }
 
@@ -137,8 +141,8 @@
     flex-shrink: 0;
     text-align: right;
     min-width: 80px;
-    font-size: 16px;
-    font-weight: 700;
+    font-size: 14px;
+    font-weight: 600;
 }
 
 .history-right.profit-positive,
@@ -160,9 +164,9 @@
 }
 
 .history-symbol {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
-    color: var(--text-primary);
+    color: rgba(255,255,255,0.9);
 }
 
 .history-type {
@@ -208,8 +212,8 @@
 }
 
 .history-profit {
-    font-size: 16px;
-    font-weight: 700;
+    font-size: 14px;
+    font-weight: 600;
     min-width: 80px;
     text-align: right;
     margin-right: 5px;
@@ -251,7 +255,7 @@
 
 .open-pos-card {
     position: relative;
-    padding: 12px 12px 12px 16px;
+    padding: 11px 12px 11px 16px;
     border-bottom: 1px solid rgba(255,255,255,0.04);
     cursor: pointer;
     transition: background 0.15s;
@@ -298,20 +302,21 @@
 .open-pos-info {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 14px;
+    gap: 5px;
+    font-size: 13px;
     font-weight: 600;
 }
 
 .open-pos-symbol {
-    color: var(--text-primary);
-    font-size: 15px;
+    color: rgba(255,255,255,0.9);
+    font-size: 13px;
     font-weight: 600;
 }
 
 .open-pos-type {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
+    font-style: italic;
 }
 
 .open-pos-type.buy { color: var(--buy-color); }
@@ -342,8 +347,8 @@
 }
 
 .open-pos-profit {
-    font-size: 16px;
-    font-weight: 700;
+    font-size: 14px;
+    font-weight: 600;
     text-align: right;
 }
 
