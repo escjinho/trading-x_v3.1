@@ -5,14 +5,14 @@
 
 // ========== 초기화 ==========
 function initMyTab() {
-    const userEmail = localStorage.getItem('user_email') || '';
-    const userName = userEmail ? userEmail.split('@')[0] : 'Trader';
+    var userEmail = localStorage.getItem('user_email') || '';
+    var userName = userEmail ? userEmail.split('@')[0] : 'Trader';
 
-    // 프로필
-    const avatarEl = document.getElementById('myAvatar');
-    const nameEl = document.getElementById('myProfileName');
-    const emailEl = document.getElementById('myProfileEmail');
-    const nicknameInput = document.getElementById('myNicknameInput');
+    // 프로필 (기본값 먼저 표시)
+    var avatarEl = document.getElementById('myAvatar');
+    var nameEl = document.getElementById('myProfileName');
+    var emailEl = document.getElementById('myProfileEmail');
+    var nicknameInput = document.getElementById('myNicknameInput');
 
     if (avatarEl) avatarEl.textContent = userName.charAt(0).toUpperCase();
     if (nameEl) nameEl.textContent = userName;
@@ -22,13 +22,60 @@ function initMyTab() {
     // 모드 표시
     updateMyModeDisplay();
 
-    // 이메일 경고 (항상 표시 - 추후 인증 로직 연동)
-    const warningEl = document.getElementById('myEmailWarning');
-    if (warningEl) warningEl.style.display = 'flex';
+    // ★★★ /api/auth/me API 호출 — 실데이터 로드 ★★★
+    var tkn = localStorage.getItem('access_token') || '';
+    if (tkn) {
+        var apiUrl = (typeof API_URL !== 'undefined') ? API_URL : '/api';
+        fetch(apiUrl + '/auth/me', {
+            headers: { 'Authorization': 'Bearer ' + tkn }
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            if (data.email) {
+                // 프로필 업데이트
+                var displayName = data.name || data.email.split('@')[0];
+                if (nameEl) nameEl.textContent = displayName;
+                if (emailEl) emailEl.textContent = data.email;
+                if (avatarEl) avatarEl.textContent = displayName.charAt(0).toUpperCase();
+                if (nicknameInput) nicknameInput.value = displayName;
 
-    // 거래 통계 (추후 API 연동)
-    updateMyTradeStats(0, 0);
-    updateMyGrade('Standard', 0, 100);
+                // 이메일 인증 경고
+                var warningEl = document.getElementById('myEmailWarning');
+                if (warningEl) {
+                    warningEl.style.display = data.email_verified ? 'none' : 'flex';
+                }
+
+                // 거래 통계
+                updateMyTradeStats(data.total_trades || 0, data.total_lots || 0);
+
+                // 등급
+                var gradeName = data.grade ? data.grade.name : 'Standard';
+                var nextGradeName = data.next_grade ? data.next_grade.name : null;
+                var remaining = data.next_grade ? data.next_grade.remaining_lots : 0;
+                var progress = data.next_grade ? data.next_grade.progress : 100;
+                updateMyGradeFromAPI(gradeName, nextGradeName, remaining, progress, data.grade ? data.grade.badge_color : '#9e9e9e');
+
+                // 전역 저장 (VIP 페이지에서 사용)
+                window._myProfileData = data;
+
+                console.log('[MyTab] Profile loaded:', displayName, 'Grade:', gradeName, 'Lots:', data.total_lots);
+            }
+        })
+        .catch(function(err) {
+            console.log('[MyTab] /me API error:', err.message);
+            // API 실패 시 기본값 유지
+            var warningEl = document.getElementById('myEmailWarning');
+            if (warningEl) warningEl.style.display = 'flex';
+            updateMyTradeStats(0, 0);
+            updateMyGradeFromAPI('Standard', 'Pro', 100, 0, '#9e9e9e');
+        });
+    } else {
+        // 비로그인
+        var warningEl = document.getElementById('myEmailWarning');
+        if (warningEl) warningEl.style.display = 'flex';
+        updateMyTradeStats(0, 0);
+        updateMyGradeFromAPI('Standard', 'Pro', 100, 0, '#9e9e9e');
+    }
 
     console.log('[MyTab] Initialized for user:', userName);
 }
@@ -56,20 +103,137 @@ function updateMyTradeStats(count, lots) {
     if (lotsEl) lotsEl.textContent = lots.toFixed(2);
 }
 
-// ========== 등급 ==========
+// ========== 등급 (API 연동) ==========
 function updateMyGrade(grade, current, next) {
-    const gradeEl = document.getElementById('myGradeText');
-    const fillEl = document.getElementById('myProgressFill');
-    const textEl = document.getElementById('myProgressText');
+    // 하위 호환 유지
+    updateMyGradeFromAPI(grade, null, next - current, next > 0 ? (current / next) * 100 : 100, '#9e9e9e');
+}
 
-    const grades = ['Standard', 'Silver', 'Gold', 'Platinum'];
-    const nextGrade = grades[grades.indexOf(grade) + 1] || 'Max';
-    const remaining = Math.max(next - current, 0);
-    const progress = next > 0 ? Math.min((current / next) * 100, 100) : 0;
+function updateMyGradeFromAPI(gradeName, nextGradeName, remainingLots, progress, badgeColor) {
+    var gradeEl = document.getElementById('myGradeText');
+    var fillEl = document.getElementById('myProgressFill');
+    var textEl = document.getElementById('myProgressText');
 
-    if (gradeEl) gradeEl.textContent = grade;
-    if (fillEl) fillEl.style.width = progress + '%';
-    if (textEl) textEl.textContent = remaining > 0 ? (nextGrade + ' · ' + remaining + '회 남음') : '달성!';
+    if (gradeEl) gradeEl.textContent = gradeName;
+    if (fillEl) fillEl.style.width = Math.min(progress, 100) + '%';
+    if (textEl) {
+        if (nextGradeName && remainingLots > 0) {
+            textEl.textContent = nextGradeName + ' · ' + remainingLots.toFixed(1) + ' lots 남음';
+        } else {
+            textEl.textContent = '최고 등급 달성! 🎉';
+        }
+    }
+}
+
+// ========== VIP 페이지 렌더링 ==========
+function initVipPage() {
+    var data = window._myProfileData;
+    if (!data) {
+        // 데이터 없으면 API 호출
+        var tkn = localStorage.getItem('access_token') || '';
+        if (!tkn) return;
+        var apiUrl = (typeof API_URL !== 'undefined') ? API_URL : '/api';
+        fetch(apiUrl + '/auth/me', {
+            headers: { 'Authorization': 'Bearer ' + tkn }
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(d) {
+            if (d.email) {
+                window._myProfileData = d;
+                renderVipPage(d);
+            }
+        })
+        .catch(function() {});
+        return;
+    }
+    renderVipPage(data);
+}
+
+function renderVipPage(data) {
+    // 현재 등급 카드
+    var gradeEl = document.getElementById('myVipGrade');
+    var descEl = document.getElementById('myVipDesc');
+    var fillEl = document.getElementById('myVipProgressFill');
+    var curLabel = document.getElementById('myVipCurrentLabel');
+    var nextLabel = document.getElementById('myVipNextLabel');
+    var badgeEl = document.getElementById('myVipBadge');
+
+    var grade = data.grade || { name: 'Standard', badge_color: '#9e9e9e' };
+    var nextGrade = data.next_grade;
+
+    if (gradeEl) gradeEl.textContent = grade.name;
+    if (badgeEl) {
+        var icon = badgeEl.querySelector('.material-icons-round');
+        if (icon) icon.style.color = grade.badge_color;
+        badgeEl.style.background = hexToRgba(grade.badge_color, 0.12);
+    }
+
+    var card = document.getElementById('myVipCurrentCard');
+    if (card) card.style.borderColor = hexToRgba(grade.badge_color, 0.3);
+
+    if (nextGrade) {
+        if (descEl) descEl.innerHTML = '다음 등급까지 <span style="font-weight:700;color:#fff;">' + nextGrade.remaining_lots.toFixed(1) + '</span> lots 남음';
+        if (fillEl) fillEl.style.width = nextGrade.progress + '%';
+        if (curLabel) curLabel.textContent = grade.name;
+        if (nextLabel) nextLabel.textContent = nextGrade.name;
+    } else {
+        if (descEl) descEl.textContent = '최고 등급을 달성했습니다! 🎉';
+        if (fillEl) fillEl.style.width = '100%';
+        if (curLabel) curLabel.textContent = grade.name;
+        if (nextLabel) nextLabel.textContent = 'MAX';
+    }
+
+    // 거래 현황
+    var lotsEl = document.getElementById('myVipTotalLots');
+    var tradesEl = document.getElementById('myVipTotalTrades');
+    var refEl = document.getElementById('myVipReferral');
+
+    if (lotsEl) lotsEl.textContent = (data.total_lots || 0).toFixed(2);
+    if (tradesEl) tradesEl.textContent = (data.total_trades || 0).toString();
+    if (refEl) {
+        var refAmount = grade.self_referral || 0;
+        refEl.textContent = refAmount > 0 ? ('$' + refAmount + '/lot') : '-';
+    }
+
+    // 등급 목록 동적 렌더링
+    var tierList = document.getElementById('myVipTierList');
+    if (tierList && data.all_grades) {
+        var html = '';
+        var badgeClass = { 'Standard': 'standard', 'Pro': 'pro', 'VIP': 'vip' };
+
+        for (var i = 0; i < data.all_grades.length; i++) {
+            var g = data.all_grades[i];
+            var cls = g.achieved ? ' active' : '';
+            var bc = badgeClass[g.name] || 'standard';
+            var check = g.achieved ? '<div class="my-vip-tier-check">✓</div>' : '';
+            var req = g.min_lots > 0 ? (g.min_lots + ' lots') : '기본';
+            var benefit = g.self_referral > 0 ? ('셀프 리퍼럴 $' + g.self_referral + '/lot') : (g.benefit || '기본 혜택');
+
+            html += '<div class="my-vip-tier' + cls + '">';
+            html += '  <div class="my-vip-tier-left">';
+            html += '    <div class="my-vip-tier-badge ' + bc + '"><span class="material-icons-round">workspace_premium</span></div>';
+            html += '    <div>';
+            html += '      <div class="my-vip-tier-name">' + g.name + '</div>';
+            html += '      <div class="my-vip-tier-req">' + req + '</div>';
+            html += '    </div>';
+            html += '  </div>';
+            html += '  <div style="display:flex;align-items:center;">';
+            html += '    <div class="my-vip-tier-benefit">' + benefit + '</div>';
+            html += check;
+            html += '  </div>';
+            html += '</div>';
+        }
+        tierList.innerHTML = html;
+    }
+}
+
+// hex → rgba 변환 유틸
+function hexToRgba(hex, alpha) {
+    if (!hex || hex.charAt(0) !== '#') return 'rgba(158,158,158,' + alpha + ')';
+    var r = parseInt(hex.slice(1, 3), 16);
+    var g = parseInt(hex.slice(3, 5), 16);
+    var b = parseInt(hex.slice(5, 7), 16);
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
 }
 
 // ========== 설정 모달 ==========
@@ -263,6 +427,11 @@ function openMyDetail(detail) {
         // ★ 알림 설정 페이지면 저장된 설정 로드
         if (detail === 'notification') {
             initNotificationSettings();
+        }
+
+        // ★ VIP 페이지면 데이터 로드
+        if (detail === 'vip') {
+            initVipPage();
         }
 
         console.log('[MyTab] Navigate to detail:', detail, 'Stack:', myPageStack);

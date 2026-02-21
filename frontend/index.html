@@ -67,7 +67,7 @@
         <link rel="stylesheet" href="css/quickeasy.css?v=1771533773">
     <link rel="stylesheet" href="css/chart.css?v=1771533773">
     <link rel="stylesheet" href="css/account.css?v=1771533773">
-    <link rel="stylesheet" href="css/my.css?v=1771630041">
+    <link rel="stylesheet" href="css/my.css?v=1771634300">
 </head>
 <body>
     <div class="app">
@@ -1951,70 +1951,52 @@
                     </div>
                     <div class="my-sub-body">
                         <!-- 현재 등급 -->
-                        <div class="my-vip-current">
+                        <div class="my-vip-current" id="myVipCurrentCard">
                             <div class="my-vip-current-badge" id="myVipBadge">
                                 <span class="material-icons-round">workspace_premium</span>
                             </div>
                             <div class="my-vip-current-grade" id="myVipGrade">Standard</div>
-                            <div class="my-vip-current-desc">다음 등급까지 <span id="myVipRemaining">100</span>회 거래 남음</div>
+                            <div class="my-vip-current-desc" id="myVipDesc">다음 등급까지 <span id="myVipRemaining">100</span> lots 남음</div>
                             <div class="my-vip-progress-wrap">
                                 <div class="my-vip-progress-bar">
                                     <div class="my-vip-progress-fill" id="myVipProgressFill" style="width: 0%"></div>
                                 </div>
                                 <div class="my-vip-progress-labels">
-                                    <span>Standard</span>
-                                    <span id="myVipNextGrade">Silver</span>
+                                    <span id="myVipCurrentLabel">Standard</span>
+                                    <span id="myVipNextLabel">Pro</span>
                                 </div>
                             </div>
                         </div>
 
+                        <!-- 내 거래 현황 -->
+                        <div style="font-size: 13px; font-weight: 600; margin-bottom: 10px;">내 거래 현황</div>
+                        <div class="my-vip-stats-card">
+                            <div class="my-vip-stat-item">
+                                <div class="my-vip-stat-value" id="myVipTotalLots">0.00</div>
+                                <div class="my-vip-stat-label">누적 거래량 (Lots)</div>
+                            </div>
+                            <div class="my-vip-stat-divider"></div>
+                            <div class="my-vip-stat-item">
+                                <div class="my-vip-stat-value" id="myVipTotalTrades">0</div>
+                                <div class="my-vip-stat-label">총 거래 횟수</div>
+                            </div>
+                            <div class="my-vip-stat-divider"></div>
+                            <div class="my-vip-stat-item">
+                                <div class="my-vip-stat-value" id="myVipReferral">$0</div>
+                                <div class="my-vip-stat-label">셀프 리퍼럴</div>
+                            </div>
+                        </div>
+
                         <!-- 등급표 -->
-                        <div style="font-size: 13px; font-weight: 600; margin-bottom: 10px;">등급 혜택</div>
-                        <div class="my-vip-tier-list">
-                            <!-- Standard -->
-                            <div class="my-vip-tier active">
-                                <div class="my-vip-tier-left">
-                                    <div class="my-vip-tier-badge standard"><span class="material-icons-round">workspace_premium</span></div>
-                                    <div>
-                                        <div class="my-vip-tier-name">Standard</div>
-                                        <div class="my-vip-tier-req">기본</div>
-                                    </div>
-                                </div>
-                                <div class="my-vip-tier-benefit">기본 혜택</div>
-                            </div>
-                            <!-- Silver -->
-                            <div class="my-vip-tier">
-                                <div class="my-vip-tier-left">
-                                    <div class="my-vip-tier-badge silver"><span class="material-icons-round">workspace_premium</span></div>
-                                    <div>
-                                        <div class="my-vip-tier-name">Silver</div>
-                                        <div class="my-vip-tier-req">100회 거래</div>
-                                    </div>
-                                </div>
-                                <div class="my-vip-tier-benefit">수수료 10% 할인</div>
-                            </div>
-                            <!-- Gold -->
-                            <div class="my-vip-tier">
-                                <div class="my-vip-tier-left">
-                                    <div class="my-vip-tier-badge gold"><span class="material-icons-round">workspace_premium</span></div>
-                                    <div>
-                                        <div class="my-vip-tier-name">Gold</div>
-                                        <div class="my-vip-tier-req">500회 거래</div>
-                                    </div>
-                                </div>
-                                <div class="my-vip-tier-benefit">수수료 20% 할인</div>
-                            </div>
-                            <!-- Platinum -->
-                            <div class="my-vip-tier">
-                                <div class="my-vip-tier-left">
-                                    <div class="my-vip-tier-badge platinum"><span class="material-icons-round">workspace_premium</span></div>
-                                    <div>
-                                        <div class="my-vip-tier-name">Platinum</div>
-                                        <div class="my-vip-tier-req">2,000회 거래</div>
-                                    </div>
-                                </div>
-                                <div class="my-vip-tier-benefit">수수료 30% + 전담 매니저</div>
-                            </div>
+                        <div style="font-size: 13px; font-weight: 600; margin: 20px 0 10px;">등급 혜택</div>
+                        <div class="my-vip-tier-list" id="myVipTierList">
+                            <!-- JS에서 동적 렌더링 -->
+                        </div>
+
+                        <!-- 안내 -->
+                        <div class="my-vip-notice">
+                            <span class="material-icons-round">info</span>
+                            <span>등급은 누적 거래량(Lots) 기준으로 자동 산정됩니다. 셀프 리퍼럴은 거래 시 lot당 지급됩니다.</span>
                         </div>
                     </div>
                 </div>
@@ -3308,7 +3290,7 @@
     <script src="js/utils.js?v=1771631828"></script>
     <script src="js/watchlist.js?v=1771533971"></script>
     <script src="js/navigation.js?v=1771533971"></script>
-    <script src="js/my.js?v=1771631177"></script>
+    <script src="js/my.js?v=1771634300"></script>
 
     <!-- Chart Panels (모듈화) -->
     <script src="js/panels/gaugePanel.js?v=1771533971"></script>

@@ -1608,6 +1608,92 @@
     color: #a855f7;
 }
 
+/* Pro 뱃지 */
+.my-vip-tier-badge.pro {
+    background: rgba(0, 212, 255, 0.12);
+}
+.my-vip-tier-badge.pro .material-icons-round {
+    color: #00d4ff;
+}
+
+/* VIP 뱃지 */
+.my-vip-tier-badge.vip {
+    background: rgba(255, 214, 0, 0.12);
+}
+.my-vip-tier-badge.vip .material-icons-round {
+    color: #ffd600;
+}
+
+/* 거래 현황 카드 */
+.my-vip-stats-card {
+    display: flex;
+    align-items: center;
+    background: var(--bg-tertiary);
+    border-radius: 14px;
+    border: 1px solid var(--border-color);
+    padding: 16px 12px;
+}
+
+.my-vip-stat-item {
+    flex: 1;
+    text-align: center;
+}
+
+.my-vip-stat-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+}
+
+.my-vip-stat-label {
+    font-size: 10px;
+    color: var(--text-dim);
+}
+
+.my-vip-stat-divider {
+    width: 1px;
+    height: 32px;
+    background: var(--border-color);
+}
+
+/* VIP 안내 */
+.my-vip-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 16px;
+    padding: 12px 14px;
+    background: rgba(0, 212, 255, 0.04);
+    border-radius: 10px;
+    border: 1px solid rgba(0, 212, 255, 0.1);
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.my-vip-notice .material-icons-round {
+    font-size: 16px;
+    color: var(--accent-cyan);
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+/* 등급 달성 체크 */
+.my-vip-tier-check {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--buy-color);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    margin-left: 8px;
+}
+
 .my-vip-tier-name {
     font-size: 14px;
     font-weight: 600;
