@@ -340,6 +340,7 @@ async def get_my_profile(
         "total_lots": round(total_lots, 2),
         "demo_trades": demo_trades_count,
         "demo_lots": round(demo_lots, 2),
+        "demo_balance": current_user.demo_balance or 10000.0,
         "live_trades": live_trades_count,
         "live_lots": round(live_lots, 2),
         "open_positions": open_positions,

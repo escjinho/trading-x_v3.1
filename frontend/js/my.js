@@ -1188,13 +1188,15 @@ let selectedDemoAmount = 10000;
 async function loadDemoBalance() {
     try {
         var tkn = localStorage.getItem('access_token');
-        var res = await fetch(API_URL + '/demo/account-info', {
+        var res = await fetch(API_URL + '/auth/me', {
             headers: { 'Authorization': 'Bearer ' + tkn }
         });
         var data = await res.json();
         var balEl = document.getElementById('myDemoBalance');
-        if (balEl && data.balance !== undefined) {
-            balEl.textContent = '$' + Number(data.balance).toLocaleString('en-US', { minimumFractionDigits: 2 });
+        if (balEl && data.demo_balance !== undefined) {
+            balEl.textContent = '$' + Number(data.demo_balance).toLocaleString('en-US', { minimumFractionDigits: 2 });
+        } else if (balEl) {
+            balEl.textContent = '$10,000.00';
         }
     } catch (e) {
         console.error('데모 잔고 로드 오류:', e);
