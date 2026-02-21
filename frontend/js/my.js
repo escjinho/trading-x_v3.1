@@ -594,9 +594,13 @@ function getCurrentUserEmail() {
 }
 
 function initEmailView() {
-    const email = localStorage.getItem('user_email') || 'user@example.com';
+    // 1순위: 프로필에 이미 표시된 이메일, 2순위: localStorage, 3순위: fallback
+    const profileEmail = document.getElementById('myProfileEmail');
+    const email = (profileEmail && profileEmail.textContent && profileEmail.textContent !== '-')
+        ? profileEmail.textContent
+        : (localStorage.getItem('user_email') || '');
     const emailEl = document.getElementById('myEmailAddr');
-    if (emailEl) emailEl.textContent = email;
+    if (emailEl) emailEl.textContent = email || '이메일을 불러올 수 없습니다';
 }
 
 async function sendEmailCode() {
