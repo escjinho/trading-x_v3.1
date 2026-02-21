@@ -40,11 +40,17 @@ function initMyTab() {
                 if (avatarEl) avatarEl.textContent = displayName.charAt(0).toUpperCase();
                 if (nicknameInput) nicknameInput.value = displayName;
 
-                // 이메일 인증 경고
+                // 이메일 인증 경고 + 상태 저장
                 var warningEl = document.getElementById('myEmailWarning');
                 if (warningEl) {
                     warningEl.style.display = data.email_verified ? 'none' : 'flex';
                 }
+                var emailStateEl = document.getElementById('myEmailState');
+                if (emailStateEl) {
+                    emailStateEl.textContent = data.email_verified ? '인증됨' : '미인증';
+                    emailStateEl.className = data.email_verified ? 'my-email-state verified' : 'my-email-state unverified';
+                }
+                localStorage.setItem('email_verified', data.email_verified ? 'true' : 'false');
 
                 // 거래 통계 — 모드별 독립, 등급은 항상 Live 기준
                 var isLive = (typeof tradingMode !== 'undefined' && tradingMode === 'live');
