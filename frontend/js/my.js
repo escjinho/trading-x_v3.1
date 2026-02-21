@@ -1509,24 +1509,29 @@ function piRenderViewMode() {
     if (!d) return;
 
     document.getElementById('piEmail').textContent = d.email || '-';
+    document.getElementById('piEmail').style.fontWeight = '700';
 
     var ca = d.created_at;
     if (ca) {
         var dt = new Date(ca);
+        document.getElementById('piCreatedAt').style.fontWeight = '700';
         document.getElementById('piCreatedAt').textContent = dt.getFullYear() + '.' + String(dt.getMonth()+1).padStart(2,'0') + '.' + String(dt.getDate()).padStart(2,'0');
     }
 
     document.getElementById('piRealName').textContent = d.real_name || '미등록';
     document.getElementById('piRealName').style.color = d.real_name ? 'var(--text-primary)' : 'var(--text-dim)';
     document.getElementById('piRealName').style.fontStyle = d.real_name ? 'normal' : 'italic';
+    document.getElementById('piRealName').style.fontWeight = d.real_name ? '700' : '400';
 
     document.getElementById('piNickname').textContent = d.name || '-';
+    document.getElementById('piNickname').style.fontWeight = '700';
 
     var bd = d.birth_date;
     if (bd) {
         document.getElementById('piBirthDate').textContent = bd.replace(/-/g, '.');
         document.getElementById('piBirthDate').style.color = 'var(--text-primary)';
         document.getElementById('piBirthDate').style.fontStyle = 'normal';
+        document.getElementById('piBirthDate').style.fontWeight = '700';
     } else {
         document.getElementById('piBirthDate').textContent = '미등록';
         document.getElementById('piBirthDate').style.color = 'var(--text-dim)';
@@ -1538,6 +1543,7 @@ function piRenderViewMode() {
         document.getElementById('piNationality').textContent = nationalityNames[nat];
         document.getElementById('piNationality').style.color = 'var(--text-primary)';
         document.getElementById('piNationality').style.fontStyle = 'normal';
+        document.getElementById('piNationality').style.fontWeight = '700';
     } else {
         document.getElementById('piNationality').textContent = '미등록';
         document.getElementById('piNationality').style.color = 'var(--text-dim)';
@@ -1562,6 +1568,7 @@ function piRenderViewMode() {
     if (d.phone) {
         phoneNum.textContent = formatPhone(d.phone);
         phoneNum.style.color = 'var(--text-primary)';
+        phoneNum.style.fontWeight = '700';
     } else {
         phoneNum.textContent = '미등록';
         phoneNum.style.color = 'var(--text-dim)';
@@ -1585,7 +1592,19 @@ function piShowEditMode() {
     document.getElementById('piEditRealName').value = d.real_name || '';
     document.getElementById('piEditNickname').value = d.name || '';
     document.getElementById('piEditPhone').value = d.phone || '';
-    document.getElementById('piEditBirthDate').value = d.birth_date || '';
+    // 생년월일 드롭다운 세팅
+    if (d.birth_date) {
+        var parts = d.birth_date.split('-');
+        if (parts.length === 3) {
+            document.getElementById('piBirthYear').value = parts[0];
+            document.getElementById('piBirthMonth').value = parts[1];
+            document.getElementById('piBirthDay').value = parts[2];
+        }
+    } else {
+        document.getElementById('piBirthYear').value = '';
+        document.getElementById('piBirthMonth').value = '';
+        document.getElementById('piBirthDay').value = '';
+    }
     document.getElementById('piEditNationality').value = d.nationality || '';
 
     document.getElementById('piViewMode').style.display = 'none';
@@ -1617,7 +1636,12 @@ async function piConfirmSave() {
         real_name: document.getElementById('piEditRealName').value,
         name: document.getElementById('piEditNickname').value,
         phone: document.getElementById('piEditPhone').value,
-        birth_date: document.getElementById('piEditBirthDate').value,
+        birth_date: (function() {
+            var y = document.getElementById('piBirthYear').value;
+            var m = document.getElementById('piBirthMonth').value;
+            var d = document.getElementById('piBirthDay').value;
+            return (y && m && d) ? y + '-' + m + '-' + d : '';
+        })(),
         nationality: document.getElementById('piEditNationality').value,
         password: pw
     };

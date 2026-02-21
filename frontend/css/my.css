@@ -3042,3 +3042,11 @@
     font-size: 10px;
     color: var(--text-dim);
 }
+
+/* 개인정보 수정 폼 - 입력값 굵게 */
+#piEditMode .my-form-input {
+    font-weight: 600;
+}
+#piEditMode .my-form-input::placeholder {
+    font-weight: 400;
+}

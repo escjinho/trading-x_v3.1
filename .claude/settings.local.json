@@ -120,7 +120,8 @@
       "Bash(sudo -u postgres psql:*)",
       "Bash(sudo su - postgres -c \"psql -d trading -c \"\"UPDATE grade_configs SET badge_color = ''#f97316'' WHERE grade_name = ''VIP'';\"\"\")",
       "Bash(sudo su:*)",
-      "Bash(1 echo \"=== 5\\) 새 함수 ===\")"
+      "Bash(1 echo \"=== 5\\) 새 함수 ===\")",
+      "Bash(cd /var/www/trading-x grep -n \"로그인\\\\|login-btn\\\\|intro-btn\\\\|btn-login\" frontend/intro.html)"
     ]
   }
 }
