@@ -1,3 +1,61 @@
+
+// ========== 커스텀 확인 다이얼로그 ==========
+var _txDialogResolve = null;
+
+function showTxConfirm(opts) {
+    return new Promise(function(resolve) {
+        _txDialogResolve = resolve;
+        var container = document.getElementById('txDialogContainer');
+        if (!container) return resolve(false);
+
+        var msgHtml = (opts.message || '').replace(/\n/g, '<br>');
+        var cancelBtn = opts.cancelText
+            ? '<button class="tx-dialog-btn cancel" onclick="closeTxDialog(false)">' + opts.cancelText + '</button>'
+            : '';
+
+        container.innerHTML =
+            '<div class="tx-dialog-overlay" onclick="closeTxDialog(false)">' +
+              '<div class="tx-dialog" onclick="event.stopPropagation()">' +
+                '<div class="tx-dialog-icon">' +
+                  '<div class="tx-dialog-icon-circle ' + (opts.type || 'info') + '">' +
+                    '<span class="material-icons-round">' + (opts.icon || 'info') + '</span>' +
+                  '</div>' +
+                '</div>' +
+                '<div class="tx-dialog-body">' +
+                  '<div class="tx-dialog-title">' + (opts.title || '') + '</div>' +
+                  '<div class="tx-dialog-message">' + msgHtml + '</div>' +
+                '</div>' +
+                '<div class="tx-dialog-actions">' +
+                  cancelBtn +
+                  '<button class="tx-dialog-btn ' + (opts.confirmStyle || 'confirm-primary') + '" onclick="closeTxDialog(true)">' + (opts.confirmText || '확인') + '</button>' +
+                '</div>' +
+              '</div>' +
+            '</div>';
+    });
+}
+
+function closeTxDialog(result) {
+    var container = document.getElementById('txDialogContainer');
+    if (container) container.innerHTML = '';
+    if (_txDialogResolve) {
+        _txDialogResolve(result);
+        _txDialogResolve = null;
+    }
+}
+
+// 알림용 (버튼 1개)
+function showTxAlert(opts) {
+    return showTxConfirm({
+        type: opts.type || 'info',
+        icon: opts.icon || 'info',
+        title: opts.title || '',
+        message: opts.message || '',
+        confirmText: opts.confirmText || '확인',
+        cancelText: '',
+        confirmStyle: opts.confirmStyle || 'confirm-primary'
+    });
+}
+
 /* ========================================
    Trading-X My Tab
    히어로, 설정, 모드 전환
@@ -1171,8 +1229,17 @@ async function loadLoginHistory() {
     }
 }
 
-function logoutAllDevices() {
-    if (confirm('모든 기기에서 로그아웃 하시겠습니까?\n현재 기기도 로그아웃됩니다.')) {
+async function logoutAllDevices() {
+    var confirmed = await showTxConfirm({
+        type: 'danger',
+        icon: 'devices',
+        title: '전체 기기 로그아웃',
+        message: '모든 기기에서 로그아웃 하시겠습니까?\n현재 기기도 로그아웃됩니다.',
+        confirmText: '로그아웃',
+        cancelText: '취소',
+        confirmStyle: 'confirm-danger'
+    });
+    if (confirmed) {
         // TODO: API 연동
         if (typeof logout === 'function') {
             logout();
@@ -1231,7 +1298,14 @@ async function handleDemoDeposit() {
             if (typeof fetchDemoData === 'function') fetchDemoData();
             showToast(data.message, 'success');
         } else {
-            showToast(data.message, 'error');
+            showTxAlert({
+                type: 'warn',
+                icon: 'account_balance_wallet',
+                title: '최대 잔고 도달',
+                message: '데모 잔고가 최대 $100,000에 도달했습니다.\n잔고 리셋 후 다시 충전할 수 있습니다.',
+                confirmText: '확인',
+                confirmStyle: 'confirm-warn'
+            });
         }
     } catch (e) {
         console.error('충전 오류:', e);
@@ -1240,7 +1314,16 @@ async function handleDemoDeposit() {
 }
 
 async function handleDemoReset() {
-    if (!confirm('정말 잔고를 $10,000로 초기화하시겠습니까?\n모든 포지션과 거래 기록이 삭제됩니다.')) return;
+    var confirmed = await showTxConfirm({
+        type: 'warn',
+        icon: 'restart_alt',
+        title: '잔고 초기화',
+        message: '정말 잔고를 $10,000로 초기화하시겠습니까?\n모든 포지션과 거래 기록이 삭제됩니다.',
+        confirmText: '초기화',
+        cancelText: '취소',
+        confirmStyle: 'confirm-warn'
+    });
+    if (!confirmed) return;
 
     try {
         var tkn = localStorage.getItem('access_token');

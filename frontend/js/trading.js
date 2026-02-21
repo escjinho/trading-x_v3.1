@@ -1142,7 +1142,16 @@ async function topupDemo() {
 
 // ========== Demo 리셋 ==========
 async function resetDemo() {
-    if (!confirm('정말 잔고를 $10,000로 초기화하시겠습니까?\n모든 포지션과 거래 기록이 삭제됩니다.')) return;
+    var confirmed = await showTxConfirm({
+        type: 'warn',
+        icon: 'restart_alt',
+        title: '잔고 초기화',
+        message: '정말 잔고를 $10,000로 초기화하시겠습니까?\n모든 포지션과 거래 기록이 삭제됩니다.',
+        confirmText: '초기화',
+        cancelText: '취소',
+        confirmStyle: 'confirm-warn'
+    });
+    if (!confirmed) return;
     
     try {
         const response = await fetch(`${API_URL}/demo/reset`, {
