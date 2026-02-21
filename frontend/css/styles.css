@@ -2604,7 +2604,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
     border: none;
     border-radius: 5px;
     color: var(--text-muted);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
@@ -2614,12 +2614,12 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
 }
 .history-tab-inline.active {
     background: var(--bg-secondary);
-    color: var(--accent-cyan);
+    color: #ffffff;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .history-tab-inline[data-filter="all"] {
-    font-size: 13px;
+    font-size: 12px;
 }
 
 /* 기간 드롭다운 */
@@ -2635,8 +2635,8 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
     background: var(--bg-tertiary);
     border: 1px solid var(--border-color);
     border-radius: 6px;
-    color: var(--accent-cyan);
-    font-size: 12px;
+    color: #ffffff;
+    font-size: 11px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
