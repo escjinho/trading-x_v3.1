@@ -80,7 +80,7 @@ def send_verification_email(email: str, code: str, name: str = "") -> dict:
                           <span style="font-size:16px;font-weight:800;color:#e8eaed;letter-spacing:0.5px;">TX</span>
                         </td>
                         <td style="padding-left:10px;vertical-align:middle;">
-                          <span style="font-size:18px;font-weight:700;color:#ffffff;letter-spacing:1px;">Trading-X</span>
+                          <span style="font-size:24px;font-weight:700;color:#ffffff;letter-spacing:2px;">Trading-X</span>
                         </td>
                       </tr>
                     </table>
@@ -89,7 +89,7 @@ def send_verification_email(email: str, code: str, name: str = "") -> dict:
                 </tr>
               </table>
               <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
-                <tr><td style="padding:0 40px;"><div style="height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.25),transparent);"></div></td></tr>
+                <tr><td style="padding:0 40px;"><div style="height:2px;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.35),transparent);"></div></td></tr>
               </table>
               <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
                 <tr>
@@ -124,7 +124,7 @@ def send_verification_email(email: str, code: str, name: str = "") -> dict:
                 </tr>
               </table>
               <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
-                <tr><td style="padding:0 40px;"><div style="height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.06),transparent);"></div></td></tr>
+                <tr><td style="padding:0 40px;"><div style="height:2px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.12),transparent);"></div></td></tr>
               </table>
               <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
                 <tr>
@@ -147,7 +147,7 @@ def send_verification_email(email: str, code: str, name: str = "") -> dict:
               <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
                 <tr>
                   <td style="padding:4px 40px 20px;text-align:center;">
-                    <a href="https://www.trading-x.ai" style="font-size:12px;color:rgba(0,212,255,0.5);text-decoration:none;letter-spacing:0.5px;">www.trading-x.ai</a>
+                    <a href="https://www.trading-x.ai" style="font-size:12px;color:#00d4ff;text-decoration:none;font-weight:500;">www.trading-x.ai</a>
                   </td>
                 </tr>
               </table>
