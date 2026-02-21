@@ -392,6 +392,7 @@ function openMyDetail(detail) {
     const titles = {
         password: '비밀번호 변경',
         email: '이메일 인증',
+        phone: '전화번호 인증',
         mt5: 'MT5 계정 관리',
         loginHistory: '로그인 기록',
         depositDemo: 'Demo 입출금',
@@ -1141,6 +1142,9 @@ function initDetailView(detail) {
             break;
         case 'openSource':
             setTimeout(renderOpenSource, 50);
+            break;
+        case 'phone':
+            initPhoneView();
             break;
     }
 }

@@ -29,6 +29,12 @@ class Settings(BaseSettings):
     SMTP_FROM_NAME: str = "Trading-X"
     SMTP_ENABLED: bool = False  # True면 실제 발송, False면 테스트 모드
 
+    # Aligo SMS 설정
+    ALIGO_API_KEY: str = ""
+    ALIGO_USER_ID: str = ""
+    ALIGO_SENDER: str = ""         # 발신번호 (등록된 번호)
+    ALIGO_ENABLED: bool = False    # True면 실제 발송, False면 테스트 모드
+
     class Config:
         env_file = ".env"
 

@@ -11,6 +11,7 @@ from ..models.live_trade import LiveTrade
 from ..schemas.user import UserCreate, UserLogin, UserResponse, Token
 from ..utils.security import get_password_hash, verify_password, create_access_token, create_refresh_token, decode_token
 from ..services.email_service import generate_verification_code, verify_code, send_verification_email
+from ..services.sms_service import generate_phone_code, verify_phone_code, send_verification_sms
 
 router = APIRouter(prefix="/auth", tags=["인증"])
 
@@ -311,3 +312,56 @@ async def get_my_profile(
         "next_grade": next_grade_data,
         "all_grades": all_grades
     }
+
+# ========== SMS 인증 ==========
+class PhoneVerifyRequest(BaseModel):
+    phone: str
+
+class PhoneCodeVerifyRequest(BaseModel):
+    phone: str
+    code: str
+
+@router.post("/phone/send-code")
+def send_phone_code(request: PhoneVerifyRequest, db: Session = Depends(get_db)):
+    """전화번호 인증코드 발송"""
+    phone = request.phone.replace("-", "").replace(" ", "")
+
+    # 전화번호 형식 검증
+    if not phone.startswith("01") or len(phone) < 10 or len(phone) > 11:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="유효하지 않은 전화번호 형식입니다"
+        )
+
+    # 인증코드 생성 및 발송
+    code = generate_phone_code(phone)
+    result = send_verification_sms(phone, code)
+
+    response = {"message": "인증코드가 발송되었습니다", "phone": phone}
+
+    # 테스트 모드일 경우 코드 포함
+    if result.get("test_mode"):
+        response["test_code"] = result.get("test_code")
+        response["test_mode"] = True
+
+    return response
+
+@router.post("/phone/verify-code")
+def verify_phone_code_endpoint(request: PhoneCodeVerifyRequest, db: Session = Depends(get_db)):
+    """전화번호 인증코드 검증"""
+    phone = request.phone.replace("-", "").replace(" ", "")
+    result = verify_phone_code(phone, request.code)
+
+    if not result["success"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=result["message"]
+        )
+
+    # 전화번호로 사용자 찾아서 업데이트
+    user = db.query(User).filter(User.phone == phone).first()
+    if user:
+        user.phone_verified = True
+        db.commit()
+
+    return {"success": True, "message": result["message"]}

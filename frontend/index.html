@@ -63,11 +63,11 @@
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css?v=1771696894">
-        <link rel="stylesheet" href="css/quickeasy.css?v=1771696894">
-    <link rel="stylesheet" href="css/chart.css?v=1771696894">
-    <link rel="stylesheet" href="css/account.css?v=1771696894">
-    <link rel="stylesheet" href="css/my.css?v=1771696894">
+    <link rel="stylesheet" href="css/styles.css?v=1771698175">
+        <link rel="stylesheet" href="css/quickeasy.css?v=1771698175">
+    <link rel="stylesheet" href="css/chart.css?v=1771698175">
+    <link rel="stylesheet" href="css/account.css?v=1771698175">
+    <link rel="stylesheet" href="css/my.css?v=1771698175">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
@@ -1456,6 +1456,10 @@
                                 <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">mark_email_unread</span></div><span class="my-sub-item-label">이메일 인증</span></div>
                                 <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
                             </div>
+                            <div class="my-sub-item" onclick="openMyDetail('phone')">
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">phone_android</span></div><span class="my-sub-item-label">전화번호 인증</span></div>
+                                <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
+                            </div>
                             <div class="my-sub-item" onclick="openMyDetail('mt5')">
                                 <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">cable</span></div><span class="my-sub-item-label">MT5 계정 관리</span></div>
                                 <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
@@ -1634,7 +1638,50 @@
                     </div>
                 </div>
 
-                <!-- ===== MT5 계정 관리 상세 페이지 ===== -->
+                <!-- ===== 전화번호 인증 상세 페이지 ===== -->
+                <div class="my-view" id="myView-phone">
+                    <div class="my-sub-header">
+                        <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
+                        <span class="my-sub-title">전화번호 인증</span>
+                    </div>
+                    <div class="my-sub-body">
+                        <div class="my-detail-section">
+                            <div class="my-email-status">
+                                <span class="material-icons-round" id="myPhoneStatusIcon">phone_android</span>
+                                <div class="my-email-status-text">
+                                    <div class="my-email-addr" id="myPhoneNumber">전화번호 미등록</div>
+                                    <div class="my-email-state unverified" id="myPhoneState">미인증</div>
+                                </div>
+                            </div>
+                            <div class="my-email-desc" id="myPhoneDesc">전화번호 인증을 완료하면 계정 보안이 강화되고,<br>중요 알림을 SMS로 받을 수 있습니다.</div>
+                        </div>
+                        <!-- 전화번호 입력 -->
+                        <div class="my-detail-section" id="myPhoneInputSection">
+                            <label class="my-form-label">전화번호 입력</label>
+                            <div style="display:flex;gap:8px;">
+                                <input type="tel" id="myPhoneInput" class="my-form-input" placeholder="01012345678" maxlength="11" style="flex:1;">
+                            </div>
+                        </div>
+                        <!-- 인증코드 입력 -->
+                        <div class="my-detail-section" id="myPhoneCodeSection" style="display: none;">
+                            <label class="my-form-label">인증 코드 입력</label>
+                            <div class="my-email-code-row">
+                                <input type="text" class="my-email-code-input my-phone-code-input" maxlength="1" data-idx="0" oninput="onPhoneCodeInput(this)">
+                                <input type="text" class="my-email-code-input my-phone-code-input" maxlength="1" data-idx="1" oninput="onPhoneCodeInput(this)">
+                                <input type="text" class="my-email-code-input my-phone-code-input" maxlength="1" data-idx="2" oninput="onPhoneCodeInput(this)">
+                                <input type="text" class="my-email-code-input my-phone-code-input" maxlength="1" data-idx="3" oninput="onPhoneCodeInput(this)">
+                                <input type="text" class="my-email-code-input my-phone-code-input" maxlength="1" data-idx="4" oninput="onPhoneCodeInput(this)">
+                                <input type="text" class="my-email-code-input my-phone-code-input" maxlength="1" data-idx="5" oninput="onPhoneCodeInput(this)">
+                            </div>
+                            <div class="my-email-timer">남은 시간: <span id="myPhoneTimer">05:00</span></div>
+                        </div>
+                        <button class="my-action-btn primary" id="myPhoneSendBtn" onclick="sendPhoneCode()">인증 문자 발송</button>
+                        <button class="my-action-btn secondary" id="myPhoneVerifyBtn" style="display: none;" onclick="verifyPhoneCode()">인증 확인</button>
+                        <button class="my-action-btn secondary" id="myPhoneResendBtn" style="display: none; margin-top: 8px; opacity: 0.7;" onclick="sendPhoneCode()">인증 문자 재발송</button>
+                    </div>
+                </div>
+
+                                <!-- ===== MT5 계정 관리 상세 페이지 ===== -->
                 <div class="my-view" id="myView-mt5">
                     <div class="my-sub-header">
                         <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
@@ -3364,36 +3411,36 @@
     </div>
 </div>
 
-    <script src="js/config.js?v=1771696894"></script>
-    <script src="js/state.js?v=1771696894"></script>
-    <script src="js/auth.js?v=1771696894"></script>
-    <script src="js/api.js?v=1771696894"></script>
-    <script src="js/utils.js?v=1771696894"></script>
-    <script src="js/watchlist.js?v=1771696894"></script>
-    <script src="js/navigation.js?v=1771696894"></script>
-    <script src="js/my.js?v=1771696894"></script>
+    <script src="js/config.js?v=1771698175"></script>
+    <script src="js/state.js?v=1771698175"></script>
+    <script src="js/auth.js?v=1771698175"></script>
+    <script src="js/api.js?v=1771698175"></script>
+    <script src="js/utils.js?v=1771698175"></script>
+    <script src="js/watchlist.js?v=1771698175"></script>
+    <script src="js/navigation.js?v=1771698175"></script>
+    <script src="js/my.js?v=1771698175"></script>
 
     <!-- Chart Panels (모듈화) -->
-    <script src="js/panels/gaugePanel.js?v=1771696894"></script>
-    <script src="js/panels/chartGaugePanel.js?v=1771696894"></script>
+    <script src="js/panels/gaugePanel.js?v=1771698175"></script>
+    <script src="js/panels/chartGaugePanel.js?v=1771698175"></script>
 
     <!-- Indicator System -->
-    <script src="js/indicators/config.js?v=1771696894"></script>
-    <script src="js/indicators/calculator.js?v=1771696894"></script>
-    <script src="js/indicators/index.js?v=1771696894"></script>
+    <script src="js/indicators/config.js?v=1771698175"></script>
+    <script src="js/indicators/calculator.js?v=1771698175"></script>
+    <script src="js/indicators/index.js?v=1771698175"></script>
 
     <!-- Chart Type System -->
-    <script src="js/chartTypes/index.js?v=1771696894"></script>
+    <script src="js/chartTypes/index.js?v=1771698175"></script>
 
-    <script src="js/panels/chartPanel.js?v=1771696894"></script>
-    <script src="js/panels/symbolSelectorPanel.js?v=1771696894"></script>
-    <script src="js/panels/randomWalkPanel.js?v=1771696894"></script>
-    <script src="js/panels/multiOrderPanelV5.js?v=1771696894"></script>
-        <script src="js/panels/quickEasyPanel.js?v=1771696894"></script>
-        <script src="js/panels/qeTickChart.js?v=1771696894"></script>
+    <script src="js/panels/chartPanel.js?v=1771698175"></script>
+    <script src="js/panels/symbolSelectorPanel.js?v=1771698175"></script>
+    <script src="js/panels/randomWalkPanel.js?v=1771698175"></script>
+    <script src="js/panels/multiOrderPanelV5.js?v=1771698175"></script>
+        <script src="js/panels/quickEasyPanel.js?v=1771698175"></script>
+        <script src="js/panels/qeTickChart.js?v=1771698175"></script>
 
-    <script src="js/chart.js?v=1771696894"></script>
-    <script src="js/settings.js?v=1771696894"></script>
+    <script src="js/chart.js?v=1771698175"></script>
+    <script src="js/settings.js?v=1771698175"></script>
     <script>
         // ========== 타임프레임 드롭다운 함수 ==========
         function toggleTimeframeDropdown() {
@@ -4844,11 +4891,11 @@
         </div>
     </div>
 
-    <script src="js/market-schedule.js?v=1771696894"></script>
-    <script src="js/account.js?v=1771696894"></script>
-    <script src="js/trading.js?v=1771696894"></script>
-    <script src="js/openPositions.js?v=1771696894"></script>
-    <script src="js/connection.js?v=1771696894"></script>
-    <script src="js/init.js?v=1771696894"></script>
+    <script src="js/market-schedule.js?v=1771698175"></script>
+    <script src="js/account.js?v=1771698175"></script>
+    <script src="js/trading.js?v=1771698175"></script>
+    <script src="js/openPositions.js?v=1771698175"></script>
+    <script src="js/connection.js?v=1771698175"></script>
+    <script src="js/init.js?v=1771698175"></script>
 </body>
 </html>
