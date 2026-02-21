@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>이용약관 | Trading-X</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Rajdhani', -apple-system, sans-serif;
+            line-height: 1.75;
+            color: rgba(255,255,255,0.8);
+            background: #0a0c10;
+        }
+        .header {
+            background: linear-gradient(135deg, #0d1117 0%, #151821 100%);
+            padding: 40px 24px 32px;
+            text-align: center;
+            position: relative;
+        }
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00d4ff, transparent);
+        }
+        .header-logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            color: #00d4ff;
+            letter-spacing: 3px;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+        .header h1 {
+            font-family: 'Rajdhani', sans-serif;
+            color: #ffffff;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .header .subtitle {
+            font-size: 13px;
+            color: rgba(255,255,255,0.4);
+            font-weight: 500;
+        }
+        .lang-switch {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin: 20px 0;
+        }
+        .lang-switch button {
+            padding: 6px 16px;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 6px;
+            background: transparent;
+            color: #ffffff;
+            cursor: pointer;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .lang-switch button.active {
+            background: rgba(0,212,255,0.1);
+            border-color: rgba(0,212,255,0.4);
+            color: #ffffff;
+        }
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 24px 20px 60px;
+        }
+        .section { margin-bottom: 28px; }
+        .section h2 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #00d4ff;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(0,212,255,0.15);
+            letter-spacing: 0.5px;
+        }
+        .section p {
+            font-size: 14px;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        .section ul { margin: 8px 0 12px 20px; }
+        .section li {
+            font-size: 14px;
+            color: rgba(255,255,255,0.65);
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        .highlight-box {
+            background: rgba(0,212,255,0.06);
+            border-left: 3px solid #00d4ff;
+            padding: 14px 16px;
+            border-radius: 0 8px 8px 0;
+            margin: 12px 0;
+        }
+        .highlight-box p { color: rgba(0,212,255,0.85); margin: 0; font-weight: 600; font-size: 13px; }
+        .info-box {
+            background: rgba(0,180,80,0.06);
+            border-left: 3px solid #00b450;
+            padding: 14px 16px;
+            border-radius: 0 8px 8px 0;
+            margin: 12px 0;
+        }
+        .info-box p { color: rgba(0,180,80,0.85); margin: 0; font-weight: 600; font-size: 13px; }
+        .warning-box {
+            background: rgba(220,50,70,0.06);
+            border-left: 3px solid #dc3246;
+            padding: 14px 16px;
+            border-radius: 0 8px 8px 0;
+            margin: 12px 0;
+        }
+        .warning-box p { color: rgba(220,50,70,0.85); margin: 0; font-weight: 600; font-size: 13px; }
+        .doc-footer {
+            text-align: center;
+            padding: 24px 0;
+            margin-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+        .doc-footer p { font-size: 12px; color: rgba(255,255,255,0.3); }
+        @media (max-width: 600px) {
+            .container { padding: 20px 16px 50px; }
+            .header { padding: 32px 16px 24px; }
+            .header h1 { font-size: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-logo">TRADING-X</div>
+    <h1>이용약관</h1>
+    <p class="subtitle">㈜굳프렌즈 (GOODFRIENDS Co., Ltd.)</p>
+</div>
+
+<div class="container">
+
+    <div class="lang-switch">
+        <button class="active" onclick="showLang('ko')">한국어</button>
+        <button onclick="showLang('en')">English</button>
+    </div>
+
+    <!-- ==================== 한국어 ==================== -->
+    <div id="lang-ko">
+
+        <div class="section">
+            <h2>제1조 (목적)</h2>
+            <p>이 약관은 ㈜굳프렌즈(이하 "회사")가 제공하는 Trading-X 서비스(이하 "서비스")의 이용 조건 및 절차, 회사와 이용자의 권리·의무·책임에 관한 사항을 규정함을 목적으로 합니다.</p>
+        </div>
+
+        <div class="section">
+            <h2>제2조 (서비스의 정의 및 범위)</h2>
+            <div class="highlight-box">
+                <p>Trading-X는 MetaTrader 5(MT5) 기반 브로커와 연동하여 주문 편의 기능을 제공하는 도구 플랫폼입니다. 회사는 증권사, 브로커, 투자자문사 또는 금융기관이 아닙니다.</p>
+            </div>
+            <div class="info-box">
+                <p>Trading-X는 이용자에게 별도의 서비스 이용료를 부과하지 않는 무료 플랫폼입니다. 회사는 이용자의 자금을 보유·수탁·관리하지 않으며, 브로커 연동을 위한 기술적 인터페이스만을 제공합니다.</p>
+            </div>
+            <p>서비스는 다음을 포함합니다.</p>
+            <ul>
+                <li>MT5 브로커 계좌 연동 인터페이스</li>
+                <li>간소화 주문 패널 (이지패널)</li>
+                <li>EA(Expert Advisor) 기반 자동매매 도구</li>
+                <li>기술적 분석 차트 및 인디케이터</li>
+                <li>멀티 계좌 관리 대시보드</li>
+                <li>실시간 시세 데이터 표시</li>
+                <li>데모 거래 환경 제공</li>
+            </ul>
+            <p>서비스는 다음을 포함하지 않습니다.</p>
+            <ul>
+                <li>금융 투자 조언, 자문 또는 추천</li>
+                <li>고객 자금의 보유, 수탁 또는 관리</li>
+                <li>입출금 처리 서비스</li>
+                <li>바이너리 옵션 거래</li>
+                <li>투자 수익 보장</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>제3조 (이용 자격)</h2>
+            <p>서비스는 만 18세 이상의 개인만 이용할 수 있습니다. 만 14세 미만의 아동은 서비스를 이용할 수 없습니다.</p>
+            <p>이용자는 자신이 거주하는 국가 또는 지역의 관련 법령에 따라 외환(FX) 및 CFD 거래가 허용되는지를 직접 확인할 책임이 있습니다.</p>
+        </div>
+
+        <div class="section">
+            <h2>제4조 (계정)</h2>
+            <p>이용자는 정확한 정보를 제공하여 계정을 생성해야 하며, 계정의 보안 유지에 대한 책임은 이용자에게 있습니다. 타인의 계정을 사용하거나 자신의 계정 정보를 제3자에게 제공하는 행위는 금지됩니다.</p>
+        </div>
+
+        <div class="section">
+            <h2>제5조 (MT5 브로커 연동)</h2>
+            <p>이용자는 자신이 직접 가입한 MT5 브로커 계좌를 서비스에 연결합니다. 서비스는 MetaAPI를 통해 해당 브로커와 연동되며, 이용자의 지시에 따라 주문을 전달합니다.</p>
+            <ul>
+                <li>브로커 선택, 계좌 개설, 자금 입출금은 전적으로 이용자와 해당 브로커 간의 관계입니다.</li>
+                <li>회사는 브로커의 서비스 품질, 수수료, 거래 조건, 자금 안전성에 대해 보증하지 않습니다.</li>
+                <li>연결 과정에서 발생하는 기술적 문제(API 지연, 연결 끊김 등)로 인한 거래 손실에 대해 회사는 책임을 지지 않습니다.</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>제6조 (투자 위험 고지)</h2>
+            <div class="warning-box">
+                <p>외환(FX) 및 CFD 거래는 높은 수준의 위험을 수반하며, 투자 원금의 일부 또는 전부를 잃을 수 있습니다. 레버리지를 사용하는 거래는 잠재적 손실을 확대할 수 있습니다.</p>
+            </div>
+            <ul>
+                <li>회사는 투자 조언을 제공하지 않으며, 서비스 내 어떠한 정보도 투자 권유로 해석되어서는 안 됩니다.</li>
+                <li>EA(Expert Advisor)의 과거 성과는 미래 수익을 보장하지 않습니다.</li>
+                <li>모든 거래 결정과 이에 따른 결과에 대한 책임은 전적으로 이용자에게 있습니다.</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>제7조 (데모 거래)</h2>
+            <p>서비스는 가상 자금을 활용한 데모 거래 환경을 제공합니다.</p>
+            <ul>
+                <li>데모 거래는 가상 자금으로 이루어지며, 실제 금전적 손익이 발생하지 않습니다.</li>
+                <li>데모 거래의 성과는 실제 거래(라이브 거래) 결과와 다를 수 있습니다.</li>
+                <li>데모 거래 환경의 시세, 체결 속도, 슬리피지 등은 실제 시장과 차이가 있을 수 있습니다.</li>
+                <li>데모 거래의 수익률이 라이브 거래에서 동일하게 재현될 것이라고 기대해서는 안 됩니다.</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>제8조 (금지 행위)</h2>
+            <ul>
+                <li>서비스를 이용한 불법 행위 또는 자금세탁</li>
+                <li>서비스의 보안을 침해하거나 시스템에 무단 접근하는 행위</li>
+                <li>서비스를 역설계, 디컴파일 또는 복제하는 행위</li>
+                <li>허위 정보를 제공하여 계정을 생성하는 행위</li>
+                <li>서비스를 이용하여 타인에게 투자 조언을 제공하는 행위</li>
+                <li>서비스의 정상적인 운영을 방해하는 행위</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>제9조 (계정 해지 및 탈퇴)</h2>
+            <p>이용자는 언제든지 서비스 내 설정 메뉴 또는 고객센터(support@trading-x.ai)를 통해 계정 해지(회원 탈퇴)를 요청할 수 있습니다.</p>
+            <ul>
+                <li>탈퇴 요청 시 계정은 즉시 비활성화되며, 재로그인이 불가합니다.</li>
+                <li>탈퇴 후 개인정보는 개인정보처리방침에 따라 지체 없이 파기됩니다. 단, 관련 법령에 따라 일정 기간 보존이 필요한 정보는 해당 기간 동안 보관 후 파기합니다.</li>
+                <li>탈퇴 시점에 연동된 MT5 브로커 계좌의 포지션, 잔고 등은 해당 브로커에 의해 관리되며, 회사와 무관합니다.</li>
+                <li>탈퇴한 계정의 거래 내역, 설정, EA 구성 등은 복구할 수 없습니다.</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>제10조 (서비스 변경 및 중단)</h2>
+            <p>회사는 운영상, 기술상의 필요에 따라 서비스의 전부 또는 일부를 변경하거나 중단할 수 있습니다. 중요한 변경 사항은 사전에 서비스 내 공지 또는 이메일을 통해 안내합니다.</p>
+        </div>
+
+        <div class="section">
+            <h2>제11조 (면책 조항)</h2>
+            <ul>
+                <li>회사는 이용자의 거래로 인한 손실에 대해 책임을 지지 않습니다.</li>
+                <li>MT5 브로커, MetaAPI 등 제3자 서비스의 장애, 지연, 오류로 인한 손해에 대해 회사는 책임을 지지 않습니다.</li>
+                <li>천재지변, 전쟁, 사이버 공격 등 불가항력적 사유로 서비스가 중단된 경우 회사는 책임을 지지 않습니다.</li>
+                <li>서비스 내 제공되는 시세 데이터, 차트, 인디케이터는 참고용이며, 정확성을 보증하지 않습니다.</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>제12조 (손해배상의 제한)</h2>
+            <p>Trading-X는 이용자에게 별도의 서비스 이용료를 부과하지 않는 무료 플랫폼이며, 브로커와 이용자 간의 기술적 연결 인터페이스만을 제공합니다.</p>
+            <ul>
+                <li>회사는 무료로 제공되는 서비스의 특성상, 서비스 이용과 관련하여 발생하는 손해에 대해 법령에 특별한 규정이 있는 경우를 제외하고는 책임을 지지 않습니다.</li>
+                <li>회사의 고의 또는 중과실로 인한 손해가 입증된 경우에도, 배상 범위는 직접적이고 통상적인 손해에 한정됩니다.</li>
+                <li>이용자의 거래 손실, 기대 수익의 상실, 간접 손해, 특별 손해에 대해서는 배상 책임을 지지 않습니다.</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>제13조 (지적재산권)</h2>
+            <p>서비스에 포함된 모든 콘텐츠(소프트웨어, UI, 디자인, EA, 인디케이터 등)에 대한 지적재산권은 회사에 귀속됩니다. 이용자는 서비스를 개인적 목적으로만 사용할 수 있으며, 회사의 사전 서면 동의 없이 복제, 배포, 수정할 수 없습니다.</p>
+        </div>
+
+        <div class="section">
+            <h2>제14조 (분쟁 해결)</h2>
+            <p>서비스와 관련된 분쟁은 대한민국 법률을 준거법으로 하며, 회사 본점 소재지를 관할하는 법원을 전속적 합의관할로 합니다.</p>
+        </div>
+
+        <div class="section">
+            <h2>제15조 (약관의 변경)</h2>
+            <p>회사는 관련 법령에 위배되지 않는 범위 내에서 본 약관을 변경할 수 있으며, 변경 시 적용일자 및 변경 사유를 명시하여 서비스 내 또는 이메일로 공지합니다. 변경된 약관에 동의하지 않는 이용자는 이용 계약을 해지할 수 있습니다.</p>
+        </div>
+
+        <div class="section">
+            <h2>부칙</h2>
+            <p>본 약관은 2026년 1월 5일부터 시행합니다.</p>
+        </div>
+
+    </div>
+
+    <!-- ==================== English ==================== -->
+    <div id="lang-en" style="display: none;">
+
+        <div class="section">
+            <h2>Article 1 (Purpose)</h2>
+            <p>These Terms govern the conditions, procedures, rights, obligations, and responsibilities between GoodFriends Co., Ltd. (hereinafter "Company") and users of the Trading-X service (hereinafter "Service").</p>
+        </div>
+
+        <div class="section">
+            <h2>Article 2 (Definition and Scope of Service)</h2>
+            <div class="highlight-box">
+                <p>Trading-X is a tool platform that provides order convenience features by connecting with MetaTrader 5 (MT5) brokers. The Company is NOT a securities firm, broker, investment advisor, or financial institution.</p>
+            </div>
+            <div class="info-box">
+                <p>Trading-X is a free platform that does not charge users any service fees. The Company does not hold, custody, or manage user funds, and only provides a technical interface for broker connectivity.</p>
+            </div>
+            <p>The Service includes:</p>
+            <ul>
+                <li>MT5 broker account connectivity interface</li>
+                <li>Simplified order panel (Easy Panel)</li>
+                <li>EA (Expert Advisor) based automated trading tools</li>
+                <li>Technical analysis charts and indicators</li>
+                <li>Multi-account management dashboard</li>
+                <li>Real-time market data display</li>
+                <li>Demo trading environment</li>
+            </ul>
+            <p>The Service does NOT include:</p>
+            <ul>
+                <li>Financial investment advice, consultation, or recommendations</li>
+                <li>Custody or management of client funds</li>
+                <li>Deposit/withdrawal processing services</li>
+                <li>Binary options trading</li>
+                <li>Guarantee of investment returns</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Article 3 (Eligibility)</h2>
+            <p>The Service is available only to individuals aged 18 or older. Users under 14 years of age are not permitted to use the Service.</p>
+            <p>Users are responsible for verifying whether FX and CFD trading is permitted under the laws of their country or region of residence.</p>
+        </div>
+
+        <div class="section">
+            <h2>Article 4 (Accounts)</h2>
+            <p>Users must provide accurate information when creating an account and are responsible for maintaining account security. Using another person's account or sharing account credentials with third parties is prohibited.</p>
+        </div>
+
+        <div class="section">
+            <h2>Article 5 (MT5 Broker Connectivity)</h2>
+            <p>Users connect their own MT5 broker accounts to the Service. The Service relays orders to brokers via MetaAPI according to user instructions.</p>
+            <ul>
+                <li>Broker selection, account opening, and fund deposits/withdrawals are entirely between the user and their broker.</li>
+                <li>The Company does not guarantee broker service quality, fees, trading conditions, or fund safety.</li>
+                <li>The Company is not liable for trading losses caused by technical issues (API delays, disconnections, etc.) during connectivity.</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Article 6 (Risk Disclosure)</h2>
+            <div class="warning-box">
+                <p>FX and CFD trading involves a high level of risk. You may lose some or all of your invested capital. Leveraged trading can amplify potential losses.</p>
+            </div>
+            <ul>
+                <li>The Company does not provide investment advice. No information within the Service should be construed as investment solicitation.</li>
+                <li>Past performance of EAs does not guarantee future returns.</li>
+                <li>All trading decisions and their outcomes are the sole responsibility of the user.</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Article 7 (Demo Trading)</h2>
+            <p>The Service provides a demo trading environment using virtual funds.</p>
+            <ul>
+                <li>Demo trades use virtual funds and do not result in actual financial gains or losses.</li>
+                <li>Demo trading results may differ from actual (live) trading results.</li>
+                <li>Market prices, execution speed, and slippage in the demo environment may differ from real markets.</li>
+                <li>Users should not expect demo trading returns to be replicated in live trading.</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Article 8 (Prohibited Activities)</h2>
+            <ul>
+                <li>Illegal activities or money laundering through the Service</li>
+                <li>Breaching Service security or unauthorized system access</li>
+                <li>Reverse engineering, decompiling, or copying the Service</li>
+                <li>Creating accounts with false information</li>
+                <li>Providing investment advice to others using the Service</li>
+                <li>Interfering with normal Service operations</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Article 9 (Account Termination and Withdrawal)</h2>
+            <p>Users may request account termination at any time through the Service settings menu or customer support (support@trading-x.ai).</p>
+            <ul>
+                <li>Upon withdrawal request, the account is immediately deactivated and re-login is not possible.</li>
+                <li>Personal information is destroyed without delay per the Privacy Policy. Information required by law is retained for the specified period before destruction.</li>
+                <li>MT5 broker account positions and balances at the time of withdrawal are managed by the respective broker and are unrelated to the Company.</li>
+                <li>Trading history, settings, and EA configurations of terminated accounts cannot be recovered.</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Article 10 (Service Modification and Suspension)</h2>
+            <p>The Company may modify or suspend all or part of the Service for operational or technical reasons. Significant changes will be communicated in advance via in-service notice or email.</p>
+        </div>
+
+        <div class="section">
+            <h2>Article 11 (Disclaimer)</h2>
+            <ul>
+                <li>The Company is not liable for losses resulting from user trades.</li>
+                <li>The Company is not liable for damages caused by failures, delays, or errors of third-party services including MT5 brokers and MetaAPI.</li>
+                <li>The Company is not liable when the Service is suspended due to force majeure such as natural disasters, war, or cyber attacks.</li>
+                <li>Market data, charts, and indicators provided within the Service are for reference only and accuracy is not guaranteed.</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Article 12 (Limitation of Liability)</h2>
+            <p>Trading-X is a free platform that does not charge service fees, providing only a technical connectivity interface between brokers and users.</p>
+            <ul>
+                <li>Given the nature of this free service, the Company is not liable for damages arising from Service use, except as specifically required by law.</li>
+                <li>Even where damages from the Company's willful misconduct or gross negligence are proven, liability is limited to direct and ordinary damages.</li>
+                <li>The Company is not liable for trading losses, lost expected profits, indirect damages, or special damages.</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Article 13 (Intellectual Property)</h2>
+            <p>All intellectual property rights to content included in the Service (software, UI, design, EAs, indicators, etc.) belong to the Company. Users may use the Service for personal purposes only and may not copy, distribute, or modify without prior written consent.</p>
+        </div>
+
+        <div class="section">
+            <h2>Article 14 (Dispute Resolution)</h2>
+            <p>Disputes related to the Service shall be governed by the laws of the Republic of Korea, with exclusive jurisdiction in the court having jurisdiction over the Company's headquarters.</p>
+        </div>
+
+        <div class="section">
+            <h2>Article 15 (Amendment of Terms)</h2>
+            <p>The Company may amend these Terms within the scope permitted by law. Changes will be notified with the effective date and reasons via in-service notice or email. Users who do not agree to amended Terms may terminate their service agreement.</p>
+        </div>
+
+        <div class="section">
+            <h2>Supplementary Provisions</h2>
+            <p>These Terms take effect on January 5, 2026.</p>
+        </div>
+
+    </div>
+
+    <div class="doc-footer">
+        <p>&copy; 2026 Trading-X by GOODFRIENDS Co., Ltd. All rights reserved.</p>
+    </div>
+
+</div>
+
+<script>
+function showLang(lang) {
+    document.getElementById('lang-ko').style.display = lang === 'ko' ? 'block' : 'none';
+    document.getElementById('lang-en').style.display = lang === 'en' ? 'block' : 'none';
+    document.querySelectorAll('.lang-switch button').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>

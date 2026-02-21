@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>개인정보처리방침 | Trading-X</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Rajdhani', -apple-system, sans-serif;
+            line-height: 1.75;
+            color: rgba(255,255,255,0.8);
+            background: #0a0c10;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #0d1117 0%, #151821 100%);
+            padding: 40px 24px 32px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00d4ff, transparent);
+        }
+        .header-logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            color: #00d4ff;
+            letter-spacing: 3px;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+        .header h1 {
+            font-family: 'Rajdhani', sans-serif;
+            color: #00d4ff;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .header .subtitle {
+            font-size: 13px;
+            color: rgba(255,255,255,0.4);
+            font-weight: 500;
+        }
+
+        /* Lang Switch */
+        .lang-switch {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin: 20px 0;
+        }
+        .lang-switch button {
+            padding: 6px 16px;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 6px;
+            background: transparent;
+            color: #ffffff;
+            cursor: pointer;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .lang-switch button.active {
+            background: rgba(0,212,255,0.1);
+            border-color: rgba(0,212,255,0.4);
+            color: #ffffff;
+        }
+
+        /* Container */
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 24px 20px 60px;
+        }
+
+        /* Section */
+        .section {
+            margin-bottom: 28px;
+        }
+        .section h2 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #00d4ff;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(0,212,255,0.15);
+            letter-spacing: 0.5px;
+        }
+        .section p {
+            font-size: 14px;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        .section ul {
+            margin: 8px 0 12px 20px;
+        }
+        .section li {
+            font-size: 14px;
+            color: rgba(255,255,255,0.65);
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+            font-size: 13px;
+        }
+        th, td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            font-weight: 500;
+        }
+        th {
+            background: rgba(0,212,255,0.05);
+            color: rgba(0,212,255,0.8);
+            font-weight: 700;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+        td {
+            color: rgba(255,255,255,0.6);
+        }
+        td strong {
+            color: rgba(255,255,255,0.8);
+        }
+
+        /* Boxes */
+        .highlight-box {
+            background: rgba(0,212,255,0.06);
+            border-left: 3px solid #00d4ff;
+            padding: 14px 16px;
+            border-radius: 0 8px 8px 0;
+            margin: 12px 0;
+        }
+        .highlight-box p { color: rgba(0,212,255,0.85); margin: 0; font-weight: 600; font-size: 13px; }
+
+        .info-box {
+            background: rgba(0,180,80,0.06);
+            border-left: 3px solid #00b450;
+            padding: 14px 16px;
+            border-radius: 0 8px 8px 0;
+            margin: 12px 0;
+        }
+        .info-box p { color: rgba(0,180,80,0.85); margin: 0; font-weight: 600; font-size: 13px; }
+
+        .warning-box {
+            background: rgba(255,180,50,0.06);
+            border-left: 3px solid #ffb432;
+            padding: 14px 16px;
+            border-radius: 0 8px 8px 0;
+            margin: 12px 0;
+        }
+        .warning-box p { color: rgba(255,180,50,0.85); margin: 0; font-weight: 600; font-size: 13px; }
+
+        /* Footer */
+        .doc-footer {
+            text-align: center;
+            padding: 24px 0;
+            margin-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+        .doc-footer p {
+            font-size: 12px;
+            color: rgba(255,255,255,0.3);
+        }
+
+        @media (max-width: 600px) {
+            .container { padding: 20px 16px 50px; }
+            .header { padding: 32px 16px 24px; }
+            .header h1 { font-size: 20px; }
+            table { font-size: 12px; }
+            th, td { padding: 8px 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-logo">TRADING-X</div>
+    <h1>개인정보처리방침</h1>
+    <p class="subtitle">㈜굳프렌즈 (GOODFRIENDS Co., Ltd.)</p>
+</div>
+
+<div class="container">
+
+    <div class="lang-switch">
+        <button class="active" onclick="showLang('ko')">한국어</button>
+        <button onclick="showLang('en')">English</button>
+    </div>
+
+    <!-- ==================== 한국어 ==================== -->
+    <div id="lang-ko">
+
+        <div class="section">
+            <h2>1. 개요</h2>
+            <p>㈜굳프렌즈(이하 "회사")는 Trading-X 서비스(이하 "서비스")를 운영함에 있어 「개인정보 보호법」 등 관련 법령을 준수하며, 이용자의 개인정보를 보호하기 위해 최선을 다하고 있습니다.</p>
+            <div class="highlight-box">
+                <p>Trading-X는 주문 편의 도구 플랫폼이며, 브로커 또는 금융기관이 아닙니다. 고객 자금을 직접 보유하거나 관리하지 않으며, 모든 자금 관리는 사용자가 선택한 MT5 브로커에 의해 이루어집니다.</p>
+            </div>
+            <p><strong>시행일:</strong> 2026년 1월 5일 &nbsp;&nbsp;|&nbsp;&nbsp; <strong>최종 수정일:</strong> 2026년 1월 5일</p>
+        </div>
+
+        <div class="section">
+            <h2>2. 수집하는 개인정보 항목</h2>
+            <table>
+                <thead><tr><th>구분</th><th>수집 항목</th><th>수집 목적</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>회원가입</strong></td><td>이메일 주소, 비밀번호(암호화), 닉네임</td><td>계정 생성 및 본인 확인</td></tr>
+                    <tr><td><strong>MT5 계좌 연결</strong></td><td>MT5 로그인 ID, 서버 정보, 브로커명</td><td>브로커 계좌 연동 및 주문 실행</td></tr>
+                    <tr><td><strong>거래 활동</strong></td><td>주문 내역, 포지션 정보, 거래 히스토리</td><td>서비스 제공 및 대시보드 표시</td></tr>
+                    <tr><td><strong>서비스 이용</strong></td><td>접속 IP, 기기 정보, 브라우저 유형, 접속 로그</td><td>서비스 개선, 보안, 오류 분석</td></tr>
+                    <tr><td><strong>고객 지원</strong></td><td>문의 내용, 연락처 정보</td><td>문의 응대 및 서비스 개선</td></tr>
+                </tbody>
+            </table>
+            <div class="warning-box">
+                <p>Trading-X는 금융 계좌 비밀번호, 입출금 정보, 신용카드 정보 등 민감한 금융 정보를 직접 수집하거나 저장하지 않습니다. MT5 계좌 연동은 MetaAPI를 통해 암호화된 방식으로 이루어집니다.</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>3. 개인정보의 수집 방법</h2>
+            <ul>
+                <li>서비스 회원가입 및 이용 과정에서 이용자가 직접 입력</li>
+                <li>MT5 브로커 계좌 연결 과정에서 MetaAPI를 통한 자동 수집</li>
+                <li>서비스 이용 과정에서 자동으로 생성·수집되는 기기 및 로그 정보</li>
+                <li>고객 지원 문의 시 이용자가 직접 제공</li>
+            </ul>
+            <p>만 14세 미만의 아동으로부터는 개인정보를 수집하지 않습니다. 만 14세 미만은 서비스 이용이 불가합니다.</p>
+        </div>
+
+        <div class="section">
+            <h2>4. 개인정보의 이용 목적</h2>
+            <ul>
+                <li><strong>서비스 제공:</strong> MT5 브로커 연동, 주문 패널, EA 시스템, 차트, 멀티계좌 관리</li>
+                <li><strong>회원 관리:</strong> 본인 확인, 가입 의사 확인, 부정 이용 방지</li>
+                <li><strong>서비스 개선:</strong> 이용 통계 분석, 신규 기능 개발, 서비스 안정성 확보</li>
+                <li><strong>고객 지원:</strong> 문의 응대, 공지사항 전달, 서비스 관련 안내</li>
+                <li><strong>보안:</strong> 비정상 접근 탐지, 계정 보호, 시스템 보안 유지</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>5. 개인정보의 제3자 제공</h2>
+            <p>회사는 원칙적으로 이용자의 개인정보를 제3자에게 제공하지 않습니다. 다만, 다음의 경우 예외로 합니다.</p>
+            <table>
+                <thead><tr><th>제공받는 자</th><th>제공 항목</th><th>제공 목적</th></tr></thead>
+                <tbody>
+                    <tr><td>MetaApi OÜ</td><td>MT5 계정 연결 정보</td><td>MT5 브로커 연동 API 서비스 제공</td></tr>
+                    <tr><td>사용자 선택 MT5 브로커</td><td>주문 정보 (사용자 요청에 의함)</td><td>거래 주문 실행</td></tr>
+                </tbody>
+            </table>
+            <p>위 제3자에게 제공되는 정보는 서비스 제공에 필요한 최소한의 범위로 한정됩니다.</p>
+        </div>
+
+        <div class="section">
+            <h2>6. 개인정보의 국외 이전</h2>
+            <div class="info-box">
+                <p>서비스 제공을 위해 이용자의 일부 개인정보가 국외의 제3자에게 이전됩니다.</p>
+            </div>
+            <table>
+                <thead><tr><th>이전받는 자</th><th>이전 국가</th><th>이전 항목</th><th>목적</th><th>보유 기간</th></tr></thead>
+                <tbody>
+                    <tr><td>MetaApi OÜ</td><td>에스토니아 (EU)</td><td>MT5 계정 연결 정보</td><td>브로커 연동 및 주문 전달</td><td>연동 해제 시까지</td></tr>
+                </tbody>
+            </table>
+            <p>MetaApi OÜ는 EU 일반개인정보보호규정(GDPR)을 준수하며, 이전되는 개인정보는 TLS 1.2 이상으로 암호화 전송됩니다.</p>
+            <p>이용자는 국외 이전을 거부할 수 있으며, 이 경우 MT5 브로커 연동 기능의 이용이 제한될 수 있습니다.</p>
+        </div>
+
+        <div class="section">
+            <h2>7. 개인정보의 보유 및 이용 기간</h2>
+            <table>
+                <thead><tr><th>구분</th><th>보유 기간</th><th>근거</th></tr></thead>
+                <tbody>
+                    <tr><td>회원 계정 정보</td><td>회원 탈퇴 시까지</td><td>서비스 제공 목적</td></tr>
+                    <tr><td>거래 로그</td><td>5년</td><td>전자상거래법</td></tr>
+                    <tr><td>접속 로그</td><td>3개월</td><td>통신비밀보호법</td></tr>
+                    <tr><td>고객 문의 기록</td><td>3년</td><td>소비자 분쟁해결기준</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>8. 개인정보의 파기</h2>
+            <p>보유 기간이 경과하거나 처리 목적이 달성된 개인정보는 지체 없이 파기합니다.</p>
+            <ul>
+                <li><strong>전자적 파일:</strong> 복구 불가능한 방법으로 영구 삭제</li>
+                <li><strong>종이 문서:</strong> 분쇄기로 분쇄하거나 소각</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>9. 이용자의 권리</h2>
+            <ul>
+                <li>개인정보 열람 요구</li>
+                <li>개인정보 정정·삭제 요구</li>
+                <li>개인정보 처리 정지 요구</li>
+                <li>회원 탈퇴 (계정 삭제)</li>
+            </ul>
+            <p>서비스 내 설정 메뉴 또는 이메일(support@trading-x.ai)을 통해 행사할 수 있습니다.</p>
+        </div>
+
+        <div class="section">
+            <h2>10. 안전성 확보 조치</h2>
+            <ul>
+                <li><strong>암호화:</strong> 비밀번호 단방향 암호화, MT5 연결 정보 AES-256 암호화 저장</li>
+                <li><strong>전송 보안:</strong> TLS 1.2 이상 암호화 통신</li>
+                <li><strong>접근 제한:</strong> 최소한의 인원으로 접근 권한 제한</li>
+                <li><strong>보안 모니터링:</strong> 비정상 접근 탐지 및 차단 시스템</li>
+                <li><strong>정기 점검:</strong> 보안 취약점 정기 점검 및 패치</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>11. 쿠키</h2>
+            <ul>
+                <li><strong>필수 쿠키:</strong> 로그인 세션 유지, 보안 인증</li>
+                <li><strong>분석 쿠키:</strong> 서비스 이용 통계 및 개선 (선택)</li>
+            </ul>
+            <p>브라우저 설정을 통해 쿠키 저장을 거부할 수 있으며, 이 경우 일부 기능에 제한이 있을 수 있습니다.</p>
+        </div>
+
+        <div class="section">
+            <h2>12. 개인정보 보호 책임자</h2>
+            <table>
+                <tbody>
+                    <tr><td><strong>회사명</strong></td><td>㈜굳프렌즈 (GOODFRIENDS Co., Ltd.)</td></tr>
+                    <tr><td><strong>서비스명</strong></td><td>Trading-X (trading-x.ai)</td></tr>
+                    <tr><td><strong>책임자</strong></td><td>노병준 / 이사(CFO)</td></tr>
+                    <tr><td><strong>연락처</strong></td><td>support@trading-x.ai</td></tr>
+                    <tr><td><strong>주소</strong></td><td>경기 안산시 단원구 보화로 41, 1층 (고잔동)</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>13. 개인정보 침해 구제</h2>
+            <ul>
+                <li>개인정보침해 신고센터: (국번없이) 118 / privacy.kisa.or.kr</li>
+                <li>개인정보 분쟁조정위원회: 1833-6972 / kopico.go.kr</li>
+                <li>대검찰청 사이버수사과: (국번없이) 1301 / spo.go.kr</li>
+                <li>경찰청 사이버수사국: (국번없이) 182 / ecrm.police.go.kr</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>14. 개인정보처리방침 변경</h2>
+            <p>본 방침은 법령, 정책 또는 서비스 변경 사항을 반영하여 개정될 수 있습니다. 중요 변경 시 서비스 내 공지 또는 이메일로 사전 안내합니다.</p>
+        </div>
+
+    </div>
+
+    <!-- ==================== English ==================== -->
+    <div id="lang-en" style="display: none;">
+
+        <div class="section">
+            <h2>1. Overview</h2>
+            <p>GoodFriends Co., Ltd. (hereinafter "Company") operates the Trading-X service in compliance with the Korean Personal Information Protection Act (PIPA) and other applicable laws.</p>
+            <div class="highlight-box">
+                <p>Trading-X is an order convenience tool platform and is NOT a broker or financial institution. We do not hold or manage client funds.</p>
+            </div>
+            <p><strong>Effective Date:</strong> January 5, 2026 &nbsp;&nbsp;|&nbsp;&nbsp; <strong>Last Updated:</strong> January 5, 2026</p>
+        </div>
+
+        <div class="section">
+            <h2>2. Information Collected</h2>
+            <table>
+                <thead><tr><th>Category</th><th>Items</th><th>Purpose</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>Registration</strong></td><td>Email, password (encrypted), nickname</td><td>Account creation & verification</td></tr>
+                    <tr><td><strong>MT5 Link</strong></td><td>MT5 login ID, server info, broker name</td><td>Broker connectivity & order execution</td></tr>
+                    <tr><td><strong>Trading</strong></td><td>Orders, positions, trade history</td><td>Service delivery & dashboard</td></tr>
+                    <tr><td><strong>Usage</strong></td><td>IP, device info, browser, access logs</td><td>Improvement, security, error analysis</td></tr>
+                    <tr><td><strong>Support</strong></td><td>Inquiry content, contact info</td><td>Support & service improvement</td></tr>
+                </tbody>
+            </table>
+            <div class="warning-box">
+                <p>Trading-X does NOT collect or store sensitive financial information such as bank passwords, deposit/withdrawal info, or credit card details.</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>3. Collection Methods</h2>
+            <ul>
+                <li>Direct input during registration and service use</li>
+                <li>Automatic collection via MetaAPI during MT5 connection</li>
+                <li>Auto-generated device and log information</li>
+                <li>Direct input during customer support inquiries</li>
+            </ul>
+            <p>We do not collect information from children under 14. Users under 14 are not permitted to use the Service.</p>
+        </div>
+
+        <div class="section">
+            <h2>4. Purpose of Use</h2>
+            <ul>
+                <li><strong>Service Delivery:</strong> MT5 connectivity, order panels, EA systems, charts</li>
+                <li><strong>Member Management:</strong> Verification, fraud prevention</li>
+                <li><strong>Improvement:</strong> Analytics, new features, stability</li>
+                <li><strong>Support:</strong> Inquiry response, notices</li>
+                <li><strong>Security:</strong> Abnormal access detection, account protection</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>5. Third-Party Disclosure</h2>
+            <table>
+                <thead><tr><th>Recipient</th><th>Items</th><th>Purpose</th></tr></thead>
+                <tbody>
+                    <tr><td>MetaApi OÜ</td><td>MT5 connection info</td><td>Broker connectivity API</td></tr>
+                    <tr><td>User-selected MT5 Broker</td><td>Order info (at user request)</td><td>Trade execution</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>6. Cross-Border Transfer</h2>
+            <div class="info-box">
+                <p>Some personal information is transferred overseas for service provision.</p>
+            </div>
+            <table>
+                <thead><tr><th>Recipient</th><th>Country</th><th>Items</th><th>Purpose</th><th>Retention</th></tr></thead>
+                <tbody>
+                    <tr><td>MetaApi OÜ</td><td>Estonia (EU)</td><td>MT5 connection info</td><td>Broker connectivity</td><td>Until disconnection</td></tr>
+                </tbody>
+            </table>
+            <p>MetaApi OÜ complies with GDPR. All transfers are encrypted via TLS 1.2+. Users may refuse transfer, which may limit MT5 features.</p>
+        </div>
+
+        <div class="section">
+            <h2>7. Retention Period</h2>
+            <table>
+                <thead><tr><th>Category</th><th>Period</th><th>Legal Basis</th></tr></thead>
+                <tbody>
+                    <tr><td>Account Info</td><td>Until deletion</td><td>Service provision</td></tr>
+                    <tr><td>Transaction Logs</td><td>5 years</td><td>E-Commerce Act</td></tr>
+                    <tr><td>Access Logs</td><td>3 months</td><td>Communications Act</td></tr>
+                    <tr><td>Support Records</td><td>3 years</td><td>Consumer Standards</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>8. Destruction</h2>
+            <ul>
+                <li><strong>Electronic:</strong> Permanently deleted using irreversible methods</li>
+                <li><strong>Paper:</strong> Shredded or incinerated</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>9. User Rights</h2>
+            <ul>
+                <li>Access, correct, delete, or suspend processing of personal information</li>
+                <li>Account deletion (withdrawal)</li>
+            </ul>
+            <p>Exercise via settings menu or email (support@trading-x.ai).</p>
+        </div>
+
+        <div class="section">
+            <h2>10. Security Measures</h2>
+            <ul>
+                <li>One-way password encryption, AES-256 for MT5 credentials</li>
+                <li>TLS 1.2+ encrypted communication</li>
+                <li>Minimum-access personnel policy</li>
+                <li>Abnormal access detection systems</li>
+                <li>Regular security audits and patches</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>11. Cookies</h2>
+            <ul>
+                <li><strong>Essential:</strong> Login sessions, security</li>
+                <li><strong>Analytics:</strong> Usage statistics (optional)</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>12. Data Protection Officer</h2>
+            <table>
+                <tbody>
+                    <tr><td><strong>Company</strong></td><td>GOODFRIENDS Co., Ltd. (㈜굳프렌즈)</td></tr>
+                    <tr><td><strong>Service</strong></td><td>Trading-X (trading-x.ai)</td></tr>
+                    <tr><td><strong>DPO</strong></td><td>Byungjun Noh / Director (CFO)</td></tr>
+                    <tr><td><strong>Contact</strong></td><td>support@trading-x.ai</td></tr>
+                    <tr><td><strong>Address</strong></td><td>1F, 41 Bohwa-ro, Danwon-gu, Ansan-si, Gyeonggi, Korea</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>13. Complaints</h2>
+            <ul>
+                <li>KISA: 118 / privacy.kisa.or.kr</li>
+                <li>KOPICO: 1833-6972 / kopico.go.kr</li>
+                <li>Prosecutors: 1301 / spo.go.kr</li>
+                <li>Police Cyber Bureau: 182 / ecrm.police.go.kr</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>14. Policy Changes</h2>
+            <p>This policy may be amended to reflect legal or service changes. Significant changes will be notified via in-app notice or email.</p>
+        </div>
+
+    </div>
+
+    <div class="doc-footer">
+        <p>&copy; 2026 Trading-X by GOODFRIENDS Co., Ltd. All rights reserved.</p>
+    </div>
+
+</div>
+
+<script>
+function showLang(lang) {
+    document.getElementById('lang-ko').style.display = lang === 'ko' ? 'block' : 'none';
+    document.getElementById('lang-en').style.display = lang === 'en' ? 'block' : 'none';
+    document.querySelectorAll('.lang-switch button').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>
