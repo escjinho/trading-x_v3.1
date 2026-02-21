@@ -1562,13 +1562,8 @@ function updateHistorySummary() {
     // ★ Trade History 서머리: Win / Lose 표시
     if (winLoseSummaryEl) {
         winLoseSummaryEl.textContent = wins + ' / ' + losses;
-        if (wins > losses) {
-            winLoseSummaryEl.className = 'history-summary-value positive';
-        } else if (losses > wins) {
-            winLoseSummaryEl.className = 'history-summary-value negative';
-        } else {
-            winLoseSummaryEl.className = 'history-summary-value';
-        }
+        winLoseSummaryEl.className = 'history-summary-value';
+        winLoseSummaryEl.style.color = '#ffffff';
     }
 
     // ★ Account Info: Win Rate 표시 (기간별 연동)
