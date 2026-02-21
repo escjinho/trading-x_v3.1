@@ -3050,3 +3050,8 @@
 #piEditMode .my-form-input::placeholder {
     font-weight: 400;
 }
+
+/* 비밀번호 변경 폼 라벨 흰색 */
+#myView-password .my-form-label {
+    color: var(--text-primary);
+}
