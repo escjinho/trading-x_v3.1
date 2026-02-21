@@ -634,7 +634,7 @@
 .acc-info-equity-row {
     display: flex;
     align-items: baseline;
-    gap: 15px;
+    gap: 20px;
 }
 
 .acc-info-equity-label {

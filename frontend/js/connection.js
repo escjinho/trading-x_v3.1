@@ -1153,10 +1153,12 @@ function connectWebSocket() {
         // Current P&L 업데이트 (전체 포지션 손익 합계 — BuySell + V5 + QE)
         if (accCurrentPL) {
             let currentProfit = 0;
+            let hasAnyPosition = false;
 
             // Buy/Sell 포지션 손익 (magic=100001)
             if (data.position) {
                 currentProfit += data.position.profit || 0;
+                hasAnyPosition = true;
             }
 
             // V5 포지션 손익 (magic=100002)
@@ -1164,13 +1166,26 @@ function connectWebSocket() {
                 v5Positions.forEach(pos => {
                     currentProfit += pos.profit || 0;
                 });
+                hasAnyPosition = true;
             }
 
             // ★ QE 포지션 손익 (magic=100003) — positions 배열에서 합산
             if (data.positions && Array.isArray(data.positions)) {
-                data.positions.filter(p => p.magic == 100003).forEach(pos => {
-                    currentProfit += pos.profit || 0;
-                });
+                const qePositions = data.positions.filter(p => p.magic == 100003);
+                if (qePositions.length > 0) {
+                    qePositions.forEach(pos => {
+                        currentProfit += pos.profit || 0;
+                    });
+                    hasAnyPosition = true;
+                }
+            }
+
+            // ★ 번쩍임 방지: 포지션 데이터 일시 누락 시 이전 P/L 유지
+            if (!hasAnyPosition && window._lastLiveCurrentPL !== undefined && window._lastLiveCurrentPL !== 0) {
+                currentProfit = window._lastLiveCurrentPL;
+            }
+            if (hasAnyPosition) {
+                window._lastLiveCurrentPL = currentProfit;
             }
 
             // 깜빡임 방지: 값이 변경된 경우에만 업데이트
