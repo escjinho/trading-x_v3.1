@@ -67,7 +67,8 @@
         <link rel="stylesheet" href="css/quickeasy.css?v=1771533773">
     <link rel="stylesheet" href="css/chart.css?v=1771533773">
     <link rel="stylesheet" href="css/account.css?v=1771533773">
-    <link rel="stylesheet" href="css/my.css?v=1771637502">
+    <link rel="stylesheet" href="css/my.css?v=1771638631">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
     <div class="app">
@@ -1879,67 +1880,65 @@
                                     <span class="material-icons-round">add</span>
                                 </div>
                             </div>
-                            <div class="my-invite-hero-title">친구와 함께하는 트레이딩 경험</div>
-                            <div class="my-invite-hero-desc">초대한 친구가 가입하면<br>나와 친구 모두에게 보너스가 지급됩니다</div>
+                            <div class="my-invite-hero-title">친구와 함께하는 트레이딩</div>
+                            <div class="my-invite-hero-desc">아래 코드를 공유하여 친구를 초대하세요</div>
                         </div>
 
-                        <!-- 내 추천 코드 -->
-                        <div class="my-detail-card" style="margin-bottom: 10px;">
-                            <div style="font-size: 11px; color: var(--text-dim); letter-spacing: 0.5px; margin-bottom: 8px;">내 추천 코드</div>
-                            <div class="my-invite-code-row">
-                                <span class="my-invite-code" id="myInviteCode">TRADEX-JIN24</span>
-                                <div class="my-invite-copy-btn" onclick="copyInviteCode()">
-                                    <span class="material-icons-round" style="font-size: 16px;">content_copy</span>
-                                </div>
+                        <!-- 추천 코드 -->
+                        <div class="my-invite-label">INVITE CODE</div>
+                        <div class="my-invite-code-card">
+                            <span class="my-invite-code" id="myInviteCode">TRADEX-JIN2024</span>
+                            <div class="my-invite-copy-btn" onclick="copyInviteCode()">복사</div>
+                        </div>
+
+                        <!-- 초대 링크 -->
+                        <div class="my-invite-label" style="margin-top: 16px;">INVITE LINK</div>
+                        <div class="my-invite-code-card link">
+                            <span class="my-invite-link" id="myInviteLink">https://trading-x.ai/invite/JIN2024</span>
+                            <div class="my-invite-copy-btn" onclick="copyInviteLink()">복사</div>
+                        </div>
+
+                        <!-- 공유 / QR 버튼 -->
+                        <div class="my-invite-btn-row">
+                            <button class="my-invite-share-btn primary" onclick="shareInviteCode()">
+                                <span class="material-icons-round">share</span> 공유
+                            </button>
+                            <button class="my-invite-share-btn secondary" onclick="showInviteQR()">
+                                <span class="material-icons-round">qr_code_2</span> QR
+                            </button>
+                        </div>
+
+                        <!-- 보상 안내 (기대감 유발) -->
+                        <div class="my-invite-notice-card">
+                            <div class="my-invite-notice-icon">
+                                <span class="material-icons-round">card_giftcard</span>
+                            </div>
+                            <div class="my-invite-notice-title">리퍼럴 보상 프로그램 Coming Soon!</div>
+                            <div class="my-invite-notice-desc">친구를 초대하면 나도, 친구도 보상을 받는 리퍼럴 프로그램이 곧 시작됩니다.<br>지금 미리 초대해두면 프로그램 오픈 시 바로 혜택을 받을 수 있어요!</div>
+                            <div class="my-invite-notice-tags">
+                                <span class="my-invite-notice-tag"><span class="material-icons-round">notifications_active</span> 오픈 시 알림 예정</span>
+                                <span class="my-invite-notice-tag"><span class="material-icons-round">celebration</span> 사전 초대도 인정</span>
                             </div>
                         </div>
 
-                        <!-- 공유 버튼 -->
-                        <button class="my-action-btn primary" onclick="shareInviteCode()">
-                            <span class="material-icons-round" style="font-size: 16px; margin-right: 6px;">share</span>
-                            초대 링크 공유하기
-                        </button>
-
-                        <!-- 보상 안내 -->
-                        <div class="my-invite-reward-section">
-                            <div class="my-invite-reward-title">보상 안내</div>
-                            <div class="my-invite-reward-grid">
-                                <div class="my-invite-reward-card">
-                                    <span class="material-icons-round" style="font-size: 22px; color: var(--accent-cyan);">person_add</span>
-                                    <div class="my-invite-reward-label">친구 가입 시</div>
-                                    <div class="my-invite-reward-value">$10</div>
-                                </div>
-                                <div class="my-invite-reward-card">
-                                    <span class="material-icons-round" style="font-size: 22px; color: var(--buy-color);">payments</span>
-                                    <div class="my-invite-reward-label">첫 입금 시</div>
-                                    <div class="my-invite-reward-value">$20</div>
-                                </div>
-                                <div class="my-invite-reward-card">
-                                    <span class="material-icons-round" style="font-size: 22px; color: #a855f7;">swap_vert</span>
-                                    <div class="my-invite-reward-label">첫 거래 시</div>
-                                    <div class="my-invite-reward-value">$20</div>
-                                </div>
-                            </div>
+                        <!-- 안내 -->
+                        <div class="my-vip-notice" style="margin-top: 16px;">
+                            <span class="material-icons-round">info</span>
+                            <span>초대 코드와 링크는 로그인 후 자동 생성됩니다. 보상 정책은 준비 중이며, 확정 시 공지를 통해 안내드립니다.</span>
                         </div>
+                    </div>
+                </div>
 
-                        <!-- 초대 현황 -->
-                        <div class="my-invite-stats-section">
-                            <div style="font-size: 13px; font-weight: 600; margin-bottom: 10px;">초대 현황</div>
-                            <div class="my-invite-stats-row">
-                                <div class="my-invite-stat-box">
-                                    <div class="my-invite-stat-num" id="myInviteTotal">0</div>
-                                    <div class="my-invite-stat-label">총 초대</div>
-                                </div>
-                                <div class="my-invite-stat-box">
-                                    <div class="my-invite-stat-num success" id="myInviteSuccess">0</div>
-                                    <div class="my-invite-stat-label">가입 완료</div>
-                                </div>
-                                <div class="my-invite-stat-box">
-                                    <div class="my-invite-stat-num cyan" id="myInviteReward">$0</div>
-                                    <div class="my-invite-stat-label">받은 보상</div>
-                                </div>
-                            </div>
+                <!-- QR 코드 모달 -->
+                <div class="my-invite-qr-overlay" id="inviteQrOverlay" onclick="closeInviteQR(event)">
+                    <div class="my-invite-qr-modal">
+                        <div class="my-invite-qr-header">
+                            <span class="my-invite-qr-title">초대 QR 코드</span>
+                            <span class="material-icons-round" onclick="closeInviteQR()" style="cursor:pointer;color:#999;">close</span>
                         </div>
+                        <div class="my-invite-qr-body" id="inviteQrCode"></div>
+                        <div class="my-invite-qr-link" id="inviteQrLink">https://trading-x.ai/invite/JIN2024</div>
+                        <div class="my-invite-qr-hint">QR 코드를 스캔하면 초대 링크로 이동합니다</div>
                     </div>
                 </div>
 
@@ -3375,7 +3374,7 @@
     <script src="js/utils.js?v=1771631828"></script>
     <script src="js/watchlist.js?v=1771533971"></script>
     <script src="js/navigation.js?v=1771533971"></script>
-    <script src="js/my.js?v=1771637502"></script>
+    <script src="js/my.js?v=1771638631"></script>
 
     <!-- Chart Panels (모듈화) -->
     <script src="js/panels/gaugePanel.js?v=1771533971"></script>

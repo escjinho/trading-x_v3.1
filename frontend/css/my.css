@@ -2806,3 +2806,202 @@
     color: #444;
     font-size: 13px;
 }
+
+/* ========== 친구 초대 리디자인 ========== */
+.my-invite-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
+
+.my-invite-code-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 14px 16px;
+}
+
+.my-invite-code-card .my-invite-code {
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: #fff;
+}
+
+.my-invite-code-card.link {
+    border-color: rgba(0, 212, 255, 0.15);
+}
+
+.my-invite-link {
+    font-size: 12px;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-right: 10px;
+}
+
+.my-invite-copy-btn {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent-cyan);
+    padding: 4px 12px;
+    border-radius: 8px;
+    background: rgba(0, 212, 255, 0.1);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.my-invite-copy-btn:active { opacity: 0.6; }
+
+.my-invite-btn-row {
+    display: flex;
+    gap: 10px;
+    margin: 16px 0 20px;
+}
+
+.my-invite-share-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 13px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+}
+.my-invite-share-btn .material-icons-round { font-size: 18px; }
+.my-invite-share-btn.primary {
+    background: linear-gradient(135deg, var(--accent-cyan), #7dd3fc);
+    color: #000;
+}
+.my-invite-share-btn.secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+    border: 1px solid var(--border-color);
+}
+.my-invite-share-btn:active { opacity: 0.7; }
+
+/* 보상 안내 카드 */
+.my-invite-notice-card {
+    background: var(--bg-tertiary);
+    border-radius: 16px;
+    border: 1px solid rgba(0, 212, 255, 0.12);
+    padding: 24px 20px;
+    text-align: center;
+}
+
+.my-invite-notice-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(0, 212, 255, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 14px;
+}
+.my-invite-notice-icon .material-icons-round {
+    font-size: 26px;
+    color: var(--accent-cyan);
+}
+
+.my-invite-notice-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 10px;
+}
+
+.my-invite-notice-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.8;
+    margin-bottom: 16px;
+}
+
+.my-invite-notice-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+}
+
+.my-invite-notice-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--text-dim);
+    padding: 5px 12px;
+    border-radius: 20px;
+    background: rgba(0, 212, 255, 0.04);
+    border: 1px solid rgba(0, 212, 255, 0.1);
+}
+.my-invite-notice-tag .material-icons-round {
+    font-size: 13px;
+    color: var(--accent-cyan);
+}
+
+/* QR 모달 */
+.my-invite-qr-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+.my-invite-qr-overlay.show { display: flex; }
+
+.my-invite-qr-modal {
+    background: var(--bg-secondary);
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+    padding: 24px;
+    width: 300px;
+    text-align: center;
+}
+
+.my-invite-qr-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.my-invite-qr-title {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.my-invite-qr-body {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 16px;
+}
+
+.my-invite-qr-body canvas,
+.my-invite-qr-body img {
+    border-radius: 12px;
+}
+
+.my-invite-qr-link {
+    font-size: 11px;
+    color: var(--accent-cyan);
+    word-break: break-all;
+    margin-bottom: 8px;
+}
+
+.my-invite-qr-hint {
+    font-size: 10px;
+    color: var(--text-dim);
+}

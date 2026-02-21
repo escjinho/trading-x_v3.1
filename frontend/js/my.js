@@ -1088,6 +1088,60 @@ function shareInviteCode() {
     }
 }
 
+// ========== 초대 링크 복사 ==========
+function copyInviteLink() {
+    var linkEl = document.getElementById('myInviteLink');
+    if (!linkEl) return;
+    var text = linkEl.textContent;
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(function() {
+            showToast('✅ 초대 링크가 복사되었습니다');
+        });
+    } else {
+        showToast('✅ 초대 링크가 복사되었습니다');
+    }
+}
+
+// ========== QR 코드 모달 ==========
+var _inviteQrGenerated = false;
+
+function showInviteQR() {
+    var overlay = document.getElementById('inviteQrOverlay');
+    if (!overlay) return;
+    overlay.classList.add('show');
+
+    // QR 한 번만 생성
+    if (!_inviteQrGenerated) {
+        var container = document.getElementById('inviteQrCode');
+        var link = document.getElementById('myInviteLink');
+        var qrLink = document.getElementById('inviteQrLink');
+        var url = link ? link.textContent : 'https://trading-x.ai';
+
+        if (qrLink) qrLink.textContent = url;
+
+        if (container && typeof QRCode !== 'undefined') {
+            container.innerHTML = '';
+            new QRCode(container, {
+                text: url,
+                width: 200,
+                height: 200,
+                colorDark: '#ffffff',
+                colorLight: '#1a1a28',
+                correctLevel: QRCode.CorrectLevel.M
+            });
+            _inviteQrGenerated = true;
+        } else {
+            container.innerHTML = '<div style="color:#999;font-size:12px;padding:20px;">QR 코드 생성 중...</div>';
+        }
+    }
+}
+
+function closeInviteQR(e) {
+    if (e && e.target !== e.currentTarget) return;
+    var overlay = document.getElementById('inviteQrOverlay');
+    if (overlay) overlay.classList.remove('show');
+}
+
 // ========== 언어 선택 ==========
 function selectMyLanguage(el, lang) {
     document.querySelectorAll('#myView-language .my-radio-item').forEach(item => {
