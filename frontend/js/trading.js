@@ -1577,10 +1577,10 @@ function updateHistorySummary() {
     
     if (plEl) {
         if (totalPL > 0) {
-            plEl.textContent = '+$' + totalPL.toFixed(2);
+            plEl.textContent = '+$' + totalPL.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
             plEl.className = 'history-summary-value positive';
         } else if (totalPL < 0) {
-            plEl.textContent = '-$' + Math.abs(totalPL).toFixed(2);
+            plEl.textContent = '-$' + Math.abs(totalPL).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
             plEl.className = 'history-summary-value negative';
         } else {
             plEl.textContent = '$0.00';
