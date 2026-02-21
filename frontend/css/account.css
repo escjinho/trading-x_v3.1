@@ -699,9 +699,10 @@
     display: flex;
     align-items: baseline;
     gap: 5px;
-    margin-bottom: 2px;
+    margin-bottom: 0;
     position: absolute;
-    left: 55%;
+    left: 48%;
+    bottom: 16px;
 }
 
 .acc-info-cpl-label {
