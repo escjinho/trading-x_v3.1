@@ -45,8 +45,17 @@ function initMyTab() {
                     warningEl.style.display = data.email_verified ? 'none' : 'flex';
                 }
 
-                // 거래 통계
-                updateMyTradeStats(data.total_trades || 0, data.total_lots || 0);
+                // 거래 통계 — 모드별 독립, 등급은 항상 Live 기준
+                var isLive = (typeof currentMode !== 'undefined' && currentMode === 'live');
+                var displayTrades = isLive ? (data.live_trades || 0) : (data.demo_trades || 0);
+                var displayLots = isLive ? (data.live_lots || 0) : (data.demo_lots || 0);
+                updateMyTradeStats(displayTrades, displayLots);
+
+                // Demo 모드에서 등급 노티스
+                var gradeNotice = document.getElementById('gradeNotice');
+                if (gradeNotice) {
+                    gradeNotice.style.display = isLive ? 'none' : 'block';
+                }
 
                 // 등급
                 var gradeName = data.grade ? data.grade.name : 'Standard';
@@ -152,8 +161,10 @@ function initVipPage() {
 function renderVipPage(data) {
     var grade = data.grade || { name: 'Standard', badge_color: '#9e9e9e' };
     var nextGrade = data.next_grade;
-    var totalLots = data.total_lots || 0;
-    var totalTrades = data.total_trades || 0;
+    var totalLots = data.total_lots || 0;  // 등급 계산용 (항상 Live)
+    var isLive = (typeof currentMode !== 'undefined' && currentMode === 'live');
+    var displayLots = isLive ? (data.live_lots || 0) : (data.demo_lots || 0);  // 거래 현황용
+    var displayTrades = isLive ? (data.live_trades || 0) : (data.demo_trades || 0);
 
     // 현재 등급 카드
     var gradeEl = document.getElementById('myVipGrade');
@@ -189,8 +200,8 @@ function renderVipPage(data) {
     var tradesEl = document.getElementById('myVipTotalTrades');
     var refEl = document.getElementById('myVipReferral');
 
-    if (lotsEl) lotsEl.textContent = totalLots.toFixed(2);
-    if (tradesEl) tradesEl.textContent = totalTrades.toString();
+    if (lotsEl) lotsEl.textContent = displayLots.toFixed(2);
+    if (tradesEl) tradesEl.textContent = displayTrades.toString();
     if (refEl) {
         var refAmount = grade.self_referral || 0;
         refEl.textContent = refAmount > 0 ? ('$' + refAmount + '/lot') : '-';

@@ -210,6 +210,14 @@
     white-space: nowrap;
 }
 
+.my-grade-notice {
+    text-align: center;
+    font-size: 10px;
+    color: var(--text-muted);
+    padding: 4px 0 0;
+    opacity: 0.7;
+}
+
 /* 경고 배너 */
 .my-warning-banner {
     padding: 10px 14px;
