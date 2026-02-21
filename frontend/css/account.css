@@ -672,17 +672,18 @@
     margin-bottom: 20px;
     padding-bottom: 16px;
     border-bottom: 1px solid rgba(255,255,255,0.06);
+    position: relative;
 }
 
 .acc-info-equity-row {
     display: flex;
     align-items: baseline;
-    justify-content: space-between;
+    gap: 0;
 }
 
 .acc-info-equity-label {
     font-size: 11px;
-    color: rgba(255,255,255,0.4);
+    color: rgba(255,255,255,0.7);
     letter-spacing: 1px;
     margin-bottom: 4px;
 }
@@ -699,11 +700,13 @@
     align-items: baseline;
     gap: 5px;
     margin-bottom: 2px;
+    position: absolute;
+    left: 55%;
 }
 
 .acc-info-cpl-label {
     font-size: 10px;
-    color: rgba(255,255,255,0.3);
+    color: rgba(255,255,255,0.7);
 }
 
 .acc-info-cpl-value {
@@ -740,7 +743,7 @@
 
 .acc-info-item-label {
     font-size: 10px;
-    color: rgba(255,255,255,0.35);
+    color: rgba(255,255,255,0.7);
     letter-spacing: 0.5px;
     margin-bottom: 5px;
 }
