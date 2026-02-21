@@ -1447,7 +1447,158 @@ function renderOpenSource() {
     });
 }
 
+// ========== 전화번호 인증 ==========
+let phoneTimerInterval = null;
+let phoneTimerSeconds = 300;
+let currentVerifyPhone = '';
 
+function initPhoneView() {
+    var tkn = localStorage.getItem('access_token');
+    if (tkn) {
+        fetch((typeof API_URL !== 'undefined' ? API_URL : '') + '/auth/me', {
+            headers: { 'Authorization': 'Bearer ' + tkn }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            var phoneEl = document.getElementById('myPhoneNumber');
+            var stateEl = document.getElementById('myPhoneState');
+            var sendBtn = document.getElementById('myPhoneSendBtn');
+            var verifyBtn = document.getElementById('myPhoneVerifyBtn');
+            var resendBtn = document.getElementById('myPhoneResendBtn');
+            var codeSection = document.getElementById('myPhoneCodeSection');
+            var inputSection = document.getElementById('myPhoneInputSection');
+            var descEl = document.getElementById('myPhoneDesc');
+            var phoneInput = document.getElementById('myPhoneInput');
+
+            if (d.phone_verified && d.phone) {
+                if (phoneEl) phoneEl.textContent = formatPhone(d.phone);
+                if (stateEl) { stateEl.textContent = '인증 완료'; stateEl.className = 'my-email-state verified'; }
+                if (sendBtn) sendBtn.style.display = 'none';
+                if (verifyBtn) verifyBtn.style.display = 'none';
+                if (resendBtn) resendBtn.style.display = 'none';
+                if (codeSection) codeSection.style.display = 'none';
+                if (inputSection) inputSection.style.display = 'none';
+                if (descEl) descEl.innerHTML = '<span style="color:#00d4ff;">✓ 전화번호 인증이 완료되었습니다.</span><br>계정 보안이 강화되었으며, 중요 알림을 SMS로 받을 수 있습니다.';
+            } else {
+                if (stateEl) { stateEl.textContent = '미인증'; stateEl.className = 'my-email-state unverified'; }
+                if (sendBtn) sendBtn.style.display = '';
+                if (verifyBtn) verifyBtn.style.display = 'none';
+                if (resendBtn) resendBtn.style.display = 'none';
+                if (codeSection) codeSection.style.display = 'none';
+                if (inputSection) inputSection.style.display = '';
+                if (d.phone && phoneInput) phoneInput.value = d.phone;
+            }
+        })
+        .catch(function(e) { console.error('전화번호 상태 조회 실패:', e); });
+    }
+}
+
+function formatPhone(phone) {
+    var p = phone.replace(/[^0-9]/g, '');
+    if (p.length === 11) return p.substring(0,3) + '-' + p.substring(3,7) + '-' + p.substring(7);
+    if (p.length === 10) return p.substring(0,3) + '-' + p.substring(3,6) + '-' + p.substring(6);
+    return phone;
+}
+
+async function sendPhoneCode() {
+    var phoneInput = document.getElementById('myPhoneInput');
+    var phone = phoneInput ? phoneInput.value.replace(/[^0-9]/g, '') : '';
+    if (!phone || phone.length < 10) { showToast('올바른 전화번호를 입력해주세요', 'error'); return; }
+
+    var sendBtn = document.getElementById('myPhoneSendBtn');
+    if (sendBtn) sendBtn.disabled = true;
+
+    try {
+        var res = await fetch(API_URL + '/auth/phone/send-code', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone: phone })
+        });
+        var data = await res.json();
+        if (!res.ok) { showToast(data.detail || '발송 실패', 'error'); if (sendBtn) sendBtn.disabled = false; return; }
+
+        currentVerifyPhone = phone;
+        if (data.test_mode && data.test_code) {
+            console.log('[TEST] SMS 인증코드:', data.test_code);
+            showToast('테스트 모드: ' + data.test_code, 'info');
+        } else {
+            showToast('인증코드가 발송되었습니다', 'success');
+        }
+
+        document.getElementById('myPhoneCodeSection').style.display = '';
+        document.getElementById('myPhoneVerifyBtn').style.display = '';
+        document.getElementById('myPhoneResendBtn').style.display = '';
+        document.getElementById('myPhoneInputSection').style.display = 'none';
+        if (sendBtn) sendBtn.style.display = 'none';
+
+        if (phoneTimerInterval) clearInterval(phoneTimerInterval);
+        phoneTimerSeconds = 300;
+        updatePhoneTimer();
+        phoneTimerInterval = setInterval(function() {
+            phoneTimerSeconds--;
+            updatePhoneTimer();
+            if (phoneTimerSeconds <= 0) { clearInterval(phoneTimerInterval); showToast('인증코드가 만료되었습니다', 'error'); }
+        }, 1000);
+
+        document.querySelectorAll('.my-phone-code-input').forEach(function(inp) { inp.value = ''; });
+        var firstInput = document.querySelector('.my-phone-code-input[data-idx="0"]');
+        if (firstInput) firstInput.focus();
+    } catch (err) {
+        console.error('SMS 인증코드 발송 오류:', err);
+        showToast('발송 중 오류가 발생했습니다', 'error');
+    }
+    if (sendBtn) sendBtn.disabled = false;
+}
+
+function updatePhoneTimer() {
+    var min = Math.floor(phoneTimerSeconds / 60).toString().padStart(2, '0');
+    var sec = (phoneTimerSeconds % 60).toString().padStart(2, '0');
+    var el = document.getElementById('myPhoneTimer');
+    if (el) el.textContent = min + ':' + sec;
+}
+
+function onPhoneCodeInput(el) {
+    if (el.value.length === 1) {
+        var idx = parseInt(el.getAttribute('data-idx'));
+        var next = document.querySelector('.my-phone-code-input[data-idx="' + (idx + 1) + '"]');
+        if (next) next.focus();
+    }
+}
+
+async function verifyPhoneCode() {
+    var code = '';
+    document.querySelectorAll('.my-phone-code-input').forEach(function(inp) { code += inp.value; });
+    if (code.length !== 6) { showToast('6자리 코드를 모두 입력해주세요', 'error'); return; }
+
+    try {
+        var res = await fetch(API_URL + '/auth/phone/verify-code', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone: currentVerifyPhone, code: code })
+        });
+        var data = await res.json();
+
+        if (res.ok && data.success) {
+            if (phoneTimerInterval) clearInterval(phoneTimerInterval);
+            var stateEl = document.getElementById('myPhoneState');
+            if (stateEl) { stateEl.textContent = '인증 완료'; stateEl.className = 'my-email-state verified'; }
+            var phoneEl = document.getElementById('myPhoneNumber');
+            if (phoneEl) phoneEl.textContent = formatPhone(currentVerifyPhone);
+            var descEl = document.getElementById('myPhoneDesc');
+            if (descEl) descEl.innerHTML = '<span style="color:#00d4ff;">✓ 전화번호 인증이 완료되었습니다.</span><br>계정 보안이 강화되었으며, 중요 알림을 SMS로 받을 수 있습니다.';
+            document.getElementById('myPhoneSendBtn').style.display = 'none';
+            document.getElementById('myPhoneVerifyBtn').style.display = 'none';
+            document.getElementById('myPhoneResendBtn').style.display = 'none';
+            document.getElementById('myPhoneCodeSection').style.display = 'none';
+            showToast('전화번호 인증이 완료되었습니다 ✓', 'success');
+        } else {
+            showToast(data.detail || data.message || '인증 실패', 'error');
+        }
+    } catch (err) {
+        console.error('SMS 인증코드 검증 오류:', err);
+        showToast('인증 확인 중 오류가 발생했습니다', 'error');
+    }
+}
 
 // ========== 페이지 로드 시 초기화 ==========
 document.addEventListener('DOMContentLoaded', initMyTab);
