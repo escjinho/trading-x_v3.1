@@ -197,19 +197,20 @@ const SymbolSelectorPanel = {
         const infoSwap3Day = document.getElementById('infoSwap3Day');
         if (infoSwap3Day) infoSwap3Day.textContent = data.swap3Day;
         
-        // 거래 시간
+        // 거래 시간 (전역 formatHoursWithKST 사용)
         const dayMap = {
-            'Sun': 'sun', 'Mon': 'mon', 'Tue': 'tue', 
+            'Sun': 'sun', 'Mon': 'mon', 'Tue': 'tue',
             'Wed': 'wed', 'Thu': 'thu', 'Fri': 'fri', 'Sat': 'sat'
         };
-        
+
         Object.keys(dayMap).forEach(day => {
             const key = dayMap[day];
             const el = document.getElementById('infoHours' + day);
-            if (el && data.hours[key]) {
-                el.textContent = data.hours[key];
-                if (key === 'sat' || key === 'sun') {
-                    el.className = data.hours[key] === '—' ? 'trading-time closed' : 'trading-time';
+            if (el && data.hours) {
+                if (typeof formatHoursWithKST === 'function') {
+                    formatHoursWithKST(el, data.hours[key] || '—');
+                } else {
+                    el.textContent = data.hours[key] || '—';
                 }
             }
         });
