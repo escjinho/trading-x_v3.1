@@ -150,6 +150,11 @@ function initVipPage() {
 }
 
 function renderVipPage(data) {
+    var grade = data.grade || { name: 'Standard', badge_color: '#9e9e9e' };
+    var nextGrade = data.next_grade;
+    var totalLots = data.total_lots || 0;
+    var totalTrades = data.total_trades || 0;
+
     // 현재 등급 카드
     var gradeEl = document.getElementById('myVipGrade');
     var descEl = document.getElementById('myVipDesc');
@@ -157,9 +162,7 @@ function renderVipPage(data) {
     var curLabel = document.getElementById('myVipCurrentLabel');
     var nextLabel = document.getElementById('myVipNextLabel');
     var badgeEl = document.getElementById('myVipBadge');
-
-    var grade = data.grade || { name: 'Standard', badge_color: '#9e9e9e' };
-    var nextGrade = data.next_grade;
+    var card = document.getElementById('myVipCurrentCard');
 
     if (gradeEl) gradeEl.textContent = grade.name;
     if (badgeEl) {
@@ -167,8 +170,6 @@ function renderVipPage(data) {
         if (icon) icon.style.color = grade.badge_color;
         badgeEl.style.background = hexToRgba(grade.badge_color, 0.12);
     }
-
-    var card = document.getElementById('myVipCurrentCard');
     if (card) card.style.borderColor = hexToRgba(grade.badge_color, 0.3);
 
     if (nextGrade) {
@@ -177,7 +178,7 @@ function renderVipPage(data) {
         if (curLabel) curLabel.textContent = grade.name;
         if (nextLabel) nextLabel.textContent = nextGrade.name;
     } else {
-        if (descEl) descEl.textContent = '최고 등급을 달성했습니다! 🎉';
+        if (descEl) descEl.textContent = '최고 등급 달성!';
         if (fillEl) fillEl.style.width = '100%';
         if (curLabel) curLabel.textContent = grade.name;
         if (nextLabel) nextLabel.textContent = 'MAX';
@@ -188,43 +189,21 @@ function renderVipPage(data) {
     var tradesEl = document.getElementById('myVipTotalTrades');
     var refEl = document.getElementById('myVipReferral');
 
-    if (lotsEl) lotsEl.textContent = (data.total_lots || 0).toFixed(2);
-    if (tradesEl) tradesEl.textContent = (data.total_trades || 0).toString();
+    if (lotsEl) lotsEl.textContent = totalLots.toFixed(2);
+    if (tradesEl) tradesEl.textContent = totalTrades.toString();
     if (refEl) {
         var refAmount = grade.self_referral || 0;
         refEl.textContent = refAmount > 0 ? ('$' + refAmount + '/lot') : '-';
     }
 
-    // 등급 목록 동적 렌더링
-    var tierList = document.getElementById('myVipTierList');
-    if (tierList && data.all_grades) {
-        var html = '';
-        var badgeClass = { 'Standard': 'standard', 'Pro': 'pro', 'VIP': 'vip' };
-
-        for (var i = 0; i < data.all_grades.length; i++) {
-            var g = data.all_grades[i];
-            var cls = g.achieved ? ' active' : '';
-            var bc = badgeClass[g.name] || 'standard';
-            var check = g.achieved ? '<div class="my-vip-tier-check">✓</div>' : '';
-            var req = g.min_lots > 0 ? (g.min_lots + ' lots') : '기본';
-            var benefit = g.benefit || (g.self_referral > 0 ? ('셀퍼럴 $' + g.self_referral + '/lot') : '기본 혜택');
-
-            html += '<div class="my-vip-tier' + cls + '">';
-            html += '  <div class="my-vip-tier-left">';
-            html += '    <div class="my-vip-tier-badge ' + bc + '"><span class="material-icons-round">workspace_premium</span></div>';
-            html += '    <div>';
-            html += '      <div class="my-vip-tier-name">' + g.name + '</div>';
-            html += '      <div class="my-vip-tier-req">' + req + '</div>';
-            html += '    </div>';
-            html += '  </div>';
-            html += '  <div style="display:flex;align-items:center;">';
-            html += '    <div class="my-vip-tier-benefit">' + benefit + '</div>';
-            html += check;
-            html += '  </div>';
-            html += '</div>';
-        }
-        tierList.innerHTML = html;
+    // 비교표 — 현재 등급 헤더에 "현재" 태그
+    var allTh = document.querySelectorAll('.my-vip-th');
+    for (var i = 0; i < allTh.length; i++) {
+        allTh[i].classList.remove('current');
     }
+    var gradeLower = (grade.name || 'standard').toLowerCase();
+    var targetTh = document.querySelector('.my-vip-th.' + gradeLower);
+    if (targetTh) targetTh.classList.add('current');
 }
 
 // hex → rgba 변환 유틸

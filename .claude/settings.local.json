@@ -115,7 +115,11 @@
       "Bash(/root/.local/share/pnpm/pm2:*)",
       "Bash(/root/.npm/_npx/5f7878ce38f1eb13/node_modules/pm2/bin/pm2:*)",
       "Bash(supervisorctl status:*)",
-      "Bash(xargs:*)"
+      "Bash(xargs:*)",
+      "Bash(PGPASSWORD=postgres psql:*)",
+      "Bash(sudo -u postgres psql:*)",
+      "Bash(sudo su - postgres -c \"psql -d trading -c \"\"UPDATE grade_configs SET badge_color = ''#f97316'' WHERE grade_name = ''VIP'';\"\"\")",
+      "Bash(sudo su:*)"
     ]
   }
 }

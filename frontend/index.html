@@ -67,7 +67,7 @@
         <link rel="stylesheet" href="css/quickeasy.css?v=1771533773">
     <link rel="stylesheet" href="css/chart.css?v=1771533773">
     <link rel="stylesheet" href="css/account.css?v=1771533773">
-    <link rel="stylesheet" href="css/my.css?v=1771636843">
+    <link rel="stylesheet" href="css/my.css?v=1771637502">
 </head>
 <body>
     <div class="app">
@@ -1950,27 +1950,131 @@
                         <span class="my-sub-title">VIP 프로그램</span>
                     </div>
                     <div class="my-sub-body">
-                        <!-- 내 현재 등급 -->
-                        <div class="my-vip-my-grade" id="myVipMyGrade">
-                            <span class="my-vip-my-badge" id="myVipMyBadge"><span class="material-icons-round">workspace_premium</span></span>
-                            <span class="my-vip-my-name" id="myVipMyName">Standard</span>
-                            <span class="my-vip-my-lots" id="myVipMyLots">0.00 lots</span>
+                        <!-- 현재 등급 카드 -->
+                        <div class="my-vip-current" id="myVipCurrentCard">
+                            <div class="my-vip-current-badge" id="myVipBadge">
+                                <span class="material-icons-round">workspace_premium</span>
+                            </div>
+                            <div class="my-vip-current-grade" id="myVipGrade">Standard</div>
+                            <div class="my-vip-current-desc" id="myVipDesc">다음 등급까지 <span id="myVipRemaining">100</span> lots 남음</div>
+                            <div class="my-vip-progress-wrap">
+                                <div class="my-vip-progress-bar">
+                                    <div class="my-vip-progress-fill" id="myVipProgressFill" style="width: 0%"></div>
+                                </div>
+                                <div class="my-vip-progress-labels">
+                                    <span id="myVipCurrentLabel">Standard</span>
+                                    <span id="myVipNextLabel">Pro</span>
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- 비교표 -->
-                        <div class="my-vip-table" id="myVipTable">
-                            <!-- JS에서 동적 렌더링 -->
+                        <!-- 내 거래 현황 -->
+                        <div class="my-vip-section-title">내 거래 현황</div>
+                        <div class="my-vip-stats-card">
+                            <div class="my-vip-stat-item">
+                                <div class="my-vip-stat-value" id="myVipTotalLots">0.00</div>
+                                <div class="my-vip-stat-label">누적 거래량 (Lots)</div>
+                            </div>
+                            <div class="my-vip-stat-divider"></div>
+                            <div class="my-vip-stat-item">
+                                <div class="my-vip-stat-value" id="myVipTotalTrades">0</div>
+                                <div class="my-vip-stat-label">총 거래 횟수</div>
+                            </div>
+                            <div class="my-vip-stat-divider"></div>
+                            <div class="my-vip-stat-item">
+                                <div class="my-vip-stat-value" id="myVipReferral">-</div>
+                                <div class="my-vip-stat-label">셀퍼럴</div>
+                            </div>
+                        </div>
+
+                        <!-- 등급 비교표 -->
+                        <div class="my-vip-section-title">등급 비교</div>
+                        <div class="my-vip-table-wrap">
+                            <table class="my-vip-table" id="myVipTable">
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th class="my-vip-th standard">Standard</th>
+                                        <th class="my-vip-th pro">Pro</th>
+                                        <th class="my-vip-th vip">VIP</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="my-vip-td-label">거래량 기준</td>
+                                        <td class="my-vip-td-val">기본</td>
+                                        <td class="my-vip-td-val pro">100 lots</td>
+                                        <td class="my-vip-td-val vip">300 lots</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="my-vip-td-label">셀퍼럴</td>
+                                        <td class="my-vip-td-dim">&mdash;</td>
+                                        <td class="my-vip-td-val pro">$1/lot</td>
+                                        <td class="my-vip-td-val vip">$2/lot</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="my-vip-td-label">기본 거래 기능</td>
+                                        <td><span class="material-icons-round my-vip-check">check_circle</span></td>
+                                        <td><span class="material-icons-round my-vip-check">check_circle</span></td>
+                                        <td><span class="material-icons-round my-vip-check">check_circle</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="my-vip-td-label">실시간 차트</td>
+                                        <td><span class="material-icons-round my-vip-check">check_circle</span></td>
+                                        <td><span class="material-icons-round my-vip-check">check_circle</span></td>
+                                        <td><span class="material-icons-round my-vip-check">check_circle</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="my-vip-td-label">분석 리포트</td>
+                                        <td class="my-vip-td-dim">&mdash;</td>
+                                        <td><span class="material-icons-round my-vip-check">check_circle</span></td>
+                                        <td><span class="material-icons-round my-vip-check">check_circle</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="my-vip-td-label">우선 고객지원</td>
+                                        <td class="my-vip-td-dim">&mdash;</td>
+                                        <td><span class="material-icons-round my-vip-check">check_circle</span></td>
+                                        <td><span class="material-icons-round my-vip-check">check_circle</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="my-vip-td-label">전담 매니저</td>
+                                        <td class="my-vip-td-dim">&mdash;</td>
+                                        <td class="my-vip-td-dim">&mdash;</td>
+                                        <td><span class="material-icons-round my-vip-check">check_circle</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="my-vip-td-label">VIP 시그널</td>
+                                        <td class="my-vip-td-dim">&mdash;</td>
+                                        <td class="my-vip-td-dim">&mdash;</td>
+                                        <td><span class="material-icons-round my-vip-check">check_circle</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
 
                         <!-- 셀퍼럴 안내 -->
-                        <div class="my-vip-info-box">
-                            <div class="my-vip-info-header">
-                                <span class="material-icons-round">info</span>
-                                <span>셀퍼럴이란?</span>
+                        <div class="my-vip-section-title">셀퍼럴이란?</div>
+                        <div class="my-vip-info-card">
+                            <div class="my-vip-info-row">
+                                <span class="material-icons-round" style="color: #00d4ff;">paid</span>
+                                <div>
+                                    <div class="my-vip-info-title">거래할 때마다 리워드 적립</div>
+                                    <div class="my-vip-info-desc">Pro 등급부터 거래 시 lot당 셀퍼럴이 자동 지급됩니다.</div>
+                                </div>
                             </div>
-                            <div class="my-vip-info-text">
-                                Pro 등급부터 거래 시 lot당 셀퍼럴이 자동 지급됩니다.<br>
-                                누적 거래량에 따라 등급이 자동으로 올라가며, 별도 신청이 필요 없습니다.
+                            <div class="my-vip-info-row">
+                                <span class="material-icons-round" style="color: #00c853;">trending_up</span>
+                                <div>
+                                    <div class="my-vip-info-title">자동 등급 산정</div>
+                                    <div class="my-vip-info-desc">누적 거래량(Lots)에 따라 자동으로 등급이 올라갑니다. 별도 신청 불필요.</div>
+                                </div>
+                            </div>
+                            <div class="my-vip-info-row last">
+                                <span class="material-icons-round" style="color: #f97316;">account_balance_wallet</span>
+                                <div>
+                                    <div class="my-vip-info-title">리워드 지급 방식</div>
+                                    <div class="my-vip-info-desc">셀퍼럴 리워드는 거래 완료 시 자동으로 계정에 적립됩니다.</div>
+                                </div>
                             </div>
                         </div>
 
@@ -3271,7 +3375,7 @@
     <script src="js/utils.js?v=1771631828"></script>
     <script src="js/watchlist.js?v=1771533971"></script>
     <script src="js/navigation.js?v=1771533971"></script>
-    <script src="js/my.js?v=1771636843"></script>
+    <script src="js/my.js?v=1771637502"></script>
 
     <!-- Chart Panels (모듈화) -->
     <script src="js/panels/gaugePanel.js?v=1771533971"></script>
