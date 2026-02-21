@@ -1120,11 +1120,11 @@ async function loadLoginHistory() {
             // 메타 정보
             var meta = '';
             if (isCurrent) {
-                meta = r.browser + ' · ' + r.os + ' · 방금 전';
+                var locStr = r.location || '';
+                meta = r.browser + ' · ' + r.os + (locStr ? ' · ' + locStr : '') + ' · 방금 전';
             } else {
                 var parts = [];
                 if (r.location) parts.push(r.location);
-                if (r.ip_address) parts.push(r.ip_address);
                 parts.push(r.time_str);
                 meta = parts.join(' · ');
             }

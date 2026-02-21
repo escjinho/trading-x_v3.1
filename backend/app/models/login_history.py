@@ -14,4 +14,6 @@ class LoginHistory(Base):
     device_type = Column(String(20), nullable=True)   # mobile / desktop / tablet
     location = Column(String(100), nullable=True)
     session_id = Column(String(50), nullable=True, index=True)  # JWT sid와 매칭
+    country_code = Column(String(5), nullable=True)            # 국가코드 (KR, US, VN 등)
+    city = Column(String(100), nullable=True)                  # 도시명
     created_at = Column(DateTime(timezone=True), server_default=func.now())

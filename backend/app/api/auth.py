@@ -13,6 +13,7 @@ from ..utils.security import get_password_hash, verify_password, create_access_t
 from ..services.email_service import generate_verification_code, verify_code, send_verification_email
 from ..models.login_history import LoginHistory
 from ..utils.ua_parser import parse_user_agent
+from ..utils.ip_location import get_ip_location
 import uuid
 from ..services.sms_service import generate_phone_code, verify_phone_code, send_verification_sms
 
@@ -71,6 +72,9 @@ def login(user_data: UserLogin, request: Request, db: Session = Depends(get_db))
         ua_string = request.headers.get("user-agent", "")
         ua_info = parse_user_agent(ua_string)
         
+        # IP 위치 조회
+        loc_info = get_ip_location(ip)
+        
         history = LoginHistory(
             user_id=user.id,
             ip_address=ip,
@@ -78,6 +82,9 @@ def login(user_data: UserLogin, request: Request, db: Session = Depends(get_db))
             browser=ua_info["browser"],
             os_name=ua_info["os"],
             device_type=ua_info["device_type"],
+            location=loc_info.get("location", ""),
+            country_code=loc_info.get("country_code", ""),
+            city=loc_info.get("city", ""),
             session_id=session_id
         )
         db.add(history)
@@ -533,6 +540,8 @@ def get_login_history(
             "device_type": r.device_type or "desktop",
             "ip_address": r.ip_address or "",
             "location": r.location or "",
+            "country_code": r.country_code or "",
+            "city": r.city or "",
             "time_str": time_str,
             "is_current": is_current,
             "created_at": str(r.created_at)
