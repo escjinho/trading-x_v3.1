@@ -1320,8 +1320,8 @@
 }
 
 .my-invite-person {
-    width: 56px;
-    height: 56px;
+    width: 62px;
+    height: 62px;
     border-radius: 50%;
     background: var(--bg-tertiary);
     border: 1px solid var(--border-color);
@@ -1331,7 +1331,7 @@
 }
 
 .my-invite-person .material-icons-round {
-    font-size: 28px;
+    font-size: 34px;
     color: var(--text-muted);
 }
 
@@ -1354,7 +1354,7 @@
 }
 
 .my-invite-hero-title {
-    font-size: 16px;
+    font-size: 22px;
     font-weight: 600;
     margin-bottom: 6px;
 }
