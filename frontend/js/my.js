@@ -419,6 +419,15 @@ function openMyDetail(detail) {
 
         // 상세 페이지 초기화
         if (typeof initDetailView === 'function') initDetailView(detail);
+        
+        // 이메일 인증 페이지: 프로필에서 이메일 강제 세팅
+        if (detail === 'email') {
+            var pEmail = document.getElementById('myProfileEmail');
+            var eAddr = document.getElementById('myEmailAddr');
+            if (pEmail && eAddr && pEmail.textContent && pEmail.textContent !== '-') {
+                eAddr.textContent = pEmail.textContent;
+            }
+        }
 
         // ★ 알림 설정 페이지면 저장된 설정 로드
         if (detail === 'notification') {
