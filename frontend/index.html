@@ -1230,33 +1230,29 @@
             <!-- ========== Account 탭 ========== -->
 <div class="page" id="page-account">
     <!-- Account Info 섹션 -->
-<div class="card trading-mode-card">
-    <div class="card-title">
-        <span class="material-icons-round" style="font-size: 18px; vertical-align: middle; margin-right: 5px;">account_balance</span>
-        Account Info
+<div class="card trading-mode-card acc-info-card">
+    <div class="acc-info-top">
+        <div class="acc-info-equity">
+            <div class="acc-info-equity-label">EQUITY</div>
+            <div class="acc-info-equity-value" id="accEquity">$0.00</div>
+        </div>
+        <div class="acc-info-cpl">
+            <div class="acc-info-cpl-label">C.P/L</div>
+            <div class="acc-info-cpl-value" id="accCurrentPL">$0.00</div>
+        </div>
     </div>
-    <div class="account-summary-v2" style="display: flex; flex-wrap: wrap; gap: 8px;">
-        <!-- 1열: Equity / Current P&L (50%씩) -->
-        <div class="summary-box-v2" style="flex: 1 1 calc(50% - 4px); min-width: calc(50% - 4px);">
-            <div class="summary-value" id="accEquity">$0.00</div>
-            <div class="summary-label">Equity</div>
+    <div class="acc-info-bottom">
+        <div class="acc-info-item">
+            <div class="acc-info-item-label">BALANCE</div>
+            <div class="acc-info-item-value" id="accBalance">$0.00</div>
         </div>
-        <div class="summary-box-v2" style="flex: 1 1 calc(50% - 4px); min-width: calc(50% - 4px);">
-            <div class="summary-value neutral" id="accCurrentPL">+$0.00</div>
-            <div class="summary-label">Current P&L</div>
+        <div class="acc-info-item">
+            <div class="acc-info-item-label">MARGIN</div>
+            <div class="acc-info-item-value" id="accMargin">$0.00</div>
         </div>
-        <!-- 2열: Balance / Margin / Today P&L (33%씩) -->
-        <div class="summary-box-v2" style="flex: 1 1 calc(33.33% - 6px); min-width: calc(33.33% - 6px);">
-            <div class="summary-value neutral" id="accBalance">$0.00</div>
-            <div class="summary-label">Balance</div>
-        </div>
-        <div class="summary-box-v2" style="flex: 1 1 calc(33.33% - 6px); min-width: calc(33.33% - 6px);">
-            <div class="summary-value neutral" id="accMargin">$0.00</div>
-            <div class="summary-label">Margin</div>
-        </div>
-        <div class="summary-box-v2" style="flex: 1 1 calc(33.33% - 6px); min-width: calc(33.33% - 6px);">
-            <div class="summary-value neutral" id="accTodayPL">$0.00</div>
-            <div class="summary-label">Today P&L</div>
+        <div class="acc-info-item">
+            <div class="acc-info-item-label">TODAY P/L</div>
+            <div class="acc-info-item-value" id="accTodayPL">$0.00</div>
         </div>
     </div>
 </div>
