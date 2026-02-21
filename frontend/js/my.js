@@ -433,7 +433,9 @@ function openMyDetail(detail) {
             if (pEmail && eAddr && pEmail.textContent && pEmail.textContent !== '-') {
                 eAddr.textContent = pEmail.textContent;
             }
-            var isVerified = localStorage.getItem('email_verified') === 'true';
+            // DOM + localStorage 모두 체크 (어느 하나라도 인증이면 인증 완료)
+            var stateText = stateEl ? stateEl.textContent.trim() : '';
+            var isVerified = localStorage.getItem('email_verified') === 'true' || stateText === '인증됨' || stateText === '인증 완료';
             var stateEl = document.getElementById('myEmailState');
             var sendBtn = document.getElementById('myEmailSendBtn');
             var verifyBtn = document.getElementById('myEmailVerifyBtn');
