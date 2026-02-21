@@ -42,7 +42,7 @@
     flex: 1;
     text-align: left;
     padding: 12px 15px;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 600;
     color: rgba(255,255,255,0.7);
     cursor: pointer;
@@ -58,10 +58,11 @@
     content: '';
     position: absolute;
     bottom: -1px;
-    left: 0;
-    right: 0;
+    left: 15px;
+    right: 15px;
     height: 2px;
     background: var(--accent-cyan);
+    border-radius: 1px;
 }
 
 .acc-tab-count {
@@ -337,13 +338,28 @@
     color: rgba(255,255,255,0.5);
 }
 
-/* 모든 뱃지 동일 스타일 (텍스트만 구분) */
-.open-pos-badge.badge-pro,
-.open-pos-badge.badge-easy,
-.open-pos-badge.badge-chart,
+.open-pos-badge.badge-pro {
+    background: transparent;
+    border: 1px solid rgba(0, 212, 255, 0.3);
+    color: rgba(0, 212, 255, 0.6);
+}
+
+.open-pos-badge.badge-easy {
+    background: transparent;
+    border: 1px solid rgba(0, 212, 164, 0.3);
+    color: rgba(0, 212, 164, 0.6);
+}
+
 .open-pos-badge.badge-v5 {
-    background: rgba(255,255,255,0.08);
-    color: rgba(255,255,255,0.5);
+    background: transparent;
+    border: 1px solid rgba(160, 120, 255, 0.3);
+    color: rgba(160, 120, 255, 0.6);
+}
+
+.open-pos-badge.badge-chart {
+    background: transparent;
+    border: 1px solid rgba(255, 180, 50, 0.3);
+    color: rgba(255, 180, 50, 0.6);
 }
 
 .open-pos-profit {
