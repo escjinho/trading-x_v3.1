@@ -1078,6 +1078,77 @@ function switchMt5Account(mode) { switchMyMt5Mode(mode); }
 function refreshMt5Connection() { refreshMyMt5Info(); }
 
 // ========== 로그인 기록 ==========
+async function loadLoginHistory() {
+    var listEl = document.getElementById('myLoginHistoryList');
+    if (!listEl) return;
+
+    listEl.innerHTML = '<div style="text-align:center;padding:40px 0;color:var(--text-dim);font-size:13px;">불러오는 중...</div>';
+
+    try {
+        var tkn = localStorage.getItem('access_token');
+        var res = await fetch(API_URL + '/auth/login-history', {
+            headers: { 'Authorization': 'Bearer ' + tkn }
+        });
+
+        if (!res.ok) {
+            listEl.innerHTML = '<div style="text-align:center;padding:40px 0;color:var(--text-dim);font-size:13px;">기록을 불러올 수 없습니다</div>';
+            return;
+        }
+
+        var data = await res.json();
+        var records = data.records || [];
+
+        if (records.length === 0) {
+            listEl.innerHTML = '<div style="text-align:center;padding:40px 0;color:var(--text-dim);font-size:13px;">로그인 기록이 없습니다</div>';
+            return;
+        }
+
+        var html = '';
+        records.forEach(function(r) {
+            var icon = r.device_type === 'mobile' ? 'smartphone' : (r.device_type === 'tablet' ? 'tablet' : 'computer');
+            var isCurrent = r.is_current;
+            var currentClass = isCurrent ? ' current' : '';
+
+            // 디바이스 이름 조합
+            var deviceName = '';
+            if (isCurrent) {
+                deviceName = '현재 기기';
+            } else {
+                deviceName = r.browser + ' · ' + r.os;
+            }
+
+            // 메타 정보
+            var meta = '';
+            if (isCurrent) {
+                meta = r.browser + ' · ' + r.os + ' · 방금 전';
+            } else {
+                var parts = [];
+                if (r.location) parts.push(r.location);
+                if (r.ip_address) parts.push(r.ip_address);
+                parts.push(r.time_str);
+                meta = parts.join(' · ');
+            }
+
+            var badge = isCurrent ? '<span class="my-login-current-badge">현재 세션</span>' : '';
+
+            html += '<div class="my-login-history-item' + currentClass + '">';
+            html += '  <div class="my-login-history-icon"><span class="material-icons-round">' + icon + '</span></div>';
+            html += '  <div class="my-login-history-info">';
+            html += '    <div class="my-login-history-device">' + deviceName + '</div>';
+            html += '    <div class="my-login-history-meta">' + meta + '</div>';
+            html += '  </div>';
+            html += badge;
+            html += '</div>';
+        });
+
+        listEl.innerHTML = html;
+
+    } catch (err) {
+        console.error('로그인 기록 조회 오류:', err);
+        listEl.innerHTML = '<div style="text-align:center;padding:40px 0;color:var(--text-dim);font-size:13px;">오류가 발생했습니다</div>';
+    }
+}
+
 function logoutAllDevices() {
     if (confirm('모든 기기에서 로그아웃 하시겠습니까?\n현재 기기도 로그아웃됩니다.')) {
         // TODO: API 연동
@@ -1149,6 +1220,9 @@ function initDetailView(detail) {
             break;
         case 'personalInfo':
             piResetView();
+            break;
+        case 'loginHistory':
+            loadLoginHistory();
             break;
     }
 }

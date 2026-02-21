@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -11,6 +11,9 @@ from ..models.live_trade import LiveTrade
 from ..schemas.user import UserCreate, UserLogin, UserResponse, Token
 from ..utils.security import get_password_hash, verify_password, create_access_token, create_refresh_token, decode_token
 from ..services.email_service import generate_verification_code, verify_code, send_verification_email
+from ..models.login_history import LoginHistory
+from ..utils.ua_parser import parse_user_agent
+import uuid
 from ..services.sms_service import generate_phone_code, verify_phone_code, send_verification_sms
 
 router = APIRouter(prefix="/auth", tags=["인증"])
@@ -39,7 +42,7 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
     return new_user
 
 @router.post("/login", response_model=Token)
-def login(user_data: UserLogin, db: Session = Depends(get_db)):
+def login(user_data: UserLogin, request: Request, db: Session = Depends(get_db)):
     """로그인"""
     # 사용자 찾기
     user = db.query(User).filter(User.email == user_data.email).first()
@@ -55,9 +58,33 @@ def login(user_data: UserLogin, db: Session = Depends(get_db)):
             detail="비활성화된 계정입니다"
         )
     
-    # 토큰 생성
-    access_token = create_access_token(data={"sub": str(user.id)})
-    refresh_token = create_refresh_token(data={"sub": str(user.id)})
+    # 세션 ID 생성
+    session_id = str(uuid.uuid4())[:16]
+    
+    # 토큰 생성 (세션 ID 포함)
+    access_token = create_access_token(data={"sub": str(user.id), "sid": session_id})
+    refresh_token = create_refresh_token(data={"sub": str(user.id), "sid": session_id})
+    
+    # 로그인 기록 저장
+    try:
+        ip = request.headers.get("x-forwarded-for", "").split(",")[0].strip() or request.client.host if request.client else "unknown"
+        ua_string = request.headers.get("user-agent", "")
+        ua_info = parse_user_agent(ua_string)
+        
+        history = LoginHistory(
+            user_id=user.id,
+            ip_address=ip,
+            user_agent=ua_string,
+            browser=ua_info["browser"],
+            os_name=ua_info["os"],
+            device_type=ua_info["device_type"],
+            session_id=session_id
+        )
+        db.add(history)
+        db.commit()
+    except Exception as e:
+        print(f"[LOGIN HISTORY] 기록 저장 실패: {e}")
+        db.rollback()
     
     return Token(access_token=access_token, refresh_token=refresh_token)
 
@@ -452,3 +479,63 @@ def update_personal_info(
             "phone_verified": current_user.phone_verified or False,
         }
     }
+
+
+# ========== 로그인 기록 ==========
+@router.get("/login-history")
+def get_login_history(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """로그인 기록 조회 (최근 20건)"""
+    # 현재 세션 ID 추출
+    auth_header = request.headers.get("authorization", "")
+    current_sid = None
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:]
+        payload = decode_token(token)
+        if payload:
+            current_sid = payload.get("sid")
+
+    records = db.query(LoginHistory).filter(
+        LoginHistory.user_id == current_user.id
+    ).order_by(LoginHistory.created_at.desc()).limit(20).all()
+
+    result = []
+    for r in records:
+        # 시간 표시
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc)
+        created = r.created_at
+        if created.tzinfo is None:
+            from datetime import timezone as tz
+            created = created.replace(tzinfo=tz.utc)
+        diff = now - created
+        
+        if diff.total_seconds() < 60:
+            time_str = "방금 전"
+        elif diff.total_seconds() < 3600:
+            time_str = f"{int(diff.total_seconds() // 60)}분 전"
+        elif diff.total_seconds() < 86400:
+            time_str = f"{int(diff.total_seconds() // 3600)}시간 전"
+        elif diff.days < 30:
+            time_str = f"{diff.days}일 전"
+        else:
+            time_str = created.strftime("%Y.%m.%d")
+
+        is_current = (current_sid and r.session_id == current_sid)
+        
+        result.append({
+            "id": r.id,
+            "browser": r.browser or "Unknown",
+            "os": r.os_name or "Unknown",
+            "device_type": r.device_type or "desktop",
+            "ip_address": r.ip_address or "",
+            "location": r.location or "",
+            "time_str": time_str,
+            "is_current": is_current,
+            "created_at": str(r.created_at)
+        })
+
+    return {"records": result}
