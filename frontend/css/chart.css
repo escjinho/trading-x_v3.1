@@ -2220,7 +2220,7 @@
 
 .zm-info-body .trading-hours-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 40px 1fr;
     gap: 0;
 }
 
