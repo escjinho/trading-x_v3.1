@@ -1227,8 +1227,8 @@
 /* 거래시간 그리드 */
 .trading-hours-grid {
     display: grid;
-    grid-template-columns: 50px 1fr;
-    gap: 6px 8px;
+    grid-template-columns: 40px 1fr;
+    gap: 6px 4px;
 }
 
 .trading-day {
