@@ -207,7 +207,7 @@ function renderVipPage(data) {
             var bc = badgeClass[g.name] || 'standard';
             var check = g.achieved ? '<div class="my-vip-tier-check">✓</div>' : '';
             var req = g.min_lots > 0 ? (g.min_lots + ' lots') : '기본';
-            var benefit = g.self_referral > 0 ? ('셀프 리퍼럴 $' + g.self_referral + '/lot') : (g.benefit || '기본 혜택');
+            var benefit = g.benefit || (g.self_referral > 0 ? ('셀퍼럴 $' + g.self_referral + '/lot') : '기본 혜택');
 
             html += '<div class="my-vip-tier' + cls + '">';
             html += '  <div class="my-vip-tier-left">';
