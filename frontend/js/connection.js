@@ -1,20 +1,26 @@
-// ★★★ Current P/L 번쩍임 방지 래퍼 ★★★
+// ★★★ Current P/L 번쩍임 방지 래퍼 (v2: 연속확인 방식) ★★★
 let _lastValidPL = null;
-let _lastPLUpdateTime = 0;
+let _plZeroCount = 0;
+const _PL_ZERO_THRESHOLD = 5; // $0.00이 연속 5회 이상 와야 실제 $0.00으로 표시
+
 function safeUpdateCurrentPL(element, profit) {
     if (!element) return;
-    const now = Date.now();
 
-    // $0.00으로 변경 시, 이전 값이 0이 아니었고 500ms 이내면 무시 (일시적 null 대응)
-    if (profit === 0 && _lastValidPL !== null && _lastValidPL !== 0 && (now - _lastPLUpdateTime) < 500) {
-        return; // 이전 값 유지
+    if (profit === 0 && _lastValidPL !== null && _lastValidPL !== 0) {
+        _plZeroCount++;
+        if (_plZeroCount < _PL_ZERO_THRESHOLD) {
+            return; // 이전 값 유지 — 아직 확인 안 됨
+        }
+        // 5회 연속 $0.00 → 진짜 청산됨, 통과
+    } else {
+        _plZeroCount = 0; // 0이 아닌 값 오면 카운터 리셋
     }
 
-    // 유효한 값이면 저장
     if (profit !== 0) {
         _lastValidPL = profit;
+    } else if (_plZeroCount >= _PL_ZERO_THRESHOLD) {
+        _lastValidPL = 0; // 진짜 청산 확인 시 리셋
     }
-    _lastPLUpdateTime = now;
 
     const newText = profit > 0
         ? '+$' + profit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})
