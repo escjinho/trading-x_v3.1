@@ -608,7 +608,10 @@ async def withdraw_account(
         current_user.phone = None
         current_user.phone_verified = False
 
-        # 3. 계정 비활성화 (소프트 삭제)
+        # 3. 이메일 변경 (재가입 허용)
+        current_user.email = f"{current_user.email}_deleted_{current_user.id}"
+
+        # 4. 계정 비활성화 (소프트 삭제)
         current_user.is_active = False
         current_user.name = f"탈퇴회원_{current_user.id}"
         current_user.updated_at = datetime.utcnow()
