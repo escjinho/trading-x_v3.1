@@ -1694,7 +1694,7 @@ async function executeWithdrawal() {
     btn.disabled = true;
     btn.textContent = '처리 중...';
     try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('access_token');
         const res = await fetch('/api/auth/withdraw?reason=' + encodeURIComponent(reasonValue), {
             method: 'DELETE',
             headers: { 'Authorization': 'Bearer ' + token }
