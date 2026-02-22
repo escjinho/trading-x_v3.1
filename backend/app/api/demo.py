@@ -737,7 +737,10 @@ async def get_demo_account(
     if current_user.has_mt5_account:
         # MT5 포지션 수: margin > 0이면 포지션 있음 (MetaAPI 기반)
         mt5_margin_val = current_user.mt5_margin or 0
-        mt5_profit_val = current_user.mt5_profit or 0
+        # ★ P/L = Equity - Balance (MT5 표준 공식)
+        mt5_equity_val = current_user.mt5_equity or current_user.mt5_balance or 0
+        mt5_balance_val = current_user.mt5_balance or 0
+        mt5_profit_val = round(mt5_equity_val - mt5_balance_val, 2)
         # MT5 open positions 추정: margin이 있으면 포지션 존재
         mt5_open_count = getattr(current_user, 'mt5_positions_count', None)
         if mt5_open_count is None:
@@ -750,7 +753,7 @@ async def get_demo_account(
             "free_margin": current_user.mt5_free_margin or current_user.mt5_balance or 0,
             "profit": mt5_profit_val,
             "today_profit": current_user.demo_today_profit or 0.0,
-            "current_pl": round(current_pl, 2),
+            "current_pl": mt5_profit_val,  # ★ equity - balance (profit과 동일)
             "broker": "Live Account",
             "account": current_user.mt5_account_number or "",
             "server": current_user.mt5_server or "",
