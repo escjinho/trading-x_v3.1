@@ -129,17 +129,14 @@ const QeTickChart = {
             }, 5000);
         });
 
-        // ★ requestAnimationFrame 루프로 오버레이/진행바 실시간 추적
+        // ★ requestAnimationFrame 루프로 오버레이/진행바/펄스 실시간 추적
         this._rafTrackingId = null;
         const trackOverlays = () => {
+            this.refreshPulsePosition();  // ★ 매 프레임 펄스 위치 갱신
             if (this._entryOverlay) this.updateEntryOverlay();
             if (this._entryData) this.drawProgressBars();
-            // 포지션 있을 때만 루프 유지
-            if (this._entryOverlay || this._entryData) {
-                this._rafTrackingId = requestAnimationFrame(trackOverlays);
-            } else {
-                this._rafTrackingId = null;
-            }
+            // ★ 항상 루프 유지 (펄스 마커 추적 필요)
+            this._rafTrackingId = requestAnimationFrame(trackOverlays);
         };
         // 포지션 생성 시 루프 시작을 위한 메서드
         this._startTracking = () => {
@@ -440,11 +437,34 @@ const QeTickChart = {
 
             if (timeCoord !== null && priceCoord !== null && timeCoord > 0 && priceCoord > 0) {
                 marker.style.display = 'block';
-                marker.style.left = timeCoord + 'px';
-                marker.style.top = priceCoord + 'px';
+                marker.style.transform = 'translate3d(' + (timeCoord - 3.5) + 'px, ' + (priceCoord - 3.5) + 'px, 0)';
+            } else {
+                marker.style.display = 'none';
             }
         } catch (e) {
-            // 좌표 변환 실패 시 무시
+            marker.style.display = 'none';
+        }
+    },
+
+    // ★ 매 프레임 펄스 위치 재계산 (줌/스크롤 시 잔상 방지)
+    refreshPulsePosition() {
+        const marker = document.getElementById('qePulseMarker');
+        if (!marker || !this.chart || !this.areaSeries) return;
+        if (!this.tickData || this.tickData.length === 0) return;
+
+        try {
+            const last = this.tickData[this.tickData.length - 1];
+            const timeCoord = this.chart.timeScale().timeToCoordinate(last.time);
+            const priceCoord = this.areaSeries.priceToCoordinate(last.value);
+
+            if (timeCoord !== null && priceCoord !== null && timeCoord > 0 && priceCoord > 0) {
+                marker.style.display = 'block';
+                marker.style.transform = 'translate3d(' + (timeCoord - 3.5) + 'px, ' + (priceCoord - 3.5) + 'px, 0)';
+            } else {
+                marker.style.display = 'none';
+            }
+        } catch (e) {
+            marker.style.display = 'none';
         }
     },
 
