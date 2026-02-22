@@ -1654,6 +1654,77 @@ function openTermsDetail(type) {
     }
 }
 
+
+// ========== 회원 탈퇴 ==========
+function startWithdrawal() {
+    document.getElementById('withdrawalModal').style.display = 'flex';
+    showWithdrawStep(1);
+}
+
+function closeWithdrawalModal() {
+    document.getElementById('withdrawalModal').style.display = 'none';
+    document.querySelectorAll('input[name="withdrawReason"]').forEach(r => r.checked = false);
+    const input = document.getElementById('withdrawConfirmInput');
+    if (input) input.value = '';
+    checkWithdrawConfirm();
+}
+
+function showWithdrawStep(step) {
+    document.getElementById('withdrawStep1').style.display = step === 1 ? 'block' : 'none';
+    document.getElementById('withdrawStep2').style.display = step === 2 ? 'block' : 'none';
+    document.getElementById('withdrawStep3').style.display = step === 3 ? 'block' : 'none';
+}
+
+function checkWithdrawConfirm() {
+    const input = document.getElementById('withdrawConfirmInput');
+    const btn = document.getElementById('withdrawFinalBtn');
+    if (!input || !btn) return;
+    const isMatch = input.value.trim() === '탈퇴합니다';
+    btn.disabled = !isMatch;
+    btn.style.background = isMatch ? '#ff4757' : 'rgba(255,71,87,0.3)';
+    btn.style.color = isMatch ? '#fff' : 'rgba(255,71,87,0.4)';
+    btn.style.cursor = isMatch ? 'pointer' : 'not-allowed';
+}
+
+async function executeWithdrawal() {
+    const reason = document.querySelector('input[name="withdrawReason"]:checked');
+    const reasonValue = reason ? reason.value : 'not_specified';
+    const btn = document.getElementById('withdrawFinalBtn');
+    btn.disabled = true;
+    btn.textContent = '처리 중...';
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch('/api/auth/withdraw', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ reason: reasonValue })
+        });
+        const data = await res.json();
+        if (data.success) {
+            closeWithdrawalModal();
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            showToast('회원 탈퇴가 완료되었습니다. 이용해주셔서 감사합니다.');
+            setTimeout(() => { window.location.href = '/login.html'; }, 2000);
+        } else {
+            showToast(data.message || '탈퇴 처리 중 오류가 발생했습니다.');
+            btn.disabled = false;
+            btn.textContent = '회원 탈퇴';
+        }
+    } catch (e) {
+        showToast('서버 연결에 실패했습니다.');
+        btn.disabled = false;
+        btn.textContent = '회원 탈퇴';
+    }
+}
+
+function switchToDemo() {
+    if (typeof setTradingMode === 'function') {
+        setTradingMode('demo');
+        showToast('데모 모드로 전환되었습니다!');
+    }
+}
+
 // ========== 1:1 문의하기 ==========
 function handleContactEmail() {
     const email = 'support@trading-x.ai';

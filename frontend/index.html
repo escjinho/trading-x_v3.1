@@ -1469,6 +1469,12 @@
                                 <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
                             </div>
                         </div>
+                        <div class="my-sub-card" style="margin-top:20px;">
+                            <div class="my-sub-item last" onclick="startWithdrawal()" style="color:#ff4757;">
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box" style="background:rgba(255,71,87,0.1);"><span class="material-icons-round" style="color:#ff4757;">person_remove</span></div><span class="my-sub-item-label" style="color:#ff4757;">회원 탈퇴</span></div>
+                                <span class="material-icons-round my-sub-item-arrow" style="color:#ff4757;">chevron_right</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -3130,6 +3136,98 @@
         
         <!-- Toast -->
         <div class="toast" id="toast"></div>
+        
+
+        <!-- 회원 탈퇴 모달 -->
+        <div class="modal-overlay" id="withdrawalModal" style="display:none;">
+            <div style="background: linear-gradient(180deg, #1e2127 0%, #15171c 100%); border: 2px solid #ff4757; border-radius: 16px; padding: 30px 25px; margin: 20px; max-width: 400px; width: 100%; box-shadow: 0 0 60px rgba(255,71,87,0.2);">
+
+                <!-- Step 1: 감성 유도 -->
+                <div id="withdrawStep1">
+                    <div style="text-align:center;margin-bottom:20px;">
+                        <div style="font-size:50px;margin-bottom:10px;">😢</div>
+                        <div style="font-size:20px;font-weight:bold;color:#fff;margin-bottom:6px;">정말 떠나시나요?</div>
+                        <div style="font-size:14px;color:#9ca3af;line-height:1.6;">아직 체험하지 못한 기능이 있어요!</div>
+                    </div>
+                    <div style="background:rgba(0,212,255,0.06);border-radius:12px;padding:16px;margin-bottom:20px;">
+                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                            <span class="material-icons-round" style="color:#00d4ff;font-size:20px;">play_circle</span>
+                            <span style="font-size:14px;color:#e2e8f0;">데모 계정으로 무료 연습</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                            <span class="material-icons-round" style="color:#00d4ff;font-size:20px;">show_chart</span>
+                            <span style="font-size:14px;color:#e2e8f0;">실시간 차트와 멀티 패널 트레이딩</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <span class="material-icons-round" style="color:#00d4ff;font-size:20px;">touch_app</span>
+                            <span style="font-size:14px;color:#e2e8f0;">Quick & Easy 원터치 매매</span>
+                        </div>
+                    </div>
+                    <div style="font-size:14px;color:#9ca3af;text-align:center;margin-bottom:18px;">데모로 한번 더 체험해보시겠어요?</div>
+                    <div style="display:flex;gap:10px;">
+                        <button onclick="closeWithdrawalModal();switchToDemo();" style="flex:1;padding:14px;font-size:14px;font-weight:bold;background:linear-gradient(135deg,#00d4ff,#0099cc);border:none;border-radius:10px;color:#000;cursor:pointer;">데모 체험하기</button>
+                        <button onclick="showWithdrawStep(2)" style="flex:1;padding:14px;font-size:14px;font-weight:600;background:transparent;border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#9ca3af;cursor:pointer;">탈퇴 계속하기</button>
+                    </div>
+                </div>
+
+                <!-- Step 2: 탈퇴 사유 -->
+                <div id="withdrawStep2" style="display:none;">
+                    <div style="text-align:center;margin-bottom:20px;">
+                        <div style="font-size:18px;font-weight:bold;color:#fff;margin-bottom:6px;">탈퇴 사유를 알려주세요</div>
+                        <div style="font-size:13px;color:#9ca3af;">서비스 개선에 참고하겠습니다</div>
+                    </div>
+                    <div id="withdrawReasons" style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+                        <label style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;cursor:pointer;">
+                            <input type="radio" name="withdrawReason" value="not_using" style="accent-color:#00d4ff;width:16px;height:16px;">
+                            <span style="font-size:14px;color:#e2e8f0;">사용하지 않게 되었어요</span>
+                        </label>
+                        <label style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;cursor:pointer;">
+                            <input type="radio" name="withdrawReason" value="lacking_features" style="accent-color:#00d4ff;width:16px;height:16px;">
+                            <span style="font-size:14px;color:#e2e8f0;">기능이 부족해요</span>
+                        </label>
+                        <label style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;cursor:pointer;">
+                            <input type="radio" name="withdrawReason" value="other_service" style="accent-color:#00d4ff;width:16px;height:16px;">
+                            <span style="font-size:14px;color:#e2e8f0;">다른 서비스를 이용할게요</span>
+                        </label>
+                        <label style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;cursor:pointer;">
+                            <input type="radio" name="withdrawReason" value="privacy" style="accent-color:#00d4ff;width:16px;height:16px;">
+                            <span style="font-size:14px;color:#e2e8f0;">개인정보가 걱정돼요</span>
+                        </label>
+                        <label style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;cursor:pointer;">
+                            <input type="radio" name="withdrawReason" value="other" style="accent-color:#00d4ff;width:16px;height:16px;">
+                            <span style="font-size:14px;color:#e2e8f0;">기타</span>
+                        </label>
+                    </div>
+                    <div style="display:flex;gap:10px;">
+                        <button onclick="showWithdrawStep(1)" style="flex:1;padding:14px;font-size:14px;font-weight:600;background:transparent;border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#9ca3af;cursor:pointer;">이전</button>
+                        <button onclick="showWithdrawStep(3)" style="flex:1;padding:14px;font-size:14px;font-weight:600;background:rgba(255,71,87,0.15);border:1px solid rgba(255,71,87,0.3);border-radius:10px;color:#ff4757;cursor:pointer;">다음</button>
+                    </div>
+                </div>
+
+                <!-- Step 3: 최종 확인 -->
+                <div id="withdrawStep3" style="display:none;">
+                    <div style="text-align:center;margin-bottom:16px;">
+                        <div style="font-size:18px;font-weight:bold;color:#ff4757;margin-bottom:6px;">⚠️ 탈퇴 전 확인사항</div>
+                    </div>
+                    <div style="background:rgba(255,71,87,0.06);border-left:3px solid #ff4757;padding:14px 16px;border-radius:0 10px 10px 0;margin-bottom:18px;">
+                        <div style="font-size:13px;color:rgba(255,255,255,0.7);line-height:1.8;">
+                            • 모든 계정 정보가 삭제됩니다<br>
+                            • MT5 연동이 해제됩니다<br>
+                            • 거래 내역은 복구할 수 없습니다<br>
+                            • 연결된 브로커 계좌는 영향받지 않습니다
+                        </div>
+                    </div>
+                    <div style="font-size:13px;color:#9ca3af;margin-bottom:10px;text-align:center;">탈퇴 확인을 위해 <strong style="color:#ff4757;">"탈퇴합니다"</strong>를 입력해주세요</div>
+                    <input type="text" id="withdrawConfirmInput" placeholder="탈퇴합니다" oninput="checkWithdrawConfirm()" style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-size:14px;text-align:center;margin-bottom:16px;outline:none;">
+                    <div style="display:flex;gap:10px;">
+                        <button onclick="showWithdrawStep(2)" style="flex:1;padding:14px;font-size:14px;font-weight:600;background:transparent;border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#9ca3af;cursor:pointer;">이전</button>
+                        <button id="withdrawFinalBtn" onclick="executeWithdrawal()" disabled style="flex:1;padding:14px;font-size:14px;font-weight:bold;background:rgba(255,71,87,0.3);border:none;border-radius:10px;color:rgba(255,71,87,0.4);cursor:not-allowed;">회원 탈퇴</button>
+                    </div>
+                </div>
+
+                <button onclick="closeWithdrawalModal()" style="display:block;margin:16px auto 0;padding:8px 24px;font-size:12px;background:transparent;border:none;color:#6b7280;cursor:pointer;">취소</button>
+            </div>
+        </div>
         
         <!-- 게스트 모드 가입 유도 팝업 -->
         <div class="modal-overlay" id="guestPopup">

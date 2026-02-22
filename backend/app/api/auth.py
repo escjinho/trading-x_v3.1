@@ -56,7 +56,7 @@ def login(user_data: UserLogin, request: Request, db: Session = Depends(get_db))
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="비활성화된 계정입니다"
+            detail="탈퇴한 계정입니다. 재가입을 원하시면 support@trading-x.ai로 문의해주세요."
         )
     
     # 세션 ID 생성
@@ -569,3 +569,58 @@ def update_name(
     current_user.name = new_name
     db.commit()
     return {"success": True, "name": new_name}
+
+# ========== 회원 탈퇴 ==========
+class WithdrawRequest(BaseModel):
+    reason: str = "not_specified"
+
+@router.delete("/withdraw")
+async def withdraw_account(
+    request: WithdrawRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    회원 탈퇴 - 소프트 삭제 (법적 기록 보존 5년)
+    1. MetaAPI undeploy
+    2. 민감 정보 삭제 (MT5 비밀번호 등)
+    3. is_active = False (계정 비활성화)
+    """
+    from datetime import datetime
+
+    try:
+        # 1. MetaAPI undeploy (deployed 상태인 경우)
+        if current_user.metaapi_account_id and current_user.metaapi_status == 'deployed':
+            try:
+                from .metaapi_service import undeploy_user_metaapi, user_trade_connections, user_metaapi_cache
+                await undeploy_user_metaapi(current_user.metaapi_account_id)
+                if current_user.id in user_trade_connections:
+                    del user_trade_connections[current_user.id]
+                if current_user.id in user_metaapi_cache:
+                    del user_metaapi_cache[current_user.id]
+                print(f"[WITHDRAW] User {current_user.id} MetaAPI undeploy 완료")
+            except Exception as e:
+                print(f"[WITHDRAW] MetaAPI undeploy 오류 (계속 진행): {e}")
+
+        # 2. 민감 정보 삭제
+        current_user.mt5_password_encrypted = None
+        current_user.mt5_account_number = None
+        current_user.mt5_server = None
+        current_user.has_mt5_account = False
+        current_user.metaapi_status = 'undeployed'
+        current_user.phone = None
+        current_user.phone_verified = False
+
+        # 3. 계정 비활성화 (소프트 삭제)
+        current_user.is_active = False
+        current_user.name = f"탈퇴회원_{current_user.id}"
+        current_user.updated_at = datetime.utcnow()
+
+        db.commit()
+        print(f"[WITHDRAW] ✅ User {current_user.id} 회원 탈퇴 완료 (사유: {request.reason})")
+        return {"success": True, "message": "회원 탈퇴가 완료되었습니다."}
+
+    except Exception as e:
+        db.rollback()
+        print(f"[WITHDRAW] ❌ User {current_user.id} 탈퇴 오류: {e}")
+        return {"success": False, "message": "탈퇴 처리 중 오류가 발생했습니다."}
