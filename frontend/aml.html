@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>자금세탁방지 정책 | Trading-X</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Rajdhani', -apple-system, sans-serif;
+            line-height: 1.75;
+            color: rgba(255,255,255,0.8);
+            background: #0a0c10;
+        }
+        .header {
+            background: linear-gradient(135deg, #0d1117 0%, #151821 100%);
+            padding: 40px 24px 32px;
+            text-align: center;
+            position: relative;
+        }
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00d4ff, transparent);
+        }
+        .header-logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            color: #00d4ff;
+            letter-spacing: 3px;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+        .header h1 {
+            font-family: 'Rajdhani', sans-serif;
+            color: #ffffff;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .header .subtitle {
+            font-size: 13px;
+            color: rgba(255,255,255,0.4);
+            font-weight: 500;
+        }
+        .lang-switch {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin: 20px 0;
+        }
+        .lang-switch button {
+            padding: 6px 16px;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 6px;
+            background: transparent;
+            color: #ffffff;
+            cursor: pointer;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .lang-switch button.active {
+            background: rgba(0,212,255,0.1);
+            border-color: rgba(0,212,255,0.4);
+            color: #ffffff;
+        }
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 24px 20px 60px;
+        }
+        .section { margin-bottom: 28px; }
+        .section h2 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #00d4ff;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(0,212,255,0.15);
+            letter-spacing: 0.5px;
+        }
+        .section p {
+            font-size: 14px;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        .section ul { margin: 8px 0 12px 20px; }
+        .section li {
+            font-size: 14px;
+            color: rgba(255,255,255,0.65);
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        .highlight-box {
+            background: rgba(0,212,255,0.06);
+            border-left: 3px solid #00d4ff;
+            padding: 14px 16px;
+            border-radius: 0 8px 8px 0;
+            margin: 12px 0;
+        }
+        .highlight-box p { color: rgba(0,212,255,0.85); margin: 0; font-weight: 600; font-size: 13px; }
+        .info-box {
+            background: rgba(0,180,80,0.06);
+            border-left: 3px solid #00b450;
+            padding: 14px 16px;
+            border-radius: 0 8px 8px 0;
+            margin: 12px 0;
+        }
+        .info-box p { color: rgba(0,180,80,0.85); margin: 0; font-weight: 600; font-size: 13px; }
+        .warning-box {
+            background: rgba(220,50,70,0.06);
+            border-left: 3px solid #dc3246;
+            padding: 14px 16px;
+            border-radius: 0 8px 8px 0;
+            margin: 12px 0;
+        }
+        .warning-box p { color: rgba(220,50,70,0.85); margin: 0; font-weight: 600; font-size: 13px; }
+        .doc-footer {
+            text-align: center;
+            padding: 24px 0;
+            margin-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+        .doc-footer p { font-size: 12px; color: rgba(255,255,255,0.3); }
+        @media (max-width: 600px) {
+            .container { padding: 20px 16px 50px; }
+            .header { padding: 32px 16px 24px; }
+            .header h1 { font-size: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-logo">TRADING-X</div>
+    <h1>자금세탁방지 정책 (AML)</h1>
+    <p class="subtitle">㈜굳프렌즈 (GOODFRIENDS Co., Ltd.)</p>
+</div>
+
+<div class="container">
+
+    <div class="lang-switch">
+        <button class="active" onclick="showLang('ko')">한국어</button>
+        <button onclick="showLang('en')">English</button>
+    </div>
+
+    <!-- ==================== 한국어 ==================== -->
+    <div id="lang-ko">
+
+        <div class="section">
+            <h2>1. 개요</h2>
+            <p>㈜굳프렌즈(이하 "회사")는 자금세탁 및 테러자금 조달을 방지하기 위해 관련 법령을 준수하며, 국제 기준에 부합하는 자금세탁방지(AML) 정책을 시행합니다.</p>
+            <div class="highlight-box">
+                <p>Trading-X는 주문 편의 도구 플랫폼이며, 이용자의 자금을 직접 보유·수탁·관리하지 않습니다. 모든 자금의 입출금은 이용자가 선택한 MT5 브로커를 통해 이루어집니다.</p>
+            </div>
+            <p><strong>시행일:</strong> 2026년 1월 5일 &nbsp;&nbsp;|&nbsp;&nbsp; <strong>최종 수정일:</strong> 2026년 1월 5일</p>
+        </div>
+
+        <div class="section">
+            <h2>2. 적용 법령 및 기준</h2>
+            <p>본 정책은 다음의 법령 및 국제 기준을 따릅니다.</p>
+            <ul>
+                <li>대한민국 「특정 금융거래정보의 보고 및 이용 등에 관한 법률」(특정금융거래정보법)</li>
+                <li>대한민국 「공중 등 협박목적 및 대량살상무기확산을 위한 자금조달행위의 금지에 관한 법률」</li>
+                <li>국제자금세탁방지기구(FATF) 권고사항</li>
+            </ul>
+            <p>회사는 관련 법령의 개정 시 본 정책을 지체 없이 업데이트합니다.</p>
+        </div>
+
+        <div class="section">
+            <h2>3. 서비스 구조 및 기본 원칙</h2>
+            <p>Trading-X의 서비스 구조상 다음의 기본 원칙이 적용됩니다.</p>
+            <ul>
+                <li>Trading-X는 주문 편의 도구이며, 이용자의 자금을 직접 보유·수탁·관리하지 않습니다</li>
+                <li>모든 자금의 입출금은 이용자가 선택한 MT5 브로커를 통해 이루어집니다</li>
+                <li>회사는 서비스가 불법 목적으로 이용되는 것을 금지합니다</li>
+                <li>Trading-X는 MetaApi OÜ(에스토니아)를 통해 브로커에 연결되며, 직접적인 자금 이동 경로에 관여하지 않습니다</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>4. 고객확인(KYC) 절차</h2>
+            <p>Trading-X의 서비스 구조상 KYC(Know Your Customer) 절차는 다음과 같이 수행됩니다.</p>
+            <ul>
+                <li>본인 인증 및 신원 확인은 이용자가 연동하는 MT5 브로커에서 수행합니다</li>
+                <li>Trading-X는 브로커의 KYC 결과에 의존하며, 별도의 신원 확인 절차를 수행하지 않습니다</li>
+                <li>회사는 필요 시 추가적인 본인 확인을 요청할 수 있습니다</li>
+            </ul>
+            <div class="info-box">
+                <p>이용자는 브로커의 KYC 절차를 성실히 이행해야 하며, Trading-X 계정과 MT5 브로커 계정의 명의가 동일해야 합니다.</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>5. 이용자 의무</h2>
+            <p>서비스를 이용하는 모든 이용자는 다음의 의무를 준수해야 합니다.</p>
+            <ul>
+                <li>본인 명의로만 계정을 생성하고 서비스를 이용해야 합니다</li>
+                <li>회원가입 시 정확하고 최신의 정보를 제공해야 합니다</li>
+                <li>타인의 계정을 대리 사용하거나 양도·대여해서는 안 됩니다</li>
+                <li>불법적으로 취득한 자금을 이용한 거래를 해서는 안 됩니다</li>
+                <li>자금세탁 또는 테러자금 조달에 해당하는 활동을 인지한 경우 회사에 신고해야 합니다</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>6. 금지 행위</h2>
+            <div class="warning-box">
+                <p>다음의 행위는 엄격히 금지되며, 위반 시 계정 정지 및 법적 조치가 취해질 수 있습니다.</p>
+            </div>
+            <ul>
+                <li>자금세탁, 테러자금 조달 등 불법 자금 이동에 서비스를 이용하는 행위</li>
+                <li>타인 명의 또는 허위 정보를 이용한 계정 생성</li>
+                <li>범죄 수익의 은닉 또는 위장을 위한 거래</li>
+                <li>UN, EU, OFAC 등 국제 제재 대상 국가·단체·개인과의 거래에 서비스를 이용하는 행위</li>
+                <li>서비스를 이용하여 제3자에게 불법 자금을 전달하거나 수령하는 행위</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>7. 거래 모니터링</h2>
+            <p>회사는 자금세탁 및 불법 행위를 방지하기 위해 다음과 같은 모니터링을 수행할 수 있습니다.</p>
+            <ul>
+                <li>비정상적인 거래 패턴 또는 이용 행태 탐지</li>
+                <li>단기간 내 반복적이거나 비통상적인 대량 거래 확인</li>
+                <li>의심스러운 계정 활동에 대한 내부 검토</li>
+            </ul>
+            <p>모니터링은 서비스 내 이용자의 거래 활동 데이터를 기반으로 수행되며, 이용자의 브로커 계좌 자금에 직접 접근하지 않습니다.</p>
+        </div>
+
+        <div class="section">
+            <h2>8. 회사의 조치</h2>
+            <p>회사는 다음의 경우 사전 통보 없이 계정 이용을 제한하거나 정지할 수 있습니다.</p>
+            <ul>
+                <li>의심스러운 활동이 발견된 경우</li>
+                <li>이용자가 본 정책 또는 관련 법령을 위반한 경우</li>
+                <li>수사기관, 금융정보분석원(FIU) 등의 요청이 있는 경우</li>
+                <li>국제 제재 목록에 해당하는 이용자로 확인된 경우</li>
+            </ul>
+            <p>회사는 관련 법령에 따라 수사기관 및 감독기관에 적극 협조합니다.</p>
+        </div>
+
+        <div class="section">
+            <h2>9. 기록 보존</h2>
+            <p>회사는 관련 법령에 따라 다음의 기록을 보존합니다.</p>
+            <ul>
+                <li>계정 생성 및 본인 확인 관련 기록: 계정 해지 후 5년</li>
+                <li>거래 관련 기록: 거래 완료 후 5년</li>
+                <li>의심거래 보고 관련 기록: 보고 후 5년</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>10. 정책 변경</h2>
+            <p>회사는 관련 법령 변경 또는 서비스 운영 상의 필요에 의해 본 정책을 변경할 수 있습니다. 정책이 변경되는 경우, 변경 내용과 시행일을 서비스 내 공지사항 또는 이메일을 통해 사전에 고지합니다.</p>
+        </div>
+
+        <div class="section">
+            <h2>11. 문의처</h2>
+            <p>본 정책에 대한 문의 또는 의심거래 신고는 아래 연락처로 접수할 수 있습니다.</p>
+            <p>이메일: <strong>support@trading-x.ai</strong></p>
+            <p>본 정책은 대한민국 법률에 따라 해석됩니다.</p>
+        </div>
+
+    </div>
+
+    <!-- ==================== English ==================== -->
+    <div id="lang-en" style="display:none;">
+
+        <div class="section">
+            <h2>1. Overview</h2>
+            <p>GOODFRIENDS Co., Ltd. (hereinafter "the Company") complies with relevant laws and regulations to prevent money laundering and terrorist financing, and implements an Anti-Money Laundering (AML) policy that meets international standards.</p>
+            <div class="highlight-box">
+                <p>Trading-X is a utility platform for order convenience and does not hold, custody, or manage users' funds. All fund deposits and withdrawals are processed through the MT5 broker selected by the user.</p>
+            </div>
+            <p><strong>Effective Date:</strong> January 5, 2026 &nbsp;&nbsp;|&nbsp;&nbsp; <strong>Last Updated:</strong> January 5, 2026</p>
+        </div>
+
+        <div class="section">
+            <h2>2. Applicable Laws and Standards</h2>
+            <p>This policy is based on the following laws and international standards:</p>
+            <ul>
+                <li>Act on Reporting and Using Specified Financial Transaction Information (Republic of Korea)</li>
+                <li>Act on the Prohibition of Financing for Offences of Public Intimidation and Proliferation of Weapons of Mass Destruction (Republic of Korea)</li>
+                <li>Financial Action Task Force (FATF) Recommendations</li>
+            </ul>
+            <p>The Company updates this policy promptly when relevant laws and regulations are amended.</p>
+        </div>
+
+        <div class="section">
+            <h2>3. Service Structure and Basic Principles</h2>
+            <p>The following basic principles apply based on Trading-X's service structure:</p>
+            <ul>
+                <li>Trading-X is an order convenience tool and does not hold, custody, or manage users' funds</li>
+                <li>All fund deposits and withdrawals are processed through the MT5 broker selected by the user</li>
+                <li>The Company prohibits the use of the service for illegal purposes</li>
+                <li>Trading-X connects to brokers through MetaApi OÜ (Estonia) and is not involved in direct fund transfer channels</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>4. Know Your Customer (KYC) Procedures</h2>
+            <p>KYC procedures within Trading-X's service structure are performed as follows:</p>
+            <ul>
+                <li>Identity verification is performed by the MT5 broker connected by the user</li>
+                <li>Trading-X relies on the broker's KYC results and does not perform separate identity verification procedures</li>
+                <li>The Company may request additional identity verification when necessary</li>
+            </ul>
+            <div class="info-box">
+                <p>Users must faithfully complete the broker's KYC procedures, and the Trading-X account and MT5 broker account must be under the same identity.</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>5. User Obligations</h2>
+            <p>All users of the service must comply with the following obligations:</p>
+            <ul>
+                <li>Create accounts and use the service only under their own identity</li>
+                <li>Provide accurate and up-to-date information during registration</li>
+                <li>Must not use, transfer, or lend another person's account</li>
+                <li>Must not engage in transactions using illegally obtained funds</li>
+                <li>Must report to the Company any activities suspected of money laundering or terrorist financing</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>6. Prohibited Activities</h2>
+            <div class="warning-box">
+                <p>The following activities are strictly prohibited and may result in account suspension and legal action.</p>
+            </div>
+            <ul>
+                <li>Using the service for money laundering, terrorist financing, or other illegal fund transfers</li>
+                <li>Creating accounts using another person's identity or false information</li>
+                <li>Transactions intended to conceal or disguise proceeds of crime</li>
+                <li>Using the service for transactions involving countries, organizations, or individuals subject to UN, EU, OFAC, or other international sanctions</li>
+                <li>Using the service to transfer or receive illegal funds to or from third parties</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>7. Transaction Monitoring</h2>
+            <p>The Company may conduct the following monitoring to prevent money laundering and illegal activities:</p>
+            <ul>
+                <li>Detection of abnormal trading patterns or usage behavior</li>
+                <li>Identification of repetitive or unusually large transactions within short periods</li>
+                <li>Internal review of suspicious account activities</li>
+            </ul>
+            <p>Monitoring is conducted based on users' trading activity data within the service and does not involve direct access to users' broker account funds.</p>
+        </div>
+
+        <div class="section">
+            <h2>8. Company Actions</h2>
+            <p>The Company may restrict or suspend account access without prior notice in the following cases:</p>
+            <ul>
+                <li>When suspicious activities are detected</li>
+                <li>When a user violates this policy or applicable laws</li>
+                <li>When requested by investigative authorities or the Financial Intelligence Unit (FIU)</li>
+                <li>When a user is identified on international sanctions lists</li>
+            </ul>
+            <p>The Company fully cooperates with investigative and regulatory authorities in accordance with applicable laws.</p>
+        </div>
+
+        <div class="section">
+            <h2>9. Record Retention</h2>
+            <p>The Company retains the following records in accordance with applicable laws:</p>
+            <ul>
+                <li>Account creation and identity verification records: 5 years after account closure</li>
+                <li>Transaction records: 5 years after transaction completion</li>
+                <li>Suspicious transaction report records: 5 years after reporting</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>10. Policy Changes</h2>
+            <p>The Company may amend this policy due to changes in applicable laws or service operational needs. When the policy is amended, the changes and effective date will be notified in advance through in-service announcements or email.</p>
+        </div>
+
+        <div class="section">
+            <h2>11. Contact</h2>
+            <p>For inquiries about this policy or to report suspicious transactions, please contact us at:</p>
+            <p>Email: <strong>support@trading-x.ai</strong></p>
+            <p>This policy shall be governed by the laws of the Republic of Korea.</p>
+        </div>
+
+    </div>
+
+    <div class="doc-footer">
+        <p>&copy; 2026 Trading-X by GOODFRIENDS Co., Ltd. All rights reserved.</p>
+    </div>
+
+</div>
+
+<script>
+function showLang(lang) {
+    document.getElementById('lang-ko').style.display = lang === 'ko' ? 'block' : 'none';
+    document.getElementById('lang-en').style.display = lang === 'en' ? 'block' : 'none';
+    document.querySelectorAll('.lang-switch button').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>

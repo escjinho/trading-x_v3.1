@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>투자 위험 고지 | Trading-X</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Rajdhani', -apple-system, sans-serif;
+            line-height: 1.75;
+            color: rgba(255,255,255,0.8);
+            background: #0a0c10;
+        }
+        .header {
+            background: linear-gradient(135deg, #0d1117 0%, #151821 100%);
+            padding: 40px 24px 32px;
+            text-align: center;
+            position: relative;
+        }
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00d4ff, transparent);
+        }
+        .header-logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            color: #00d4ff;
+            letter-spacing: 3px;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+        .header h1 {
+            font-family: 'Rajdhani', sans-serif;
+            color: #ffffff;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .header .subtitle {
+            font-size: 13px;
+            color: rgba(255,255,255,0.4);
+            font-weight: 500;
+        }
+        .lang-switch {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin: 20px 0;
+        }
+        .lang-switch button {
+            padding: 6px 16px;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 6px;
+            background: transparent;
+            color: #ffffff;
+            cursor: pointer;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .lang-switch button.active {
+            background: rgba(0,212,255,0.1);
+            border-color: rgba(0,212,255,0.4);
+            color: #ffffff;
+        }
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 24px 20px 60px;
+        }
+        .section { margin-bottom: 28px; }
+        .section h2 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #00d4ff;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(0,212,255,0.15);
+            letter-spacing: 0.5px;
+        }
+        .section p {
+            font-size: 14px;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        .section ul { margin: 8px 0 12px 20px; }
+        .section li {
+            font-size: 14px;
+            color: rgba(255,255,255,0.65);
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        .highlight-box {
+            background: rgba(0,212,255,0.06);
+            border-left: 3px solid #00d4ff;
+            padding: 14px 16px;
+            border-radius: 0 8px 8px 0;
+            margin: 12px 0;
+        }
+        .highlight-box p { color: rgba(0,212,255,0.85); margin: 0; font-weight: 600; font-size: 13px; }
+        .info-box {
+            background: rgba(0,180,80,0.06);
+            border-left: 3px solid #00b450;
+            padding: 14px 16px;
+            border-radius: 0 8px 8px 0;
+            margin: 12px 0;
+        }
+        .info-box p { color: rgba(0,180,80,0.85); margin: 0; font-weight: 600; font-size: 13px; }
+        .warning-box {
+            background: rgba(220,50,70,0.06);
+            border-left: 3px solid #dc3246;
+            padding: 14px 16px;
+            border-radius: 0 8px 8px 0;
+            margin: 12px 0;
+        }
+        .warning-box p { color: rgba(220,50,70,0.85); margin: 0; font-weight: 600; font-size: 13px; }
+        .doc-footer {
+            text-align: center;
+            padding: 24px 0;
+            margin-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+        .doc-footer p { font-size: 12px; color: rgba(255,255,255,0.3); }
+        @media (max-width: 600px) {
+            .container { padding: 20px 16px 50px; }
+            .header { padding: 32px 16px 24px; }
+            .header h1 { font-size: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-logo">TRADING-X</div>
+    <h1>투자 위험 고지</h1>
+    <p class="subtitle">㈜굳프렌즈 (GOODFRIENDS Co., Ltd.)</p>
+</div>
+
+<div class="container">
+
+    <div class="lang-switch">
+        <button class="active" onclick="showLang('ko')">한국어</button>
+        <button onclick="showLang('en')">English</button>
+    </div>
+
+    <!-- ==================== 한국어 ==================== -->
+    <div id="lang-ko">
+
+        <div class="section">
+            <h2>1. 서비스의 성격</h2>
+            <div class="highlight-box">
+                <p>Trading-X는 MetaTrader 5(MT5) 기반 브로커와 연동하여 주문 편의 기능을 제공하는 도구 플랫폼입니다. 회사는 증권사, 브로커, 투자자문사 또는 금융기관이 아니며, 투자 조언·추천·중개 서비스를 제공하지 않습니다.</p>
+            </div>
+            <p>Trading-X는 이용자에게 별도의 서비스 이용료를 부과하지 않는 무료 플랫폼이며, 이용자의 자금을 직접 보유·수탁·관리하지 않습니다.</p>
+            <p><strong>시행일:</strong> 2026년 1월 5일 &nbsp;&nbsp;|&nbsp;&nbsp; <strong>최종 수정일:</strong> 2026년 1월 5일</p>
+        </div>
+
+        <div class="section">
+            <h2>2. 일반 투자 위험</h2>
+            <div class="warning-box">
+                <p>⚠️ 외환(FX) 및 CFD 거래는 높은 수준의 위험을 수반하며, 투자 원금의 일부 또는 전부를 잃을 수 있습니다. 감당할 수 있는 범위를 초과하는 자금으로 거래하지 마십시오.</p>
+            </div>
+            <p>거래를 시작하기 전에 자신의 투자 목적, 경험 수준, 재정 상황, 위험 허용 범위를 신중히 고려하십시오. FX 및 CFD 거래가 본인에게 적합한지 확실하지 않은 경우, 독립적인 전문가의 조언을 구하시기 바랍니다.</p>
+        </div>
+
+        <div class="section">
+            <h2>3. 레버리지 위험</h2>
+            <p>레버리지를 사용하는 거래는 잠재적 이익뿐만 아니라 손실도 확대할 수 있습니다. 레버리지 비율이 높을수록 소규모 시장 변동에도 큰 손실이 발생할 수 있으며, 예치금을 초과하는 손실이 발생할 수 있습니다.</p>
+        </div>
+
+        <div class="section">
+            <h2>4. 주요 위험 사항</h2>
+            <ul>
+                <li>시장 변동성으로 인한 급격한 가격 변동</li>
+                <li>레버리지로 인한 예치금 초과 손실 가능성</li>
+                <li>기술적 장애(시스템 오류, 네트워크 지연)로 인한 주문 미체결 또는 지연</li>
+                <li>주말·공휴일 갭(Gap) 발생으로 인한 예상 외 손실</li>
+                <li>유동성 부족 시 슬리피지(Slippage) 발생</li>
+                <li>환율 변동으로 인한 추가 손실 가능성</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>5. 자동매매(EA) 위험</h2>
+            <p>Trading-X에서 제공하는 자동매매(Expert Advisor) 기능은 사전 설정된 전략에 따라 자동으로 주문을 실행합니다. 이와 관련하여 다음의 위험을 인지하시기 바랍니다.</p>
+            <ul>
+                <li>EA의 과거 성과(백테스트 포함)는 미래 수익을 보장하지 않습니다</li>
+                <li>마틴게일(Martingale) 등 단계별 진입 전략은 연속 손실 시 포지션 규모가 급격히 증가할 수 있습니다</li>
+                <li>시장 급변 시 자동매매가 예상과 다른 결과를 초래할 수 있습니다</li>
+                <li>네트워크 장애, 서버 지연 등으로 자동매매가 정상 작동하지 않을 수 있습니다</li>
+                <li>자동매매 사용 여부와 설정에 대한 판단 및 책임은 전적으로 이용자에게 있습니다</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>6. 제3자 서비스</h2>
+            <p>Trading-X는 MetaApi OÜ(에스토니아)를 통해 MT5 브로커에 연결됩니다. 다음 사항에 대해 회사는 책임을 지지 않습니다.</p>
+            <ul>
+                <li>MT5 브로커의 서비스 품질, 자금 안전성, 거래 조건</li>
+                <li>MetaApi의 시스템 장애, 연결 지연, 서비스 중단</li>
+                <li>브로커 또는 제3자 시스템의 기술적 문제로 인한 주문 미체결·지연·오류</li>
+                <li>인터넷 환경, 기기 성능 등 이용자 측 기술 환경에 의한 장애</li>
+            </ul>
+            <p>브로커 선택, 계좌 개설, 자금 입출금은 전적으로 이용자와 해당 브로커 간의 관계이며, 이용자는 브로커의 이용약관 및 위험 고지를 별도로 확인해야 합니다.</p>
+        </div>
+
+        <div class="section">
+            <h2>7. 면책 사항</h2>
+            <p>Trading-X는 투자 조언을 제공하지 않습니다. 서비스 내 어떠한 정보, 차트, 지표, 신호(Signal)도 투자 권유 또는 추천으로 해석되어서는 안 됩니다.</p>
+            <p>모든 거래 결정과 그에 따른 결과(이익 및 손실)에 대한 책임은 전적으로 이용자에게 있으며, 회사는 이용자의 거래 손실에 대해 어떠한 배상 책임도 부담하지 않습니다.</p>
+        </div>
+
+        <div class="section">
+            <h2>8. 이용자 확인 사항</h2>
+            <p>서비스를 이용함으로써, 이용자는 다음 사항을 이해하고 동의한 것으로 간주합니다.</p>
+            <ul>
+                <li>FX 및 CFD 거래에 수반되는 위험을 충분히 이해하고 있습니다</li>
+                <li>본인의 판단과 책임 하에 거래를 수행합니다</li>
+                <li>감당할 수 있는 범위 내의 자금으로 거래합니다</li>
+                <li>Trading-X가 브로커 또는 투자자문사가 아님을 이해합니다</li>
+                <li>자동매매 기능의 위험을 인지하고, 설정에 대한 책임이 본인에게 있음을 이해합니다</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>9. 관할법 및 문의</h2>
+            <p>본 고지는 대한민국 법률에 따라 해석됩니다.</p>
+            <p>문의처: <strong>support@trading-x.ai</strong></p>
+        </div>
+
+    </div>
+
+    <!-- ==================== English ==================== -->
+    <div id="lang-en" style="display:none;">
+
+        <div class="section">
+            <h2>1. Nature of Service</h2>
+            <div class="highlight-box">
+                <p>Trading-X is a utility platform that provides order convenience features by connecting with MetaTrader 5 (MT5) brokers. The Company is not a securities firm, broker, investment advisor, or financial institution, and does not provide investment advice, recommendations, or brokerage services.</p>
+            </div>
+            <p>Trading-X is a free platform that does not charge users any service fees, and does not hold, custody, or manage users' funds.</p>
+            <p><strong>Effective Date:</strong> January 5, 2026 &nbsp;&nbsp;|&nbsp;&nbsp; <strong>Last Updated:</strong> January 5, 2026</p>
+        </div>
+
+        <div class="section">
+            <h2>2. General Investment Risk</h2>
+            <div class="warning-box">
+                <p>⚠️ Foreign exchange (FX) and CFD trading involves a high level of risk and may result in the loss of part or all of your invested capital. Do not trade with funds you cannot afford to lose.</p>
+            </div>
+            <p>Before engaging in trading, carefully consider your investment objectives, level of experience, financial situation, and risk tolerance. If you are unsure whether FX and CFD trading is suitable for you, please seek independent professional advice.</p>
+        </div>
+
+        <div class="section">
+            <h2>3. Leverage Risk</h2>
+            <p>Trading with leverage can magnify both potential profits and losses. Higher leverage ratios mean that even small market movements can result in significant losses, and losses may exceed your initial deposit.</p>
+        </div>
+
+        <div class="section">
+            <h2>4. Key Risk Factors</h2>
+            <ul>
+                <li>Sudden price fluctuations due to market volatility</li>
+                <li>Potential for losses exceeding deposited funds due to leverage</li>
+                <li>Order non-execution or delays due to technical failures (system errors, network latency)</li>
+                <li>Unexpected losses due to weekend/holiday price gaps</li>
+                <li>Slippage during periods of low liquidity</li>
+                <li>Additional losses due to exchange rate fluctuations</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>5. Automated Trading (EA) Risk</h2>
+            <p>The automated trading (Expert Advisor) features provided by Trading-X execute orders automatically based on pre-configured strategies. Please be aware of the following risks:</p>
+            <ul>
+                <li>Past performance of EAs (including backtesting) does not guarantee future results</li>
+                <li>Stepped entry strategies such as Martingale can result in rapidly increasing position sizes during consecutive losses</li>
+                <li>Automated trading may produce unexpected results during sudden market movements</li>
+                <li>Automated trading may not function properly due to network failures or server delays</li>
+                <li>The decision to use automated trading and its configuration is solely the user's responsibility</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>6. Third-Party Services</h2>
+            <p>Trading-X connects to MT5 brokers through MetaApi OÜ (Estonia). The Company is not responsible for:</p>
+            <ul>
+                <li>Service quality, fund safety, or trading conditions of MT5 brokers</li>
+                <li>System failures, connection delays, or service interruptions of MetaApi</li>
+                <li>Order non-execution, delays, or errors caused by technical issues in broker or third-party systems</li>
+                <li>Disruptions caused by the user's technical environment, including internet connection and device performance</li>
+            </ul>
+            <p>Broker selection, account opening, and fund deposits/withdrawals are entirely between the user and the respective broker. Users should independently review the broker's terms of service and risk disclosures.</p>
+        </div>
+
+        <div class="section">
+            <h2>7. Disclaimer</h2>
+            <p>Trading-X does not provide investment advice. No information, charts, indicators, or signals within the service should be interpreted as investment solicitation or recommendation.</p>
+            <p>All trading decisions and their outcomes (profits and losses) are solely the user's responsibility, and the Company assumes no liability for users' trading losses.</p>
+        </div>
+
+        <div class="section">
+            <h2>8. User Acknowledgment</h2>
+            <p>By using the service, the user acknowledges and agrees to the following:</p>
+            <ul>
+                <li>I fully understand the risks associated with FX and CFD trading</li>
+                <li>I trade based on my own judgment and responsibility</li>
+                <li>I trade with funds within my affordable range</li>
+                <li>I understand that Trading-X is not a broker or investment advisor</li>
+                <li>I acknowledge the risks of automated trading features and understand that I am responsible for their configuration</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>9. Governing Law & Contact</h2>
+            <p>This disclosure shall be governed by the laws of the Republic of Korea.</p>
+            <p>Contact: <strong>support@trading-x.ai</strong></p>
+        </div>
+
+    </div>
+
+    <div class="doc-footer">
+        <p>&copy; 2026 Trading-X by GOODFRIENDS Co., Ltd. All rights reserved.</p>
+    </div>
+
+</div>
+
+<script>
+function showLang(lang) {
+    document.getElementById('lang-ko').style.display = lang === 'ko' ? 'block' : 'none';
+    document.getElementById('lang-en').style.display = lang === 'en' ? 'block' : 'none';
+    document.querySelectorAll('.lang-switch button').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>
