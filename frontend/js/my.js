@@ -192,7 +192,7 @@ function updateMyGradeFromAPI(gradeName, nextGradeName, remainingLots, progress,
     if (fillEl) fillEl.style.width = Math.min(progress, 100) + '%';
     if (textEl) {
         if (nextGradeName && remainingLots > 0) {
-            textEl.textContent = nextGradeName + ' · ' + remainingLots.toFixed(1) + ' lots 남음';
+            textEl.innerHTML = nextGradeName + ' · ' + remainingLots.toFixed(1) + ' lots <span style="color:#9aa0b0;">남음</span>';
         } else {
             textEl.textContent = '최고 등급 달성! 🎉';
         }
