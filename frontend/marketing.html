@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>마케팅 정보 수신 동의 | Trading-X</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Rajdhani', -apple-system, sans-serif;
+            line-height: 1.75;
+            color: rgba(255,255,255,0.8);
+            background: #0a0c10;
+        }
+        .header {
+            background: linear-gradient(135deg, #0d1117 0%, #151821 100%);
+            padding: 40px 24px 32px;
+            text-align: center;
+            position: relative;
+        }
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00d4ff, transparent);
+        }
+        .header-logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            color: #00d4ff;
+            letter-spacing: 3px;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+        .header h1 {
+            font-family: 'Rajdhani', sans-serif;
+            color: #ffffff;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .header .subtitle {
+            font-size: 13px;
+            color: rgba(255,255,255,0.4);
+            font-weight: 500;
+        }
+        .lang-switch {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin: 20px 0;
+        }
+        .lang-switch button {
+            padding: 6px 16px;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 6px;
+            background: transparent;
+            color: #ffffff;
+            cursor: pointer;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .lang-switch button.active {
+            background: rgba(0,212,255,0.1);
+            border-color: rgba(0,212,255,0.4);
+            color: #ffffff;
+        }
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 24px 20px 60px;
+        }
+        .section { margin-bottom: 28px; }
+        .section h2 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #00d4ff;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(0,212,255,0.15);
+            letter-spacing: 0.5px;
+        }
+        .section p {
+            font-size: 14px;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        .section ul { margin: 8px 0 12px 20px; }
+        .section li {
+            font-size: 14px;
+            color: rgba(255,255,255,0.65);
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        .highlight-box {
+            background: rgba(0,212,255,0.06);
+            border-left: 3px solid #00d4ff;
+            padding: 14px 16px;
+            border-radius: 0 8px 8px 0;
+            margin: 12px 0;
+        }
+        .highlight-box p { color: rgba(0,212,255,0.85); margin: 0; font-weight: 600; font-size: 13px; }
+        .info-box {
+            background: rgba(0,180,80,0.06);
+            border-left: 3px solid #00b450;
+            padding: 14px 16px;
+            border-radius: 0 8px 8px 0;
+            margin: 12px 0;
+        }
+        .info-box p { color: rgba(0,180,80,0.85); margin: 0; font-weight: 600; font-size: 13px; }
+        .warning-box {
+            background: rgba(220,50,70,0.06);
+            border-left: 3px solid #dc3246;
+            padding: 14px 16px;
+            border-radius: 0 8px 8px 0;
+            margin: 12px 0;
+        }
+        .warning-box p { color: rgba(220,50,70,0.85); margin: 0; font-weight: 600; font-size: 13px; }
+        .doc-footer {
+            text-align: center;
+            padding: 24px 0;
+            margin-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+        .doc-footer p { font-size: 12px; color: rgba(255,255,255,0.3); }
+        @media (max-width: 600px) {
+            .container { padding: 20px 16px 50px; }
+            .header { padding: 32px 16px 24px; }
+            .header h1 { font-size: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-logo">TRADING-X</div>
+    <h1>마케팅 정보 수신 동의</h1>
+    <p class="subtitle">㈜굳프렌즈 (GOODFRIENDS Co., Ltd.)</p>
+</div>
+
+<div class="container">
+
+    <div class="lang-switch">
+        <button class="active" onclick="showLang('ko')">한국어</button>
+        <button onclick="showLang('en')">English</button>
+    </div>
+
+    <!-- ==================== 한국어 ==================== -->
+    <div id="lang-ko">
+
+        <div class="section">
+            <h2>1. 개요</h2>
+            <p>㈜굳프렌즈(이하 "회사")는 「정보통신망 이용촉진 및 정보보호 등에 관한 법률」 제50조에 따라, 이용자의 동의를 받아 마케팅 정보를 발송합니다.</p>
+            <div class="highlight-box">
+                <p>마케팅 정보 수신은 선택사항이며, 동의하지 않더라도 Trading-X 서비스 이용에 제한이 없습니다.</p>
+            </div>
+            <p><strong>시행일:</strong> 2026년 1월 5일 &nbsp;&nbsp;|&nbsp;&nbsp; <strong>최종 수정일:</strong> 2026년 1월 5일</p>
+        </div>
+
+        <div class="section">
+            <h2>2. 수신 내용</h2>
+            <p>동의 시 다음의 정보를 받으실 수 있습니다.</p>
+            <ul>
+                <li>이벤트 및 프로모션 안내</li>
+                <li>신규 기능 업데이트 소식</li>
+                <li>투자 관련 뉴스레터</li>
+                <li>맞춤형 서비스 제안</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>3. 수신 방법 및 빈도</h2>
+            <ul>
+                <li><strong>수신 방법:</strong> 앱 푸시 알림, 이메일</li>
+                <li><strong>발송 빈도:</strong> 주 1~2회 이내</li>
+                <li><strong>야간 발송 제한:</strong> 오후 9시 ~ 오전 8시에는 마케팅 정보를 발송하지 않습니다 (정보통신망법 제50조 제3항)</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>4. 활용 정보</h2>
+            <p>마케팅 정보 발송을 위해 다음의 개인정보를 활용합니다.</p>
+            <ul>
+                <li>이메일 주소</li>
+                <li>앱 푸시 토큰(기기 식별 정보)</li>
+                <li>서비스 이용 기록(맞춤형 콘텐츠 제공 목적)</li>
+            </ul>
+            <p>상세한 개인정보 처리에 관한 사항은 <strong>개인정보 처리방침</strong>을 참조하시기 바랍니다.</p>
+        </div>
+
+        <div class="section">
+            <h2>5. 제3자 제공</h2>
+            <p>마케팅 목적으로 이용자의 개인정보를 제3자에게 제공하지 않습니다.</p>
+        </div>
+
+        <div class="section">
+            <h2>6. 동의 철회</h2>
+            <p>동의 철회는 언제든지 가능하며, 철회 즉시 마케팅 정보 발송이 중단됩니다.</p>
+            <ul>
+                <li><strong>앱 내 설정:</strong> My &gt; 일반 &gt; 알림 설정</li>
+                <li><strong>이메일 문의:</strong> support@trading-x.ai</li>
+            </ul>
+            <p>동의 철회 시 마케팅 목적으로 수집된 정보는 지체 없이 파기됩니다.</p>
+        </div>
+
+        <div class="section">
+            <h2>7. 필수 공지 안내</h2>
+            <div class="info-box">
+                <p>서버 점검, 약관 변경, 보안 관련 공지 등 서비스 운영에 필수적인 안내는 마케팅 수신 동의 여부와 관계없이 발송됩니다.</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>8. 문의처</h2>
+            <p>마케팅 정보 수신에 관한 문의는 아래 연락처로 접수할 수 있습니다.</p>
+            <p>이메일: <strong>support@trading-x.ai</strong></p>
+        </div>
+
+    </div>
+
+    <!-- ==================== English ==================== -->
+    <div id="lang-en" style="display:none;">
+
+        <div class="section">
+            <h2>1. Overview</h2>
+            <p>GOODFRIENDS Co., Ltd. (hereinafter "the Company") sends marketing information with user consent in accordance with the Act on Promotion of Information and Communications Network Utilization and Information Protection (Article 50).</p>
+            <div class="highlight-box">
+                <p>Marketing consent is optional. You can fully use the Trading-X service without providing consent.</p>
+            </div>
+            <p><strong>Effective Date:</strong> January 5, 2026 &nbsp;&nbsp;|&nbsp;&nbsp; <strong>Last Updated:</strong> January 5, 2026</p>
+        </div>
+
+        <div class="section">
+            <h2>2. Content</h2>
+            <p>By providing consent, you may receive the following information:</p>
+            <ul>
+                <li>Event and promotion announcements</li>
+                <li>New feature updates</li>
+                <li>Investment-related newsletters</li>
+                <li>Personalized service recommendations</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>3. Method & Frequency</h2>
+            <ul>
+                <li><strong>Methods:</strong> App push notifications, email</li>
+                <li><strong>Frequency:</strong> Up to 1-2 times per week</li>
+                <li><strong>Nighttime restriction:</strong> Marketing messages are not sent between 9:00 PM and 8:00 AM (KST) in compliance with Korean law</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>4. Information Used</h2>
+            <p>The following personal information is used for sending marketing communications:</p>
+            <ul>
+                <li>Email address</li>
+                <li>App push token (device identifier)</li>
+                <li>Service usage records (for personalized content)</li>
+            </ul>
+            <p>For detailed information on personal data processing, please refer to our <strong>Privacy Policy</strong>.</p>
+        </div>
+
+        <div class="section">
+            <h2>5. Third-Party Sharing</h2>
+            <p>We do not share your personal information with third parties for marketing purposes.</p>
+        </div>
+
+        <div class="section">
+            <h2>6. Withdrawal of Consent</h2>
+            <p>You can withdraw consent at any time, and marketing messages will stop immediately upon withdrawal.</p>
+            <ul>
+                <li><strong>In-app settings:</strong> My &gt; General &gt; Notification Settings</li>
+                <li><strong>Email:</strong> support@trading-x.ai</li>
+            </ul>
+            <p>Upon withdrawal, information collected for marketing purposes will be promptly destroyed.</p>
+        </div>
+
+        <div class="section">
+            <h2>7. Mandatory Notices</h2>
+            <div class="info-box">
+                <p>Essential service notices such as server maintenance, policy changes, and security alerts are sent regardless of marketing consent status.</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>8. Contact</h2>
+            <p>For inquiries about marketing communications, please contact us at:</p>
+            <p>Email: <strong>support@trading-x.ai</strong></p>
+        </div>
+
+    </div>
+
+    <div class="doc-footer">
+        <p>&copy; 2026 Trading-X by GOODFRIENDS Co., Ltd. All rights reserved.</p>
+    </div>
+
+</div>
+
+<script>
+function showLang(lang) {
+    document.getElementById('lang-ko').style.display = lang === 'ko' ? 'block' : 'none';
+    document.getElementById('lang-en').style.display = lang === 'en' ? 'block' : 'none';
+    document.querySelectorAll('.lang-switch button').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>

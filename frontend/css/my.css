@@ -3174,7 +3174,7 @@
 .my-deposit-hero-amount.live {
     font-size: 28px;
     font-weight: 700;
-    color: #00d4ff;
+    color: #ffffff;
     letter-spacing: -0.5px;
     font-family: 'Rajdhani', sans-serif;
 }
@@ -3230,8 +3230,8 @@
 /* ===== HedgeHood CTA (시안 강조) ===== */
 .my-live-cta-deposit {
     display: flex; align-items: center; gap: 14px;
-    padding: 18px; background: linear-gradient(135deg, rgba(0,212,255,0.12), rgba(0,212,255,0.04));
-    border: 1px solid rgba(0,212,255,0.35); border-radius: 16px;
+    padding: 18px; background: linear-gradient(135deg, rgba(0,212,255,0.22), rgba(0,212,255,0.08));
+    border: 1px solid rgba(0,212,255,0.45); border-radius: 16px;
     cursor: pointer; margin-bottom: 10px;
     box-shadow: 0 0 20px rgba(0,212,255,0.08);
     transition: background 0.15s;
@@ -3250,7 +3250,7 @@
 }
 .my-live-cta-arrow { color: var(--accent-cyan); font-size: 22px; }
 .my-live-cta-note {
-    font-size: 11px; color: var(--text-dim); line-height: 1.5;
+    font-size: 11px; color: rgba(255,255,255,0.85); line-height: 1.5;
     padding: 0 4px; margin-bottom: 16px;
 }
 
@@ -3375,4 +3375,8 @@
 .my-deposit-guide-icon.small .material-icons-round { font-size: 18px; }
 .my-deposit-guide-card.compact .my-deposit-guide-label {
     font-family: 'Rajdhani', sans-serif;
+}
+
+.my-live-cta-subtitle {
+    font-size: 11px; color: rgba(0,212,255,0.7); margin-top: 2px;
 }
