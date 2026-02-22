@@ -1640,8 +1640,14 @@ const termsData = {
 };
 
 function openTermsDetail(type) {
-    if (type === 'service') { window.open('terms.html', '_blank'); return; }
-    if (type === 'privacy') { window.open('privacy.html', '_blank'); return; }
+    if (type === 'service' || type === 'privacy') {
+        const url = type === 'service' ? 'terms.html' : 'privacy.html';
+        const title = type === 'service' ? '서비스 이용약관' : '개인정보 처리방침';
+        document.getElementById('myTermsDetailTitle').textContent = title;
+        document.getElementById('myTermsDetailBody').innerHTML = '<iframe src="' + url + '" style="width:100%;height:calc(100vh - 120px);border:none;border-radius:8px;"></iframe>';
+        openMyDetail('termsDetail');
+        return;
+    }
     const data = termsData[type];
     if (!data) return;
     document.getElementById('myTermsDetailTitle').textContent = data.title;
