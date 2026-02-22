@@ -309,6 +309,8 @@ const QeTickChart = {
                                 } else {
                                     this._zoomAnimating = false;
                                     console.log('[QeTickChart] ★ 줌인 애니메이션 완료');
+                                    // ★ following mode 재활성화 → 현재가가 항상 rightOffset 위치 유지
+                                    try { this.chart.timeScale().scrollToRealTime(); } catch(e) {}
                                     if (this._entryData && this._entryData.tp && this._entryData.sl) {
                                         this.zoomToShowTPSL(this._entryData.price, this._entryData.tp, this._entryData.sl);
                                     }
@@ -414,6 +416,11 @@ const QeTickChart = {
 
         // 펄스 마커 위치 업데이트
         this.updatePulse(now, price);
+
+        // ★ following mode 유지: 사용자 조작 중 아닐 때 자동 스크롤
+        if (!this._userInteracting && !this._zoomAnimating) {
+            try { this.chart.timeScale().scrollToRealTime(); } catch(e) {}
+        }
 
         // ★ 진입가 오버레이 위치 업데이트
         if (this._entryOverlay) this.updateEntryOverlay();
@@ -912,6 +919,7 @@ const QeTickChart = {
                     from: snapshotTotal - targetVisibleBars,
                     to: snapshotTotal + rightOffset
                 });
+                this.chart.timeScale().scrollToRealTime();
             } catch(e) {}
             return;
         }
