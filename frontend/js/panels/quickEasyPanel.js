@@ -5,6 +5,30 @@
 
 const QE_MAGIC_NUMBER = 100003;
 
+// ★ localStorage 포지션 데이터 저장/복원/삭제
+function qeSavePosition(symbol, data) {
+    try {
+        const all = JSON.parse(localStorage.getItem('qe_positions') || '{}');
+        all[symbol] = data;
+        localStorage.setItem('qe_positions', JSON.stringify(all));
+        console.log('[QE-LS] 저장:', symbol, data);
+    } catch(e) { console.warn('[QE-LS] 저장 실패:', e); }
+}
+function qeLoadPosition(symbol) {
+    try {
+        const all = JSON.parse(localStorage.getItem('qe_positions') || '{}');
+        return all[symbol] || null;
+    } catch(e) { return null; }
+}
+function qeDeletePosition(symbol) {
+    try {
+        const all = JSON.parse(localStorage.getItem('qe_positions') || '{}');
+        delete all[symbol];
+        localStorage.setItem('qe_positions', JSON.stringify(all));
+        console.log('[QE-LS] 삭제:', symbol);
+    } catch(e) {}
+}
+
 const QE_SYMBOL_SPECS = {
     "BTCUSD":   { contract_size: 1 },
     "ETHUSD":   { contract_size: 1 },
@@ -471,6 +495,13 @@ const QuickEasyPanel = {
                 // 해결: 짧은 지연으로 차트 렌더링 완료 후 라인 그리기
                 const _entryPrice = entryPrice;
                 const _side = side;
+                // ★ localStorage에 포지션 데이터 저장 (새로고침 복원용)
+                qeSavePosition(symbol, {
+                    target: target,
+                    volume: volume,
+                    side: side,
+                    entry: _entryPrice
+                });
                 setTimeout(() => {
                     this.showPositionView(_side, _entryPrice);
                 }, 300);
@@ -491,9 +522,18 @@ const QuickEasyPanel = {
 
                 console.log('[QuickEasy] ' + side + ' 주문 성공:', result);
             } else {
-                const msg = (result && result.message) ? result.message : '주문 실패';
-                if (typeof showToast === 'function') showToast(msg, 'error');
-                console.error('[QuickEasy] 주문 실패:', result);
+                // ★★★ 증거금 부족 시 특별 토스트 ★★★
+                if (result && result.margin_insufficient) {
+                    const fm = result.free_margin || 0;
+                    const rm = result.required_margin || 0;
+                    const pct = rm > 0 ? Math.min(Math.round((fm / rm) * 100), 100) : 0;
+                    this._showMarginAlert(fm, rm, pct);
+                    console.warn('[QuickEasy] 증거금 부족:', result);
+                } else {
+                    const msg = (result && result.message) ? result.message : '주문 실패';
+                    if (typeof showToast === 'function') showToast(msg, 'error');
+                    console.error('[QuickEasy] 주문 실패:', result);
+                }
             }
         } catch (e) {
             if (typeof showToast === 'function') showToast('네트워크 오류', 'error');
@@ -610,7 +650,11 @@ const QuickEasyPanel = {
             if (side === 'SELL') posInfo.classList.add('sell-pos');
         }
         if (entryEl) {
-            const _t = target !== null ? target : this.target;
+            let _t = (target !== null && target > 0) ? target : 0;
+            if (!_t) {
+                const lsPos = qeLoadPosition(window.currentSymbol || 'BTCUSD');
+                _t = (lsPos && lsPos.target > 0) ? lsPos.target : this.target;
+            }
             entryEl.textContent = '$' + _t;
         }
 
@@ -625,9 +669,19 @@ const QuickEasyPanel = {
         }, 1000);
 
         // Win/Lose 실시간 업데이트
-        // ★ 복구 시 volume/target이 전달되면 사용, 아니면 현재 UI 값 사용
+        // ★ 복구 시 volume/target이 전달되면 사용, 아니면 localStorage → UI fallback
         const posVolume = volume !== null ? volume : this.lotSize;
-        const posTarget = target !== null ? target : this.target;
+        let posTarget = (target !== null && target > 0) ? target : 0;
+        if (!posTarget) {
+            const lsPos = qeLoadPosition(window.currentSymbol || 'BTCUSD');
+            if (lsPos && lsPos.target > 0) {
+                posTarget = lsPos.target;
+                console.log('[QE] ★ localStorage에서 target 복원:', posTarget);
+            } else {
+                posTarget = this.target;  // UI fallback
+                console.log('[QE] ★ UI target fallback:', posTarget);
+            }
+        }
 
         this._posEntryPrice = entryPrice;
         this._posOpenedAt = Date.now();  // No position 안전장치 쿨다운용
@@ -701,6 +755,7 @@ const QuickEasyPanel = {
         // ★ 실제 청산일 때만 딕셔너리에서 제거 (종목 전환은 제거하지 않음)
         if (actualClose && this._posSymbol) {
             delete this._positions[this._posSymbol];
+            qeDeletePosition(this._posSymbol);  // ★ localStorage에서도 삭제
             this._updatePositionBadge();
         }
         this._posEntryPrice = 0;
@@ -882,5 +937,99 @@ const QuickEasyPanel = {
             if (closeBtn) closeBtn.disabled = false;
             this.hidePositionView();
         }
+    },
+
+    // ★★★ 증거금 부족 알림 (게이지 바 포함) ★★★
+    _showMarginAlert(freeMargin, requiredMargin, percent) {
+        // 기존 알림 제거
+        const existingAlert = document.querySelector('.margin-alert-popup');
+        if (existingAlert) existingAlert.remove();
+
+        const popup = document.createElement('div');
+        popup.className = 'margin-alert-popup';
+        popup.innerHTML = `
+            <div class="margin-alert-content">
+                <div class="margin-alert-icon">⚠️</div>
+                <div class="margin-alert-title">증거금 부족</div>
+                <div class="margin-alert-values">
+                    <span>가용: <b>$${freeMargin.toFixed(0)}</b></span>
+                    <span>필요: <b>$${requiredMargin.toFixed(0)}</b></span>
+                </div>
+                <div class="margin-gauge-container">
+                    <div class="margin-gauge-bar" style="width: ${percent}%"></div>
+                    <div class="margin-gauge-text">${percent}%</div>
+                </div>
+                <div class="margin-alert-tip">랏 사이즈를 줄이거나 입금 후 재시도</div>
+            </div>
+        `;
+
+        // 스타일 추가 (없으면)
+        if (!document.querySelector('#margin-alert-style')) {
+            const style = document.createElement('style');
+            style.id = 'margin-alert-style';
+            style.textContent = `
+                .margin-alert-popup {
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+                    border: 2px solid #ff4757;
+                    border-radius: 16px;
+                    padding: 24px 32px;
+                    z-index: 10000;
+                    box-shadow: 0 8px 32px rgba(255, 71, 87, 0.3);
+                    animation: marginAlertIn 0.3s ease;
+                }
+                @keyframes marginAlertIn {
+                    from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+                    to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+                }
+                .margin-alert-content { text-align: center; color: #fff; }
+                .margin-alert-icon { font-size: 48px; margin-bottom: 8px; }
+                .margin-alert-title { font-size: 20px; font-weight: bold; color: #ff4757; margin-bottom: 16px; }
+                .margin-alert-values { display: flex; justify-content: space-between; gap: 24px; font-size: 16px; margin-bottom: 16px; }
+                .margin-alert-values b { color: #ffa502; }
+                .margin-gauge-container {
+                    position: relative;
+                    height: 24px;
+                    background: #2d3436;
+                    border-radius: 12px;
+                    overflow: hidden;
+                    margin-bottom: 12px;
+                }
+                .margin-gauge-bar {
+                    height: 100%;
+                    background: linear-gradient(90deg, #ff4757 0%, #ffa502 100%);
+                    border-radius: 12px;
+                    transition: width 0.5s ease;
+                }
+                .margin-gauge-text {
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    font-size: 12px;
+                    font-weight: bold;
+                    color: #fff;
+                    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+                }
+                .margin-alert-tip { font-size: 12px; color: #a4b0be; }
+            `;
+            document.head.appendChild(style);
+        }
+
+        document.body.appendChild(popup);
+
+        // 3초 후 자동 닫기
+        setTimeout(() => {
+            popup.style.animation = 'marginAlertIn 0.2s ease reverse';
+            setTimeout(() => popup.remove(), 200);
+        }, 3000);
+
+        // 클릭 시 닫기
+        popup.addEventListener('click', () => {
+            popup.remove();
+        });
     }
 };
