@@ -1433,15 +1433,15 @@ async def place_order(
                 # ★★★ TP/SL 포인트 계산 ★★★
                 point_value = tick_value if tick_value > 0 else 1
                 tp_points = int(target / (volume * point_value)) if volume * point_value > 0 else 500
-                sl_points = int(target / (volume * point_value)) if volume * point_value > 0 else tp_points  # SL = TP 동일 거리
-                print(f"[MetaAPI Order] TP/SL 계산: target=${target} -> tp_points={tp_points}, sl_points={sl_points}")
+                sl_points = int((target * 0.99) / (volume * point_value)) if volume * point_value > 0 else tp_points  # SL = TP × 99% (magic 무관 통일)
+                print(f"[MetaAPI Order] TP/SL 계산: target=${target}, magic={magic} -> tp_points={tp_points}, sl_points={sl_points}")
             else:
                 # 가격 없으면 기본값
                 specs = SYMBOL_SPECS.get(symbol, {"tick_value": 0.01})
                 point_value = specs.get("tick_value", 0.01)
                 tp_points = int(target / (volume * point_value)) if volume * point_value > 0 else 500
-                sl_points = int(target / (volume * point_value)) if volume * point_value > 0 else tp_points
-                print(f"[MetaAPI Order] 가격 없음, 기본 SL/TP: tp={tp_points}, sl={sl_points}")
+                sl_points = int((target * 0.99) / (volume * point_value)) if volume * point_value > 0 else tp_points
+                print(f"[MetaAPI Order] 가격 없음, 기본 SL/TP: tp={tp_points}, sl={sl_points}, magic={magic}")
 
         # ★★★ MetaAPI 주문 실행 (유저별 or 공유) ★★★
         if _use_user_metaapi:
@@ -3664,8 +3664,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 if target > 0 and positions_count > 0 and position_data:
                     if total_realtime_profit >= target:
                         print(f"[LIVE WS] 📊 모니터링: User {user_id} WIN 영역 ${total_realtime_profit:.2f} >= Target ${target} (MT5 TP 대기)")
-                    elif total_realtime_profit <= -target * 0.98:
-                        print(f"[LIVE WS] 📊 모니터링: User {user_id} LOSE 영역 ${total_realtime_profit:.2f} <= -${target*0.98:.2f} (MT5 SL 대기)")
+                    elif total_realtime_profit <= -target * 0.99:
+                        print(f"[LIVE WS] 📊 모니터링: User {user_id} LOSE 영역 ${total_realtime_profit:.2f} <= -${target*0.99:.2f} (MT5 SL 대기)")
 
             elif mt5_connected:
                 positions = mt5.positions_get()
