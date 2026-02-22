@@ -1373,9 +1373,6 @@ function initDetailView(detail) {
         case 'mt5':
             initMt5View();
             break;
-        case 'depositLive':
-            startLiveRefresh();
-            break;
         case 'depositDemo':
             // 금액 선택 초기화
             selectedDemoAmount = 10000;
@@ -1637,17 +1634,46 @@ function openNoticeDetail(id) {
 
 // ========== 약관 상세 ==========
 const termsData = {
-    risk: { title: '투자 위험 고지', body: '<h3 style="color:#00d4ff;margin-bottom:8px;">⚠️ 투자 위험 고지</h3><p>외환(FX) 및 CFD 거래는 높은 수준의 위험을 수반하며, 투자 원금의 일부 또는 전부를 잃을 수 있습니다.</p><h3 style="color:#00d4ff;margin:16px 0 8px;">레버리지 위험</h3><p>레버리지를 사용하는 거래는 잠재적 이익뿐만 아니라 손실도 확대할 수 있습니다. 거래를 시작하기 전에 자신의 투자 목적, 경험 수준, 위험 허용 범위를 신중히 고려하십시오.</p><h3 style="color:#00d4ff;margin:16px 0 8px;">주요 위험 사항</h3><ul style="margin-left:16px;"><li>시장 변동성으로 인한 급격한 가격 변동</li><li>레버리지로 인한 예치금 초과 손실 가능성</li><li>기술적 장애(시스템 오류, 네트워크 지연)로 인한 주문 미체결</li><li>주말·공휴일 갭 발생으로 인한 예상 외 손실</li><li>유동성 부족 시 슬리피지 발생</li></ul><h3 style="color:#00d4ff;margin:16px 0 8px;">면책 사항</h3><p>Trading-X는 투자 조언을 제공하지 않습니다. 서비스 내 어떠한 정보도 투자 권유로 해석되어서는 안 됩니다. EA(Expert Advisor)의 과거 성과는 미래 수익을 보장하지 않으며, 모든 거래 결정과 그 결과에 대한 책임은 전적으로 이용자에게 있습니다.</p>' },
-    aml: { title: '자금세탁방지 정책 (AML)', body: '<h3 style="color:#00d4ff;margin-bottom:8px;">자금세탁방지 정책</h3><p>㈜굳프렌즈는 자금세탁 및 테러자금 조달을 방지하기 위해 관련 법령을 준수하며, 다음과 같은 정책을 시행합니다.</p><h3 style="color:#00d4ff;margin:16px 0 8px;">기본 원칙</h3><ul style="margin-left:16px;"><li>Trading-X는 주문 편의 도구이며, 이용자의 자금을 직접 보유·수탁·관리하지 않습니다</li><li>모든 자금의 입출금은 이용자가 선택한 MT5 브로커를 통해 이루어집니다</li><li>회사는 서비스가 불법 목적으로 이용되는 것을 금지합니다</li></ul><h3 style="color:#00d4ff;margin:16px 0 8px;">금지 행위</h3><ul style="margin-left:16px;"><li>자금세탁, 테러자금 조달 등 불법 자금 이동에 서비스 이용</li><li>타인 명의 또는 허위 정보를 이용한 계정 생성</li><li>범죄 수익의 은닉 또는 위장을 위한 거래</li><li>제재 대상 국가·개인과의 거래에 서비스 이용</li></ul><h3 style="color:#00d4ff;margin:16px 0 8px;">회사의 조치</h3><ul style="margin-left:16px;"><li>의심스러운 활동 발견 시 계정 이용 제한 또는 정지</li><li>관련 법령에 따라 수사기관에 협조</li><li>KYC(고객확인) 절차는 연동 브로커에서 수행하며, Trading-X는 브로커의 KYC 결과에 의존합니다</li></ul>' },
-    marketing: { title: '마케팅 정보 수신 동의', body: '<h3 style="color:#00d4ff;margin-bottom:8px;">마케팅 정보 수신 안내</h3><p>동의 시 다음의 정보를 받으실 수 있습니다.</p><h3 style="color:#00d4ff;margin:16px 0 8px;">수신 내용</h3><ul style="margin-left:16px;"><li>이벤트 및 프로모션 안내</li><li>신규 기능 업데이트 소식</li><li>투자 관련 뉴스레터</li><li>맞춤형 서비스 제안</li></ul><h3 style="color:#00d4ff;margin:16px 0 8px;">수신 방법</h3><p>앱 푸시 알림, 이메일</p><h3 style="color:#00d4ff;margin:16px 0 8px;">동의 철회</h3><p>동의 철회는 My &gt; 일반 &gt; 알림 설정에서 언제든지 가능합니다.</p><p style="margin-top:16px;color:rgba(255,255,255,0.4);font-size:12px;">※ 필수 공지사항(서버 점검, 약관 변경 등)은 동의 여부와 관계없이 발송됩니다.</p>' }
+    marketing: {
+        title: '마케팅 정보 수신 동의',
+        body: '<h3 style="color:#00d4ff;margin-bottom:8px;">마케팅 정보 수신 안내</h3>' +
+            '<p>㈜굳프렌즈(이하 "회사")는 「정보통신망 이용촉진 및 정보보호 등에 관한 법률」 제50조에 따라, 이용자의 동의를 받아 마케팅 정보를 발송합니다.</p>' +
+            '<h3 style="color:#00d4ff;margin:16px 0 8px;">수신 내용</h3>' +
+            '<ul style="margin-left:16px;"><li>이벤트 및 프로모션 안내</li><li>신규 기능 업데이트 소식</li><li>투자 관련 뉴스레터</li><li>맞춤형 서비스 제안</li></ul>' +
+            '<h3 style="color:#00d4ff;margin:16px 0 8px;">수신 방법 및 빈도</h3>' +
+            '<p>앱 푸시 알림, 이메일 (주 1~2회 이내)</p>' +
+            '<h3 style="color:#00d4ff;margin:16px 0 8px;">제3자 제공</h3>' +
+            '<p>마케팅 목적으로 이용자의 개인정보를 제3자에게 제공하지 않습니다.</p>' +
+            '<h3 style="color:#00d4ff;margin:16px 0 8px;">동의 철회</h3>' +
+            '<p>동의 철회는 My &gt; 일반 &gt; 알림 설정에서 언제든지 가능합니다. 철회 시 마케팅 정보 발송이 즉시 중단됩니다.</p>' +
+            '<p style="margin-top:16px;color:rgba(255,255,255,0.4);font-size:12px;">※ 필수 공지사항(서버 점검, 약관 변경 등)은 동의 여부와 관계없이 발송됩니다.</p>' +
+            '<hr style="border:none;border-top:1px solid rgba(255,255,255,0.1);margin:20px 0;">' +
+            '<h3 style="color:#00d4ff;margin-bottom:8px;">Marketing Information Consent</h3>' +
+            '<p>GOODFRIENDS Co., Ltd. sends marketing information with user consent in accordance with the Act on Promotion of Information and Communications Network Utilization and Information Protection (Article 50).</p>' +
+            '<h3 style="color:#00d4ff;margin:16px 0 8px;">Content</h3>' +
+            '<ul style="margin-left:16px;"><li>Event and promotion announcements</li><li>New feature updates</li><li>Investment-related newsletters</li><li>Personalized service recommendations</li></ul>' +
+            '<h3 style="color:#00d4ff;margin:16px 0 8px;">Method & Frequency</h3>' +
+            '<p>App push notifications, email (up to 1-2 times per week)</p>' +
+            '<h3 style="color:#00d4ff;margin:16px 0 8px;">Third-Party Sharing</h3>' +
+            '<p>We do not share your personal information with third parties for marketing purposes.</p>' +
+            '<h3 style="color:#00d4ff;margin:16px 0 8px;">Withdrawal of Consent</h3>' +
+            '<p>You can withdraw consent at any time via My &gt; General &gt; Notification Settings. Marketing messages will stop immediately upon withdrawal.</p>' +
+            '<p style="margin-top:16px;color:rgba(255,255,255,0.4);font-size:12px;">※ Mandatory notices (server maintenance, policy changes, etc.) are sent regardless of consent status.</p>'
+    }
+};
+
+const iframeTermsMap = {
+    service: { url: 'terms.html', title: '서비스 이용약관' },
+    privacy: { url: 'privacy.html', title: '개인정보 처리방침' },
+    risk: { url: 'risk.html', title: '투자 위험 고지' },
+    aml: { url: 'aml.html', title: '자금세탁방지 정책 (AML)' }
 };
 
 function openTermsDetail(type) {
-    if (type === 'service' || type === 'privacy') {
-        const url = type === 'service' ? 'terms.html' : 'privacy.html';
-        const title = type === 'service' ? '서비스 이용약관' : '개인정보 처리방침';
-        document.getElementById('myTermsDetailTitle').textContent = title;
-        document.getElementById('myTermsDetailBody').innerHTML = '<iframe src="' + url + '" style="width:100%;height:calc(100vh - 120px);border:none;border-radius:8px;"></iframe>';
+    const iframe = iframeTermsMap[type];
+    if (iframe) {
+        document.getElementById('myTermsDetailTitle').textContent = iframe.title;
+        document.getElementById('myTermsDetailBody').innerHTML = '<iframe src="' + iframe.url + '" style="width:100%;height:calc(100vh - 120px);border:none;border-radius:8px;"></iframe>';
         openMyDetail('termsDetail');
         return;
     }
@@ -2128,162 +2154,3 @@ function initTradeAlertToggles() {
         };
     }
 })();
-
-// ========== Live 입출금 ==========
-var _liveRefreshTimer = null;
-var _liveHistoryAll = [];
-var _liveHistoryShown = 3;
-
-async function loadLiveAccountData() {
-    // 새로고침 스핀
-    var spinBtn = document.getElementById('liveRefreshBtn');
-    if (spinBtn) { spinBtn.classList.add('spinning'); setTimeout(function(){ spinBtn.classList.remove('spinning'); }, 800); }
-
-    try {
-        var tkn = localStorage.getItem('access_token');
-        var res = await fetch(API_URL + '/demo/account-info', {
-            headers: { 'Authorization': 'Bearer ' + tkn }
-        });
-        var d = await res.json();
-
-        // 연결 상태 분기
-        if (!d.has_mt5) {
-            document.getElementById('liveConnectedState').style.display = 'none';
-            document.getElementById('liveEmptyState').style.display = 'block';
-            return;
-        }
-        document.getElementById('liveConnectedState').style.display = 'block';
-        document.getElementById('liveEmptyState').style.display = 'none';
-
-        // Balance
-        var balEl = document.getElementById('myLiveBalance');
-        if (balEl) balEl.textContent = '$' + Number(d.balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
-
-        // Account (상세 카드)
-        var accEl2 = document.getElementById('myLiveAccountNum2');
-        if (accEl2) accEl2.textContent = d.account || '-';
-
-        // Equity
-        var eqEl = document.getElementById('myLiveEquity');
-        if (eqEl) eqEl.textContent = '$' + Number(d.equity || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
-
-        // Margin
-        var mEl = document.getElementById('myLiveMargin');
-        if (mEl) mEl.textContent = '$' + Number(d.margin || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
-
-        // Current P/L (포지션 없으면 흰색 $0.00, 수익 녹색, 손실 빨강)
-        var pEl = document.getElementById('myLiveProfit');
-        if (pEl) {
-            var profit = Number(d.profit || 0);
-            var posCount = Number(d.positions_count || 0);
-            if (posCount === 0) {
-                pEl.textContent = '$0.00';
-                pEl.className = 'my-live-stat-value';
-            } else {
-                pEl.textContent = (profit >= 0 ? '+$' : '-$') + Math.abs(profit).toLocaleString('en-US', { minimumFractionDigits: 2 });
-                pEl.className = 'my-live-stat-value ' + (profit > 0 ? 'profit-plus' : profit < 0 ? 'profit-minus' : '');
-            }
-        }
-
-        // Server
-        var sEl = document.getElementById('myLiveServer');
-        if (sEl) sEl.textContent = d.server || '-';
-
-        // Leverage
-        var lvEl = document.getElementById('myLiveLeverage');
-        if (lvEl) lvEl.textContent = d.leverage ? '1:' + d.leverage : '-';
-
-        // Open Positions
-        var opEl = document.getElementById('myLivePositions');
-        if (opEl) opEl.textContent = d.positions_count || 0;
-
-    } catch (e) {
-        console.error('Live 계좌 데이터 로드 오류:', e);
-    }
-}
-
-function startLiveRefresh() {
-    stopLiveRefresh();
-    loadLiveAccountData();
-    loadLiveDepositHistory();
-    _liveRefreshTimer = setInterval(loadLiveAccountData, 30000);
-}
-
-function stopLiveRefresh() {
-    if (_liveRefreshTimer) { clearInterval(_liveRefreshTimer); _liveRefreshTimer = null; }
-}
-
-// 입출금 내역 로드 (더미 데이터 — 추후 MetaAPI 연동)
-function loadLiveDepositHistory() {
-    var bodyEl = document.getElementById('myLiveHistoryBody');
-    var moreEl = document.getElementById('myLiveHistoryMore');
-    if (!bodyEl) return;
-
-    // TODO: 추후 MetaAPI deal history에서 입출금만 필터링
-    _liveHistoryAll = [
-        { type: 'in', label: '입금', method: 'Bank Transfer', date: '02.18 14:32', amount: 500 },
-        { type: 'out', label: '출금', method: 'Bank Transfer', date: '02.15 09:20', amount: -200 },
-        { type: 'in', label: '입금', method: 'Card', date: '02.10 11:45', amount: 1000 },
-        { type: 'in', label: '입금', method: 'E-Wallet', date: '02.05 16:30', amount: 300 },
-        { type: 'out', label: '출금', method: 'Bank Transfer', date: '01.28 11:00', amount: -150 },
-        { type: 'in', label: '입금', method: 'Crypto', date: '01.20 08:15', amount: 2000 }
-    ];
-
-    _liveHistoryShown = 3;
-    renderLiveHistory();
-}
-
-function renderLiveHistory() {
-    var bodyEl = document.getElementById('myLiveHistoryBody');
-    var moreEl = document.getElementById('myLiveHistoryMore');
-    if (!bodyEl) return;
-
-    if (_liveHistoryAll.length === 0) {
-        bodyEl.innerHTML = '<div style="text-align:center;padding:20px 0;color:var(--text-dim);font-size:13px;">입출금 내역이 없습니다</div>';
-        if (moreEl) moreEl.style.display = 'none';
-        return;
-    }
-
-    var items = _liveHistoryAll.slice(0, _liveHistoryShown);
-    var html = '';
-    for (var i = 0; i < items.length; i++) {
-        var h = items[i];
-        var isIn = h.type === 'in';
-        var amtStr = isIn ? ('+$' + Math.abs(h.amount).toLocaleString('en-US', {minimumFractionDigits:2})) : ('-$' + Math.abs(h.amount).toLocaleString('en-US', {minimumFractionDigits:2}));
-        html += '<div class="my-live-history-item">' +
-            '<div class="my-live-history-left">' +
-                '<div class="my-live-history-icon ' + (isIn ? 'in' : 'out') + '">' +
-                    '<span class="material-icons-round" style="font-size:16px;color:' + (isIn ? 'var(--buy-color)' : 'var(--sell-color)') + ';">' + (isIn ? 'south_west' : 'north_east') + '</span>' +
-                '</div>' +
-                '<div>' +
-                    '<div class="my-live-history-type">' + h.label + '</div>' +
-                    '<div class="my-live-history-meta">' + h.method + ' \u00B7 ' + h.date + '</div>' +
-                '</div>' +
-            '</div>' +
-            '<span class="my-live-history-amount ' + (isIn ? 'positive' : 'negative') + '">' + amtStr + '</span>' +
-        '</div>';
-    }
-    bodyEl.innerHTML = html;
-
-    // 더보기 버튼
-    if (moreEl) {
-        if (_liveHistoryShown < _liveHistoryAll.length) {
-            moreEl.style.display = 'flex';
-            moreEl.innerHTML = '<span>더보기</span><span class="material-icons-round" style="font-size:16px;">expand_more</span>';
-        } else if (_liveHistoryAll.length > 3) {
-            moreEl.style.display = 'flex';
-            moreEl.innerHTML = '<span>접기</span><span class="material-icons-round" style="font-size:16px;">expand_less</span>';
-        } else {
-            moreEl.style.display = 'none';
-        }
-    }
-}
-
-function showMoreLiveHistory() {
-    if (_liveHistoryShown < _liveHistoryAll.length) {
-        _liveHistoryShown = _liveHistoryAll.length;
-    } else {
-        _liveHistoryShown = 3;
-    }
-    renderLiveHistory();
-}
