@@ -3158,28 +3158,54 @@
 /* ===== Live 입출금 - 새로고침 버튼 ===== */
 .my-live-account-row { display: flex; align-items: center; gap: 6px; }
 .my-live-refresh-btn {
-    font-size: 16px; color: var(--text-dim); cursor: pointer;
+    font-size: 18px; color: var(--text-dim); cursor: pointer;
     transition: color 0.15s; display: flex; align-items: center;
 }
 .my-live-refresh-btn:active { color: var(--accent-cyan); }
 @keyframes liveSpin { to { transform: rotate(360deg); } }
 .my-live-refresh-btn.spinning { animation: liveSpin 0.8s linear; color: var(--accent-cyan); }
 
-/* ===== Live 4칸 그리드 통계 ===== */
+/* ===== Live 계좌 히어로 (Account탭 톤앤매너) ===== */
+.my-deposit-hero-label {
+    font-size: 11px;
+    color: rgba(255,255,255,0.7);
+    letter-spacing: 1px;
+}
+.my-deposit-hero-amount.live {
+    font-size: 28px;
+    font-weight: 700;
+    color: #00d4ff;
+    letter-spacing: -0.5px;
+    font-family: 'Rajdhani', sans-serif;
+}
+
+/* ===== Live 3칸 통계 (Account탭 하단 스타일) ===== */
 .my-live-stats-grid {
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 8px 16px; margin-top: 14px; padding-top: 14px;
+    display: flex; gap: 0;
+    margin-top: 14px; padding-top: 14px;
     border-top: 1px solid rgba(255,255,255,0.06);
 }
-.my-live-stat-item { text-align: center; }
-.my-live-stat-label { font-size: 10px; color: var(--text-dim); letter-spacing: 0.3px; margin-bottom: 2px; }
-.my-live-stat-value {
-    font-size: 14px; font-weight: 600; color: var(--text-primary);
-    font-family: 'Consolas', 'SF Mono', monospace;
+.my-live-stat-item {
+    flex: 1; text-align: left; padding-left: 12px; position: relative;
 }
-.my-live-stat-value.cyan { color: var(--accent-cyan); }
-.my-live-stat-value.profit-plus { color: var(--buy-color); }
-.my-live-stat-value.profit-minus { color: var(--sell-color); }
+.my-live-stat-item:first-child { padding-left: 4px; }
+.my-live-stat-item:not(:last-child)::after {
+    content: ''; position: absolute; right: 0; top: 20%; height: 60%;
+    width: 1px; background: rgba(255,255,255,0.08);
+}
+.my-live-stat-label {
+    font-size: 10px; color: rgba(255,255,255,0.7);
+    letter-spacing: 0.5px; margin-bottom: 5px;
+    text-transform: uppercase;
+}
+.my-live-stat-value {
+    font-size: 15px; font-weight: 600;
+    color: rgba(255,255,255,0.9);
+    font-family: 'Rajdhani', sans-serif;
+}
+.my-live-stat-value.cyan { color: #00d4ff; }
+.my-live-stat-value.profit-plus { color: #00d4a4; }
+.my-live-stat-value.profit-minus { color: #ff4d5a; }
 
 /* ===== Live 계좌 상세 정보 ===== */
 .my-live-info-card {
@@ -3191,29 +3217,42 @@
     padding: 11px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
 }
 .my-live-info-row:last-child { border-bottom: none; }
-.my-live-info-label { font-size: 13px; color: var(--text-dim); }
+.my-live-info-label {
+    font-size: 11px; color: rgba(255,255,255,0.7);
+    letter-spacing: 0.5px;
+}
 .my-live-info-value {
-    font-size: 13px; font-weight: 600; color: var(--text-primary);
-    font-family: 'Consolas', 'SF Mono', monospace;
+    font-size: 14px; font-weight: 600;
+    color: rgba(255,255,255,0.9);
+    font-family: 'Rajdhani', sans-serif;
 }
 
-/* ===== HedgeHood 바로가기 바 ===== */
-.my-live-link-bar {
-    display: flex; align-items: center; gap: 12px;
-    padding: 14px 16px; background: var(--bg-tertiary);
-    border: 1px solid rgba(0,180,80,0.15); border-radius: 14px;
-    cursor: pointer; transition: background 0.15s; margin-bottom: 16px;
+/* ===== HedgeHood CTA (시안 강조) ===== */
+.my-live-cta-deposit {
+    display: flex; align-items: center; gap: 14px;
+    padding: 18px; background: linear-gradient(135deg, rgba(0,212,255,0.12), rgba(0,212,255,0.04));
+    border: 1px solid rgba(0,212,255,0.35); border-radius: 16px;
+    cursor: pointer; margin-bottom: 10px;
+    box-shadow: 0 0 20px rgba(0,212,255,0.08);
+    transition: background 0.15s;
 }
-.my-live-link-bar:active { background: var(--bg-secondary); }
-.my-live-link-icon {
-    width: 36px; height: 36px; border-radius: 10px;
-    background: rgba(0,180,80,0.12); border: 1px solid rgba(0,180,80,0.25);
+.my-live-cta-deposit:active { background: rgba(0,212,255,0.15); }
+.my-live-cta-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: rgba(0,212,255,0.15); border: 1px solid rgba(0,212,255,0.3);
     display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
-.my-live-link-icon .material-icons-round { color: var(--buy-color); font-size: 18px; }
-.my-live-link-text { flex: 1; }
-.my-live-link-title { font-size: 13px; font-weight: 600; color: var(--text-primary); }
-.my-live-link-desc { font-size: 11px; color: var(--text-dim); margin-top: 1px; }
+.my-live-cta-icon .material-icons-round { color: var(--accent-cyan); font-size: 22px; }
+.my-live-cta-text { flex: 1; }
+.my-live-cta-title {
+    font-size: 15px; font-weight: 700; color: var(--text-primary);
+    font-family: 'Rajdhani', sans-serif; letter-spacing: 0.3px;
+}
+.my-live-cta-arrow { color: var(--accent-cyan); font-size: 22px; }
+.my-live-cta-note {
+    font-size: 11px; color: var(--text-dim); line-height: 1.5;
+    padding: 0 4px; margin-bottom: 16px;
+}
 
 /* ===== 입출금 내역 ===== */
 .my-live-history-section {
@@ -3324,3 +3363,16 @@
 }
 .my-live-help-note .material-icons-round { font-size: 16px; color: var(--accent-cyan); flex-shrink: 0; margin-top: 1px; }
 .my-live-help-note span:last-child { font-size: 12px; color: var(--text-dim); line-height: 1.5; }
+
+/* ===== 가이드 카드 compact (한줄) ===== */
+.my-deposit-guide-card.compact {
+    display: flex; flex-direction: row; align-items: center; gap: 10px;
+    padding: 12px 14px;
+}
+.my-deposit-guide-icon.small {
+    width: 32px; height: 32px; margin: 0;
+}
+.my-deposit-guide-icon.small .material-icons-round { font-size: 18px; }
+.my-deposit-guide-card.compact .my-deposit-guide-label {
+    font-family: 'Rajdhani', sans-serif;
+}

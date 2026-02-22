@@ -63,11 +63,11 @@
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css?v=1771726264">
-        <link rel="stylesheet" href="css/quickeasy.css?v=1771726264">
-    <link rel="stylesheet" href="css/chart.css?v=1771726264">
-    <link rel="stylesheet" href="css/account.css?v=1771726264">
-    <link rel="stylesheet" href="css/my.css?v=1771726264">
+    <link rel="stylesheet" href="css/styles.css?v=1771769716">
+        <link rel="stylesheet" href="css/quickeasy.css?v=1771769716">
+    <link rel="stylesheet" href="css/chart.css?v=1771769716">
+    <link rel="stylesheet" href="css/account.css?v=1771769716">
+    <link rel="stylesheet" href="css/my.css?v=1771769716">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
@@ -1956,29 +1956,22 @@
                                         <div class="my-deposit-broker-dot"></div>
                                         <span class="my-deposit-broker-name">HedgeHood</span>
                                     </div>
-                                    <div class="my-live-account-row">
-                                        <span class="my-deposit-account-num" id="myLiveAccount">-</span>
-                                        <span class="material-icons-round my-live-refresh-btn" id="liveRefreshBtn" onclick="loadLiveAccountData()">refresh</span>
-                                    </div>
+                                    <span class="material-icons-round my-live-refresh-btn" id="liveRefreshBtn" onclick="loadLiveAccountData()">refresh</span>
                                 </div>
                                 <div class="my-deposit-hero-label">LIVE BALANCE</div>
                                 <div class="my-deposit-hero-amount live" id="myLiveBalance">$--.--</div>
                                 <div class="my-live-stats-grid">
                                     <div class="my-live-stat-item">
-                                        <div class="my-live-stat-label">Equity</div>
-                                        <div class="my-live-stat-value cyan" id="myLiveEquity">-</div>
+                                        <div class="my-live-stat-label">EQUITY</div>
+                                        <div class="my-live-stat-value cyan" id="myLiveEquity">$0.00</div>
                                     </div>
                                     <div class="my-live-stat-item">
-                                        <div class="my-live-stat-label">Free Margin</div>
-                                        <div class="my-live-stat-value" id="myLiveFreeMargin">-</div>
+                                        <div class="my-live-stat-label">MARGIN</div>
+                                        <div class="my-live-stat-value" id="myLiveMargin">$0.00</div>
                                     </div>
                                     <div class="my-live-stat-item">
-                                        <div class="my-live-stat-label">Margin</div>
-                                        <div class="my-live-stat-value" id="myLiveMargin">-</div>
-                                    </div>
-                                    <div class="my-live-stat-item">
-                                        <div class="my-live-stat-label">Profit</div>
-                                        <div class="my-live-stat-value" id="myLiveProfit">-</div>
+                                        <div class="my-live-stat-label">CURRENT P/L</div>
+                                        <div class="my-live-stat-value" id="myLiveProfit">$0.00</div>
                                     </div>
                                 </div>
                             </div>
@@ -1986,16 +1979,16 @@
                             <!-- 계좌 상세 -->
                             <div class="my-live-info-card">
                                 <div class="my-live-info-row">
-                                    <span class="my-live-info-label">Account</span>
-                                    <span class="my-live-info-value" id="myLiveAccountNum2">-</span>
-                                </div>
-                                <div class="my-live-info-row">
                                     <span class="my-live-info-label">Server</span>
                                     <span class="my-live-info-value" id="myLiveServer">-</span>
                                 </div>
                                 <div class="my-live-info-row">
-                                    <span class="my-live-info-label">Margin Level</span>
-                                    <span class="my-live-info-value" id="myLiveMarginLevel">-</span>
+                                    <span class="my-live-info-label">Account</span>
+                                    <span class="my-live-info-value" id="myLiveAccountNum2">-</span>
+                                </div>
+                                <div class="my-live-info-row">
+                                    <span class="my-live-info-label">Leverage</span>
+                                    <span class="my-live-info-value" id="myLiveLeverage">-</span>
                                 </div>
                                 <div class="my-live-info-row" style="border-bottom:none;">
                                     <span class="my-live-info-label">Open Positions</span>
@@ -2003,26 +1996,26 @@
                                 </div>
                             </div>
 
-                            <!-- 입금/출금 가이드 -->
-                            <div class="my-deposit-guide-row">
-                                <div class="my-deposit-guide-card" onclick="openMyDetail('depositGuide')">
-                                    <div class="my-deposit-guide-icon deposit"><span class="material-icons-round">account_balance</span></div>
-                                    <div class="my-deposit-guide-label">입금 가이드</div>
+                            <!-- ★ 핵심 CTA: HedgeHood 입출금 -->
+                            <div class="my-live-cta-deposit" onclick="window.open('https://hedgehood.com','_blank')">
+                                <div class="my-live-cta-icon"><span class="material-icons-round">account_balance_wallet</span></div>
+                                <div class="my-live-cta-text">
+                                    <div class="my-live-cta-title">HEDGEHOOD 클라이언트 포털</div>
                                 </div>
-                                <div class="my-deposit-guide-card" onclick="openMyDetail('withdrawGuide')">
-                                    <div class="my-deposit-guide-icon withdraw"><span class="material-icons-round">send</span></div>
-                                    <div class="my-deposit-guide-label">출금 가이드</div>
-                                </div>
+                                <span class="material-icons-round my-live-cta-arrow">chevron_right</span>
                             </div>
+                            <div class="my-live-cta-note">Trading-X는 MetaTrader 5(MT5) 기반 브로커와 연동하여 주문 편의 기능을 제공하는 도구 플랫폼입니다. 입출금은 HEDGEHOOD 브로커를 통해 직접 진행됩니다.</div>
 
-                            <!-- HedgeHood 바로가기 -->
-                            <div class="my-live-link-bar" onclick="window.open('https://hedgehood.com','_blank')">
-                                <div class="my-live-link-icon"><span class="material-icons-round">launch</span></div>
-                                <div class="my-live-link-text">
-                                    <div class="my-live-link-title">HedgeHood 클라이언트 포털</div>
-                                    <div class="my-live-link-desc">입출금 · 계좌관리 · 리포트</div>
+                            <!-- 입금/출금 가이드 (심플 한줄) -->
+                            <div class="my-deposit-guide-row">
+                                <div class="my-deposit-guide-card compact" onclick="openMyDetail('depositGuide')">
+                                    <div class="my-deposit-guide-icon deposit small"><span class="material-icons-round">download</span></div>
+                                    <span class="my-deposit-guide-label">입금 가이드</span>
                                 </div>
-                                <span class="material-icons-round" style="color:var(--text-dim);font-size:18px;">chevron_right</span>
+                                <div class="my-deposit-guide-card compact" onclick="openMyDetail('withdrawGuide')">
+                                    <div class="my-deposit-guide-icon withdraw small"><span class="material-icons-round">upload</span></div>
+                                    <span class="my-deposit-guide-label">출금 가이드</span>
+                                </div>
                             </div>
 
                             <!-- 입출금 내역 -->
@@ -3608,36 +3601,36 @@
     </div>
 </div>
 
-    <script src="js/config.js?v=1771726264"></script>
-    <script src="js/state.js?v=1771726264"></script>
-    <script src="js/auth.js?v=1771726264"></script>
-    <script src="js/api.js?v=1771726264"></script>
-    <script src="js/utils.js?v=1771726264"></script>
-    <script src="js/watchlist.js?v=1771726264"></script>
-    <script src="js/navigation.js?v=1771726264"></script>
-    <script src="js/my.js?v=1771726264"></script>
+    <script src="js/config.js?v=1771769716"></script>
+    <script src="js/state.js?v=1771769716"></script>
+    <script src="js/auth.js?v=1771769716"></script>
+    <script src="js/api.js?v=1771769716"></script>
+    <script src="js/utils.js?v=1771769716"></script>
+    <script src="js/watchlist.js?v=1771769716"></script>
+    <script src="js/navigation.js?v=1771769716"></script>
+    <script src="js/my.js?v=1771769716"></script>
 
     <!-- Chart Panels (모듈화) -->
-    <script src="js/panels/gaugePanel.js?v=1771726264"></script>
-    <script src="js/panels/chartGaugePanel.js?v=1771726264"></script>
+    <script src="js/panels/gaugePanel.js?v=1771769716"></script>
+    <script src="js/panels/chartGaugePanel.js?v=1771769716"></script>
 
     <!-- Indicator System -->
-    <script src="js/indicators/config.js?v=1771726264"></script>
-    <script src="js/indicators/calculator.js?v=1771726264"></script>
-    <script src="js/indicators/index.js?v=1771726264"></script>
+    <script src="js/indicators/config.js?v=1771769716"></script>
+    <script src="js/indicators/calculator.js?v=1771769716"></script>
+    <script src="js/indicators/index.js?v=1771769716"></script>
 
     <!-- Chart Type System -->
-    <script src="js/chartTypes/index.js?v=1771726264"></script>
+    <script src="js/chartTypes/index.js?v=1771769716"></script>
 
-    <script src="js/panels/chartPanel.js?v=1771726264"></script>
-    <script src="js/panels/symbolSelectorPanel.js?v=1771726264"></script>
-    <script src="js/panels/randomWalkPanel.js?v=1771726264"></script>
-    <script src="js/panels/multiOrderPanelV5.js?v=1771726264"></script>
-        <script src="js/panels/quickEasyPanel.js?v=1771726264"></script>
-        <script src="js/panels/qeTickChart.js?v=1771726264"></script>
+    <script src="js/panels/chartPanel.js?v=1771769716"></script>
+    <script src="js/panels/symbolSelectorPanel.js?v=1771769716"></script>
+    <script src="js/panels/randomWalkPanel.js?v=1771769716"></script>
+    <script src="js/panels/multiOrderPanelV5.js?v=1771769716"></script>
+        <script src="js/panels/quickEasyPanel.js?v=1771769716"></script>
+        <script src="js/panels/qeTickChart.js?v=1771769716"></script>
 
-    <script src="js/chart.js?v=1771726264"></script>
-    <script src="js/settings.js?v=1771726264"></script>
+    <script src="js/chart.js?v=1771769716"></script>
+    <script src="js/settings.js?v=1771769716"></script>
     <script>
         // ========== 타임프레임 드롭다운 함수 ==========
         function toggleTimeframeDropdown() {
@@ -5088,12 +5081,12 @@
         </div>
     </div>
 
-    <script src="js/market-schedule.js?v=1771726264"></script>
-    <script src="js/account.js?v=1771726264"></script>
-    <script src="js/trading.js?v=1771726264"></script>
-    <script src="js/openPositions.js?v=1771726264"></script>
-    <script src="js/connection.js?v=1771726264"></script>
-    <script src="js/init.js?v=1771726264"></script>
+    <script src="js/market-schedule.js?v=1771769716"></script>
+    <script src="js/account.js?v=1771769716"></script>
+    <script src="js/trading.js?v=1771769716"></script>
+    <script src="js/openPositions.js?v=1771769716"></script>
+    <script src="js/connection.js?v=1771769716"></script>
+    <script src="js/init.js?v=1771769716"></script>
 <div id="txDialogContainer"></div>
 </body>
 </html>

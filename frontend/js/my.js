@@ -2159,51 +2159,39 @@ async function loadLiveAccountData() {
         var balEl = document.getElementById('myLiveBalance');
         if (balEl) balEl.textContent = '$' + Number(d.balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
 
-        // Account (2곳)
-        var acc = d.account || '-';
-        var accEl = document.getElementById('myLiveAccount');
-        if (accEl) accEl.textContent = acc;
+        // Account (상세 카드)
         var accEl2 = document.getElementById('myLiveAccountNum2');
-        if (accEl2) accEl2.textContent = acc;
+        if (accEl2) accEl2.textContent = d.account || '-';
 
         // Equity
         var eqEl = document.getElementById('myLiveEquity');
         if (eqEl) eqEl.textContent = '$' + Number(d.equity || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
 
-        // Free Margin
-        var fmEl = document.getElementById('myLiveFreeMargin');
-        if (fmEl) fmEl.textContent = '$' + Number(d.free_margin || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
-
         // Margin
         var mEl = document.getElementById('myLiveMargin');
         if (mEl) mEl.textContent = '$' + Number(d.margin || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
 
-        // Profit (색상)
+        // Current P/L (포지션 없으면 흰색 $0.00, 수익 녹색, 손실 빨강)
         var pEl = document.getElementById('myLiveProfit');
         if (pEl) {
             var profit = Number(d.profit || 0);
-            pEl.textContent = (profit >= 0 ? '+$' : '-$') + Math.abs(profit).toLocaleString('en-US', { minimumFractionDigits: 2 });
-            pEl.className = 'my-live-stat-value ' + (profit > 0 ? 'profit-plus' : profit < 0 ? 'profit-minus' : '');
+            var posCount = Number(d.positions_count || 0);
+            if (posCount === 0) {
+                pEl.textContent = '$0.00';
+                pEl.className = 'my-live-stat-value';
+            } else {
+                pEl.textContent = (profit >= 0 ? '+$' : '-$') + Math.abs(profit).toLocaleString('en-US', { minimumFractionDigits: 2 });
+                pEl.className = 'my-live-stat-value ' + (profit > 0 ? 'profit-plus' : profit < 0 ? 'profit-minus' : '');
+            }
         }
 
         // Server
         var sEl = document.getElementById('myLiveServer');
         if (sEl) sEl.textContent = d.server || '-';
 
-        // Margin Level (자동 계산)
-        var mlEl = document.getElementById('myLiveMarginLevel');
-        if (mlEl) {
-            var margin = Number(d.margin || 0);
-            var equity = Number(d.equity || 0);
-            if (margin > 0) {
-                var level = ((equity / margin) * 100).toFixed(1);
-                mlEl.textContent = level + '%';
-                mlEl.style.color = Number(level) > 200 ? 'var(--buy-color)' : Number(level) > 100 ? '#ffaa00' : 'var(--sell-color)';
-            } else {
-                mlEl.textContent = '\u221E';
-                mlEl.style.color = 'var(--buy-color)';
-            }
-        }
+        // Leverage
+        var lvEl = document.getElementById('myLiveLeverage');
+        if (lvEl) lvEl.textContent = d.leverage ? '1:' + d.leverage : '-';
 
         // Open Positions
         var opEl = document.getElementById('myLivePositions');
