@@ -92,7 +92,7 @@
 
 .my-glow-label {
     font-size: 10px;
-    color: #ffffff;
+    color: #9aa0b0;
     letter-spacing: 0.5px;
     text-transform: uppercase;
     margin-bottom: 4px;
@@ -205,7 +205,7 @@
 
 .my-progress-text {
     font-size: 10px;
-    color: var(--text-dim);
+    color: #ffffff;
     font-family: 'Consolas', 'SF Mono', monospace;
     white-space: nowrap;
 }
