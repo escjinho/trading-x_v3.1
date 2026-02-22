@@ -1702,8 +1702,9 @@ async function executeWithdrawal() {
         const data = await res.json();
         if (data.success) {
             closeWithdrawalModal();
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('user_info');
+            localStorage.removeItem('refresh_token');
             showToast('회원 탈퇴가 완료되었습니다. 이용해주셔서 감사합니다.');
             setTimeout(() => { window.location.href = '/login.html'; }, 2000);
         } else {
