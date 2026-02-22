@@ -2167,12 +2167,11 @@ async function loadLiveAccountData() {
         var mEl = document.getElementById('myLiveMargin');
         if (mEl) mEl.textContent = fmtUSD(d.margin || d.total_margin);
 
-        // Current P/L
+        // Current P/L (MT5 profit 직접 표시)
         var pEl = document.getElementById('myLiveProfit');
         if (pEl) {
-            var posCount = Number(d.positions_count || 0);
-            var profit = posCount > 0 ? Number(d.profit || d.current_pl || 0) : 0;
-            if (posCount === 0 || profit === 0) {
+            var profit = Number(d.profit || 0);
+            if (profit === 0) {
                 pEl.textContent = '$0.00';
                 pEl.className = 'my-live-stat-value';
             } else {
@@ -2209,17 +2208,35 @@ function stopLiveRefresh() {
     if (_liveRefreshTimer) { clearInterval(_liveRefreshTimer); _liveRefreshTimer = null; }
 }
 
-function loadLiveDepositHistory() {
+async function loadLiveDepositHistory() {
     var bodyEl = document.getElementById('myLiveHistoryBody');
+    var moreEl = document.getElementById('myLiveHistoryMore');
     if (!bodyEl) return;
-    _liveHistoryAll = [
-        { type: 'in', label: '입금', method: 'Bank Transfer', date: '02.18 14:32', amount: 500 },
-        { type: 'out', label: '출금', method: 'Bank Transfer', date: '02.15 09:20', amount: -200 },
-        { type: 'in', label: '입금', method: 'Card', date: '02.10 11:45', amount: 1000 },
-        { type: 'in', label: '입금', method: 'E-Wallet', date: '02.05 16:30', amount: 300 },
-        { type: 'out', label: '출금', method: 'Bank Transfer', date: '01.28 11:00', amount: -150 },
-        { type: 'in', label: '입금', method: 'Crypto', date: '01.20 08:15', amount: 2000 }
-    ];
+
+    try {
+        var tkn = localStorage.getItem('access_token');
+        var res = await fetch(API_URL + '/demo/deposit-history', {
+            headers: { 'Authorization': 'Bearer ' + tkn }
+        });
+        if (res.ok) {
+            var data = await res.json();
+            _liveHistoryAll = (data.history || []).map(function(h) {
+                var isDeposit = h.type === 'deposit' || h.amount > 0;
+                return {
+                    type: isDeposit ? 'in' : 'out',
+                    label: isDeposit ? '입금' : '출금',
+                    method: h.method || h.comment || 'Transfer',
+                    date: h.date || '',
+                    amount: Math.abs(h.amount || 0) * (isDeposit ? 1 : -1)
+                };
+            });
+        } else {
+            _liveHistoryAll = [];
+        }
+    } catch(e) {
+        console.error('Deposit history error:', e);
+        _liveHistoryAll = [];
+    }
     _liveHistoryShown = 3;
     renderLiveHistory();
 }
@@ -2229,7 +2246,7 @@ function renderLiveHistory() {
     var moreEl = document.getElementById('myLiveHistoryMore');
     if (!bodyEl) return;
     if (_liveHistoryAll.length === 0) {
-        bodyEl.innerHTML = '<div style="text-align:center;padding:20px 0;color:var(--text-dim);font-size:13px;">입출금 내역이 없습니다</div>';
+        bodyEl.innerHTML = '<div style="text-align:center;padding:24px 0;"><span class="material-icons-round" style="font-size:32px;color:var(--text-dim);opacity:0.4;display:block;margin-bottom:8px;">receipt_long</span><span style="color:var(--text-dim);font-size:13px;">최근 6개월간 입출금 내역이 없습니다</span></div>';
         if (moreEl) moreEl.style.display = 'none';
         return;
     }

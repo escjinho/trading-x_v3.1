@@ -735,13 +735,21 @@ async def get_demo_account(
 
     # ★★★ 라이브 모드 (MT5 계정 연결됨) - 유저 MT5 계정 정보 반환 ★★★
     if current_user.has_mt5_account:
+        # MT5 포지션 수: margin > 0이면 포지션 있음 (MetaAPI 기반)
+        mt5_margin_val = current_user.mt5_margin or 0
+        mt5_profit_val = current_user.mt5_profit or 0
+        # MT5 open positions 추정: margin이 있으면 포지션 존재
+        mt5_open_count = getattr(current_user, 'mt5_positions_count', None)
+        if mt5_open_count is None:
+            # mt5_positions_count 필드가 없으면 margin으로 추정
+            mt5_open_count = len(all_positions) if len(all_positions) > 0 else (1 if mt5_margin_val > 0 else 0)
         return {
             "balance": current_user.mt5_balance or 0,
             "equity": current_user.mt5_equity or current_user.mt5_balance or 0,
-            "margin": current_user.mt5_margin or 0,
+            "margin": mt5_margin_val,
             "free_margin": current_user.mt5_free_margin or current_user.mt5_balance or 0,
-            "profit": current_user.mt5_profit or 0,
-            "today_profit": current_user.demo_today_profit or 0.0,  # 오늘 수익은 데모 값 유지
+            "profit": mt5_profit_val,
+            "today_profit": current_user.demo_today_profit or 0.0,
             "current_pl": round(current_pl, 2),
             "broker": "Live Account",
             "account": current_user.mt5_account_number or "",
@@ -750,7 +758,7 @@ async def get_demo_account(
             "currency": current_user.mt5_currency or "USD",
             "position": position_data,
             "positions": positions_data,
-            "positions_count": len(all_positions),
+            "positions_count": mt5_open_count,
             "buysell_count": len(positions),
             "has_mt5": True,
             "total_margin": round(total_margin, 2)
@@ -2383,3 +2391,17 @@ async def demo_websocket_endpoint(websocket: WebSocket):
             break
 
     await websocket.close()
+@router.get("/deposit-history")
+async def get_deposit_history(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """입출금 내역 조회 (최근 6개월)"""
+    from datetime import timedelta
+    six_months_ago = datetime.now() - timedelta(days=180)
+    
+    # MetaAPI를 통한 실제 입출금 내역은 추후 연동
+    # 현재는 빈 배열 반환 (더미 데이터 제거)
+    history = []
+    
+    return {"history": history}
