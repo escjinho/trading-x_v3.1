@@ -123,7 +123,8 @@
       "Bash(1 echo \"=== 5\\) 새 함수 ===\")",
       "Bash(cd /var/www/trading-x grep -n \"로그인\\\\|login-btn\\\\|intro-btn\\\\|btn-login\" frontend/intro.html)",
       "Bash(__NEW_LINE_2efe89efa37465cc__ sed -i 's/padding: 24px 48px;/padding: 24px 48px; min-width: 280px; white-space: nowrap;/' frontend/login.html)",
-      "Bash(__NEW_LINE_2efe89efa37465cc__ git add frontend/login.html)"
+      "Bash(__NEW_LINE_2efe89efa37465cc__ git add frontend/login.html)",
+      "Bash(cd /var/www/trading-x grep -n \"// Balance\" frontend/js/my.js)"
     ]
   }
 }

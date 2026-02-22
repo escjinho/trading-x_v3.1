@@ -1373,6 +1373,9 @@ function initDetailView(detail) {
         case 'mt5':
             initMt5View();
             break;
+        case 'depositLive':
+            startLiveRefresh();
+            break;
         case 'depositDemo':
             // 금액 선택 초기화
             selectedDemoAmount = 10000;
@@ -2121,3 +2124,142 @@ function initTradeAlertToggles() {
         };
     }
 })();
+
+// ========== Live 입출금 ==========
+var _liveRefreshTimer = null;
+var _liveHistoryAll = [];
+var _liveHistoryShown = 3;
+
+async function loadLiveAccountData() {
+    var spinBtn = document.getElementById('liveRefreshBtn');
+    if (spinBtn) { spinBtn.classList.add('spinning'); setTimeout(function(){ spinBtn.classList.remove('spinning'); }, 800); }
+
+    try {
+        var tkn = localStorage.getItem('access_token');
+        var res = await fetch(API_URL + '/demo/account-info', {
+            headers: { 'Authorization': 'Bearer ' + tkn }
+        });
+        var d = await res.json();
+
+        if (!d.has_mt5) {
+            document.getElementById('liveConnectedState').style.display = 'none';
+            document.getElementById('liveEmptyState').style.display = 'block';
+            return;
+        }
+        document.getElementById('liveConnectedState').style.display = 'block';
+        document.getElementById('liveEmptyState').style.display = 'none';
+
+        function fmtUSD(v) { return '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2 }); }
+
+        // Balance
+        var balEl = document.getElementById('myLiveBalance');
+        if (balEl) balEl.textContent = fmtUSD(d.balance);
+
+        // Account
+        var accEl2 = document.getElementById('myLiveAccountNum2');
+        if (accEl2) accEl2.textContent = d.account || '-';
+
+        // Equity
+        var eqEl = document.getElementById('myLiveEquity');
+        if (eqEl) eqEl.textContent = fmtUSD(d.equity);
+
+        // Margin
+        var mEl = document.getElementById('myLiveMargin');
+        if (mEl) mEl.textContent = fmtUSD(d.margin || d.total_margin);
+
+        // Current P/L
+        var pEl = document.getElementById('myLiveProfit');
+        if (pEl) {
+            var posCount = Number(d.positions_count || 0);
+            var profit = posCount > 0 ? Number(d.profit || d.current_pl || 0) : 0;
+            if (posCount === 0 || profit === 0) {
+                pEl.textContent = '$0.00';
+                pEl.className = 'my-live-stat-value';
+            } else {
+                pEl.textContent = (profit >= 0 ? '+$' : '-$') + Math.abs(profit).toLocaleString('en-US', { minimumFractionDigits: 2 });
+                pEl.className = 'my-live-stat-value ' + (profit > 0 ? 'profit-plus' : profit < 0 ? 'profit-minus' : '');
+            }
+        }
+
+        // Server
+        var sEl = document.getElementById('myLiveServer');
+        if (sEl) sEl.textContent = d.server || '-';
+
+        // Leverage
+        var lvEl = document.getElementById('myLiveLeverage');
+        if (lvEl) lvEl.textContent = d.leverage ? '1:' + d.leverage : '-';
+
+        // Open Positions
+        var opEl = document.getElementById('myLivePositions');
+        if (opEl) opEl.textContent = Number(d.positions_count || 0);
+
+    } catch (e) {
+        console.error('Live account data error:', e);
+    }
+}
+
+function startLiveRefresh() {
+    stopLiveRefresh();
+    loadLiveAccountData();
+    loadLiveDepositHistory();
+    _liveRefreshTimer = setInterval(loadLiveAccountData, 30000);
+}
+
+function stopLiveRefresh() {
+    if (_liveRefreshTimer) { clearInterval(_liveRefreshTimer); _liveRefreshTimer = null; }
+}
+
+function loadLiveDepositHistory() {
+    var bodyEl = document.getElementById('myLiveHistoryBody');
+    if (!bodyEl) return;
+    _liveHistoryAll = [
+        { type: 'in', label: '입금', method: 'Bank Transfer', date: '02.18 14:32', amount: 500 },
+        { type: 'out', label: '출금', method: 'Bank Transfer', date: '02.15 09:20', amount: -200 },
+        { type: 'in', label: '입금', method: 'Card', date: '02.10 11:45', amount: 1000 },
+        { type: 'in', label: '입금', method: 'E-Wallet', date: '02.05 16:30', amount: 300 },
+        { type: 'out', label: '출금', method: 'Bank Transfer', date: '01.28 11:00', amount: -150 },
+        { type: 'in', label: '입금', method: 'Crypto', date: '01.20 08:15', amount: 2000 }
+    ];
+    _liveHistoryShown = 3;
+    renderLiveHistory();
+}
+
+function renderLiveHistory() {
+    var bodyEl = document.getElementById('myLiveHistoryBody');
+    var moreEl = document.getElementById('myLiveHistoryMore');
+    if (!bodyEl) return;
+    if (_liveHistoryAll.length === 0) {
+        bodyEl.innerHTML = '<div style="text-align:center;padding:20px 0;color:var(--text-dim);font-size:13px;">입출금 내역이 없습니다</div>';
+        if (moreEl) moreEl.style.display = 'none';
+        return;
+    }
+    var items = _liveHistoryAll.slice(0, _liveHistoryShown);
+    var html = '';
+    for (var i = 0; i < items.length; i++) {
+        var h = items[i];
+        var isIn = h.type === 'in';
+        var amtStr = isIn ? ('+$' + Math.abs(h.amount).toLocaleString('en-US', {minimumFractionDigits:2})) : ('-$' + Math.abs(h.amount).toLocaleString('en-US', {minimumFractionDigits:2}));
+        html += '<div class="my-live-history-item"><div class="my-live-history-left"><div class="my-live-history-icon ' + (isIn ? 'in' : 'out') + '"><span class="material-icons-round" style="font-size:16px;color:' + (isIn ? 'var(--buy-color)' : 'var(--sell-color)') + ';">' + (isIn ? 'south_west' : 'north_east') + '</span></div><div><div class="my-live-history-type">' + h.label + '</div><div class="my-live-history-meta">' + h.method + ' \u00B7 ' + h.date + '</div></div></div><span class="my-live-history-amount ' + (isIn ? 'positive' : 'negative') + '">' + amtStr + '</span></div>';
+    }
+    bodyEl.innerHTML = html;
+    if (moreEl) {
+        if (_liveHistoryShown < _liveHistoryAll.length) {
+            moreEl.style.display = 'flex';
+            moreEl.innerHTML = '<span>더보기</span><span class="material-icons-round" style="font-size:16px;">expand_more</span>';
+        } else if (_liveHistoryAll.length > 3) {
+            moreEl.style.display = 'flex';
+            moreEl.innerHTML = '<span>접기</span><span class="material-icons-round" style="font-size:16px;">expand_less</span>';
+        } else {
+            moreEl.style.display = 'none';
+        }
+    }
+}
+
+function showMoreLiveHistory() {
+    if (_liveHistoryShown < _liveHistoryAll.length) {
+        _liveHistoryShown = _liveHistoryAll.length;
+    } else {
+        _liveHistoryShown = 3;
+    }
+    renderLiveHistory();
+}
