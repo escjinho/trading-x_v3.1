@@ -1633,40 +1633,12 @@ function openNoticeDetail(id) {
 }
 
 // ========== 약관 상세 ==========
-const termsData = {
-    marketing: {
-        title: '마케팅 정보 수신 동의',
-        body: '<h3 style="color:#00d4ff;margin-bottom:8px;">마케팅 정보 수신 안내</h3>' +
-            '<p>㈜굳프렌즈(이하 "회사")는 「정보통신망 이용촉진 및 정보보호 등에 관한 법률」 제50조에 따라, 이용자의 동의를 받아 마케팅 정보를 발송합니다.</p>' +
-            '<h3 style="color:#00d4ff;margin:16px 0 8px;">수신 내용</h3>' +
-            '<ul style="margin-left:16px;"><li>이벤트 및 프로모션 안내</li><li>신규 기능 업데이트 소식</li><li>투자 관련 뉴스레터</li><li>맞춤형 서비스 제안</li></ul>' +
-            '<h3 style="color:#00d4ff;margin:16px 0 8px;">수신 방법 및 빈도</h3>' +
-            '<p>앱 푸시 알림, 이메일 (주 1~2회 이내)</p>' +
-            '<h3 style="color:#00d4ff;margin:16px 0 8px;">제3자 제공</h3>' +
-            '<p>마케팅 목적으로 이용자의 개인정보를 제3자에게 제공하지 않습니다.</p>' +
-            '<h3 style="color:#00d4ff;margin:16px 0 8px;">동의 철회</h3>' +
-            '<p>동의 철회는 My &gt; 일반 &gt; 알림 설정에서 언제든지 가능합니다. 철회 시 마케팅 정보 발송이 즉시 중단됩니다.</p>' +
-            '<p style="margin-top:16px;color:rgba(255,255,255,0.4);font-size:12px;">※ 필수 공지사항(서버 점검, 약관 변경 등)은 동의 여부와 관계없이 발송됩니다.</p>' +
-            '<hr style="border:none;border-top:1px solid rgba(255,255,255,0.1);margin:20px 0;">' +
-            '<h3 style="color:#00d4ff;margin-bottom:8px;">Marketing Information Consent</h3>' +
-            '<p>GOODFRIENDS Co., Ltd. sends marketing information with user consent in accordance with the Act on Promotion of Information and Communications Network Utilization and Information Protection (Article 50).</p>' +
-            '<h3 style="color:#00d4ff;margin:16px 0 8px;">Content</h3>' +
-            '<ul style="margin-left:16px;"><li>Event and promotion announcements</li><li>New feature updates</li><li>Investment-related newsletters</li><li>Personalized service recommendations</li></ul>' +
-            '<h3 style="color:#00d4ff;margin:16px 0 8px;">Method & Frequency</h3>' +
-            '<p>App push notifications, email (up to 1-2 times per week)</p>' +
-            '<h3 style="color:#00d4ff;margin:16px 0 8px;">Third-Party Sharing</h3>' +
-            '<p>We do not share your personal information with third parties for marketing purposes.</p>' +
-            '<h3 style="color:#00d4ff;margin:16px 0 8px;">Withdrawal of Consent</h3>' +
-            '<p>You can withdraw consent at any time via My &gt; General &gt; Notification Settings. Marketing messages will stop immediately upon withdrawal.</p>' +
-            '<p style="margin-top:16px;color:rgba(255,255,255,0.4);font-size:12px;">※ Mandatory notices (server maintenance, policy changes, etc.) are sent regardless of consent status.</p>'
-    }
-};
-
 const iframeTermsMap = {
     service: { url: 'terms.html', title: '서비스 이용약관' },
     privacy: { url: 'privacy.html', title: '개인정보 처리방침' },
     risk: { url: 'risk.html', title: '투자 위험 고지' },
-    aml: { url: 'aml.html', title: '자금세탁방지 정책 (AML)' }
+    aml: { url: 'aml.html', title: '자금세탁방지 정책 (AML)' },
+    marketing: { url: 'marketing.html', title: '마케팅 정보 수신 동의' }
 };
 
 function openTermsDetail(type) {
@@ -1677,11 +1649,6 @@ function openTermsDetail(type) {
         openMyDetail('termsDetail');
         return;
     }
-    const data = termsData[type];
-    if (!data) return;
-    document.getElementById('myTermsDetailTitle').textContent = data.title;
-    document.getElementById('myTermsDetailBody').innerHTML = data.body;
-    openMyDetail('termsDetail');
 }
 
 // ========== 1:1 문의하기 ==========
