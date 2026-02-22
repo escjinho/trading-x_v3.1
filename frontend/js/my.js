@@ -1374,6 +1374,7 @@ function initDetailView(detail) {
             initMt5View();
             break;
         case 'depositLive':
+            console.log('[LIVE-DEBUG] depositLive case 진입');
             startLiveRefresh();
             break;
         case 'depositDemo':
@@ -1694,10 +1695,9 @@ async function executeWithdrawal() {
     btn.textContent = '처리 중...';
     try {
         const token = localStorage.getItem('token');
-        const res = await fetch('/api/auth/withdraw', {
+        const res = await fetch('/api/auth/withdraw?reason=' + encodeURIComponent(reasonValue), {
             method: 'DELETE',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-            body: JSON.stringify({ reason: reasonValue })
+            headers: { 'Authorization': 'Bearer ' + token }
         });
         const data = await res.json();
         if (data.success) {
@@ -2202,6 +2202,7 @@ var _liveHistoryAll = [];
 var _liveHistoryShown = 3;
 
 async function loadLiveAccountData() {
+    console.log("[LIVE-DEBUG] loadLiveAccountData 호출됨");
     var spinBtn = document.getElementById('liveRefreshBtn');
     if (spinBtn) { spinBtn.classList.add('spinning'); setTimeout(function(){ spinBtn.classList.remove('spinning'); }, 800); }
 
@@ -2269,6 +2270,7 @@ async function loadLiveAccountData() {
 }
 
 function startLiveRefresh() {
+    console.log("[LIVE-DEBUG] startLiveRefresh 호출됨");
     stopLiveRefresh();
     loadLiveAccountData();
     loadLiveDepositHistory();

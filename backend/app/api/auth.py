@@ -571,12 +571,9 @@ def update_name(
     return {"success": True, "name": new_name}
 
 # ========== 회원 탈퇴 ==========
-class WithdrawRequest(BaseModel):
-    reason: str = "not_specified"
-
 @router.delete("/withdraw")
 async def withdraw_account(
-    request: WithdrawRequest,
+    reason: str = "not_specified",
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -617,7 +614,7 @@ async def withdraw_account(
         current_user.updated_at = datetime.utcnow()
 
         db.commit()
-        print(f"[WITHDRAW] ✅ User {current_user.id} 회원 탈퇴 완료 (사유: {request.reason})")
+        print(f"[WITHDRAW] ✅ User {current_user.id} 회원 탈퇴 완료 (사유: {reason})")
         return {"success": True, "message": "회원 탈퇴가 완료되었습니다."}
 
     except Exception as e:
