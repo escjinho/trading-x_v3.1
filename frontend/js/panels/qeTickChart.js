@@ -118,6 +118,7 @@ const QeTickChart = {
 
         // 사용자 조작 감지 → 5초 후 자동 현재가 복귀
         this.chart.timeScale().subscribeVisibleTimeRangeChange(() => {
+            this.refreshPulsePosition();  // ★ 스크롤/줌 시 펄스 즉시 추적
             if (this._entryOverlay) this.updateEntryOverlay();
             if (this._entryData) this.drawProgressBars();
             if (this._userInteracting) return;
@@ -144,6 +145,8 @@ const QeTickChart = {
                 this._rafTrackingId = requestAnimationFrame(trackOverlays);
             }
         };
+        // ★ 초기화 시 바로 RAF 루프 시작 (펄스 마커 항상 추적)
+        this._startTracking();
 
         // 터치/마우스 조작 감지
         container.addEventListener('touchstart', () => {
