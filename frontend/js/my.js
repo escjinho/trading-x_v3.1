@@ -346,16 +346,71 @@ function toggleNicknameEdit() {
 function toggleMyNoti(el) {
     el.classList.toggle('active');
 
-    // ★★★ localStorage에 설정 저장 ★★★
+    // ★★★ localStorage에 설정 저장 + 동기화 ★★★
     var key = el.getAttribute('data-noti-key');
     if (key) {
         var isOn = el.classList.contains('active');
         localStorage.setItem(key, isOn ? 'true' : 'false');
+        // ★ 연결된 tr_ 키도 동기화
+        _syncNotiToTr(key, isOn);
+        // ★ 같은 noti_key를 가진 다른 토글 UI도 동기화
+        _syncAllNotiToggles(key, isOn);
     }
+}
+
+
+// ★★★ 알림 설정 동기화 시스템 ★★★
+// noti_ ↔ tr_ 키 매핑
+var _NOTI_TR_MAP = {
+    'noti_order': 'tr_order',
+    'noti_close': 'tr_close',
+    'noti_liquidation': 'tr_losscut',
+    'noti_deposit': 'tr_deposit',
+    'noti_sound': 'tr_sound'
+};
+var _TR_NOTI_MAP = {
+    'tr_order': 'noti_order',
+    'tr_close': 'noti_close',
+    'tr_losscut': 'noti_liquidation',
+    'tr_deposit': 'noti_deposit',
+    'tr_sound': 'noti_sound'
+};
+
+// noti_ 변경 시 → tr_ 동기화
+function _syncNotiToTr(notiKey, isOn) {
+    var trKey = _NOTI_TR_MAP[notiKey];
+    if (trKey) {
+        localStorage.setItem(trKey, isOn ? '1' : '0');
+        // tr_ UI 토글도 동기화
+        var trToggle = document.querySelector('.my-toggle[data-key="' + trKey + '"]');
+        if (trToggle) {
+            if (isOn) trToggle.classList.add('active');
+            else trToggle.classList.remove('active');
+        }
+    }
+}
+
+// tr_ 변경 시 → noti_ 동기화
+function _syncTrToNoti(trKey, isOn) {
+    var notiKey = _TR_NOTI_MAP[trKey];
+    if (notiKey) {
+        localStorage.setItem(notiKey, isOn ? 'true' : 'false');
+        // noti_ UI 토글도 동기화
+        _syncAllNotiToggles(notiKey, isOn);
+    }
+}
+
+// 같은 noti_key를 가진 모든 토글 UI 동기화
+function _syncAllNotiToggles(notiKey, isOn) {
+    document.querySelectorAll('.my-toggle[data-noti-key="' + notiKey + '"]').forEach(function(t) {
+        if (isOn) t.classList.add('active');
+        else t.classList.remove('active');
+    });
 }
 
 // 알림 설정 페이지 진입 시 저장된 설정 로드
 function initNotificationSettings() {
+    // ★ 모든 noti_ 토글 UI 동기화 (알림 설정 + 설정 모달 모두)
     var toggles = document.querySelectorAll('.my-toggle[data-noti-key]');
     toggles.forEach(function(toggle) {
         var key = toggle.getAttribute('data-noti-key');
@@ -363,7 +418,9 @@ function initNotificationSettings() {
 
         var stored = localStorage.getItem(key);
         if (stored === null) {
-            // 저장된 값 없으면 현재 HTML 상태 유지 (기본값)
+            if (key === 'noti_event') {
+                toggle.classList.remove('active');
+            }
             return;
         }
 
@@ -371,6 +428,20 @@ function initNotificationSettings() {
             toggle.classList.add('active');
         } else {
             toggle.classList.remove('active');
+        }
+    });
+    // ★ tr_ 토글도 noti_ 기준으로 동기화
+    Object.keys(_NOTI_TR_MAP).forEach(function(notiKey) {
+        var trKey = _NOTI_TR_MAP[notiKey];
+        var notiVal = localStorage.getItem(notiKey);
+        if (notiVal !== null) {
+            var isOn = notiVal === 'true';
+            localStorage.setItem(trKey, isOn ? '1' : '0');
+            var trToggle = document.querySelector('.my-toggle[data-key="' + trKey + '"]');
+            if (trToggle) {
+                if (isOn) trToggle.classList.add('active');
+                else trToggle.classList.remove('active');
+            }
         }
     });
 }
@@ -483,6 +554,7 @@ function openMyDetail(detail) {
         personalInfo: '개인정보',
         mt5: 'MT5 계정 관리',
         loginHistory: '로그인 기록',
+        kyc: 'KYC',
         depositDemo: 'Demo 입출금',
         depositLive: 'Live 입출금',
         tradingReport: '트레이딩 리포트',
@@ -2168,7 +2240,10 @@ function toggleTradeAlert(el) {
     el.classList.toggle('active');
     const key = el.getAttribute('data-key');
     if (key) {
-        localStorage.setItem(key, el.classList.contains('active') ? '1' : '0');
+        const isOn = el.classList.contains('active');
+        localStorage.setItem(key, isOn ? '1' : '0');
+        // ★ 연결된 noti_ 키도 동기화
+        _syncTrToNoti(key, isOn);
     }
 }
 
@@ -2205,7 +2280,7 @@ var _liveHistoryAll = [];
 var _liveHistoryShown = 3;
 
 async function loadLiveAccountData() {
-    console.log("[LIVE-DEBUG] loadLiveAccountData 호출됨");
+    console.log("[LIVE] loadLiveAccountData 호출");
     var spinBtn = document.getElementById('liveRefreshBtn');
     if (spinBtn) { spinBtn.classList.add('spinning'); setTimeout(function(){ spinBtn.classList.remove('spinning'); }, 800); }
 
@@ -2214,9 +2289,11 @@ async function loadLiveAccountData() {
         var res = await fetch(API_URL + '/demo/account-info', {
             headers: { 'Authorization': 'Bearer ' + tkn }
         });
+        if (!res.ok) { console.error("[LIVE] HTTP 에러:", res.status); return; }
         var d = await res.json();
+        console.log("[LIVE] 응답:", JSON.stringify({balance:d.balance, equity:d.equity, profit:d.profit, has_mt5:d.has_mt5}));
 
-        if (!d.has_mt5) {
+        if (!d || !d.has_mt5) {
             document.getElementById('liveConnectedState').style.display = 'none';
             document.getElementById('liveEmptyState').style.display = 'block';
             return;
@@ -2226,49 +2303,38 @@ async function loadLiveAccountData() {
 
         function fmtUSD(v) { return '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2 }); }
 
-        // Balance
         var balEl = document.getElementById('myLiveBalance');
         if (balEl) balEl.textContent = fmtUSD(d.balance);
 
-        // Account
-        var accEl2 = document.getElementById('myLiveAccountNum2');
-        if (accEl2) accEl2.textContent = d.account || '-';
-
-        // Equity
         var eqEl = document.getElementById('myLiveEquity');
         if (eqEl) eqEl.textContent = fmtUSD(d.equity);
 
-        // Margin
         var mEl = document.getElementById('myLiveMargin');
         if (mEl) mEl.textContent = fmtUSD(d.margin || d.total_margin);
 
-        // Current P/L (MT5 profit 직접 표시)
         var pEl = document.getElementById('myLiveProfit');
         if (pEl) {
-            var profit = Number(d.profit || 0);
+            var profit = Number(d.profit || d.current_pl || 0);
             if (profit === 0) {
                 pEl.textContent = '$0.00';
                 pEl.className = 'my-live-stat-value';
             } else {
                 pEl.textContent = (profit >= 0 ? '+$' : '-$') + Math.abs(profit).toLocaleString('en-US', { minimumFractionDigits: 2 });
-                pEl.className = 'my-live-stat-value ' + (profit > 0 ? 'profit-plus' : profit < 0 ? 'profit-minus' : '');
+                pEl.className = 'my-live-stat-value ' + (profit > 0 ? 'profit-plus' : 'profit-minus');
             }
         }
 
-        // Server
+        var accEl2 = document.getElementById('myLiveAccountNum2');
+        if (accEl2) accEl2.textContent = d.account || '-';
         var sEl = document.getElementById('myLiveServer');
         if (sEl) sEl.textContent = d.server || '-';
-
-        // Leverage
         var lvEl = document.getElementById('myLiveLeverage');
         if (lvEl) lvEl.textContent = d.leverage ? '1:' + d.leverage : '-';
-
-        // Open Positions
         var opEl = document.getElementById('myLivePositions');
         if (opEl) opEl.textContent = Number(d.positions_count || 0);
 
     } catch (e) {
-        console.error('Live account data error:', e);
+        console.error("[LIVE] loadLiveAccountData 에러:", e);
     }
 }
 
@@ -2277,7 +2343,7 @@ function startLiveRefresh() {
     stopLiveRefresh();
     loadLiveAccountData();
     loadLiveDepositHistory();
-    _liveRefreshTimer = setInterval(loadLiveAccountData, 30000);
+    _liveRefreshTimer = setInterval(loadLiveAccountData, 5000);  // ★ 30초→3초 (실시간 반영)
 }
 
 function stopLiveRefresh() {
@@ -2355,4 +2421,20 @@ function showMoreLiveHistory() {
         _liveHistoryShown = 3;
     }
     renderLiveHistory();
+}
+
+// ★★★ KYC 메뉴 토글 ★★★
+function toggleKycMenu() {
+    var menu = document.getElementById('kycSubMenu');
+    var arrow = document.getElementById('kycArrow');
+    var parent = arrow.closest('.kyc-parent');
+    if (menu.style.display === 'none') {
+        menu.style.display = 'block';
+        arrow.textContent = 'expand_less';
+        if (parent) parent.classList.add('open');
+    } else {
+        menu.style.display = 'none';
+        arrow.textContent = 'expand_more';
+        if (parent) parent.classList.remove('open');
+    }
 }

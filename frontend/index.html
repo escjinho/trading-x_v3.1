@@ -64,10 +64,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css?v=1771777952">
-        <link rel="stylesheet" href="css/quickeasy.css?v=1771777952">
+        <link rel="stylesheet" href="css/quickeasy.css?v=1771805185">
     <link rel="stylesheet" href="css/chart.css?v=1771777952">
     <link rel="stylesheet" href="css/account.css?v=1771777952">
-    <link rel="stylesheet" href="css/my.css?v=1771777952">
+    <link rel="stylesheet" href="css/my.css?v=1771804630">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
@@ -1456,12 +1456,8 @@
                                 <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">lock</span></div><span class="my-sub-item-label">비밀번호 변경</span></div>
                                 <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
                             </div>
-                            <div class="my-sub-item" onclick="openMyDetail('email')">
-                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">mark_email_unread</span></div><span class="my-sub-item-label">이메일 인증</span></div>
-                                <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
-                            </div>
-                            <div class="my-sub-item" onclick="openMyDetail('phone')">
-                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">phone_android</span></div><span class="my-sub-item-label">전화번호 인증</span></div>
+                            <div class="my-sub-item" onclick="openMyDetail('kyc')">
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">verified_user</span></div><span class="my-sub-item-label">KYC</span></div>
                                 <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
                             </div>
                             <div class="my-sub-item last" onclick="openMyDetail('loginHistory')">
@@ -1469,10 +1465,10 @@
                                 <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
                             </div>
                         </div>
-                        <div class="my-sub-card" style="margin-top:20px;">
-                            <div class="my-sub-item last" onclick="startWithdrawal()" style="color:#ff4757;">
-                                <div class="my-sub-item-left"><div class="my-sub-icon-box" style="background:rgba(255,71,87,0.1);"><span class="material-icons-round" style="color:#ff4757;">person_remove</span></div><span class="my-sub-item-label" style="color:#ff4757;">회원 탈퇴</span></div>
-                                <span class="material-icons-round my-sub-item-arrow" style="color:#ff4757;">chevron_right</span>
+                        <div class="my-sub-card withdraw-card" style="margin-top:24px;">
+                            <div class="my-sub-item last" onclick="startWithdrawal()">
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box withdraw-icon"><span class="material-icons-round">person_remove</span></div><span class="my-sub-item-label withdraw-label">회원 탈퇴</span></div>
+                                <span class="material-icons-round my-sub-item-arrow withdraw-arrow">chevron_right</span>
                             </div>
                         </div>
                     </div>
@@ -1890,7 +1886,27 @@
                     </div>
                 </div>
 
-                <!-- ===== 로그인 기록 상세 페이지 ===== -->
+                <!-- ===== KYC 상세 페이지 ===== -->
+                <div class="my-view" id="myView-kyc">
+                    <div class="my-sub-header">
+                        <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
+                        <span class="my-sub-title">KYC</span>
+                    </div>
+                    <div class="my-sub-body">
+                        <div class="my-sub-card">
+                            <div class="my-sub-item" onclick="openMyDetail('email')">
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">mark_email_unread</span></div><span class="my-sub-item-label">이메일 인증</span></div>
+                                <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
+                            </div>
+                            <div class="my-sub-item last" onclick="openMyDetail('phone')">
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">phone_android</span></div><span class="my-sub-item-label">전화번호 인증</span></div>
+                                <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                                <!-- ===== 로그인 기록 상세 페이지 ===== -->
                 <div class="my-view" id="myView-loginHistory">
                     <div class="my-sub-header">
                         <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
@@ -2902,10 +2918,10 @@
                     </div>
                     <div class="my-settings-label">Notifications</div>
                     <div class="my-settings-noti-list">
-                        <div class="my-settings-noti-item"><span class="my-settings-noti-label">거래 체결</span><div class="my-toggle active" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div></div>
-                        <div class="my-settings-noti-item"><span class="my-settings-noti-label">입출금</span><div class="my-toggle active" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div></div>
-                        <div class="my-settings-noti-item"><span class="my-settings-noti-label">공지사항</span><div class="my-toggle active" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div></div>
-                        <div class="my-settings-noti-item"><span class="my-settings-noti-label">이벤트</span><div class="my-toggle" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div></div>
+                        <div class="my-settings-noti-item"><span class="my-settings-noti-label">거래 체결</span><div class="my-toggle active" data-noti-key="noti_order" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div></div>
+                        <div class="my-settings-noti-item"><span class="my-settings-noti-label">입출금</span><div class="my-toggle active" data-noti-key="noti_deposit" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div></div>
+                        <div class="my-settings-noti-item"><span class="my-settings-noti-label">공지사항</span><div class="my-toggle active" data-noti-key="noti_notice" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div></div>
+                        <div class="my-settings-noti-item"><span class="my-settings-noti-label">이벤트</span><div class="my-toggle" data-noti-key="noti_event" onclick="toggleMyNoti(this)"><div class="my-toggle-knob"></div></div></div>
                     </div>
                 </div>
             </div>
@@ -3735,11 +3751,11 @@
     <script src="js/config.js?v=1771777952"></script>
     <script src="js/state.js?v=1771777952"></script>
     <script src="js/auth.js?v=1771777952"></script>
-    <script src="js/api.js?v=1771777952"></script>
+    <script src="js/api.js?v=1771803124"></script>
     <script src="js/utils.js?v=1771777952"></script>
     <script src="js/watchlist.js?v=1771777952"></script>
-    <script src="js/navigation.js?v=1771777952"></script>
-    <script src="js/my.js?v=1771777952"></script>
+    <script src="js/navigation.js?v=1771803124"></script>
+    <script src="js/my.js?v=1771806659"></script>
 
     <!-- Chart Panels (모듈화) -->
     <script src="js/panels/gaugePanel.js?v=1771777952"></script>
@@ -3757,8 +3773,8 @@
     <script src="js/panels/symbolSelectorPanel.js?v=1771777952"></script>
     <script src="js/panels/randomWalkPanel.js?v=1771777952"></script>
     <script src="js/panels/multiOrderPanelV5.js?v=1771777952"></script>
-        <script src="js/panels/quickEasyPanel.js?v=1771777952"></script>
-        <script src="js/panels/qeTickChart.js?v=1771777952"></script>
+        <script src="js/panels/quickEasyPanel.js?v=1771805185"></script>
+        <script src="js/panels/qeTickChart.js?v=1771805185"></script>
 
     <script src="js/chart.js?v=1771777952"></script>
     <script src="js/settings.js?v=1771777952"></script>
@@ -5214,10 +5230,10 @@
 
     <script src="js/market-schedule.js?v=1771777952"></script>
     <script src="js/account.js?v=1771777952"></script>
-    <script src="js/trading.js?v=1771777952"></script>
+    <script src="js/trading.js?v=1771803124"></script>
     <script src="js/openPositions.js?v=1771777952"></script>
-    <script src="js/connection.js?v=1771777952"></script>
-    <script src="js/init.js?v=1771777952"></script>
+    <script src="js/connection.js?v=1771805264"></script>
+    <script src="js/init.js?v=1771805780"></script>
 <div id="txDialogContainer"></div>
 </body>
 </html>
