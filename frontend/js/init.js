@@ -250,8 +250,10 @@ function startGuideTour() {
 
 // 셀퍼럴 안내 페이지 열기 (나중에 구현)
 function openReferralPage() {
-    showToast('💰 리베이트 센터는 준비 중입니다!', 'info');
-    // TODO: 셀퍼럴 안내 페이지 또는 리베이트 센터 모달
+    // My 탭 → VIP 프로그램으로 이동
+    if (typeof switchTab === 'function') switchTab('my');
+    setTimeout(function(){ if (typeof openMyDetail === 'function') openMyDetail('vip'); }, 300);
+    return;
 }
 
 // 홈 슬라이더 초기화 실행
