@@ -199,6 +199,36 @@ def verify_email_code(request: CodeVerifyRequest, db: Session = Depends(get_db))
 
     return {"success": True, "message": result["message"]}
 
+class PasswordResetRequest(BaseModel):
+    email: str
+    code: str
+    new_password: str
+
+@router.post("/password/reset")
+def reset_password(request: PasswordResetRequest, db: Session = Depends(get_db)):
+    """비밀번호 재설정 (로그인 불필요 — 이메일 인증코드 검증 후)"""
+    if len(request.new_password) < 6:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="비밀번호는 최소 6자 이상이어야 합니다"
+        )
+    result = verify_code(request.email, request.code)
+    if not result["success"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=result["message"]
+        )
+    user = db.query(User).filter(User.email == request.email).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="등록되지 않은 이메일입니다")
+    if not user.is_active:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="탈퇴한 계정입니다")
+    user.password_hash = get_password_hash(request.new_password)
+    db.commit()
+    print(f"[PASSWORD RESET] ✅ {request.email} 비밀번호 재설정 완료")
+    return {"success": True, "message": "비밀번호가 변경되었습니다. 새 비밀번호로 로그인해주세요."}
+
+
 @router.post("/password/change")
 def change_password(
     request: PasswordChangeRequest,

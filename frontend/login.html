@@ -422,6 +422,79 @@
             opacity: 1;
             pointer-events: auto;
         }
+
+        /* ========== 비밀번호 찾기 모달 ========== */
+        .pw-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(6px);
+            z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px;
+        }
+        .pw-overlay.active { display: flex; }
+        .pw-modal {
+            background: var(--bg-secondary); border: 1px solid var(--border-color);
+            border-radius: 16px; width: 100%; max-width: 400px; overflow: hidden;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.6), 0 0 30px var(--accent-cyan-glow);
+        }
+        .pw-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .pw-header-title { font-size: 16px; font-weight: 700; color: #fff; }
+        .pw-close {
+            width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+            border-radius: 8px; cursor: pointer; color: var(--text-muted); transition: background 0.2s;
+        }
+        .pw-close:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .pw-body { padding: 24px; }
+        .pw-step { display: none; }
+        .pw-step.active { display: block; }
+        .pw-desc { font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px; }
+        .pw-input-group { margin-bottom: 16px; }
+        .pw-label { display: block; font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; font-weight: 600; }
+        .pw-input {
+            width: 100%; background: var(--bg-primary); border: 1px solid var(--border-color);
+            border-radius: 10px; padding: 12px 14px; color: #fff; font-size: 15px; outline: none; transition: border 0.2s;
+        }
+        .pw-input:focus { border-color: var(--accent-cyan); }
+        .pw-input::placeholder { color: var(--text-dim); }
+        .pw-code-row { display: flex; gap: 10px; align-items: center; }
+        .pw-code-row .pw-input { flex: 1; letter-spacing: 6px; text-align: center; font-size: 20px; font-weight: 700; }
+        .pw-timer { font-size: 14px; font-weight: 600; color: var(--accent-cyan); white-space: nowrap; min-width: 46px; text-align: center; }
+        .pw-timer.expired { color: var(--sell-color); }
+        .pw-btn {
+            width: 100%; padding: 13px; border: none; border-radius: 10px;
+            font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s; letter-spacing: 0.5px; margin-top: 4px;
+        }
+        .pw-btn-primary {
+            background: linear-gradient(135deg, var(--accent-cyan), #0088cc);
+            color: #fff; box-shadow: 0 4px 15px rgba(0,212,255,0.25);
+        }
+        .pw-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,212,255,0.35); }
+        .pw-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+        .pw-msg { font-size: 12px; margin-top: 10px; padding: 8px 12px; border-radius: 8px; display: none; line-height: 1.5; }
+        .pw-msg.error { display: block; background: rgba(220,50,70,0.1); border: 1px solid rgba(220,50,70,0.3); color: #ff6b7a; }
+        .pw-msg.success { display: block; background: rgba(0,180,80,0.1); border: 1px solid rgba(0,180,80,0.3); color: #00d4a4; }
+        .pw-resend { font-size: 12px; color: var(--text-dim); text-align: center; margin-top: 14px; }
+        .pw-resend-btn { color: var(--accent-cyan); cursor: pointer; font-weight: 600; display: none; }
+        .pw-resend-btn:hover { text-decoration: underline; }
+        .pw-strength { display: flex; gap: 4px; margin-top: 8px; }
+        .pw-strength-bar { flex: 1; height: 3px; border-radius: 2px; background: rgba(255,255,255,0.08); transition: background 0.3s; }
+        .pw-strength-text { font-size: 11px; margin-top: 4px; }
+        .pw-success-icon { text-align: center; margin-bottom: 16px; }
+        .pw-success-icon .material-icons-round { font-size: 56px; color: #00d4a4; }
+        .pw-success-msg { text-align: center; font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 6px; }
+        .pw-success-sub { text-align: center; font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+        .pw-input-wrap { position: relative; }
+        .pw-input-wrap .pw-input { padding-right: 44px; }
+        .pw-eye {
+            position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+            background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 4px; display: flex; align-items: center;
+        }
+        .pw-eye:hover { color: var(--text-muted); }
+        .pw-steps-indicator { display: flex; justify-content: center; gap: 8px; margin-bottom: 20px; }
+        .pw-step-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.12); transition: all 0.3s; }
+        .pw-step-dot.active { background: var(--accent-cyan); width: 24px; border-radius: 4px; }
+        .pw-step-dot.done { background: #00d4a4; }
     </style>
 </head>
 <body>
@@ -475,7 +548,7 @@
                         <input type="checkbox" id="remember">
                         <span>로그인 유지</span>
                     </label>
-                    <a href="#" class="forgot-link">비밀번호 찾기</a>
+                    <a href="javascript:void(0)" class="forgot-link" onclick="openPwModal()">비밀번호 찾기</a>
                 </div>
                 
                 <button type="submit" class="login-btn" id="loginBtn">
@@ -514,6 +587,78 @@
         <span class="material-icons-round" style="font-size:32px; color:#00d4ff;">lock</span>
         <div style="font-size:15px; font-weight:600; margin-top:8px;">로그인 후 이용 가능합니다</div>
         <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">My &gt; 일반 &gt; 고객센터에서 확인하세요</div>
+    </div>
+
+
+    <!-- ========== 비밀번호 찾기 모달 ========== -->
+    <div class="pw-overlay" id="pwOverlay" onclick="if(event.target===this)closePwModal()">
+        <div class="pw-modal">
+            <div class="pw-header">
+                <span class="pw-header-title">비밀번호 찾기</span>
+                <div class="pw-close" onclick="closePwModal()"><span class="material-icons-round" style="font-size:20px;">close</span></div>
+            </div>
+            <div class="pw-body">
+                <div class="pw-steps-indicator">
+                    <div class="pw-step-dot active" id="pwDot1"></div>
+                    <div class="pw-step-dot" id="pwDot2"></div>
+                    <div class="pw-step-dot" id="pwDot3"></div>
+                </div>
+                <!-- STEP 1: 이메일 -->
+                <div class="pw-step active" id="pwStep1">
+                    <div class="pw-desc">가입 시 사용한 이메일을 입력하세요.<br>인증코드를 발송해드립니다.</div>
+                    <div class="pw-input-group">
+                        <label class="pw-label">Email</label>
+                        <input type="email" class="pw-input" id="pwEmail" placeholder="example@email.com" autocomplete="email">
+                    </div>
+                    <button class="pw-btn pw-btn-primary" id="pwSendBtn" onclick="pwSendCode()">인증코드 발송</button>
+                    <div class="pw-msg" id="pwMsg1"></div>
+                </div>
+                <!-- STEP 2: 인증코드 -->
+                <div class="pw-step" id="pwStep2">
+                    <div class="pw-desc"><span id="pwEmailDisplay" style="color:#fff;font-weight:600;"></span>으로<br>발송된 6자리 인증코드를 입력하세요.</div>
+                    <div class="pw-input-group">
+                        <label class="pw-label">인증코드</label>
+                        <div class="pw-code-row">
+                            <input type="text" class="pw-input" id="pwCode" placeholder="000000" maxlength="6" inputmode="numeric" autocomplete="one-time-code">
+                            <span class="pw-timer" id="pwTimer">5:00</span>
+                        </div>
+                    </div>
+                    <button class="pw-btn pw-btn-primary" onclick="pwVerifyCode()">확인</button>
+                    <div class="pw-msg" id="pwMsg2"></div>
+                    <div class="pw-resend">인증코드를 받지 못하셨나요? <span class="pw-resend-btn" id="pwResendBtn" onclick="pwResendCode()">재발송</span><span id="pwResendTimer"></span></div>
+                </div>
+                <!-- STEP 3: 새 비밀번호 -->
+                <div class="pw-step" id="pwStep3">
+                    <div class="pw-desc">새로운 비밀번호를 입력하세요.</div>
+                    <div class="pw-input-group">
+                        <label class="pw-label">새 비밀번호</label>
+                        <div class="pw-input-wrap">
+                            <input type="password" class="pw-input" id="pwNew" placeholder="6자 이상 입력" oninput="checkPwStrength()">
+                            <button type="button" class="pw-eye" onclick="togglePwEye('pwNew',this)"><span class="material-icons-round" style="font-size:20px;">visibility_off</span></button>
+                        </div>
+                        <div class="pw-strength"><div class="pw-strength-bar" id="pwBar1"></div><div class="pw-strength-bar" id="pwBar2"></div><div class="pw-strength-bar" id="pwBar3"></div><div class="pw-strength-bar" id="pwBar4"></div></div>
+                        <div class="pw-strength-text" id="pwStrengthText"></div>
+                    </div>
+                    <div class="pw-input-group">
+                        <label class="pw-label">비밀번호 확인</label>
+                        <div class="pw-input-wrap">
+                            <input type="password" class="pw-input" id="pwConfirm" placeholder="비밀번호 재입력" oninput="checkPwMatch()">
+                            <button type="button" class="pw-eye" onclick="togglePwEye('pwConfirm',this)"><span class="material-icons-round" style="font-size:20px;">visibility_off</span></button>
+                        </div>
+                        <div class="pw-strength-text" id="pwMatchText"></div>
+                    </div>
+                    <button class="pw-btn pw-btn-primary" id="pwResetBtn" onclick="pwResetPassword()" disabled>비밀번호 변경</button>
+                    <div class="pw-msg" id="pwMsg3"></div>
+                </div>
+                <!-- STEP 4: 완료 -->
+                <div class="pw-step" id="pwStep4">
+                    <div class="pw-success-icon"><span class="material-icons-round">check_circle</span></div>
+                    <div class="pw-success-msg">비밀번호가 변경되었습니다</div>
+                    <div class="pw-success-sub">새 비밀번호로 로그인해주세요</div>
+                    <button class="pw-btn pw-btn-primary" onclick="closePwModal()">로그인으로 돌아가기</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -561,6 +706,135 @@
             document.getElementById('errorMessage').classList.remove('show');
         }
         
+
+        // ========== 비밀번호 찾기 ==========
+        let _pwEmail = '', _pwCode = '', _pwTimerInterval = null, _pwResendCooldown = 0;
+
+        function openPwModal() {
+            document.getElementById('pwOverlay').classList.add('active');
+            pwGoStep(1);
+            const loginEmail = document.getElementById('email').value;
+            if (loginEmail) document.getElementById('pwEmail').value = loginEmail;
+            setTimeout(() => document.getElementById('pwEmail').focus(), 200);
+        }
+        function closePwModal() {
+            document.getElementById('pwOverlay').classList.remove('active');
+            if (_pwTimerInterval) { clearInterval(_pwTimerInterval); _pwTimerInterval = null; }
+            ['pwEmail','pwCode','pwNew','pwConfirm'].forEach(id => { const e=document.getElementById(id); if(e) e.value=''; });
+            ['pwMsg1','pwMsg2','pwMsg3'].forEach(id => { const e=document.getElementById(id); e.className='pw-msg'; e.textContent=''; });
+            _pwEmail=''; _pwCode='';
+        }
+        function pwGoStep(n) {
+            document.querySelectorAll('.pw-step').forEach(s => s.classList.remove('active'));
+            document.getElementById('pwStep'+n).classList.add('active');
+            for(let i=1;i<=3;i++){
+                const d=document.getElementById('pwDot'+i); d.className='pw-step-dot';
+                if(i<n) d.classList.add('done');
+                if(i===n && n<=3) d.classList.add('active');
+            }
+            const titles={1:'비밀번호 찾기',2:'인증코드 입력',3:'새 비밀번호 설정',4:'완료'};
+            document.querySelector('.pw-header-title').textContent=titles[n]||'';
+        }
+        function pwShowMsg(s,t,c){const e=document.getElementById('pwMsg'+s);e.className='pw-msg '+c;e.textContent=t;}
+        function pwClearMsg(s){const e=document.getElementById('pwMsg'+s);e.className='pw-msg';e.textContent='';}
+
+        async function pwSendCode() {
+            const email=document.getElementById('pwEmail').value.trim();
+            if(!email||!email.includes('@')){pwShowMsg(1,'올바른 이메일을 입력해주세요.','error');return;}
+            const btn=document.getElementById('pwSendBtn'); btn.disabled=true; btn.textContent='발송 중...'; pwClearMsg(1);
+            try {
+                const res=await fetch(`${API_URL}/auth/email/send-code`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
+                const data=await res.json();
+                if(res.ok){
+                    _pwEmail=email;
+                    if(data.test_mode&&data.test_code){_pwCode=data.test_code;console.log('[PW] test code:',_pwCode);}
+                    document.getElementById('pwEmailDisplay').textContent=email;
+                    pwGoStep(2); pwStartTimer(); pwStartResendCooldown();
+                    setTimeout(()=>document.getElementById('pwCode').focus(),200);
+                } else { pwShowMsg(1,data.detail||'발송에 실패했습니다.','error'); }
+            } catch(e){ pwShowMsg(1,'서버 연결에 실패했습니다.','error'); }
+            finally { btn.disabled=false; btn.textContent='인증코드 발송'; }
+        }
+        function pwStartTimer() {
+            if(_pwTimerInterval) clearInterval(_pwTimerInterval);
+            let rem=300; const el=document.getElementById('pwTimer'); el.classList.remove('expired');
+            const upd=()=>{el.textContent=Math.floor(rem/60)+':'+String(rem%60).padStart(2,'0');if(rem<=0){clearInterval(_pwTimerInterval);el.textContent='만료';el.classList.add('expired');}rem--;};
+            upd(); _pwTimerInterval=setInterval(upd,1000);
+        }
+        function pwStartResendCooldown() {
+            _pwResendCooldown=30;
+            const btn=document.getElementById('pwResendBtn'),tmr=document.getElementById('pwResendTimer');
+            btn.style.display='none'; tmr.style.display='inline'; tmr.textContent='(30초 후 재발송 가능)';
+            const iv=setInterval(()=>{_pwResendCooldown--;if(_pwResendCooldown<=0){clearInterval(iv);btn.style.display='inline';tmr.style.display='none';}else{tmr.textContent='('+_pwResendCooldown+'초 후 재발송 가능)';}},1000);
+        }
+        async function pwResendCode() {
+            if(_pwResendCooldown>0) return;
+            const btn=document.getElementById('pwResendBtn'); btn.textContent='발송 중...'; pwClearMsg(2);
+            try {
+                const res=await fetch(`${API_URL}/auth/email/send-code`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:_pwEmail})});
+                const data=await res.json();
+                if(res.ok){
+                    if(data.test_mode&&data.test_code){_pwCode=data.test_code;console.log('[PW] resend code:',_pwCode);}
+                    pwShowMsg(2,'인증코드가 재발송되었습니다.','success'); pwStartTimer(); pwStartResendCooldown();
+                    document.getElementById('pwCode').value=''; document.getElementById('pwCode').focus();
+                } else { pwShowMsg(2,data.detail||'재발송에 실패했습니다.','error'); }
+            } catch(e){ pwShowMsg(2,'서버 연결에 실패했습니다.','error'); }
+            finally { btn.textContent='재발송'; }
+        }
+        function pwVerifyCode() {
+            const code=document.getElementById('pwCode').value.trim();
+            if(!code||code.length!==6){pwShowMsg(2,'6자리 인증코드를 입력해주세요.','error');return;}
+            if(!/^\d{6}$/.test(code)){pwShowMsg(2,'숫자 6자리를 입력해주세요.','error');return;}
+            _pwCode=code;
+            if(_pwTimerInterval){clearInterval(_pwTimerInterval);_pwTimerInterval=null;}
+            pwGoStep(3); setTimeout(()=>document.getElementById('pwNew').focus(),200);
+        }
+        function checkPwStrength() {
+            const pw=document.getElementById('pwNew').value;
+            const bars=['pwBar1','pwBar2','pwBar3','pwBar4'].map(id=>document.getElementById(id));
+            const txt=document.getElementById('pwStrengthText');
+            let s=0; if(pw.length>=6)s++; if(pw.length>=8)s++; if(/[A-Z]/.test(pw)&&/[a-z]/.test(pw))s++; if(/[0-9]/.test(pw)&&/[^A-Za-z0-9]/.test(pw))s++;
+            const c=['','#ff4d5a','#ffaa00','#00d4a4','#00d4ff'], l=['','약함','보통','강함','매우 강함'];
+            bars.forEach((b,i)=>{b.style.background=i<s?c[s]:'rgba(255,255,255,0.08)';});
+            txt.textContent=pw.length>0?l[s]:''; txt.style.color=c[s]||'var(--text-dim)';
+            checkPwMatch();
+        }
+        function checkPwMatch() {
+            const pw=document.getElementById('pwNew').value, cf=document.getElementById('pwConfirm').value;
+            const mt=document.getElementById('pwMatchText'), btn=document.getElementById('pwResetBtn');
+            if(!cf){mt.textContent='';btn.disabled=true;return;}
+            if(pw===cf){mt.textContent='✓ 비밀번호가 일치합니다';mt.style.color='#00d4a4';btn.disabled=pw.length<6;}
+            else{mt.textContent='✗ 비밀번호가 일치하지 않습니다';mt.style.color='#ff6b7a';btn.disabled=true;}
+        }
+        function togglePwEye(id,btn){const i=document.getElementById(id),ic=btn.querySelector('.material-icons-round');if(i.type==='password'){i.type='text';ic.textContent='visibility';}else{i.type='password';ic.textContent='visibility_off';}}
+
+        async function pwResetPassword() {
+            const newPw=document.getElementById('pwNew').value, cfPw=document.getElementById('pwConfirm').value;
+            if(newPw.length<6){pwShowMsg(3,'비밀번호는 최소 6자 이상이어야 합니다.','error');return;}
+            if(newPw!==cfPw){pwShowMsg(3,'비밀번호가 일치하지 않습니다.','error');return;}
+            const btn=document.getElementById('pwResetBtn'); btn.disabled=true; btn.textContent='변경 중...'; pwClearMsg(3);
+            try {
+                const res=await fetch(`${API_URL}/auth/password/reset`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:_pwEmail,code:_pwCode,new_password:newPw})});
+                const data=await res.json();
+                if(res.ok&&data.success){ pwGoStep(4); }
+                else {
+                    const err=data.detail||'비밀번호 변경에 실패했습니다.';
+                    if(err.includes('인증코드')||err.includes('만료')||err.includes('일치하지')){
+                        pwGoStep(2); pwShowMsg(2,err+' 다시 입력해주세요.','error');
+                        document.getElementById('pwCode').value=''; document.getElementById('pwCode').focus();
+                    } else { pwShowMsg(3,err,'error'); }
+                }
+            } catch(e){ pwShowMsg(3,'서버 연결에 실패했습니다.','error'); }
+            finally { btn.disabled=false; btn.textContent='비밀번호 변경'; }
+        }
+        document.addEventListener('keydown',function(e){
+            if(e.key!=='Enter') return;
+            const ov=document.getElementById('pwOverlay'); if(!ov.classList.contains('active')) return;
+            if(document.getElementById('pwStep1').classList.contains('active')) pwSendCode();
+            else if(document.getElementById('pwStep2').classList.contains('active')) pwVerifyCode();
+            else if(document.getElementById('pwStep3').classList.contains('active')&&!document.getElementById('pwResetBtn').disabled) pwResetPassword();
+        });
+
         async function handleLogin(event) {
             event.preventDefault();
             hideError();
