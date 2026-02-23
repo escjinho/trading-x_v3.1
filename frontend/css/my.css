@@ -1538,7 +1538,7 @@
 .my-vip-badge-ring::before {
     content: '';
     position: absolute;
-    top: -3px; left: 50%; transform: translateX(-50%);
+    top: 0px; left: 50%; transform: translateX(-50%);
     width: 5px; height: 5px; border-radius: 50%;
     background: var(--vip-badge-border, rgba(156,163,175,0.5));
     box-shadow: 0 0 4px var(--vip-badge-border, rgba(156,163,175,0.3));
