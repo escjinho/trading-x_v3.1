@@ -244,9 +244,16 @@ function renderVipPage(data) {
     if (badgeEl) {
         var icon = badgeEl.querySelector('.material-icons-round');
         if (icon) icon.style.color = grade.badge_color;
-        badgeEl.style.background = hexToRgba(grade.badge_color, 0.12);
+        badgeEl.style.background = hexToRgba(grade.badge_color, 0.08);
+        badgeEl.style.borderColor = hexToRgba(grade.badge_color, 0.35);
+        badgeEl.style.setProperty('--vip-badge-border', hexToRgba(grade.badge_color, 0.35));
+        badgeEl.style.setProperty('--vip-badge-bg', hexToRgba(grade.badge_color, 0.08));
     }
-    if (card) card.style.borderColor = hexToRgba(grade.badge_color, 0.3);
+    if (card) {
+        card.style.borderColor = hexToRgba(grade.badge_color, 0.3);
+        card.style.setProperty('--vip-glow-color', hexToRgba(grade.badge_color, 0.12));
+        card.style.setProperty('--vip-tag-color', grade.badge_color);
+    }
 
     if (nextGrade) {
         if (descEl) descEl.innerHTML = '다음 등급까지 <span style="font-weight:700;color:#fff;">' + nextGrade.remaining_lots.toFixed(1) + '</span> lots 남음';
@@ -272,14 +279,29 @@ function renderVipPage(data) {
         refEl.textContent = refAmount > 0 ? ('$' + refAmount + '/lot') : '-';
     }
 
-    // 비교표 — 현재 등급 헤더에 "현재" 태그
+    // 비교표 — 현재 등급 컬럼 전체 하이라이트
     var allTh = document.querySelectorAll('.my-vip-th');
     for (var i = 0; i < allTh.length; i++) {
         allTh[i].classList.remove('current');
     }
     var gradeLower = (grade.name || 'standard').toLowerCase();
     var targetTh = document.querySelector('.my-vip-th.' + gradeLower);
-    if (targetTh) targetTh.classList.add('current');
+    if (targetTh) {
+        targetTh.classList.add('current');
+        var thRow = targetTh.parentElement;
+        var colIndex = Array.prototype.indexOf.call(thRow.children, targetTh);
+        var tbody = document.querySelector('#myVipTable tbody');
+        if (tbody && colIndex >= 0) {
+            var rows = tbody.querySelectorAll('tr');
+            for (var r = 0; r < rows.length; r++) {
+                var cells = rows[r].children;
+                for (var c = 0; c < cells.length; c++) {
+                    cells[c].classList.remove('current');
+                }
+                if (cells[colIndex]) cells[colIndex].classList.add('current');
+            }
+        }
+    }
 }
 
 // hex → rgba 변환 유틸
