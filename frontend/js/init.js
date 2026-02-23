@@ -250,10 +250,9 @@ function startGuideTour() {
 
 // 셀퍼럴 안내 페이지 열기 (나중에 구현)
 function openReferralPage() {
-    // My 탭 → VIP 프로그램으로 이동
-    if (typeof switchTab === 'function') switchTab('my');
-    setTimeout(function(){ if (typeof openMyDetail === 'function') openMyDetail('vip'); }, 300);
-    return;
+    // VIP 프로그램으로 바로 이동 (My 탭 화면 안 거침)
+    document.querySelector('.nav-item[data-page="my"]').click();
+    openMyDetail('vip');
 }
 
 // 홈 슬라이더 초기화 실행
