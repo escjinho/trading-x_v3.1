@@ -1428,14 +1428,14 @@ class MetaAPIService:
                             await self.close_position(position_id)
                             return {
                                 'success': False,
-                                'error': 'TP/SL 설정 실패로 안전을 위해 주문이 취소되었습니다. 다시 시도해주세요.',
+                                'error': 'Target 금액 설정 실패로 안전을 위해 주문이 취소되었습니다. 다시 시도해주세요.',
                                 'tp_sl_failed': True
                             }
                         except Exception as close_err:
                             print(f"[MetaAPI] 🚨🚨 강제 청산도 실패!: {close_err}")
                             return {
                                 'success': False,
-                                'error': 'TP/SL 설정 및 청산 모두 실패! MT5에서 수동 청산 필요!',
+                                'error': 'Target 금액 설정 및 청산 모두 실패! MT5에서 수동 청산 필요!',
                                 'tp_sl_failed': True,
                                 'critical': True
                             }
@@ -2024,10 +2024,10 @@ async def startup_metaapi():
             print("[MetaAPI Startup] ★ 캐시에서 캔들 즉시 로드 완료! 백그라운드에서 최신화 중...")
 
         # 5. 시세 업데이트 루프 시작 (10초 간격 - Rate Limit 방지)
-        await metaapi_service.start_price_update_loop(interval=10.0)
+        await metaapi_service.start_price_update_loop(interval=60.0)  # 크레딧 절약: 10초→60초 (스트리밍이 메인, 이건 백업)
 
         # 6. 포지션 동기화 루프 시작 (120초 주기)
-        await metaapi_service.start_position_sync_loop(interval=120.0)  # ★ 120초 (Rate Limit 최적화, Listener가 실시간 push)
+        await metaapi_service.start_position_sync_loop(interval=300.0)  # 크레딧 절약: 120초→300초 (TradeSyncListener가 메인, 이건 백업)
 
         # 7. 비활동 유저 자동 undeploy 루프 시작 (5분마다 체크, 30분 비활동 시 undeploy)
         asyncio.create_task(_auto_undeploy_inactive_users())
@@ -2623,17 +2623,61 @@ async def place_order_for_user(user_id: int, metaapi_account_id: str, symbol: st
         if result.get('stringCode') == 'TRADE_RETCODE_DONE':
             position_id = result.get('positionId')
 
-            # TP/SL 재설정 (안전장치)
+            # ★★★ TP/SL 설정 확인 + 실패 시 강제 청산 (안전장치) ★★★
             if position_id and (options.get('stopLoss') or options.get('takeProfit')):
+                tp_sl_confirmed = False
+
+                # 1차: modify_position으로 TP/SL 설정
                 try:
                     await asyncio.sleep(0.5)
-                    await rpc.modify_position(
+                    modify_result = await rpc.modify_position(
                         position_id=position_id,
                         stop_loss=options.get('stopLoss'),
                         take_profit=options.get('takeProfit')
                     )
+                    print(f"[MetaAPI User Order] SL/TP 설정 결과: {modify_result}")
+                    if modify_result and modify_result.get('stringCode') == 'TRADE_RETCODE_DONE':
+                        tp_sl_confirmed = True
+                        print(f"[MetaAPI User Order] ✅ SL/TP 설정 완료")
+                    else:
+                        print(f"[MetaAPI User Order] ⚠️ SL/TP 설정 응답 불확실: {modify_result}")
                 except Exception as mod_err:
-                    print(f"[MetaAPI User Order] TP/SL modify 실패: {mod_err}")
+                    print(f"[MetaAPI User Order] ❌ SL/TP 1차 실패: {mod_err}")
+
+                # 2차: 실패 시 재시도
+                if not tp_sl_confirmed:
+                    try:
+                        await asyncio.sleep(1.0)
+                        modify_result2 = await rpc.modify_position(
+                            position_id=position_id,
+                            stop_loss=options.get('stopLoss'),
+                            take_profit=options.get('takeProfit')
+                        )
+                        print(f"[MetaAPI User Order] SL/TP 재시도 결과: {modify_result2}")
+                        if modify_result2 and modify_result2.get('stringCode') == 'TRADE_RETCODE_DONE':
+                            tp_sl_confirmed = True
+                            print(f"[MetaAPI User Order] ✅ SL/TP 재시도 성공")
+                    except Exception as mod_err2:
+                        print(f"[MetaAPI User Order] ❌ SL/TP 2차 실패: {mod_err2}")
+
+                # 3차: 최종 실패 시 강제 청산 (TP/SL 없는 포지션 방지)
+                if not tp_sl_confirmed:
+                    print(f"[MetaAPI User Order] 🚨 SL/TP 설정 불가! 포지션 강제 청산: {position_id}")
+                    try:
+                        await rpc.close_position(position_id)
+                        return {
+                            "success": False,
+                            "error": "Target 금액 설정 실패로 안전을 위해 주문이 취소되었습니다. 다시 시도해주세요.",
+                            "tp_sl_failed": True
+                        }
+                    except Exception as close_err:
+                        print(f"[MetaAPI User Order] 🚨🚨 강제 청산도 실패!: {close_err}")
+                        return {
+                            "success": False,
+                            "error": "Target 금액 설정 및 청산 모두 실패! MT5에서 수동 청산 필요!",
+                            "tp_sl_failed": True,
+                            "critical": True
+                        }
 
             return {
                 "success": True,

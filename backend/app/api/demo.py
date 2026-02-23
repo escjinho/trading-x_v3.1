@@ -397,13 +397,13 @@ async def get_demo_account(
                         should_close = True
                         is_win = True
                         print(f"[AUTO-CLOSE] Fallback WIN: profit={profit:.2f} >= target={target}")
-                    elif profit <= -target * 0.98:
+                    elif profit <= -target * 0.99:
                         should_close = True
                         is_win = False
-                        print(f"[AUTO-CLOSE] Fallback LOSE: profit={profit:.2f} <= -{target*0.98:.2f}")
+                        print(f"[AUTO-CLOSE] Fallback LOSE: profit={profit:.2f} <= -{target*0.99:.2f}")
 
             if not should_close and target > 0:
-                print(f"[MARTIN-DEBUG] No close: profit={profit:.2f}, target_range=[{-target*0.98:.2f}, {target:.2f}]")
+                print(f"[MARTIN-DEBUG] No close: profit={profit:.2f}, target_range=[{-target*0.99:.2f}, {target:.2f}]")
 
             if should_close:
                 print(f"[DEBUG-BRIDGE] AUTO CLOSING! {'WIN' if is_win else 'LOSE'} - Profit: {profit}")
@@ -561,10 +561,10 @@ async def get_demo_account(
                         should_close = True
                         is_win = True
                         print(f"[DEBUG] WIN! Profit {profit} >= Target {target}")
-                    elif profit <= -target * 0.98:  # LOSE: target의 98% 도달 시 청산
+                    elif profit <= -target * 0.99:  # LOSE: target의 99% 도달 시 청산
                         should_close = True
                         is_win = False
-                        print(f"[DEBUG] LOSE! Profit {profit} <= -Target*0.98 {-target * 0.98}")
+                        print(f"[DEBUG] LOSE! Profit {profit} <= -Target*0.99 {-target * 0.99}")
                 
                 if should_close:
                     print(f"[DEBUG] AUTO CLOSING! {'WIN' if is_win else 'LOSE'} - Profit: {profit}")
@@ -863,7 +863,7 @@ async def place_demo_order(
                 spread_raw = abs(pd.get('ask', 0) - pd.get('bid', 0))
             spread_cost = (spread_raw / tick_size) * tick_value * volume if tick_size > 0 else 0
             tp_diff = target / ppp if ppp > 0 else 0
-            sl_diff = target / ppp if ppp > 0 else 0  # ★ TP와 동일 거리 → 손실 = target
+            sl_diff = (target * 0.99) / ppp if ppp > 0 else 0  # ★ SL = target × 99%
 
             if order_type.upper() == "BUY":
                 tp_price_val = round(entry_price + tp_diff, 8)
@@ -875,7 +875,7 @@ async def place_demo_order(
         else:
             # 기존 로직 (Buy/Sell, Martin)
             tp_diff = target / ppp if ppp > 0 else 0
-            sl_diff = (target * 0.98) / ppp if ppp > 0 else 0
+            sl_diff = (target * 0.99) / ppp if ppp > 0 else 0
             if order_type.upper() == "BUY":
                 tp_price_val = round(entry_price + tp_diff, 8)
                 sl_price_val = round(entry_price - sl_diff, 8)
@@ -2209,10 +2209,10 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                                             should_close = True
                                             is_win = True
                                             print(f"[DEMO WS] 🎯 Fallback WIN! Profit ${profit:.2f} >= Target ${target:.2f}")
-                                        elif profit <= -target * 0.98:  # LOSE (98% 도달 시)
+                                        elif profit <= -target * 0.99:  # LOSE (99% 도달 시)
                                             should_close = True
                                             is_win = False
-                                            print(f"[DEMO WS] 💔 Fallback LOSE! Profit ${profit:.2f} <= -Target*0.98 ${-target * 0.98:.2f}")
+                                            print(f"[DEMO WS] 💔 Fallback LOSE! Profit ${profit:.2f} <= -Target*0.99 ${-target * 0.99:.2f}")
 
                                 if should_close:
                                     # 자동청산 실행

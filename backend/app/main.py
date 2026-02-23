@@ -45,17 +45,26 @@ def api_health_check():
 
 @app.on_event("startup")
 async def startup_event():
-    """서버 시작 시 MetaAPI 초기화 (타임아웃 60초)"""
+    """서버 시작 시 MetaAPI 초기화 (백그라운드 — 서버 즉시 응답 가능)"""
     import asyncio
-    try:
-        from .api.metaapi_service import startup_metaapi
-        # ★ 60초 타임아웃 (Quote 연결 대기 충분히)
-        await asyncio.wait_for(startup_metaapi(), timeout=60.0)
-        print("[Main] MetaAPI 초기화 완료")
-    except asyncio.TimeoutError:
-        print("[Main] MetaAPI 초기화 타임아웃 (60초) - 서버는 계속 실행")
-    except Exception as e:
-        print(f"[Main] MetaAPI 초기화 실패 (서버는 계속 실행): {e}")
+
+    async def _init_metaapi_background():
+        """MetaAPI를 백그라운드에서 초기화 (서버 시작 블로킹 방지)"""
+        await asyncio.sleep(2)  # ★ 서버 완전 시작 후 2초 대기
+        try:
+            from .api.metaapi_service import startup_metaapi
+            await asyncio.wait_for(startup_metaapi(), timeout=90.0)
+            print("[Main] ✅ MetaAPI 백그라운드 초기화 완료")
+        except asyncio.TimeoutError:
+            print("[Main] ⚠️ MetaAPI 초기화 타임아웃 (90초) - 서버는 계속 실행")
+        except Exception as e:
+            print(f"[Main] ⚠️ MetaAPI 초기화 실패 (서버는 계속 실행): {e}")
+            import traceback
+            traceback.print_exc()
+
+    # ★★★ 핵심: await 대신 create_task로 백그라운드 실행 ★★★
+    asyncio.create_task(_init_metaapi_background())
+    print("[Main] 서버 시작 완료 — MetaAPI 백그라운드 초기화 중...")
 
 @app.on_event("shutdown")
 async def shutdown_event():

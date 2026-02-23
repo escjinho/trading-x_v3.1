@@ -126,7 +126,17 @@
       "Bash(__NEW_LINE_2efe89efa37465cc__ git add frontend/login.html)",
       "Bash(cd /var/www/trading-x grep -n \"// Balance\" frontend/js/my.js)",
       "Bash(sudo supervisorctl:*)",
-      "Bash(cd /var/www/trading-x grep -rn \"API_URL\\\\s*=\" frontend/js/*.js)"
+      "Bash(cd /var/www/trading-x grep -rn \"API_URL\\\\s*=\" frontend/js/*.js)",
+      "Bash(cd /var/www/trading-x/backend __NEW_LINE_5c280defe39c083c__ echo \"=== 가격 캐시 관련 전역변수 ===\" grep -n \"^quote_price_cache\\\\|^quote_candle_cache\\\\|^metaapi_positions_cache\\\\|^metaapi_account_cache\" app/api/metaapi_service.py)",
+      "Bash(__NEW_LINE_1e15028b11cb15a7__ echo \"\")",
+      "Bash(__NEW_LINE_9276dc4008c61f3f__ echo \"=== 서버 상태 ===\")",
+      "Bash(__NEW_LINE_9276dc4008c61f3f__ echo \"\")",
+      "Bash(__NEW_LINE_b1823f96fd62208c__ echo \"=== 서버 상태 ===\")",
+      "Bash(__NEW_LINE_b1823f96fd62208c__ echo \"\")",
+      "Bash(sleep 5 echo \"\" echo \"=== 서버 상태 ===\" systemctl is-active trading-x curl -s -o /dev/null -w \"HTTP: %{http_code}\\\\n\" http://localhost:8000/)",
+      "Bash(systemctl is-active:*)",
+      "Bash(sleep 5 systemctl is-active trading-x curl -s -o /dev/null -w \"HTTP: %{http_code}\\\\n\" http://localhost:8000/)",
+      "Bash(pip3 install:*)"
     ]
   }
 }

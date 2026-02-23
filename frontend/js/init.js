@@ -104,9 +104,12 @@ function updateGreeting() {
     const greetingSub = document.getElementById('greetingSub');
     
     if (greetingText && greetingSub) {
-        // 사용자 이름 가져오기 (있으면)
-        const userName = localStorage.getItem('user_name') || '';
-        
+        // 사용자 이름 가져오기 (3자리 초과 시 truncate)
+        let userName = localStorage.getItem('user_name') || '';
+        if (userName.length > 3) {
+            userName = userName.substring(0, 3) + '...';
+        }
+
         // 영문 인사말에 이름 추가
         let enText = greeting.en;
         if (userName) {

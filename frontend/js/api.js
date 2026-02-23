@@ -1,4 +1,5 @@
 // ========== API Helper ==========
+let _lastApiErrorToast = 0;  // ★ 네트워크 에러 토스트 쿨다운
 async function apiCall(endpoint, method = 'GET', body = null) {
     const headers = {
         'Content-Type': 'application/json'
@@ -62,11 +63,13 @@ async function apiCall(endpoint, method = 'GET', body = null) {
     } catch (error) {
         console.error('API Error:', error);
         
-        // 네트워크 오류와 세션 만료 구분
-        if (error.name === 'TypeError' && error.message.includes('fetch')) {
-            showToast('네트워크 연결 확인 중', 'warning');
-        } else {
-            showToast('잠시 연결이 불안정합니다\n곧 자동으로 복구됩니다', 'warning');
+        // ★★★ 네트워크 에러 토스트: 10초 쿨다운 + WS 재연결 중 표시 안 함 ★★★
+        const _now = Date.now();
+        const _wsReconnecting = !window.wsConnected;
+        if (_now - _lastApiErrorToast > 10000 && !_wsReconnecting) {
+            _lastApiErrorToast = _now;
+            // 네트워크 오류는 콘솔에만 기록 (토스트 표시 안 함 - WS가 재연결 처리)
+            console.warn('[API] 네트워크 오류 (토스트 생략 - WS 재연결 대기)');
         }
         
         return { success: false, error: 'network_error', message: '서버 연결 실패' };

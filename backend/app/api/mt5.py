@@ -1379,6 +1379,32 @@ async def place_order(
                 "martin_lot": volume
             })
 
+
+    # ★★★ 일반 모드 증거금 사전 체크 ★★★
+    if not is_martin:
+        # 유저별 MetaAPI: user_metaapi_cache에서 계정정보 조회
+        if _use_user_metaapi:
+            _u_acc = user_metaapi_cache.get(current_user.id, {}).get("account_info", {})
+            free_margin = _u_acc.get("freeMargin", 0) if _u_acc else 0
+        else:
+            _u_acc = get_metaapi_account()
+            free_margin = _u_acc.get("freeMargin", 0)
+
+        margin_per_lot = SYMBOL_MARGIN_PER_LOT.get(symbol, 500)
+        required_margin = round(volume * margin_per_lot, 2)
+
+        print(f"[MetaAPI Order] 증거금 체크 (일반): free_margin=${free_margin:.2f}, required=${required_margin:.2f} ({volume:.2f} lot)")
+
+        if free_margin > 0 and required_margin > free_margin:
+            print(f"[MetaAPI Order] ❌ 증거금 부족 (일반): 필요 ${required_margin:.2f} > 가용 ${free_margin:.2f}")
+            return JSONResponse({
+                "success": False,
+                "message": f"증거금 부족! 가용: ${free_margin:.0f} / 필요: ${required_margin:.0f}",
+                "margin_insufficient": True,
+                "free_margin": free_margin,
+                "required_margin": required_margin,
+                "volume": volume
+            })
     # ★★★ 중복 주문 방지: 같은 매직넘버 + 같은 종목 포지션 확인 ★★★
     # 종목이 다르면 같은 매직넘버라도 독립 주문 허용 (QuickEasy 다종목 지원)
     if _use_user_metaapi:
@@ -1572,6 +1598,78 @@ async def place_order(
     #     return JSONResponse({"success": False, "message": "MT5 초기화 실패"})
     # ... (기존 MT5 직접 연결 코드)
 
+
+# ========== SL/TP 설정 (바이셀 패널용) ==========
+@router.post("/set-sltp")
+async def set_sltp(
+    symbol: str = "BTCUSD",
+    sl: float = 0,
+    tp: float = 0,
+    magic: int = 100001,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """기존 포지션에 SL/TP 설정 (바이셀 패널용) - MetaAPI"""
+    from .metaapi_service import metaapi_service, is_metaapi_connected, user_metaapi_cache
+
+    _use_user_metaapi = bool(current_user.metaapi_account_id and current_user.metaapi_status == "deployed")
+
+    # 포지션 찾기
+    if _use_user_metaapi:
+        _positions = user_metaapi_cache.get(current_user.id, {}).get("positions", [])
+    else:
+        _positions = user_live_cache.get(current_user.id, {}).get("positions", [])
+
+    target_pos = None
+    for p in _positions:
+        if p.get("symbol") == symbol and p.get("magic") == magic:
+            target_pos = p
+            break
+
+    if not target_pos:
+        return JSONResponse({"success": False, "message": f"{symbol} 포지션을 찾을 수 없습니다"})
+
+    position_id = target_pos.get("id", "")
+    if not position_id:
+        return JSONResponse({"success": False, "message": "포지션 ID를 찾을 수 없습니다"})
+
+    # SL/TP 값 검증
+    stop_loss = sl if sl > 0 else None
+    take_profit = tp if tp > 0 else None
+
+    if not stop_loss and not take_profit:
+        return JSONResponse({"success": False, "message": "SL 또는 TP 값을 입력하세요"})
+
+    try:
+        if _use_user_metaapi:
+            from .metaapi_service import get_user_trade_connection
+            rpc = await get_user_trade_connection(current_user.id, current_user.metaapi_account_id)
+            if not rpc:
+                return JSONResponse({"success": False, "message": "MetaAPI 연결 실패"})
+            result = await rpc.modify_position(
+                position_id=position_id,
+                stop_loss=stop_loss,
+                take_profit=take_profit
+            )
+        else:
+            if not metaapi_service.trade_connection:
+                return JSONResponse({"success": False, "message": "MetaAPI 연결 실패"})
+            result = await metaapi_service.trade_connection.modify_position(
+                position_id=position_id,
+                stop_loss=stop_loss,
+                take_profit=take_profit
+            )
+
+        if result and result.get("stringCode") == "TRADE_RETCODE_DONE":
+            print(f"[MT5 SL/TP] ✅ {symbol} SL={stop_loss}, TP={take_profit} 설정 완료 (pos={position_id})")
+            return JSONResponse({"success": True, "message": f"SL/TP 설정 완료"})
+        else:
+            print(f"[MT5 SL/TP] ⚠️ 응답: {result}")
+            return JSONResponse({"success": True, "message": "SL/TP 설정 요청 전송됨"})
+
+    except Exception as e:
+        print(f"[MT5 SL/TP] ❌ 실패: {e}")
+        return JSONResponse({"success": False, "message": f"SL/TP 설정 실패: {str(e)}"})
 
 # ========== 포지션 청산 ==========
 @router.post("/close")

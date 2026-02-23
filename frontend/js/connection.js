@@ -2018,7 +2018,15 @@ async function checkUserMode() {
             }
             
             updateHeroCTA('live');
-            
+
+            // ★★★ MT5 Account 섹션 업데이트 (연결된 계정 정보 표시) ★★★
+            updateMT5AccountUI(true, {
+                broker: data.broker || 'Live Account',
+                account: data.account || '-',
+                server: data.server || '-',
+                leverage: data.leverage || 500
+            });
+
             // WebSocket 연결 (실패해도 폴링으로 대체)
             console.log("[checkUserMode] About to try connectWebSocket - Live mode");
             try {

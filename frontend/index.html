@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta name="theme-color" content="#000000">
+    <meta name="theme-color" content="#080a0e">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta charset="UTF-8">
     <meta name="google-site-verification" content="xBV5kZVqrAwpc89Gzd8anwWGE6SXUb9bIFz0-PdpE3o" />
@@ -22,41 +22,36 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <script>
-        // ★★★ 인트로/스플래시 분기 — 토큰 유무 + 30분 비활동 체크 ★★★
+        // ★★★ PWA 스플래시 분기 (sessionStorage 기반) ★★★
+        // - sessionStorage는 앱 완전 종료 시 사라지고, 백그라운드 전환에선 유지됨
+        // - 앱 새로 실행 = sessionStorage 없음 → 스플래시
+        // - 백그라운드 복귀 = sessionStorage 있음 → 원래 화면 유지
         (function() {
-            // 0. welcome/intro에서 돌아온 경우 스킵 + 활동시간 갱신
+            // 0. welcome/intro에서 돌아온 경우 → 세션 등록 후 스킵
             if (location.search.includes('from_welcome=1') || location.search.includes('from_intro=1')) {
+                sessionStorage.setItem('app_session', '1');
                 localStorage.setItem('intro_shown', 'true');
-                localStorage.setItem('last_active_ts', Date.now().toString());
                 return;
             }
-            // 1. 무한루프 방지 (3초 내 재진입 차단)
-            var lastRedirect = sessionStorage.getItem('intro_redirect_ts');
-            if (lastRedirect && (Date.now() - parseInt(lastRedirect)) < 3000) return;
+
+            // 1. 이미 세션 진행 중 (백그라운드 복귀) → 원래 화면 유지
+            if (sessionStorage.getItem('app_session')) return;
 
             var token = localStorage.getItem('access_token');
 
-            // 2. 로그인 유저 → 30분 비활동 시 welcome.html
+            // 2. 로그인 됨 + 앱 새로 실행 → Welcome Back 스플래시
             if (token) {
-                var lastActive = parseInt(localStorage.getItem('last_active_ts') || '0');
-                var thirtyMin = 30 * 60 * 1000;
-                if (lastActive > 0 && (Date.now() - lastActive) < thirtyMin) {
-                    // 30분 이내 → 스킵, 활동시간만 갱신
-                    localStorage.setItem('last_active_ts', Date.now().toString());
-                    return;
-                }
-                // 30분 이상 또는 첫 접속 → welcome 스플래시
-                sessionStorage.setItem('intro_redirect_ts', Date.now().toString());
                 window.location.replace('welcome.html');
                 return;
             }
 
-            // 3. 비로그인 유저 → 인트로 이미 봤으면 스킵
-            if (localStorage.getItem('intro_shown')) return;
-            if (sessionStorage.getItem('intro_shown')) return;
+            // 3. 비로그인 + 인트로 이미 봤음 → 둘러보기 모드 (바로 진입)
+            if (localStorage.getItem('intro_shown')) {
+                sessionStorage.setItem('app_session', '1');
+                return;
+            }
 
-            // 4. 인트로 안 봤으면 → intro.html
-            sessionStorage.setItem('intro_redirect_ts', Date.now().toString());
+            // 4. 인트로 안 봤으면 → 최초 인트로
             window.location.replace('intro.html');
         })();
     </script>

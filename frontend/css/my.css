@@ -3230,25 +3230,25 @@
 /* ===== HedgeHood CTA (시안 강조) ===== */
 .my-live-cta-deposit {
     display: flex; align-items: center; gap: 14px;
-    padding: 18px; background: linear-gradient(135deg, rgba(0,212,255,0.22), rgba(0,212,255,0.08));
-    border: 1px solid rgba(0,212,255,0.45); border-radius: 16px;
+    padding: 18px; background: linear-gradient(135deg, rgba(0,200,83,0.22), rgba(0,200,83,0.08));
+    border: 1px solid rgba(0,200,83,0.45); border-radius: 16px;
     cursor: pointer; margin-bottom: 10px;
-    box-shadow: 0 0 20px rgba(0,212,255,0.08);
+    box-shadow: 0 0 20px rgba(0,200,83,0.08);
     transition: background 0.15s;
 }
-.my-live-cta-deposit:active { background: rgba(0,212,255,0.15); }
+.my-live-cta-deposit:active { background: rgba(0,200,83,0.15); }
 .my-live-cta-icon {
     width: 44px; height: 44px; border-radius: 12px;
-    background: rgba(0,212,255,0.15); border: 1px solid rgba(0,212,255,0.3);
+    background: rgba(0,200,83,0.15); border: 1px solid rgba(0,200,83,0.3);
     display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
-.my-live-cta-icon .material-icons-round { color: var(--accent-cyan); font-size: 22px; }
+.my-live-cta-icon .material-icons-round { color: #00c853; font-size: 22px; }
 .my-live-cta-text { flex: 1; }
 .my-live-cta-title {
     font-size: 15px; font-weight: 700; color: var(--text-primary);
     font-family: 'Rajdhani', sans-serif; letter-spacing: 0.3px;
 }
-.my-live-cta-arrow { color: var(--accent-cyan); font-size: 22px; }
+.my-live-cta-arrow { color: #00c853; font-size: 22px; }
 .my-live-cta-note {
     font-size: 11px; color: rgba(255,255,255,0.85); line-height: 1.5;
     padding: 0 4px; margin-bottom: 16px;
@@ -3378,5 +3378,24 @@
 }
 
 .my-live-cta-subtitle {
-    font-size: 11px; color: rgba(0,212,255,0.7); margin-top: 2px;
+    font-size: 11px; color: rgba(0,200,83,0.7); margin-top: 2px;
 }
+
+/* ★★★ KYC 메뉴 스타일 ★★★ */
+.my-sub-item.kyc-parent { cursor: pointer; }
+.my-sub-item.kyc-parent .my-sub-item-arrow { transition: transform 0.2s; }
+.my-sub-item.kyc-parent.open .my-sub-item-arrow { transform: rotate(180deg); }
+.kyc-sub-menu { padding-left: 20px; background: rgba(255,255,255,0.02); }
+.kyc-sub-menu .my-sub-item.kyc-child { padding: 13px 16px; }
+.kyc-sub-menu .my-sub-icon-box.small { width: 32px; height: 32px; border-radius: 8px; }
+.kyc-sub-menu .my-sub-icon-box.small .material-icons-round { font-size: 17px; }
+
+/* ★★★ 회원탈퇴 (로그아웃 스타일) ★★★ */
+.my-sub-card.withdraw-card {
+    background: transparent;
+    border-color: rgba(220, 50, 70, 0.25);
+}
+.withdraw-icon { background: rgba(255,71,87,0.08) !important; }
+.withdraw-icon .material-icons-round { color: var(--sell-color) !important; }
+.withdraw-label { color: var(--sell-color) !important; }
+.withdraw-arrow { color: var(--sell-color) !important; }
