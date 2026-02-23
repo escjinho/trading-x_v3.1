@@ -244,15 +244,28 @@ function renderVipPage(data) {
     if (badgeEl) {
         var icon = badgeEl.querySelector('.material-icons-round');
         if (icon) icon.style.color = grade.badge_color;
-        badgeEl.style.background = hexToRgba(grade.badge_color, 0.08);
-        badgeEl.style.borderColor = hexToRgba(grade.badge_color, 0.35);
-        badgeEl.style.setProperty('--vip-badge-border', hexToRgba(grade.badge_color, 0.35));
-        badgeEl.style.setProperty('--vip-badge-bg', hexToRgba(grade.badge_color, 0.08));
+        // 링 + 아이콘 컬러
+        var ring = document.getElementById('myVipBadgeRing');
+        var bIcon = document.getElementById('myVipBadgeIcon');
+        if (ring) {
+            ring.style.borderColor = hexToRgba(grade.badge_color, 0.25);
+            ring.style.setProperty('--vip-badge-border', hexToRgba(grade.badge_color, 0.6));
+        }
+        if (bIcon) {
+            bIcon.style.background = 'linear-gradient(145deg, ' + hexToRgba(grade.badge_color, 0.12) + ', ' + hexToRgba(grade.badge_color, 0.04) + ')';
+            bIcon.style.borderColor = hexToRgba(grade.badge_color, 0.2);
+        }
     }
     if (card) {
         card.style.borderColor = hexToRgba(grade.badge_color, 0.3);
         card.style.setProperty('--vip-glow-color', hexToRgba(grade.badge_color, 0.12));
-        card.style.setProperty('--vip-tag-color', grade.badge_color);
+    }
+    // 태그 컬러
+    var tagEl = document.getElementById('myVipTag');
+    if (tagEl) {
+        tagEl.style.color = grade.badge_color;
+        tagEl.style.borderColor = hexToRgba(grade.badge_color, 0.15);
+        tagEl.style.background = hexToRgba(grade.badge_color, 0.06);
     }
 
     if (nextGrade) {
@@ -279,15 +292,24 @@ function renderVipPage(data) {
         refEl.textContent = refAmount > 0 ? ('$' + refAmount + '/lot') : '-';
     }
 
-    // 비교표 — 현재 등급 컬럼 전체 하이라이트
+    // 비교표 — C안: 우상단 체크 원형 + 컬럼 하이라이트
     var allTh = document.querySelectorAll('.my-vip-th');
     for (var i = 0; i < allTh.length; i++) {
         allTh[i].classList.remove('current');
+        var oldCheck = allTh[i].querySelector('.my-vip-th-check');
+        if (oldCheck) oldCheck.remove();
     }
     var gradeLower = (grade.name || 'standard').toLowerCase();
     var targetTh = document.querySelector('.my-vip-th.' + gradeLower);
     if (targetTh) {
         targetTh.classList.add('current');
+        // 체크 아이콘 삽입
+        var checkEl = document.createElement('div');
+        checkEl.className = 'my-vip-th-check';
+        checkEl.innerHTML = '<span class="material-icons-round">check</span>';
+        targetTh.style.position = 'relative';
+        targetTh.appendChild(checkEl);
+        // 컬럼 바디 하이라이트
         var thRow = targetTh.parentElement;
         var colIndex = Array.prototype.indexOf.call(thRow.children, targetTh);
         var tbody = document.querySelector('#myVipTable tbody');

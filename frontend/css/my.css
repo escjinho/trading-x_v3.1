@@ -1507,18 +1507,14 @@
 }
 
 .my-vip-current-badge {
-    width: 72px;
-    height: 72px;
+    width: 80px;
+    height: 80px;
     border-radius: 50%;
-    background: var(--vip-badge-bg, rgba(0,212,255,0.08));
-    border: 2.5px solid var(--vip-badge-border, rgba(0,212,255,0.35));
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 0 auto 6px;
     position: relative;
-    box-shadow: 0 0 20px var(--vip-glow-color, rgba(0,212,255,0.12)),
-                inset 0 0 12px var(--vip-glow-color, rgba(0,212,255,0.06));
 }
 .my-vip-current-badge::after {
     content: '';
@@ -1532,9 +1528,38 @@
     to { transform: rotate(360deg); }
 }
 
+.my-vip-badge-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid var(--vip-badge-border, rgba(0,212,255,0.25));
+    animation: vipBadgeRotate 25s linear infinite;
+}
+.my-vip-badge-ring::before {
+    content: '';
+    position: absolute;
+    top: -2px; left: 50%; transform: translateX(-50%);
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--vip-badge-border, rgba(0,212,255,0.6));
+}
+@keyframes vipBadgeRotate { to { transform: rotate(360deg); } }
+
+.my-vip-badge-icon {
+    position: absolute;
+    inset: 8px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, var(--vip-badge-bg, rgba(0,212,255,0.12)), var(--vip-badge-bg2, rgba(0,212,255,0.04)));
+    border: 1.5px solid var(--vip-badge-border, rgba(0,212,255,0.2));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .my-vip-current-badge .material-icons-round {
-    font-size: 32px;
+    font-size: 28px;
     color: var(--accent-cyan);
+    position: relative;
+    z-index: 1;
 }
 
 .my-vip-current-tag {
@@ -1960,27 +1985,9 @@
     color: var(--text-muted);
 }
 
-.my-vip-th.current {
-    position: relative;
-    background: rgba(0, 212, 255, 0.06);
-}
-.my-vip-th.current::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2.5px;
-    background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
-    border-radius: 2px;
-}
-.my-vip-th.current::after {
-    content: '현재';
-    position: absolute;
-    top: 4px; right: 4px;
-    font-size: 8px; font-weight: 700;
-    padding: 1px 5px; border-radius: 4px;
-    background: var(--accent-cyan); color: #000;
-    letter-spacing: 0.5px;
-}
+
+
+
 
 .my-vip-th-badge {
     width: 28px;
@@ -2043,11 +2050,7 @@
     color: var(--text-dim);
 }
 
-.my-vip-td.current {
-    background: rgba(0, 212, 255, 0.06);
-    border-left: 1px solid rgba(0,212,255,0.12);
-    border-right: 1px solid rgba(0,212,255,0.12);
-}
+
 
 .my-vip-check {
     color: var(--buy-color);
@@ -2845,16 +2848,8 @@
 .my-vip-th.pro { color: #00d4ff; }
 .my-vip-th.vip { color: #f97316; }
 
-.my-vip-th.current { position: relative; }
-.my-vip-th.current::after {
-    content: '현재';
-    display: block;
-    font-size: 9px;
-    margin-top: 3px;
-    padding: 1px 0;
-    border-radius: 8px;
-    font-weight: 700;
-}
+
+
 .my-vip-th.current.standard::after { color: #9e9e9e; }
 .my-vip-th.current.pro::after { color: #00d4ff; }
 .my-vip-th.current.vip::after { color: #f97316; }
@@ -3453,3 +3448,28 @@
 .withdraw-icon .material-icons-round { color: var(--sell-color) !important; }
 .withdraw-label { color: var(--sell-color) !important; }
 .withdraw-arrow { color: var(--sell-color) !important; }
+
+/* 현재 등급 헤더 - C안: 우상단 체크 원형 */
+.my-vip-th.current {
+    position: relative;
+    background: rgba(0, 212, 255, 0.06);
+}
+.my-vip-th-check {
+    position: absolute;
+    top: 3px; right: 3px;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--accent-cyan);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.my-vip-th-check .material-icons-round {
+    font-size: 11px;
+    color: #000;
+}
+
+/* 현재 등급 컬럼 바디 하이라이트 */
+#myVipTable td.current {
+    background: rgba(0, 212, 255, 0.05);
+}
