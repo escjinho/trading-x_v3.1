@@ -2108,7 +2108,7 @@ async def provision_user_metaapi(user_id: int, login: str, password: str, server
     """
     유저의 MT5 계정을 MetaAPI에 프로비저닝 (계정 생성)
     - /mt5/connect 성공 후 호출됨
-    - 이미 프로비저닝된 경우 기존 account_id 반환
+    - ★★★ 중복 방지: 기존 계정 검색 → 있으면 재사용, 없으면 신규 생성 ★★★
     """
     if not metaapi_service.api:
         if not await metaapi_service.initialize():
@@ -2117,9 +2117,38 @@ async def provision_user_metaapi(user_id: int, login: str, password: str, server
     try:
         print(f"[MetaAPI Provision] 🔵 User {user_id} 프로비저닝 시작: {login}@{server}")
 
-        # MetaAPI에 MT5 계정 등록
+        # ★★★ Step 1: DB에서 이미 metaapi_account_id가 있는지 확인 ★★★
+        try:
+            from ..database import get_db
+            from ..models.user import User
+            _db = next(get_db())
+            _user = _db.query(User).filter(User.id == user_id).first()
+            if _user and _user.metaapi_account_id:
+                existing_id = _user.metaapi_account_id
+                print(f"[MetaAPI Provision] 🔄 User {user_id} DB에 기존 계정 존재: {existing_id[:8]}... → 재사용")
+                _db.close()
+                return {"success": True, "account_id": existing_id, "state": "existing"}
+            _db.close()
+        except Exception as db_err:
+            print(f"[MetaAPI Provision] ⚠️ DB 확인 실패 (계속 진행): {db_err}")
+
+        # ★★★ Step 2: MetaAPI에서 같은 login+유저명으로 기존 계정 검색 ★★★
+        expected_name = f"TradingX-User{user_id}-{login}"
+        try:
+            accounts = await metaapi_service.api.metatrader_account_api.get_accounts()
+            for acc in accounts:
+                acc_name = getattr(acc, 'name', '')
+                acc_login = str(getattr(acc, 'login', ''))
+                if acc_login == str(login) and f"User{user_id}" in acc_name:
+                    print(f"[MetaAPI Provision] 🔄 User {user_id} MetaAPI 기존 계정 발견: {acc.id} ({acc_name}) → 재사용")
+                    return {"success": True, "account_id": acc.id, "state": acc.state}
+            print(f"[MetaAPI Provision] 🆕 User {user_id} 기존 계정 없음 → 신규 생성")
+        except Exception as search_err:
+            print(f"[MetaAPI Provision] ⚠️ 계정 검색 실패 (신규 생성 진행): {search_err}")
+
+        # ★★★ Step 3: 신규 계정 생성 ★★★
         account = await metaapi_service.api.metatrader_account_api.create_account({
-            'name': f'TradingX-User{user_id}-{login}',
+            'name': expected_name,
             'type': 'cloud',
             'login': str(login),
             'password': password,
@@ -2142,15 +2171,15 @@ async def provision_user_metaapi(user_id: int, login: str, password: str, server
         error_msg = str(e)
         print(f"[MetaAPI Provision] ❌ User {user_id} 프로비저닝 실패: {error_msg}")
 
-        # 이미 존재하는 계정인 경우 처리
         if 'already exists' in error_msg.lower() or 'duplicate' in error_msg.lower():
-            # 기존 계정 검색 시도
             try:
                 accounts = await metaapi_service.api.metatrader_account_api.get_accounts()
                 for acc in accounts:
                     if hasattr(acc, 'login') and str(acc.login) == str(login):
-                        print(f"[MetaAPI Provision] 🔄 User {user_id} 기존 계정 발견: {acc.id}")
-                        return {"success": True, "account_id": acc.id, "state": acc.state}
+                        acc_name = getattr(acc, 'name', '')
+                        if f"User{user_id}" in acc_name:
+                            print(f"[MetaAPI Provision] 🔄 User {user_id} 기존 계정 발견: {acc.id}")
+                            return {"success": True, "account_id": acc.id, "state": acc.state}
             except Exception as search_err:
                 print(f"[MetaAPI Provision] 계정 검색 실패: {search_err}")
 
