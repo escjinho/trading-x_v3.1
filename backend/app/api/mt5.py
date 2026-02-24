@@ -3061,6 +3061,16 @@ async def connect_mt5_account(
     if not request.account or not request.password:
         return JSONResponse({"success": False, "message": "계좌번호와 비밀번호를 입력하세요"})
 
+    # ★★★ 같은 MT5 계좌를 다른 유저가 이미 등록했는지 체크 ★★★
+    existing_user = db.query(User).filter(
+        User.mt5_account_number == request.account,
+        User.has_mt5_account == True,
+        User.id != current_user.id
+    ).first()
+    if existing_user:
+        print(f"[CONNECT] ⛔ User {current_user.id} 차단 - 계좌 {request.account}는 User {existing_user.id}가 이미 사용 중")
+        return JSONResponse({"success": False, "message": "이 계좌는 다른 사용자가 이미 연결하고 있습니다"})
+
     # ★★★ 이전 에러 메시지 초기화 ★★★
     metaapi_error_messages.pop(current_user.id, None)
 
