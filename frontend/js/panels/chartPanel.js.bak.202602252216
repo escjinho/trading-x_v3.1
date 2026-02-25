@@ -16,12 +16,6 @@ const ChartPanel = {
     _bidCurrent: null,
     _bidAnimFrameId: null,
 
-    // ★ 자동 복귀 시스템 속성
-    _autoReturnTimer: null,
-    _autoReturnDelay: 5000,  // 5초 비활동 후 자동 복귀
-    _isAutoReturning: false,  // ★ 자동복귀 중 플래그 (무한루프 방지)
-    _isLoadingCandles: false,
-
     /**
      * 차트 패널 초기화
      */
@@ -842,8 +836,7 @@ setIndicators(settings) {
 
         try {
             chart.timeScale().subscribeVisibleLogicalRangeChange(() => {
-                // loadCandles 중이거나 자동복귀 중이면 무시 (무한루프 방지)
-                if (self._isLoadingCandles || self._isAutoReturning) return;
+                if (self._isLoadingCandles) return;
                 self._onChartInteraction();
             });
         } catch (e) {
@@ -865,18 +858,12 @@ setIndicators(settings) {
 
     returnToCurrentPrice() {
         if (!chart || !candleSeries) return;
-
-        // ★★★ 무한루프 방지: 자동복귀 중 플래그 ON ★★★
-        this._isAutoReturning = true;
-
         try {
             const visibleBars = this.getVisibleBarsForTimeframe();
-
             let candleCount = 0;
             if (typeof ChartTypeManager !== 'undefined' && ChartTypeManager.candleData) {
                 candleCount = ChartTypeManager.candleData.length;
             }
-
             if (candleCount > visibleBars) {
                 const candles = ChartTypeManager.candleData;
                 const startIdx = Math.max(0, candles.length - visibleBars);
@@ -887,23 +874,14 @@ setIndicators(settings) {
                 } catch (e) {
                     chart.timeScale().scrollToRealTime();
                 }
-            } else if (candleCount > 0) {
-                chart.timeScale().fitContent();
             } else {
                 chart.timeScale().scrollToRealTime();
             }
-
-            console.log('[ChartPanel] ↩️ Auto-return (bars:', visibleBars, ', candles:', candleCount, ')');
+            console.log('[ChartPanel] ↩️ Auto-return to current price (bars:', visibleBars, ')');
         } catch (e) {
             try { chart.timeScale().scrollToRealTime(); } catch (e2) {}
         }
-
         this._autoReturnTimer = null;
-
-        // ★★★ 500ms 후 플래그 해제 (setVisibleRange 이벤트 전파 완료 대기) ★★★
-        setTimeout(() => {
-            this._isAutoReturning = false;
-        }, 500);
     },
 
 /**
