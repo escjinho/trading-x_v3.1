@@ -2200,9 +2200,10 @@ async function verifyPhoneCode() {
     if (code.length !== 6) { showToast('6자리 코드를 모두 입력해주세요', 'error'); return; }
 
     try {
+        var token = localStorage.getItem('access_token');
         var res = await fetch(API_URL + '/auth/phone/verify-code', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
             body: JSON.stringify({ phone: currentVerifyPhone, code: code })
         });
         var data = await res.json();
@@ -2220,6 +2221,12 @@ async function verifyPhoneCode() {
             document.getElementById('myPhoneResendBtn').style.display = 'none';
             document.getElementById('myPhoneCodeSection').style.display = 'none';
             showToast('전화번호 인증이 완료되었습니다 ✓', 'success');
+
+            // 개인정보 데이터 동기화 (다음 열람 시 최신 반영)
+            if (piUserData) {
+                piUserData.phone = currentVerifyPhone;
+                piUserData.phone_verified = true;
+            }
         } else {
             showToast(data.detail || data.message || '인증 실패', 'error');
         }

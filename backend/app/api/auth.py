@@ -415,8 +415,12 @@ def send_phone_code(request: PhoneVerifyRequest, db: Session = Depends(get_db)):
     return response
 
 @router.post("/phone/verify-code")
-def verify_phone_code_endpoint(request: PhoneCodeVerifyRequest, db: Session = Depends(get_db)):
-    """전화번호 인증코드 검증"""
+def verify_phone_code_endpoint(
+    request: PhoneCodeVerifyRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """전화번호 인증코드 검증 (로그인 필수)"""
     phone = request.phone.replace("-", "").replace(" ", "")
     result = verify_phone_code(phone, request.code)
 
@@ -426,11 +430,11 @@ def verify_phone_code_endpoint(request: PhoneCodeVerifyRequest, db: Session = De
             detail=result["message"]
         )
 
-    # 전화번호로 사용자 찾아서 업데이트
-    user = db.query(User).filter(User.phone == phone).first()
-    if user:
-        user.phone_verified = True
-        db.commit()
+    # 현재 로그인 사용자에게 인증번호 저장 + 인증 완료
+    current_user.phone = phone
+    current_user.phone_verified = True
+    db.commit()
+    print(f"[SMS] 전화번호 인증 완료: user={current_user.email}, phone={phone}")
 
     return {"success": True, "message": result["message"]}
 
@@ -494,7 +498,12 @@ def update_personal_info(
     if request.name is not None:
         current_user.name = request.name.strip()
     if request.phone is not None:
-        current_user.phone = request.phone.replace("-", "").replace(" ", "").strip()
+        new_phone = request.phone.replace("-", "").replace(" ", "").strip()
+        # 전화번호가 변경되면 인증 상태 리셋
+        if new_phone != (current_user.phone or ""):
+            current_user.phone_verified = False
+            print(f"[INFO] 전화번호 변경: {current_user.phone} → {new_phone}, 인증 리셋")
+        current_user.phone = new_phone
     if request.birth_date is not None:
         current_user.birth_date = request.birth_date.strip()
     if request.nationality is not None:

@@ -1046,7 +1046,7 @@ function connectWebSocket() {
                     }
                     newQePositions[posSym] = {
                         id: qePos.id || qePos.ticket,
-                        side: qePos.type === 'BUY' ? 'BUY' : 'SELL',
+                        side: (qePos.type && qePos.type.includes('BUY')) ? 'BUY' : 'SELL',
                         entry: _entry,
                         volume: _vol,
                         target: _target,
@@ -1339,7 +1339,7 @@ function connectWebSocket() {
                 }
                 newQePositions[posSym] = {
                     id: qePos.id || qePos.ticket,
-                    side: qePos.type === 'BUY' ? 'BUY' : 'SELL',
+                    side: (qePos.type && qePos.type.includes('BUY')) ? 'BUY' : 'SELL',
                     entry: _entry,
                     volume: _vol,
                     target: _target,

@@ -25,6 +25,7 @@ const QeTickChart = {
     _loadingHistory: false,  // 히스토리 로딩 중 플래그
     _progressCanvas: null,   // SL/TP 진행도 바 캔버스
     _entryData: null,        // { price, side, tp, sl }
+    _totalSeriesCount: 0,    // ★ 시리즈 실제 데이터 수 (tickData와 별도 추적)
     _entryOverlay: null,     // ◉ BUY/SELL 커스텀 라벨
     _tpOverlay: null,        // Win 커스텀 라벨
     _slOverlay: null,        // Lose 커스텀 라벨
@@ -203,6 +204,7 @@ const QeTickChart = {
 
         // ★ 종목 변경 시 이전 데이터 즉시 클리어 (점프 방지)
         this.tickData = [];
+        this._totalSeriesCount = 0;  // ★ 카운트 리셋
         if (this.areaSeries) {
             this.areaSeries.setData([]);
         }
@@ -247,6 +249,7 @@ const QeTickChart = {
                 if (unique.length > 0 && this.areaSeries) {
                     this.areaSeries.setData(unique);
                     this.tickData = unique;
+                    this._totalSeriesCount = unique.length;  // ★ 히스토리 카운트 초기화
                     this.lastPrice = unique[unique.length - 1].value;
                     this.openPrice = unique[0].value;
                     this.prevPrice = this.lastPrice;
@@ -406,6 +409,7 @@ const QeTickChart = {
         }
 
         this.tickData.push({ time: now, value: price });
+        this._totalSeriesCount++;  // ★ 시리즈 실제 카운트
 
         this.areaSeries.update({ time: now, value: price });
 
@@ -922,7 +926,7 @@ const QeTickChart = {
         });
 
         // 3. 부드러운 미니 트랜지션 (300ms, 10스텝)
-        const snapshotTotal = this.tickData.length; // ★ 스냅샷 고정
+        const snapshotTotal = this._totalSeriesCount || this.tickData.length; // ★ 시리즈 실제 카운트 사용
         const targetVisibleBars = Math.max(15, Math.min(50, snapshotTotal));
         const rightOffset = 8;
 
