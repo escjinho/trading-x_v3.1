@@ -245,13 +245,13 @@ const ChartPanel = {
                 borderVisible: false,  // Y축 경계선 제거
                 autoScale: true,
                 visible: true,
-                scaleMargins: { top: 0.1, bottom: 0.15 },
+                scaleMargins: { top: 0.1, bottom: 0.2 },
             },
             timeScale: {
                 borderColor: 'rgba(255,255,255,0.4)',
                 borderVisible: false,    // CSS로 연장 구분선 처리 (#chart-wrapper::after)
                 timeVisible: true,
-                rightOffset: 8,
+                rightOffset: 5,
                 shiftVisibleRangeOnNewBar: true,
                 fixRightEdge: false,
                 fixLeftEdge: false
@@ -488,9 +488,6 @@ const ChartPanel = {
                     // 캔들이 적으면: 전체 표시하되 scrollToRealTime
                     chart.timeScale().scrollToRealTime();
                 }
-
-                // ★ 가격 스케일 자동 맞춤
-                try { chart.priceScale('right').applyOptions({ autoScale: true }); } catch(e) {}
 
                 // 마지막 가격 업데이트
                 if (data.candles.length > 0) {
@@ -812,21 +809,19 @@ setIndicators(settings) {
     // ========== 타임프레임별 적정 캔들 수 ==========
     getVisibleBarsForTimeframe() {
         const tf = currentTimeframe || 'M5';
-        // chart-container 실제 너비 기준으로 판단
-        const w = document.getElementById('chart-container')?.clientWidth || window.innerWidth;
-        const isMobile = w <= 500;
+        const isMobile = window.innerWidth <= 480;
         const map = {
-            'M1':  isMobile ? 50 : 100,
-            'M5':  isMobile ? 40 : 80,
-            'M15': isMobile ? 35 : 65,
-            'M30': isMobile ? 30 : 55,
-            'H1':  isMobile ? 25 : 50,
-            'H4':  isMobile ? 22 : 40,
-            'D1':  isMobile ? 20 : 40,
-            'W1':  isMobile ? 18 : 30,
-            'MN1': isMobile ? 12 : 20
+            'M1':  isMobile ? 80 : 120,
+            'M5':  isMobile ? 60 : 100,
+            'M15': isMobile ? 50 : 80,
+            'M30': isMobile ? 45 : 70,
+            'H1':  isMobile ? 40 : 60,
+            'H4':  isMobile ? 35 : 50,
+            'D1':  isMobile ? 30 : 50,
+            'W1':  isMobile ? 25 : 40,
+            'MN1': isMobile ? 18 : 24
         };
-        return map[tf] || (isMobile ? 35 : 60);
+        return map[tf] || (isMobile ? 50 : 80);
     },
 
     // ========== 차트 자동 복귀 시스템 ==========
