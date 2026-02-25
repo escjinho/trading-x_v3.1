@@ -326,9 +326,11 @@ function queueIndicatorUpdate(buy, sell, neutral) {
         sell: sell || 33,
         neutral: neutral || 34
     };
+    console.log('[Indicator] 큐에 저장:', _pendingIndicator);
 
     // 타이머가 없으면 시작
     if (!_indicatorTimerId) {
+        console.log('[Indicator] 타이머 시작');
         scheduleIndicatorUpdate();
     }
 }
@@ -341,6 +343,7 @@ function scheduleIndicatorUpdate() {
         _indicatorTimerId = null;
 
         const { buy, sell, neutral } = _pendingIndicator;
+        console.log(`[Indicator] 업데이트 실행: Buy=${buy}, Sell=${sell}, Neutral=${neutral}`);
 
         // 인디케이터 숫자 업데이트
         const indSell = document.getElementById('indSell');
@@ -359,12 +362,15 @@ function scheduleIndicatorUpdate() {
 
         // 시그널 게이지 업데이트 + 애니메이션 시작
         if (typeof GaugePanel !== 'undefined' && GaugePanel.updateGauge) {
+            console.log('[Indicator] GaugePanel.updateGauge 호출, animationFrameId:', GaugePanel.animationFrameId);
             GaugePanel.updateGauge(buy, sell, neutral);
             // ★ 애니메이션이 멈췄으면 다시 시작
             if (!GaugePanel.animationFrameId && GaugePanel.startAnimation) {
+                console.log('[Indicator] GaugePanel 애니메이션 재시작');
                 GaugePanel.startAnimation();
             }
         } else {
+            console.log('[Indicator] GaugePanel 없음:', typeof GaugePanel);
         }
         if (typeof ChartGaugePanel !== 'undefined' && ChartGaugePanel.updateGauge) {
             ChartGaugePanel.updateGauge(buy, sell, neutral);
@@ -976,6 +982,7 @@ function connectWebSocket() {
             }
 
             // ★ Demo 포지션 업데이트
+            console.log('[WS Demo] Position data received:', data.position);
             if (data.position) {
                 console.log('[WS Demo] ✅ Has position - calling updatePositionUI(true)');
                 window.currentProfit = data.position.profit || 0;
@@ -995,6 +1002,7 @@ function connectWebSocket() {
                     updatePositionUI(true, data.position);  // Buy/Sell 패널용
                 }
             } else if (!data.auto_closed) {  // 자동청산이 아닐 때만 포지션 없음 처리
+                console.log('[WS Demo] ❌ No position - calling updatePositionUI(false)');
 
                 // ★★★ 유령 포지션 정리: 서버가 null 연속 보내면 프론트엔드 강제 초기화 ★★★
                 if (window._demoPositionHeld) {
@@ -1833,6 +1841,7 @@ async function fetchAccountData() {
     // Demo 모드면 실행 안 함
     if (isDemo) return;
     
+    console.log("[checkUserMode] About to try connectWebSocket - Live mode");
             try {
         const data = await apiCall('/mt5/account-info');
         if (data) {
@@ -1979,14 +1988,18 @@ async function fetchAccountData() {
 
 // ========== Demo/Live 모드 확인 ==========
 async function checkUserMode() {
+    console.log('[checkUserMode] Start');
+    console.log("[checkUserMode] About to try connectWebSocket - Live mode");
             try {
         // 먼저 Demo 계정 정보 조회
         const response = await fetch(`${API_URL}/demo/account-info`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.json();
+        console.log('[checkUserMode] Response:', data);
 
         if (data.has_mt5) {
+            console.log('[checkUserMode] Live mode - has_mt5=true');
             // MT5 계정 연결됨 → Live 모드
             isDemo = false;
             window._checkUserModeRetries = 0;  // ★ 재시도 카운터 리셋
@@ -2029,7 +2042,9 @@ async function checkUserMode() {
             });
 
             // WebSocket 연결 (실패해도 폴링으로 대체)
+            console.log("[checkUserMode] About to try connectWebSocket - Live mode");
             try {
+                console.log("[checkUserMode] Calling connectWebSocket...");
             connectWebSocket();
             } catch (e) {
                 console.log('WebSocket connection failed, using polling');
@@ -2082,6 +2097,7 @@ async function checkUserMode() {
             badge.className = 'mode-badge-demo';
             badge.style.display = 'inline';
             
+            console.log("[checkUserMode] Calling connectWebSocket...");
             connectWebSocket();
 
             // ★ Demo 데이터 즉시 로드 (Account Overview 업데이트)
@@ -2131,6 +2147,8 @@ async function fetchDemoData() {
         return;
     }
 
+    console.log('[fetchDemoData] 🔵 START - Fetching account info...');
+    console.log("[checkUserMode] About to try connectWebSocket - Live mode");
             try {
         const response = await fetch(`${API_URL}/demo/account-info`, {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -2347,6 +2365,7 @@ async function fetchDemoData() {
             
             // Demo 마틴 상태 조회 (변경된 경우에만 업데이트)
             if (currentMode === 'martin' && martinEnabled) {
+                console.log("[checkUserMode] About to try connectWebSocket - Live mode");
             try {
                     const martinRes = await fetch(`${API_URL}/demo/martin/state?magic=100001`, {
                         headers: { 'Authorization': `Bearer ${token}` }
@@ -2378,6 +2397,7 @@ async function fetchDemoData() {
         console.error('[fetchDemoData] ❌ ERROR:', error);
     }
 
+    console.log('[fetchDemoData] 🔴 END');
     
     // 패널 동기화 (Today P/L 등)
     if (typeof syncAccountInfoToPanels === 'function') {
@@ -2389,6 +2409,7 @@ async function fetchDemoData() {
 console.log('[Init] Starting connection.js - isGuest:', isGuest, 'token:', !!token);
 if (!isGuest && token) {
     // 로그인 사용자 - Demo인지 Live인지 확인
+    console.log('[Init] Calling checkUserMode()');
     checkUserMode();
 } else if (isGuest) {
     console.log('[Init] Guest mode');
@@ -2415,6 +2436,7 @@ if (!isGuest && token) {
                 queueIndicatorUpdate(data.buy || 33, data.sell || 33, data.neutral || 34);
             }
         } catch (e) {
+            console.log('Guest indicator error:', e);
         }
     }
 
@@ -2681,6 +2703,7 @@ function updateMT5AccountUI(hasMT5, mt5Data = null) {
 async function disconnectMT5() {
     if (!confirm('MT5 계좌 연결을 해제하시겠습니까?')) return;
     
+    console.log("[checkUserMode] About to try connectWebSocket - Live mode");
             try {
         const response = await fetch(`${API_URL}/mt5/disconnect`, {
             method: 'POST',
@@ -2704,6 +2727,7 @@ async function disconnectMT5() {
 
 // MT5 상태 확인 및 UI 업데이트
 async function checkAndUpdateMT5Status() {
+    console.log("[checkUserMode] About to try connectWebSocket - Live mode");
             try {
         const response = await fetch(`${API_URL}/demo/account-info`, {
             headers: { 'Authorization': `Bearer ${token}` }
