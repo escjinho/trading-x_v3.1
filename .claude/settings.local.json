@@ -149,7 +149,9 @@
       "Bash(git cherry-pick:*)",
       "Bash(__NEW_LINE_5fc4070fd272d772__ git commit -m \"Fix: 전화번호 인증 플로우 + Demo TP/SL + QE side 파싱 + tickChart 시리즈 카운트\n\n- auth.py: verify-code 토큰 인증 + phone DB 저장\n- demo.py: positions_data에 tp_price/sl_price 추가\n- connection.js: QE position side includes\\(''BUY''\\) 파싱 + 캐시버스팅\n- my.js: Authorization 헤더 추가 + piUserData 동기화\n- qeTickChart.js: _totalSeriesCount 추적\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\")",
       "Bash(cd /var/www/trading-x git show backup-before-rollback:frontend/js/init.js)",
-      "Bash(cd /var/www/trading-x git diff backup-before-rollback -- frontend/index.html)"
+      "Bash(cd /var/www/trading-x git diff backup-before-rollback -- frontend/index.html)",
+      "Bash(__NEW_LINE_03272df279026f73__ echo -n \"2. connection.js ''updateGreeting'': \")",
+      "Bash(__NEW_LINE_03272df279026f73__ echo \"\")"
     ]
   }
 }

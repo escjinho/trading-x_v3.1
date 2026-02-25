@@ -2451,7 +2451,9 @@ if (!isGuest && token) {
     updateHeroCTA('guest');
 }
 
-// 인사말 업데이트는 init.js의 initHomeSlider()에서 처리
+// 인사말 업데이트 (이메일에서 이름 추출은 updateGreeting 내부에서 처리)
+updateGreeting();
+setInterval(updateGreeting, 60000);
 
 // ========== Trading Mode 전환 ==========
 function switchTradingMode(mode) {

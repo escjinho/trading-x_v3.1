@@ -158,7 +158,33 @@ function checkGuestAction(action) {
     return true;
 }
 
-// updateGreeting()은 init.js에서 정의 (시간대별 5개 랜덤 인사말 버전 사용)
+// ========== 인사말 업데이트 ==========
+function updateGreeting() {
+    const hour = new Date().getHours();
+    const greetingText = document.getElementById('greetingText');
+    const greetingSub = document.getElementById('greetingSub');
+
+    const userName = localStorage.getItem('user_email')?.split('@')[0] || 'Trader';
+
+    let greeting, sub;
+
+    if (hour >= 5 && hour < 12) {
+        greeting = `Good Morning, ${userName}! ☀️`;
+        sub = '오늘도 좋은 거래 되세요!';
+    } else if (hour >= 12 && hour < 18) {
+        greeting = `Good Afternoon, ${userName}! 🌤️`;
+        sub = '오후도 화이팅!';
+    } else if (hour >= 18 && hour < 22) {
+        greeting = `Good Evening, ${userName}! 🌙`;
+        sub = '오늘 하루 수고하셨어요!';
+    } else {
+        greeting = `Still Trading, ${userName}? 🦉`;
+        sub = '늦은 시간까지 화이팅!';
+    }
+
+    if (greetingText) greetingText.textContent = greeting;
+    if (greetingSub) greetingSub.textContent = sub;
+}
 
 // ========== 프로모션 슬라이더 ==========
 function scrollToPromo(index) {

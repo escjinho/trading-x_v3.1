@@ -139,9 +139,8 @@ function initHomeSlider() {
     
     if (!slider || dots.length === 0) return;
     
-    // 인사말 업데이트 + 60초마다 자동 갱신
+    // 인사말 업데이트
     updateGreeting();
-    setInterval(updateGreeting, 60000);
     
     // 인디케이터 클릭
     dots.forEach((dot, index) => {
