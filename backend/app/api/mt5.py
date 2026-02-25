@@ -371,6 +371,8 @@ def mt5_initialize_safe() -> bool:
 router = APIRouter(prefix="/mt5", tags=["MT5"])
 security = HTTPBearer()
 
+# ★★★ Phase 3: 동적 심볼 (전역 변수) ★★★
+indicator_symbol = "BTCUSD"
 
 # ========== 인증 함수 ==========
 async def get_current_user(
@@ -427,9 +429,9 @@ async def get_account_info(
         if not mt5_initialize_safe():
             # MT5 없음 - MetaAPI 또는 bridge_cache에서 정보 조회
 
-            # 인디케이터 계산
+            # 인디케이터 계산 (★ 동적 심볼)
             try:
-                indicators = IndicatorService.calculate_all_indicators("BTCUSD")
+                indicators = IndicatorService.calculate_all_indicators(indicator_symbol)
                 buy_count = indicators["buy"]
                 sell_count = indicators["sell"]
                 neutral_count = indicators["neutral"]
@@ -655,9 +657,9 @@ async def get_account_info(
                     "magic": buysell_pos.magic
                 }
         
-        # 인디케이터 계산
+        # 인디케이터 계산 (★ 동적 심볼)
         try:
-            indicators = IndicatorService.calculate_all_indicators("BTCUSD")
+            indicators = IndicatorService.calculate_all_indicators(indicator_symbol)
             buy_count = indicators["buy"]
             sell_count = indicators["sell"]
             neutral_count = indicators["neutral"]
@@ -4139,6 +4141,10 @@ async def websocket_endpoint(websocket: WebSocket):
                     parsed = json.loads(client_msg)
                     if parsed.get("type") == "pong":
                         last_client_pong = current_time
+                    elif parsed.get("type") == "symbol_change":
+                        global indicator_symbol
+                        indicator_symbol = parsed.get("symbol", "BTCUSD")
+                        print(f"[LIVE WS] 📊 심볼 변경: {indicator_symbol}")
             except asyncio.TimeoutError:
                 pass  # 타임아웃 OK - 클라이언트가 보낸 게 없음
             except Exception:

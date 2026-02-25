@@ -315,67 +315,41 @@ window.addEventListener('offline', function() {
     console.log('[Network] ⚠️ 네트워크 끊김 감지');
 });
 
-// ★★★ 시그널 게이지 + 인디케이터 1~3초 랜덤 업데이트 ★★★
-let _pendingIndicator = { buy: 33, sell: 33, neutral: 34 };
-let _indicatorTimerId = null;
-
+// ★★★ 시그널 게이지 + 인디케이터 즉시 업데이트 (Phase 2) ★★★
 function queueIndicatorUpdate(buy, sell, neutral) {
-    // WS에서 받은 값을 저장
-    _pendingIndicator = {
-        buy: buy || 33,
-        sell: sell || 33,
-        neutral: neutral || 34
-    };
+    // 즉시 실행 (타이머 제거)
+    const b = buy || 33;
+    const s = sell || 33;
+    const n = neutral || 34;
 
-    // 타이머가 없으면 시작
-    if (!_indicatorTimerId) {
-        scheduleIndicatorUpdate();
+    // 인디케이터 숫자 업데이트
+    const indSell = document.getElementById('indSell');
+    const indNeutral = document.getElementById('indNeutral');
+    const indBuy = document.getElementById('indBuy');
+    const chartIndSell = document.getElementById('chartIndSell');
+    const chartIndNeutral = document.getElementById('chartIndNeutral');
+    const chartIndBuy = document.getElementById('chartIndBuy');
+
+    if (indSell) indSell.textContent = s;
+    if (indNeutral) indNeutral.textContent = n;
+    if (indBuy) indBuy.textContent = b;
+    if (chartIndSell) chartIndSell.textContent = s;
+    if (chartIndNeutral) chartIndNeutral.textContent = n;
+    if (chartIndBuy) chartIndBuy.textContent = b;
+
+    // 시그널 게이지 업데이트 + 애니메이션 시작
+    if (typeof GaugePanel !== 'undefined' && GaugePanel.updateGauge) {
+        GaugePanel.updateGauge(b, s, n);
+        if (!GaugePanel.animationFrameId && GaugePanel.startAnimation) {
+            GaugePanel.startAnimation();
+        }
     }
-}
-
-function scheduleIndicatorUpdate() {
-    // 1~3초 랜덤 간격
-    const delay = Math.random() * 2000 + 1000;
-
-    _indicatorTimerId = setTimeout(() => {
-        _indicatorTimerId = null;
-
-        const { buy, sell, neutral } = _pendingIndicator;
-
-        // 인디케이터 숫자 업데이트
-        const indSell = document.getElementById('indSell');
-        const indNeutral = document.getElementById('indNeutral');
-        const indBuy = document.getElementById('indBuy');
-        const chartIndSell = document.getElementById('chartIndSell');
-        const chartIndNeutral = document.getElementById('chartIndNeutral');
-        const chartIndBuy = document.getElementById('chartIndBuy');
-
-        if (indSell) indSell.textContent = sell;
-        if (indNeutral) indNeutral.textContent = neutral;
-        if (indBuy) indBuy.textContent = buy;
-        if (chartIndSell) chartIndSell.textContent = sell;
-        if (chartIndNeutral) chartIndNeutral.textContent = neutral;
-        if (chartIndBuy) chartIndBuy.textContent = buy;
-
-        // 시그널 게이지 업데이트 + 애니메이션 시작
-        if (typeof GaugePanel !== 'undefined' && GaugePanel.updateGauge) {
-            GaugePanel.updateGauge(buy, sell, neutral);
-            // ★ 애니메이션이 멈췄으면 다시 시작
-            if (!GaugePanel.animationFrameId && GaugePanel.startAnimation) {
-                GaugePanel.startAnimation();
-            }
-        } else {
+    if (typeof ChartGaugePanel !== 'undefined' && ChartGaugePanel.updateGauge) {
+        ChartGaugePanel.updateGauge(b, s, n);
+        if (!ChartGaugePanel.animationFrameId && ChartGaugePanel.startAnimation) {
+            ChartGaugePanel.startAnimation();
         }
-        if (typeof ChartGaugePanel !== 'undefined' && ChartGaugePanel.updateGauge) {
-            ChartGaugePanel.updateGauge(buy, sell, neutral);
-            if (!ChartGaugePanel.animationFrameId && ChartGaugePanel.startAnimation) {
-                ChartGaugePanel.startAnimation();
-            }
-        }
-
-        // 다음 업데이트 예약
-        scheduleIndicatorUpdate();
-    }, delay);
+    }
 }
 // ★★★ 시그널 게이지 + 인디케이터 끝 ★★★
 
@@ -2430,6 +2404,18 @@ if (!isGuest && token) {
 }
 
 // 인사말 업데이트는 init.js의 initHomeSlider()에서 처리
+
+// ★★★ 심볼 변경 알림 (Phase 2) ★★★
+function notifySymbolChange(newSymbol) {
+    // Demo WebSocket이 연결되어 있으면 symbol_change 메시지 전송
+    if (window._demoWs && window._demoWs.readyState === WebSocket.OPEN) {
+        window._demoWs.send(JSON.stringify({
+            type: 'symbol_change',
+            symbol: newSymbol
+        }));
+        console.log('[Signal Gauge] Symbol changed to:', newSymbol);
+    }
+}
 
 // ========== Trading Mode 전환 ==========
 function switchTradingMode(mode) {

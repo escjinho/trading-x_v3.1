@@ -389,6 +389,11 @@ async function applySettings() {
     martinLevel = settingsMartinLevel;
     martinEnabled = settingsMartinEnabled;
 
+    // ★★★ 심볼 변경 알림 (Phase 2) ★★★
+    if (typeof notifySymbolChange === 'function') {
+        notifySymbolChange(currentSymbol);
+    }
+
     if (currentMode === 'martin' && martinEnabled) {
         martinBaseTarget = targetAmount;
         if (isDemo) {

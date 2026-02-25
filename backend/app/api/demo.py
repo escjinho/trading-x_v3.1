@@ -92,6 +92,9 @@ from .mt5 import get_bridge_prices, get_bridge_candles, bridge_cache
 # 이전 점수 저장 (스무딩용)
 _prev_signal_score = 50.0
 
+# ★★★ Phase 2: 동적 심볼 지원 ★★★
+indicator_symbol = "BTCUSD"
+
 # ★ Synthetic 캔들 시가 캐시 (1분마다 갱신)
 _synthetic_candle_cache = {
     "minute": 0,      # 현재 분 (unix timestamp // 60)
@@ -1977,6 +1980,21 @@ async def demo_websocket_endpoint(websocket: WebSocket):
 
     while True:
         try:
+            # ★★★ Phase 2: 클라이언트 메시지 수신 (심볼 변경) ★★★
+            global indicator_symbol
+            try:
+                # Non-blocking receive with short timeout
+                msg = await asyncio.wait_for(websocket.receive_text(), timeout=0.05)
+                data = json.loads(msg)
+                if data.get("type") == "symbol_change":
+                    new_symbol = data.get("symbol", "BTCUSD")
+                    indicator_symbol = new_symbol
+                    print(f"[DEMO WS] 🔄 Symbol changed to: {indicator_symbol}")
+            except asyncio.TimeoutError:
+                pass  # No message, continue
+            except Exception:
+                pass  # Ignore parse errors
+
             realtime = None  # ★ 추가
             # MT5 사용 가능 여부 체크
             mt5_connected = False
@@ -1986,26 +2004,21 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                 except:
                     mt5_connected = False
 
-            # 인디케이터 분석
+            # 인디케이터 분석 (★ 동적 심볼 사용)
             if mt5_connected:
                 try:
-                    indicators = IndicatorService.calculate_all_indicators("BTCUSD")
+                    indicators = IndicatorService.calculate_all_indicators(indicator_symbol)
                     buy_count = indicators["buy"]
                     sell_count = indicators["sell"]
                     neutral_count = indicators["neutral"]
                     base_score = indicators["score"]
+                    # ★ Phase 2: 랜덤 변동 제거 - 백엔드 계산값 그대로 사용
 
-                    # 실시간 변동을 위한 랜덤 조정 (±3% 범위로 축소)
-                    variation = random.randint(-3, 3)
-                    buy_count = max(5, min(80, buy_count + variation))
-                    sell_count = max(5, min(80, sell_count - variation // 2))
-                    neutral_count = 100 - buy_count - sell_count
-
-                    print(f"[DEMO WS] 📊 Indicators - Sell: {sell_count}, Neutral: {neutral_count}, Buy: {buy_count}, Score: {base_score:.1f}")
+                    print(f"[DEMO WS] 📊 Indicators ({indicator_symbol}) - Sell: {sell_count}, Neutral: {neutral_count}, Buy: {buy_count}, Score: {base_score:.1f}")
                 except Exception as e:
                     print(f"[DEMO WS] ⚠️ Indicator calculation error: {e}")
-                    # Bridge 캐시 기반 인디케이터 계산
-                    indicators = calculate_indicators_from_bridge("BTCUSD")
+                    # Bridge 캐시 기반 인디케이터 계산 (★ 동적 심볼)
+                    indicators = calculate_indicators_from_bridge(indicator_symbol)
                     buy_count = indicators["buy"]
                     sell_count = indicators["sell"]
                     neutral_count = indicators["neutral"]
