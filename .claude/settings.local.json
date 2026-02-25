@@ -158,7 +158,8 @@
       "Bash(uniq -c __NEW_LINE_d95fd338592102b7__ echo \"\" echo \"2. settingsSymbolText 제거 확인:\" echo -n \"index.html: \" grep -c \"settingsSymbolText\" index.html)",
       "Bash(node -e \"const fs=require\\(''fs''\\); try { new Function\\(fs.readFileSync\\(''/var/www/trading-x/frontend/js/panels/chartPanel.js'',''utf8''\\)\\); console.log\\(''✅ 문법 OK''\\); } catch\\(e\\) { console.log\\(''❌ 오류:'', e.message\\); }\")",
       "Bash(node -e \"const fs=require\\(''fs''\\); try { new Function\\(fs.readFileSync\\(''/var/www/trading-x/frontend/js/panels/chartPanel.js'',''utf8''\\)\\); console.log\\(''✅ chartPanel.js 문법 OK''\\); } catch\\(e\\) { console.log\\(''❌ 오류:'', e.message\\); }\")",
-      "Bash(__NEW_LINE_f80da0c31ba089d8__ echo \"\")"
+      "Bash(__NEW_LINE_f80da0c31ba089d8__ echo \"\")",
+      "Bash(__NEW_LINE_1c98bc221cb83e71__ echo \"\")"
     ]
   }
 }

@@ -463,36 +463,22 @@ const ChartPanel = {
                     }
                 }
 
-                // ★★★ 타임프레임별 적절한 보이는 캔들 수 계산 ★★★
-                const visibleBars = this.getVisibleBarsForTimeframe();
+                // 보이는 범위 설정 — 장마감 시 마지막 캔들까지만, 장중에는 실시간 스크롤
+                const visibleBars = 150;
+                const _mktClosed = typeof MarketSchedule !== 'undefined' && MarketSchedule.isMarketOpen
+                    ? !MarketSchedule.isMarketOpen(chartSymbol) : false;
 
-                if (data.candles.length > visibleBars) {
-                    // 캔들이 충분히 많음 → 마지막 N개만 표시 (현재가 부근)
-                    const startIdx = Math.max(0, data.candles.length - visibleBars);
-                    const from = data.candles[startIdx].time;
+                if (data.candles.length <= 20) {
+                    chart.timeScale().fitContent();
+                } else if (_mktClosed && data.candles.length > visibleBars) {
+                    // ★ 장마감: 마지막 캔들까지만 표시 (빈 영역 방지)
+                    const from = data.candles[data.candles.length - visibleBars].time;
                     const to = data.candles[data.candles.length - 1].time;
-                    try {
-                        chart.timeScale().setVisibleRange({ from, to });
-                    } catch(e) {
-                        chart.timeScale().scrollToRealTime();
-                    }
-                } else if (data.candles.length >= 5) {
-                    // 캔들 5~visibleBars개: 전체 표시하되 적정 크기 유지
-                    // barSpacing으로 캔들 크기 제어 (fitContent 대신)
-                    const containerWidth = document.getElementById('chart-container')?.clientWidth || 360;
-                    const idealBarSpacing = Math.min(12, Math.max(4, containerWidth / data.candles.length * 0.6));
-                    try {
-                        chart.timeScale().applyOptions({ barSpacing: idealBarSpacing });
-                        chart.timeScale().scrollToRealTime();
-                    } catch(e) {
-                        chart.timeScale().scrollToRealTime();
-                    }
+                    try { chart.timeScale().setVisibleRange({ from, to }); } catch(e) { chart.timeScale().scrollToRealTime(); }
+                } else if (data.candles.length > visibleBars) {
+                    chart.timeScale().scrollToRealTime();
                 } else {
-                    // 캔들 5개 미만: 데이터 부족 → scrollToRealTime만 (fitContent 사용금지)
-                    try {
-                        chart.timeScale().applyOptions({ barSpacing: 12 });
-                        chart.timeScale().scrollToRealTime();
-                    } catch(e) {}
+                    chart.timeScale().fitContent();
                 }
 
                 // 마지막 가격 업데이트
