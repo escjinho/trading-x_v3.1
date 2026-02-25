@@ -75,7 +75,7 @@ const IndicatorConfig = {
             name: 'BB',
             fullName: 'Bollinger Bands',
             type: 'overlay',
-            enabled: false,
+            enabled: true,  // 기본 활성화
             params: {
                 period: 20,
                 stdDev: 2,

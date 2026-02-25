@@ -159,7 +159,16 @@
       "Bash(node -e \"const fs=require\\(''fs''\\); try { new Function\\(fs.readFileSync\\(''/var/www/trading-x/frontend/js/panels/chartPanel.js'',''utf8''\\)\\); console.log\\(''✅ 문법 OK''\\); } catch\\(e\\) { console.log\\(''❌ 오류:'', e.message\\); }\")",
       "Bash(node -e \"const fs=require\\(''fs''\\); try { new Function\\(fs.readFileSync\\(''/var/www/trading-x/frontend/js/panels/chartPanel.js'',''utf8''\\)\\); console.log\\(''✅ chartPanel.js 문법 OK''\\); } catch\\(e\\) { console.log\\(''❌ 오류:'', e.message\\); }\")",
       "Bash(__NEW_LINE_f80da0c31ba089d8__ echo \"\")",
-      "Bash(__NEW_LINE_1c98bc221cb83e71__ echo \"\")"
+      "Bash(__NEW_LINE_1c98bc221cb83e71__ echo \"\")",
+      "Bash(__NEW_LINE_e57bb8ffb1a0b080__ echo \"==========================================\")",
+      "Bash(__NEW_LINE_e57bb8ffb1a0b080__ echo \"\")",
+      "Bash(__NEW_LINE_655455a01ac29ba2__ echo \"=== _isAutoReturning 있으면 복원 실패 ===\")",
+      "Bash(__NEW_LINE_655455a01ac29ba2__ echo \"\")",
+      "Bash(node -e \"const fs=require\\(''fs''\\); try { new Function\\(fs.readFileSync\\(''/var/www/trading-x/frontend/js/panels/chartPanel.js'',''utf8''\\)\\); console.log\\(''✅ OK''\\); } catch\\(e\\) { console.log\\(''❌'', e.message\\); }\")",
+      "Bash(__NEW_LINE_5143e682557531a2__ echo \"\")",
+      "Bash(node -e \"const fs=require\\(''fs''\\); try { new Function\\(fs.readFileSync\\(''/var/www/trading-x/frontend/js/indicators/config.js'',''utf8''\\)\\); console.log\\(''✅ config.js OK''\\); } catch\\(e\\) { console.log\\(''❌'', e.message\\); }\")",
+      "Bash(cd /var/www/trading-x __NEW_LINE_504cb33518a868a1__ echo \"=== 긴급: config.js만 롤백 ===\" sed -i '0,/enabled: true,/{s/enabled: true,/enabled: false,/}' frontend/js/indicators/config.js __NEW_LINE_504cb33518a868a1__ echo \"=== 확인 ===\" grep -n \"enabled:\" frontend/js/indicators/config.js)",
+      "Bash(node -e \"const fs=require\\(''fs''\\); try { new Function\\(fs.readFileSync\\(''/var/www/trading-x/frontend/js/indicators/config.js'',''utf8''\\)\\); console.log\\(''✅ OK''\\); } catch\\(e\\) { console.log\\(''❌'', e.message\\); }\")"
     ]
   }
 }
