@@ -461,38 +461,32 @@ const ChartPanel = {
                     } catch (e) {
                         // lightweight-charts "Value is null" 무시
                     }
+
+                    // ★★★ BB/LWMA 가시성 제어: IndicatorConfig 기준으로 표시/숨김 ★★★
+                    const _bbOn = typeof IndicatorConfig !== 'undefined' && IndicatorConfig.overlay.bb ? IndicatorConfig.overlay.bb.enabled : false;
+                    const _lwmaOn = typeof IndicatorConfig !== 'undefined' && IndicatorConfig.overlay.lwma ? IndicatorConfig.overlay.lwma.enabled : false;
+                    if (bbUpperSeries) bbUpperSeries.applyOptions({ visible: _bbOn });
+                    if (bbMiddleSeries) bbMiddleSeries.applyOptions({ visible: _bbOn });
+                    if (bbLowerSeries) bbLowerSeries.applyOptions({ visible: _bbOn });
+                    if (lwmaSeries) lwmaSeries.applyOptions({ visible: _lwmaOn });
                 }
 
-                // ★★★ 타임프레임별 적절한 보이는 캔들 수 계산 ★★★
+                // ★★★ 적절한 줌 레벨로 현재가 부근 표시 ★★★
                 const visibleBars = this.getVisibleBarsForTimeframe();
 
                 if (data.candles.length > visibleBars) {
-                    // 캔들이 충분히 많음 → 마지막 N개만 표시 (현재가 부근)
+                    // 캔들이 충분하면: 마지막 N개만 표시
                     const startIdx = Math.max(0, data.candles.length - visibleBars);
                     const from = data.candles[startIdx].time;
                     const to = data.candles[data.candles.length - 1].time;
                     try {
                         chart.timeScale().setVisibleRange({ from, to });
-                    } catch(e) {
+                    } catch (e) {
                         chart.timeScale().scrollToRealTime();
                     }
-                } else if (data.candles.length >= 5) {
-                    // 캔들 5~visibleBars개: 전체 표시하되 적정 크기 유지
-                    // barSpacing으로 캔들 크기 제어 (fitContent 대신)
-                    const containerWidth = document.getElementById('chart-container')?.clientWidth || 360;
-                    const idealBarSpacing = Math.min(12, Math.max(4, containerWidth / data.candles.length * 0.6));
-                    try {
-                        chart.timeScale().applyOptions({ barSpacing: idealBarSpacing });
-                        chart.timeScale().scrollToRealTime();
-                    } catch(e) {
-                        chart.timeScale().scrollToRealTime();
-                    }
-                } else {
-                    // 캔들 5개 미만: 데이터 부족 → scrollToRealTime만 (fitContent 사용금지)
-                    try {
-                        chart.timeScale().applyOptions({ barSpacing: 12 });
-                        chart.timeScale().scrollToRealTime();
-                    } catch(e) {}
+                } else if (data.candles.length > 0) {
+                    // 캔들이 적으면: 전체 표시하되 scrollToRealTime
+                    chart.timeScale().scrollToRealTime();
                 }
 
                 // 마지막 가격 업데이트
