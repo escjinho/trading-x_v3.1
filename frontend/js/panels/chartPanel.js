@@ -16,12 +16,6 @@ const ChartPanel = {
     _bidCurrent: null,
     _bidAnimFrameId: null,
 
-    // ★ 자동 복귀 시스템 속성
-    _autoReturnTimer: null,
-    _autoReturnDelay: 5000,  // 5초 비활동 후 자동 복귀
-    _isAutoReturning: false,  // ★ 자동복귀 중 플래그 (무한루프 방지)
-    _isLoadingCandles: false,
-
     /**
      * 차트 패널 초기화
      */
@@ -352,11 +346,8 @@ const ChartPanel = {
             lastValueVisible: false
         });
 
-        // 반응형 리사이즈 (★ 중복 방지: 기존 핸들러 제거 후 추가)
-        if (this._resizeHandler) {
-            window.removeEventListener('resize', this._resizeHandler);
-        }
-        this._resizeHandler = () => {
+        // 반응형 리사이즈
+        window.addEventListener('resize', () => {
             if (!chart) return;
             // 가용 높이 재계산
             const _hdr = document.querySelector('.header');
@@ -374,8 +365,7 @@ const ChartPanel = {
                 // 보조지표 없으면 container가 전체 높이 사용 (CSS flex:1이 높이 결정)
                 chart.resize(container.clientWidth, newH);
             }
-        };
-        window.addEventListener('resize', this._resizeHandler);
+        });
 
         // IndicatorManager 초기화
         if (typeof IndicatorManager !== 'undefined') {
@@ -463,36 +453,22 @@ const ChartPanel = {
                     }
                 }
 
-                // ★★★ 타임프레임별 적절한 보이는 캔들 수 계산 ★★★
-                const visibleBars = this.getVisibleBarsForTimeframe();
+                // 보이는 범위 설정 — 장마감 시 마지막 캔들까지만, 장중에는 실시간 스크롤
+                const visibleBars = 150;
+                const _mktClosed = typeof MarketSchedule !== 'undefined' && MarketSchedule.isMarketOpen
+                    ? !MarketSchedule.isMarketOpen(chartSymbol) : false;
 
-                if (data.candles.length > visibleBars) {
-                    // 캔들이 충분히 많음 → 마지막 N개만 표시 (현재가 부근)
-                    const startIdx = Math.max(0, data.candles.length - visibleBars);
-                    const from = data.candles[startIdx].time;
+                if (data.candles.length <= 20) {
+                    chart.timeScale().fitContent();
+                } else if (_mktClosed && data.candles.length > visibleBars) {
+                    // ★ 장마감: 마지막 캔들까지만 표시 (빈 영역 방지)
+                    const from = data.candles[data.candles.length - visibleBars].time;
                     const to = data.candles[data.candles.length - 1].time;
-                    try {
-                        chart.timeScale().setVisibleRange({ from, to });
-                    } catch(e) {
-                        chart.timeScale().scrollToRealTime();
-                    }
-                } else if (data.candles.length >= 5) {
-                    // 캔들 5~visibleBars개: 전체 표시하되 적정 크기 유지
-                    // barSpacing으로 캔들 크기 제어 (fitContent 대신)
-                    const containerWidth = document.getElementById('chart-container')?.clientWidth || 360;
-                    const idealBarSpacing = Math.min(12, Math.max(4, containerWidth / data.candles.length * 0.6));
-                    try {
-                        chart.timeScale().applyOptions({ barSpacing: idealBarSpacing });
-                        chart.timeScale().scrollToRealTime();
-                    } catch(e) {
-                        chart.timeScale().scrollToRealTime();
-                    }
+                    try { chart.timeScale().setVisibleRange({ from, to }); } catch(e) { chart.timeScale().scrollToRealTime(); }
+                } else if (data.candles.length > visibleBars) {
+                    chart.timeScale().scrollToRealTime();
                 } else {
-                    // 캔들 5개 미만: 데이터 부족 → scrollToRealTime만 (fitContent 사용금지)
-                    try {
-                        chart.timeScale().applyOptions({ barSpacing: 12 });
-                        chart.timeScale().scrollToRealTime();
-                    } catch(e) {}
+                    chart.timeScale().fitContent();
                 }
 
                 // 마지막 가격 업데이트
@@ -690,17 +666,12 @@ const ChartPanel = {
      * 차트 재초기화
      */
     reinit() {
-        if (this._autoReturnTimer) {
-            clearTimeout(this._autoReturnTimer);
-            this._autoReturnTimer = null;
-        }
         if (chart) {
             chart.remove();
             chart = null;
         }
         this.initChart();
         this.loadCandles();
-        setTimeout(() => this.setupAutoReturn(), 1000);
     },
 
     /**
@@ -812,134 +783,10 @@ setIndicators(settings) {
         if (this._availableHeight < 300) this._availableHeight = 300;
     },
 
-    // ========== 타임프레임별 적정 캔들 수 ==========
-    getVisibleBarsForTimeframe() {
-        const tf = currentTimeframe || 'M5';
-        const isMobile = window.innerWidth <= 480;
-        const map = {
-            'M1':  isMobile ? 80 : 120,
-            'M5':  isMobile ? 60 : 100,
-            'M15': isMobile ? 50 : 80,
-            'M30': isMobile ? 45 : 70,
-            'H1':  isMobile ? 40 : 60,
-            'H4':  isMobile ? 35 : 50,
-            'D1':  isMobile ? 30 : 50,
-            'W1':  isMobile ? 25 : 40,
-            'MN1': isMobile ? 18 : 24
-        };
-        return map[tf] || (isMobile ? 50 : 80);
-    },
-
-    // ========== 차트 자동 복귀 시스템 ==========
-    setupAutoReturn() {
-        if (!chart) return;
-        const self = this;
-        const chartContainer = document.getElementById('chart-container');
-        if (!chartContainer) return;
-
-        if (this._chartTouchHandler) {
-            chartContainer.removeEventListener('touchstart', this._chartTouchHandler);
-            chartContainer.removeEventListener('mousedown', this._chartTouchHandler);
-            chartContainer.removeEventListener('wheel', this._chartWheelHandler);
-        }
-
-        this._chartTouchHandler = function() {
-            self._onChartInteraction();
-        };
-        this._chartWheelHandler = function() {
-            self._onChartInteraction();
-        };
-
-        chartContainer.addEventListener('touchstart', this._chartTouchHandler, { passive: true });
-        chartContainer.addEventListener('mousedown', this._chartTouchHandler);
-        chartContainer.addEventListener('wheel', this._chartWheelHandler, { passive: true });
-
-        try {
-            chart.timeScale().subscribeVisibleLogicalRangeChange(() => {
-                // loadCandles 중이거나 자동복귀 중이면 무시 (무한루프 방지)
-                if (self._isLoadingCandles || self._isAutoReturning) return;
-                self._onChartInteraction();
-            });
-        } catch (e) {
-            console.warn('[ChartPanel] subscribeVisibleLogicalRangeChange failed:', e.message);
-        }
-
-        console.log('[ChartPanel] ✅ Auto-return system initialized');
-    },
-
-    _onChartInteraction() {
-        if (this._autoReturnTimer) {
-            clearTimeout(this._autoReturnTimer);
-            this._autoReturnTimer = null;
-        }
-        this._autoReturnTimer = setTimeout(() => {
-            this.returnToCurrentPrice();
-        }, this._autoReturnDelay);
-    },
-
-    returnToCurrentPrice() {
-        if (!chart || !candleSeries) return;
-
-        // ★★★ 무한루프 방지: 자동복귀 중 플래그 ON ★★★
-        this._isAutoReturning = true;
-
-        try {
-            const visibleBars = this.getVisibleBarsForTimeframe();
-
-            let candleCount = 0;
-            if (typeof ChartTypeManager !== 'undefined' && ChartTypeManager.candleData) {
-                candleCount = ChartTypeManager.candleData.length;
-            }
-
-            if (candleCount > visibleBars) {
-                const candles = ChartTypeManager.candleData;
-                const startIdx = Math.max(0, candles.length - visibleBars);
-                const from = candles[startIdx].time;
-                const to = candles[candles.length - 1].time;
-                try {
-                    chart.timeScale().setVisibleRange({ from, to });
-                } catch (e) {
-                    chart.timeScale().scrollToRealTime();
-                }
-            } else if (candleCount > 0) {
-                chart.timeScale().fitContent();
-            } else {
-                chart.timeScale().scrollToRealTime();
-            }
-
-            console.log('[ChartPanel] ↩️ Auto-return (bars:', visibleBars, ', candles:', candleCount, ')');
-        } catch (e) {
-            try { chart.timeScale().scrollToRealTime(); } catch (e2) {}
-        }
-
-        this._autoReturnTimer = null;
-
-        // ★★★ 500ms 후 플래그 해제 (setVisibleRange 이벤트 전파 완료 대기) ★★★
-        setTimeout(() => {
-            this._isAutoReturning = false;
-        }, 500);
-    },
-
 /**
  * 패널 정리
  */
 destroy() {
-        if (this._autoReturnTimer) {
-            clearTimeout(this._autoReturnTimer);
-            this._autoReturnTimer = null;
-        }
-        const chartContainer = document.getElementById('chart-container');
-        if (chartContainer && this._chartTouchHandler) {
-            chartContainer.removeEventListener('touchstart', this._chartTouchHandler);
-            chartContainer.removeEventListener('mousedown', this._chartTouchHandler);
-        }
-        if (chartContainer && this._chartWheelHandler) {
-            chartContainer.removeEventListener('wheel', this._chartWheelHandler);
-        }
-        if (this._resizeHandler) {
-            window.removeEventListener('resize', this._resizeHandler);
-            this._resizeHandler = null;
-        }
         if (chart) {
             chart.remove();
             chart = null;
