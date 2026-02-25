@@ -299,6 +299,22 @@ document.addEventListener('visibilitychange', function() {
     }
 });
 
+// ★★★ 네트워크 복구 감지 (모바일 WiFi↔LTE 전환, 터널 등) ★★★
+window.addEventListener('online', function() {
+    console.log('[Network] 🌐 네트워크 복구 감지');
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+        console.log('[Network] WS 끊김 상태 → 즉시 재연결');
+        reconnectAttempt = 0;
+        if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+        connectWebSocket();
+        setTimeout(function() { _lastSoftRefreshAt = 0; softRefresh('network_online'); }, 1500);
+    }
+});
+
+window.addEventListener('offline', function() {
+    console.log('[Network] ⚠️ 네트워크 끊김 감지');
+});
+
 // ★★★ 시그널 게이지 + 인디케이터 1~3초 랜덤 업데이트 ★★★
 let _pendingIndicator = { buy: 33, sell: 33, neutral: 34 };
 let _indicatorTimerId = null;
@@ -370,7 +386,7 @@ function scheduleIndicatorUpdate() {
 // ★★★ 시그널 게이지 + 인디케이터 끝 ★★★
 
 // ========== WebSocket 자동 재연결 (지수 백오프, 무제한 재시도) ==========
-// 재연결 간격: 3초 → 6초 → 12초 → 24초 → 30초 (최대)
+// 재연결 간격: 3초 → 6초 → 10초 (최대)
 const WS_RECONNECT_BASE = 3000;  // 3초 시작
 const WS_RECONNECT_MAX = 10000;  // 최대 10초 (서버 복구 시 빠른 재연결)
 let reconnectAttempt = 0;
@@ -507,6 +523,13 @@ function reconnectWithBackoff() {
     // ★ 페이지가 백그라운드면 재연결 안 함 (포그라운드 복귀 시 재연결)
     if (!isPageVisible) {
         console.log('[WS] Page hidden - skipping reconnect');
+        return;
+    }
+
+    // ★★★ 120초간 재연결 실패 시 강제 페이지 리로드 ★★★
+    if (window._wsDisconnectedAt && (Date.now() - window._wsDisconnectedAt > 120000)) {
+        console.log('[WS] ⚠️ 120초간 재연결 실패 — 페이지 리로드');
+        location.reload();
         return;
     }
 
