@@ -168,7 +168,9 @@
       "Bash(__NEW_LINE_5143e682557531a2__ echo \"\")",
       "Bash(node -e \"const fs=require\\(''fs''\\); try { new Function\\(fs.readFileSync\\(''/var/www/trading-x/frontend/js/indicators/config.js'',''utf8''\\)\\); console.log\\(''✅ config.js OK''\\); } catch\\(e\\) { console.log\\(''❌'', e.message\\); }\")",
       "Bash(cd /var/www/trading-x __NEW_LINE_504cb33518a868a1__ echo \"=== 긴급: config.js만 롤백 ===\" sed -i '0,/enabled: true,/{s/enabled: true,/enabled: false,/}' frontend/js/indicators/config.js __NEW_LINE_504cb33518a868a1__ echo \"=== 확인 ===\" grep -n \"enabled:\" frontend/js/indicators/config.js)",
-      "Bash(node -e \"const fs=require\\(''fs''\\); try { new Function\\(fs.readFileSync\\(''/var/www/trading-x/frontend/js/indicators/config.js'',''utf8''\\)\\); console.log\\(''✅ OK''\\); } catch\\(e\\) { console.log\\(''❌'', e.message\\); }\")"
+      "Bash(node -e \"const fs=require\\(''fs''\\); try { new Function\\(fs.readFileSync\\(''/var/www/trading-x/frontend/js/indicators/config.js'',''utf8''\\)\\); console.log\\(''✅ OK''\\); } catch\\(e\\) { console.log\\(''❌'', e.message\\); }\")",
+      "Bash(__NEW_LINE_20c6a18e2b20f880__ echo \"=== 1. config.js - 전부 false 확인 ===\")",
+      "Bash(cd /var/www/trading-x __NEW_LINE_c0b24c3f6058fc75__ echo \"=== 1. 구문 검증 ===\" python3 -c \"import ast; ast.parse\\(open\\(''''backend/app/services/indicator_service.py''''\\).read\\(\\)\\); print\\(''''✅ 구문 오류 없음''''\\)\" __NEW_LINE_c0b24c3f6058fc75__ echo \"\" echo \"=== 2. random.uniform 개수 ===\" grep -c \"random.uniform\" backend/app/services/indicator_service.py __NEW_LINE_c0b24c3f6058fc75__ echo \"\" echo \"=== 3. calculate_all_indicators 개수 ===\" grep -c \"def calculate_all_indicators\" backend/app/services/indicator_service.py __NEW_LINE_c0b24c3f6058fc75__ echo \"\" echo \"=== 4. calculate_chart_indicators 존재 확인 ===\" grep -c \"def calculate_chart_indicators\" backend/app/services/indicator_service.py __NEW_LINE_c0b24c3f6058fc75__ echo \"\" echo \"=== 5. _prev_signal_scores \\(복수형\\) ===\" grep \"_prev_signal_scores\" backend/app/services/indicator_service.py)"
     ]
   }
 }

@@ -13,32 +13,14 @@ def _get_quote_caches():
     from app.api.metaapi_service import quote_price_cache, quote_candle_cache
     return quote_price_cache, quote_candle_cache
 
-# 이전 점수 저장 (스무딩용) - 심볼별
-_prev_signal_scores = {}
-
-# 틱 히스토리 (모멘텀 계산용) - 심볼별
-_tick_history = {}
-_TICK_HISTORY_MAX = 10
+# 이전 점수 저장 (스무딩용)
+_prev_signal_score = 50.0
 
 # Synthetic 캔들 시가 캐시 (1분마다 갱신)
 _synthetic_candle_cache = {
     "minute": 0,
     "open_prices": {}
 }
-
-# 종목별 변동률 임계값 (% 기준)
-_SYMBOL_THRESHOLDS = {
-    "BTCUSD": {"weak": 0.02, "normal": 0.05, "strong": 0.12},
-    "ETHUSD": {"weak": 0.03, "normal": 0.07, "strong": 0.15},
-    "EURUSD.r": {"weak": 0.005, "normal": 0.015, "strong": 0.04},
-    "USDJPY.r": {"weak": 0.005, "normal": 0.015, "strong": 0.04},
-    "GBPUSD.r": {"weak": 0.005, "normal": 0.015, "strong": 0.04},
-    "AUDUSD.r": {"weak": 0.005, "normal": 0.015, "strong": 0.04},
-    "USDCAD.r": {"weak": 0.005, "normal": 0.015, "strong": 0.04},
-    "XAUUSD.r": {"weak": 0.01, "normal": 0.03, "strong": 0.08},
-    "US100.": {"weak": 0.01, "normal": 0.03, "strong": 0.08},
-}
-_DEFAULT_THRESHOLD = {"weak": 0.02, "normal": 0.05, "strong": 0.12}
 
 
 class IndicatorService:
@@ -313,14 +295,12 @@ class IndicatorService:
     @staticmethod
     def calculate_all_indicators(symbol: str) -> Dict:
         """
-        3요소 시그널 게이지 (캔들 방향 + 틱 모멘텀 + 직전 추세)
-        - 1분봉 양봉 → 무조건 Buy (50 이상)
-        - 1분봉 음봉 → 무조건 Sell (50 이하)
-        - 강한 움직임 → Strong 영역
-        - 랜덤 없음, 결정론적 계산
-        - score ↔ buy/sell/neutral 100% 동기화
+        캔들 기반 시그널 게이지 (demo.py 로직)
+        - change_pct = (current_tick - candle_open) / candle_open * 100
+        - 스무딩: prev * 0.7 + new * 0.3
+        - Buy + Sell + Neutral = 100 보장
         """
-        global _prev_signal_scores, _tick_history, _synthetic_candle_cache
+        global _prev_signal_score, _synthetic_candle_cache
 
         # MetaAPI 캐시에서 데이터 가져오기
         try:
@@ -335,14 +315,7 @@ class IndicatorService:
         if current_tick <= 0:
             return {"buy": 33, "sell": 33, "neutral": 34, "score": 50}
 
-        # ========== 틱 히스토리 저장 (모멘텀용) ==========
-        if symbol not in _tick_history:
-            _tick_history[symbol] = []
-        _tick_history[symbol].append(current_tick)
-        if len(_tick_history[symbol]) > _TICK_HISTORY_MAX:
-            _tick_history[symbol] = _tick_history[symbol][-_TICK_HISTORY_MAX:]
-
-        # ========== 1분봉 캔들 시가 ==========
+        # 1분봉 캔들 데이터
         candles = quote_candle_cache.get(symbol, {}).get("M1", [])
 
         candle_open = 0
@@ -354,158 +327,72 @@ class IndicatorService:
             current_minute = int(time.time()) // 60
             if _synthetic_candle_cache["minute"] != current_minute:
                 _synthetic_candle_cache["minute"] = current_minute
-                _synthetic_candle_cache["open_prices"] = {}
-            if symbol not in _synthetic_candle_cache["open_prices"]:
                 _synthetic_candle_cache["open_prices"][symbol] = current_tick
+            elif symbol not in _synthetic_candle_cache["open_prices"]:
+                _synthetic_candle_cache["open_prices"][symbol] = current_tick
+
             candle_open = _synthetic_candle_cache["open_prices"].get(symbol, current_tick)
 
-        # ========== 종목별 임계값 ==========
-        thresholds = _SYMBOL_THRESHOLDS.get(symbol, _DEFAULT_THRESHOLD)
-        weak_th = thresholds["weak"]
-        normal_th = thresholds["normal"]
-        strong_th = thresholds["strong"]
-
-        # ========== 요소 1: 현재 캔들 방향 (60%) ==========
+        # 변동폭 계산
         if current_tick > 0 and candle_open > 0:
             change_pct = (current_tick - candle_open) / candle_open * 100
         else:
             change_pct = 0
 
-        # 변동률 → 점수 (결정론적, 랜덤 없음)
-        if change_pct >= strong_th:
-            candle_score = 90 + min(5, (change_pct - strong_th) / strong_th * 5)
-        elif change_pct >= normal_th:
-            candle_score = 70 + (change_pct - normal_th) / (strong_th - normal_th) * 20
-        elif change_pct >= weak_th:
-            candle_score = 55 + (change_pct - weak_th) / (normal_th - weak_th) * 15
-        elif change_pct > 0:
-            candle_score = 50 + (change_pct / weak_th) * 5
-        elif change_pct <= -strong_th:
-            candle_score = 10 - min(5, (abs(change_pct) - strong_th) / strong_th * 5)
-        elif change_pct <= -normal_th:
-            candle_score = 30 - (abs(change_pct) - normal_th) / (strong_th - normal_th) * 20
-        elif change_pct <= -weak_th:
-            candle_score = 45 - (abs(change_pct) - weak_th) / (normal_th - weak_th) * 15
-        elif change_pct < 0:
-            candle_score = 50 - (abs(change_pct) / weak_th) * 5
+        # ========== 점수 범위 결정 ==========
+        if change_pct >= 0.1:
+            score_min, score_max = 80, 95  # 강한 양봉
+        elif change_pct >= 0.03:
+            score_min, score_max = 65, 85  # 일반 양봉
+        elif change_pct > 0.01:
+            score_min, score_max = 50, 70  # 약한 양봉
+        elif change_pct <= -0.1:
+            score_min, score_max = 5, 20   # 강한 음봉
+        elif change_pct <= -0.03:
+            score_min, score_max = 15, 35  # 일반 음봉
+        elif change_pct < -0.01:
+            score_min, score_max = 30, 50  # 약한 음봉
         else:
-            candle_score = 50
-
-        candle_score = max(5, min(95, candle_score))
-
-        # ========== 요소 2: 틱 모멘텀 (25%) ==========
-        tick_list = _tick_history.get(symbol, [])
-        if len(tick_list) >= 3:
-            old_tick = tick_list[-min(5, len(tick_list))]
-            momentum_pct = (current_tick - old_tick) / current_tick * 10000  # bps
-            # 모멘텀 → 점수 보정
-            if momentum_pct > 5:
-                momentum_score = 75 + min(20, momentum_pct)
-            elif momentum_pct > 1:
-                momentum_score = 55 + momentum_pct * 4
-            elif momentum_pct > 0:
-                momentum_score = 50 + momentum_pct * 5
-            elif momentum_pct < -5:
-                momentum_score = 25 - min(20, abs(momentum_pct))
-            elif momentum_pct < -1:
-                momentum_score = 45 + momentum_pct * 4
-            elif momentum_pct < 0:
-                momentum_score = 50 + momentum_pct * 5
+            # 시가 부근 (Neutral)
+            if change_pct > 0:
+                score_min, score_max = 45, 60
+            elif change_pct < 0:
+                score_min, score_max = 40, 55
             else:
-                momentum_score = 50
-            momentum_score = max(5, min(95, momentum_score))
-        else:
-            momentum_score = 50
+                score_min, score_max = 45, 55
 
-        # ========== 요소 3: 직전 캔들 추세 (15%) ==========
-        trend_score = 50
-        if candles and len(candles) >= 4:
-            bull_count = 0
-            bear_count = 0
-            for c in candles[-4:-1]:  # 직전 3개 완성 캔들
-                c_open = c.get("open", 0)
-                c_close = c.get("close", 0)
-                if c_close > c_open:
-                    bull_count += 1
-                elif c_close < c_open:
-                    bear_count += 1
+        # 랜덤워크로 범위 내 왔다갔다
+        raw_score = random.uniform(score_min, score_max)
 
-            if bull_count == 3:
-                trend_score = 80
-            elif bull_count == 2:
-                trend_score = 65
-            elif bear_count == 3:
-                trend_score = 20
-            elif bear_count == 2:
-                trend_score = 35
-            else:
-                trend_score = 50
+        # 스무딩 (70% 이전값 + 30% 새값)
+        smoothed_score = _prev_signal_score * 0.7 + raw_score * 0.3
+        final_score = max(5, min(95, smoothed_score))
+        _prev_signal_score = final_score
 
-        # ========== 최종 점수 합산 ==========
-        raw_score = candle_score * 0.60 + momentum_score * 0.25 + trend_score * 0.15
-        raw_score = max(5, min(95, raw_score))
-
-        # ========== 스무딩 (방향 전환 시 빠르게) ==========
-        prev_score = _prev_signal_scores.get(symbol, 50.0)
-
-        # 방향 전환 감지 (Buy↔Sell 경계 = 50)
-        direction_changed = (prev_score >= 50 and raw_score < 50) or (prev_score < 50 and raw_score >= 50)
-        # 강한 변동 감지
-        big_move = abs(raw_score - prev_score) > 15
-
-        if direction_changed or big_move:
-            # 빠르게 반응
-            smooth_factor = 0.7  # 새값 70%
-        elif abs(raw_score - prev_score) > 8:
-            smooth_factor = 0.5  # 새값 50%
-        else:
-            smooth_factor = 0.4  # 새값 40%
-
-        final_score = prev_score * (1 - smooth_factor) + raw_score * smooth_factor
-        final_score = max(5, min(95, final_score))
-        _prev_signal_scores[symbol] = final_score
-
-        # ========== buy/sell/neutral → score에서 직접 산출 ==========
-        if final_score >= 80:
-            # Strong Buy
-            disp_buy = 60 + int((final_score - 80) / 15 * 15)
-            disp_sell = max(5, 15 - int((final_score - 80) / 15 * 10))
-        elif final_score >= 60:
-            # Buy
-            disp_buy = 40 + int((final_score - 60) / 20 * 20)
-            disp_sell = 30 - int((final_score - 60) / 20 * 15)
+        # ========== buy/sell/neutral 계산 ==========
+        if final_score >= 70:
+            disp_buy = 55 + int((final_score - 70) * 1.5)
+            disp_sell = max(5, 20 - int((final_score - 70) * 0.5))
         elif final_score >= 50:
-            # Weak Buy / Neutral
-            disp_buy = 33 + int((final_score - 50) / 10 * 7)
-            disp_sell = 33 - int((final_score - 50) / 10 * 3)
-        elif final_score >= 40:
-            # Weak Sell / Neutral
-            disp_sell = 33 + int((50 - final_score) / 10 * 7)
-            disp_buy = 33 - int((50 - final_score) / 10 * 3)
-        elif final_score >= 20:
-            # Sell
-            disp_sell = 40 + int((50 - final_score) / 30 * 20)
-            disp_buy = 30 - int((50 - final_score) / 30 * 15)
+            disp_buy = 35 + int((final_score - 50) * 1.0)
+            disp_sell = 35 - int((final_score - 50) * 0.5)
+        elif final_score >= 30:
+            disp_sell = 35 + int((50 - final_score) * 1.0)
+            disp_buy = 35 - int((50 - final_score) * 0.5)
         else:
-            # Strong Sell
-            disp_sell = 60 + int((20 - final_score) / 15 * 15)
-            disp_buy = max(5, 15 - int((20 - final_score) / 15 * 10))
+            disp_sell = 55 + int((30 - final_score) * 1.5)
+            disp_buy = max(5, 20 - int((30 - final_score) * 0.5))
 
-        disp_buy = max(5, min(75, disp_buy))
-        disp_sell = max(5, min(75, disp_sell))
+        disp_buy = max(5, min(80, disp_buy))
+        disp_sell = max(5, min(80, disp_sell))
+        # ★★★ Buy + Sell + Neutral = 100 보장 ★★★
         disp_neutral = 100 - disp_buy - disp_sell
-        disp_neutral = max(5, disp_neutral)
-
-        # 합계 100 보장
-        total = disp_buy + disp_sell + disp_neutral
-        if total != 100:
-            disp_neutral = 100 - disp_buy - disp_sell
 
         return {
             "buy": disp_buy,
             "sell": disp_sell,
             "neutral": disp_neutral,
-            "score": round(final_score, 1)
+            "score": final_score
         }
     
     @staticmethod
