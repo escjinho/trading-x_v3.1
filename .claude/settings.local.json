@@ -151,7 +151,8 @@
       "Bash(cd /var/www/trading-x git show backup-before-rollback:frontend/js/init.js)",
       "Bash(cd /var/www/trading-x git diff backup-before-rollback -- frontend/index.html)",
       "Bash(__NEW_LINE_03272df279026f73__ echo -n \"2. connection.js ''updateGreeting'': \")",
-      "Bash(__NEW_LINE_03272df279026f73__ echo \"\")"
+      "Bash(__NEW_LINE_03272df279026f73__ echo \"\")",
+      "Bash(__NEW_LINE_45b5f949132840ff__ echo \"\")"
     ]
   }
 }
