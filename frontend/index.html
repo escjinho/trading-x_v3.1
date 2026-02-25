@@ -62,7 +62,7 @@
         <link rel="stylesheet" href="css/quickeasy.css?v=1771805185">
     <link rel="stylesheet" href="css/chart.css?v=1771777952">
     <link rel="stylesheet" href="css/account.css?v=1771777952">
-    <link rel="stylesheet" href="css/my.css?v=1771804630">
+    <link rel="stylesheet" href="css/my.css?v=1771994800">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
@@ -2205,8 +2205,12 @@
                         <!-- 현재 등급 카드 -->
                         <div class="my-vip-current" id="myVipCurrentCard">
                             <div class="my-vip-current-badge" id="myVipBadge">
-                                <span class="material-icons-round">workspace_premium</span>
+                                <div class="my-vip-badge-ring" id="myVipBadgeRing"></div>
+                                <div class="my-vip-badge-icon" id="myVipBadgeIcon">
+                                    <span class="material-icons-round">workspace_premium</span>
+                                </div>
                             </div>
+                            <div class="my-vip-current-tag" id="myVipTag">현재 등급</div>
                             <div class="my-vip-current-grade" id="myVipGrade">Standard</div>
                             <div class="my-vip-current-desc" id="myVipDesc">다음 등급까지 <span id="myVipRemaining">100</span> lots 남음</div>
                             <div class="my-vip-progress-wrap">
@@ -3750,7 +3754,7 @@
     <script src="js/utils.js?v=1771777952"></script>
     <script src="js/watchlist.js?v=1771777952"></script>
     <script src="js/navigation.js?v=1771803124"></script>
-    <script src="js/my.js?v=1771977852"></script>
+    <script src="js/my.js?v=1772049898"></script>
 
     <!-- Chart Panels (모듈화) -->
     <script src="js/panels/gaugePanel.js?v=1771777952"></script>
@@ -5227,8 +5231,8 @@
     <script src="js/account.js?v=1771777952"></script>
     <script src="js/trading.js?v=1771803124"></script>
     <script src="js/openPositions.js?v=1771777952"></script>
-    <script src="js/connection.js?v=1771984925"></script>
-    <script src="js/init.js?v=1771820096"></script>
+    <script src="js/connection.js?v=1772049898"></script>
+    <script src="js/init.js?v=1771992777"></script>
 <div id="txDialogContainer"></div>
 </body>
 </html>

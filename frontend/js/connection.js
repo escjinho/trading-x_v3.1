@@ -2031,15 +2031,6 @@ async function checkUserMode() {
             }
             if (demoControl) demoControl.style.display = 'none';
             
-            // Hero 배지도 업데이트
-            const heroBadge = document.getElementById('heroModeBadge');
-            if (heroBadge) {
-                heroBadge.textContent = 'Trading-X Live';
-                heroBadge.style.background = 'linear-gradient(135deg, rgba(0, 255, 136, 0.2) 0%, rgba(0, 255, 136, 0.05) 100%)';
-                heroBadge.style.borderColor = 'rgba(0, 255, 136, 0.4)';
-                heroBadge.style.color = '#ffffff';
-            }
-            
             updateHeroCTA('live');
 
             // ★★★ MT5 Account 섹션 업데이트 (연결된 계정 정보 표시) ★★★
@@ -2097,15 +2088,6 @@ async function checkUserMode() {
                 modeStatus.innerHTML = '<span class="mode-status-dot demo"></span><span>Currently in <strong>Demo Mode</strong> - Practice with virtual $10,000</span>';
             }
             if (demoControl) demoControl.style.display = 'block';
-            
-            // Hero 배지도 업데이트
-            const heroBadge = document.getElementById('heroModeBadge');
-            if (heroBadge) {
-                heroBadge.textContent = 'Trading-X Demo';
-                heroBadge.style.background = 'linear-gradient(135deg, rgba(0, 212, 255, 0.2) 0%, rgba(0, 212, 255, 0.05) 100%)';
-                heroBadge.style.borderColor = 'rgba(0, 212, 255, 0.4)';
-                heroBadge.style.color = '#ffffff';
-            }
             
             updateHeroCTA('demo');
 
@@ -2469,25 +2451,9 @@ if (!isGuest && token) {
     updateHeroCTA('guest');
 }
 
-// Profile name
-const userEmail = localStorage.getItem('user_email');
-if (userEmail) {
-    document.getElementById('profileName').textContent = userEmail.split('@')[0];
-}
-
-// 인사말 업데이트
+// 인사말 업데이트 (이메일에서 이름 추출은 updateGreeting 내부에서 처리)
 updateGreeting();
 setInterval(updateGreeting, 60000);
-
-// 프로모션 슬라이더 이벤트
-document.getElementById('promoSlider')?.addEventListener('scroll', function() {
-    const slider = this;
-    const scrollLeft = slider.scrollLeft;
-    const cardWidth = slider.querySelector('.promo-card')?.offsetWidth || 0;
-    const gap = 12;
-    const index = Math.round(scrollLeft / (cardWidth + gap));
-    updatePromoDots(index);
-});
 
 // ========== Trading Mode 전환 ==========
 function switchTradingMode(mode) {
@@ -2516,13 +2482,6 @@ function switchTradingMode(mode) {
             modeBadge.style.display = 'inline';
         }
         
-        // ★ Hero 배지 업데이트 추가
-        const heroBadge = document.getElementById('heroModeBadge');
-        if (heroBadge) {
-            heroBadge.textContent = 'Trading-X Demo';
-            heroBadge.style.color = '#ffffff';
-        }
-        
         // Demo Control 표시
         const demoControl = document.getElementById('demoControlCard');
         if (demoControl) demoControl.style.display = 'block';
@@ -2546,6 +2505,7 @@ function switchTradingMode(mode) {
             if (typeof QeTickChart !== 'undefined') QeTickChart._pendingEntryLine = null;
         }
         showToast('Demo 모드로 전환되었습니다', 'demo');
+        if (typeof updateMyModeDisplay === 'function') updateMyModeDisplay();
         updateHeroCTA('demo_with_live');
 
         // ★ WebSocket 재연결 (Live → Demo URL로 변경)
@@ -2598,13 +2558,6 @@ function switchTradingMode(mode) {
                     modeBadge.style.display = 'inline';
                 }
                 
-                // ★ Hero 배지 업데이트 추가
-                const heroBadge = document.getElementById('heroModeBadge');
-                if (heroBadge) {
-                    heroBadge.textContent = 'Trading-X Live';
-                    heroBadge.style.color = '#ffffff';
-                }
-                
                 // Demo Control 숨기기
                 const demoControl = document.getElementById('demoControlCard');
                 if (demoControl) demoControl.style.display = 'none';
@@ -2628,6 +2581,7 @@ function switchTradingMode(mode) {
                     if (typeof QeTickChart !== 'undefined') QeTickChart._pendingEntryLine = null;
                 }
                 showToast('Live 모드로 전환되었습니다', 'success');
+                if (typeof updateMyModeDisplay === 'function') updateMyModeDisplay();
                 updateHeroCTA('live');
 
                 // ★★★ MT5 계정 연결 상태 UI 즉시 갱신 ★★★
@@ -2899,15 +2853,6 @@ async function connectMT5Account() {
             if (modeBadge) {
                 modeBadge.textContent = 'LIVE';
                 modeBadge.className = 'mode-badge-live';
-            }
-            
-            // Hero 배지 업데이트
-            const heroBadge = document.getElementById('heroModeBadge');
-            if (heroBadge) {
-                heroBadge.textContent = 'Trading-X Live';
-                heroBadge.style.background = 'linear-gradient(135deg, rgba(0, 255, 136, 0.2) 0%, rgba(0, 255, 136, 0.05) 100%)';
-                heroBadge.style.borderColor = 'rgba(0, 255, 136, 0.4)';
-                heroBadge.style.color = '#00ff88';
             }
             
             // Trading Mode UI 업데이트

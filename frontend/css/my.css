@@ -2848,6 +2848,9 @@
 .my-vip-th.standard { color: #9e9e9e; }
 .my-vip-th.pro { color: #00d4ff; }
 .my-vip-th.vip { color: #f97316; }
+.my-vip-th.current.standard { background: rgba(158,158,158,0.15) !important; }
+.my-vip-th.current.pro { background: rgba(0,212,255,0.15) !important; }
+.my-vip-th.current.vip { background: rgba(249,115,22,0.15) !important; }
 
 
 

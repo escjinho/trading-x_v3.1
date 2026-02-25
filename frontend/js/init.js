@@ -130,7 +130,7 @@ function updateGreeting() {
 // 홈 슬라이더 변수
 let homeSliderInterval = null;
 let homeSliderPaused = false;
-const HOME_SLIDE_INTERVAL = 10000; // 10초
+const HOME_SLIDE_INTERVAL = 20000; // 20초
 
 // 홈 슬라이더 초기화
 function initHomeSlider() {
@@ -250,8 +250,9 @@ function startGuideTour() {
 
 // 셀퍼럴 안내 페이지 열기 → VIP 프로그램으로 이동
 function openReferralPage() {
-    if (typeof switchTab === 'function') switchTab('my');
-    setTimeout(function(){ if (typeof openMyDetail === 'function') openMyDetail('vip'); }, 300);
+    // VIP 프로그램으로 바로 이동 (My 탭 화면 안 거침)
+    document.querySelector('.nav-item[data-page="my"]').click();
+    openMyDetail('vip');
 }
 
 // 홈 슬라이더 초기화 실행

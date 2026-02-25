@@ -514,29 +514,16 @@ function closeModeSwitch() {
 
 function confirmModeSwitch() {
     const demo = typeof isDemo !== 'undefined' ? isDemo : true;
+    const toMode = demo ? 'live' : 'demo';
 
-    if (demo) {
-        // Demo → Live 전환
-        if (typeof switchToLive === 'function') {
-            switchToLive();
-        } else {
-            isDemo = false;
-        }
-    } else {
-        // Live → Demo 전환
-        if (typeof switchToDemo === 'function') {
-            switchToDemo();
-        } else {
-            isDemo = true;
-        }
+    // ★ switchTradingMode 호출 (WS 재연결 + 전체 UI 업데이트)
+    if (typeof switchTradingMode === 'function') {
+        switchTradingMode(toMode);
     }
 
-    updateMyModeDisplay();
+    // ★ My 탭 프로필 모드 표시 갱신 (Live 비동기 대비 지연)
+    setTimeout(() => { updateMyModeDisplay(); }, 500);
     closeModeSwitch();
-
-    if (typeof showToast === 'function') {
-        showToast(isDemo ? '📚 Demo 모드로 전환되었습니다' : '🚀 Live 모드로 전환되었습니다', 'success');
-    }
 }
 
 // ========== 로그아웃 확인 ==========
@@ -1838,9 +1825,8 @@ async function executeWithdrawal() {
 }
 
 function switchToDemo() {
-    if (typeof setTradingMode === 'function') {
-        setTradingMode('demo');
-        showToast('데모 모드로 전환되었습니다!');
+    if (typeof switchTradingMode === 'function') {
+        switchTradingMode('demo');
     }
 }
 

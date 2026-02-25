@@ -136,7 +136,20 @@
       "Bash(sleep 5 echo \"\" echo \"=== 서버 상태 ===\" systemctl is-active trading-x curl -s -o /dev/null -w \"HTTP: %{http_code}\\\\n\" http://localhost:8000/)",
       "Bash(systemctl is-active:*)",
       "Bash(sleep 5 systemctl is-active trading-x curl -s -o /dev/null -w \"HTTP: %{http_code}\\\\n\" http://localhost:8000/)",
-      "Bash(pip3 install:*)"
+      "Bash(pip3 install:*)",
+      "Bash(sudo cat:*)",
+      "Bash(PYTHONPATH=/var/www/trading-x/backend python3:*)",
+      "Bash(printenv:*)",
+      "Bash(sudo ls:*)",
+      "Bash(__NEW_LINE_07da19693a3fe321__ echo \"=== 1\\) 22178dc ===\")",
+      "Bash(git diff-tree:*)",
+      "Bash(__NEW_LINE_07da19693a3fe321__ echo \"\")",
+      "Bash(__NEW_LINE_fb5627729025ff0f__ echo \"=== 8\\) 72a1720 ===\")",
+      "Bash(__NEW_LINE_fb5627729025ff0f__ echo \"\")",
+      "Bash(git cherry-pick:*)",
+      "Bash(__NEW_LINE_5fc4070fd272d772__ git commit -m \"Fix: 전화번호 인증 플로우 + Demo TP/SL + QE side 파싱 + tickChart 시리즈 카운트\n\n- auth.py: verify-code 토큰 인증 + phone DB 저장\n- demo.py: positions_data에 tp_price/sl_price 추가\n- connection.js: QE position side includes\\(''BUY''\\) 파싱 + 캐시버스팅\n- my.js: Authorization 헤더 추가 + piUserData 동기화\n- qeTickChart.js: _totalSeriesCount 추적\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\")",
+      "Bash(cd /var/www/trading-x git show backup-before-rollback:frontend/js/init.js)",
+      "Bash(cd /var/www/trading-x git diff backup-before-rollback -- frontend/index.html)"
     ]
   }
 }
