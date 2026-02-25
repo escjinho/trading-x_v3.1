@@ -128,8 +128,14 @@ function closeSettings() {
 }
 
 function updateSettingsUI() {
-    document.getElementById('settingsSymbolText').textContent = settingsSymbol;
-    document.getElementById('settingsSymbolDesc').textContent = symbolData[settingsSymbol]?.desc || '';
+    const sData = symbolData[settingsSymbol] || {};
+    const iconEl = document.getElementById('settingsSymbolIcon');
+    const nameEl = document.getElementById('settingsSymbolName');
+    const codeEl = document.getElementById('settingsSymbolCode');
+    if (iconEl) { iconEl.textContent = sData.icon || ''; iconEl.style.color = sData.color || '#fff'; }
+    if (nameEl) nameEl.textContent = sData.name || settingsSymbol;
+    if (codeEl) codeEl.textContent = settingsSymbol;
+    document.getElementById('settingsSymbolDesc').textContent = sData.desc || '';
 
     document.querySelectorAll('.mode-option').forEach(opt => {
         const isSelected = opt.dataset.mode === settingsMode;
@@ -231,8 +237,14 @@ function toggleSettingsSymbol() {
 
 function setSettingsSymbol(symbol) {
     settingsSymbol = symbol;
-    document.getElementById('settingsSymbolText').textContent = symbol;
-    document.getElementById('settingsSymbolDesc').textContent = symbolData[symbol]?.desc || '';
+    const sData = symbolData[symbol] || {};
+    const iconEl = document.getElementById('settingsSymbolIcon');
+    const nameEl = document.getElementById('settingsSymbolName');
+    const codeEl = document.getElementById('settingsSymbolCode');
+    if (iconEl) { iconEl.textContent = sData.icon || ''; iconEl.style.color = sData.color || '#fff'; }
+    if (nameEl) nameEl.textContent = sData.name || symbol;
+    if (codeEl) codeEl.textContent = symbol;
+    document.getElementById('settingsSymbolDesc').textContent = sData.desc || '';
     document.getElementById('settingsSymbolDropdown').style.display = 'none';
 }
 
