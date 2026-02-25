@@ -315,14 +315,13 @@ window.addEventListener('offline', function() {
     console.log('[Network] ⚠️ 네트워크 끊김 감지');
 });
 
-// ★★★ 시그널 게이지 + 인디케이터 즉시 업데이트 (Phase 2) ★★★
-function queueIndicatorUpdate(buy, sell, neutral) {
-    // 즉시 실행 (타이머 제거)
-    const b = buy || 33;
-    const s = sell || 33;
-    const n = neutral || 34;
+// ★★★ 시그널 게이지(즉시) + 인디케이터 숫자(1~3초 랜덤) ★★★
+let _latestIndicator = { buy: 33, sell: 33, neutral: 34 };
+let _indicatorDisplayTimer = null;
 
-    // 인디케이터 숫자 업데이트
+function _displayIndicatorNumbers() {
+    const { buy, sell, neutral } = _latestIndicator;
+
     const indSell = document.getElementById('indSell');
     const indNeutral = document.getElementById('indNeutral');
     const indBuy = document.getElementById('indBuy');
@@ -330,25 +329,43 @@ function queueIndicatorUpdate(buy, sell, neutral) {
     const chartIndNeutral = document.getElementById('chartIndNeutral');
     const chartIndBuy = document.getElementById('chartIndBuy');
 
-    if (indSell) indSell.textContent = s;
-    if (indNeutral) indNeutral.textContent = n;
-    if (indBuy) indBuy.textContent = b;
-    if (chartIndSell) chartIndSell.textContent = s;
-    if (chartIndNeutral) chartIndNeutral.textContent = n;
-    if (chartIndBuy) chartIndBuy.textContent = b;
+    if (indSell) indSell.textContent = sell;
+    if (indNeutral) indNeutral.textContent = neutral;
+    if (indBuy) indBuy.textContent = buy;
+    if (chartIndSell) chartIndSell.textContent = sell;
+    if (chartIndNeutral) chartIndNeutral.textContent = neutral;
+    if (chartIndBuy) chartIndBuy.textContent = buy;
 
-    // 시그널 게이지 업데이트 + 애니메이션 시작
+    // 다음 표시 예약 (1~3초 랜덤)
+    const delay = Math.random() * 2000 + 1000;
+    _indicatorDisplayTimer = setTimeout(_displayIndicatorNumbers, delay);
+}
+
+function queueIndicatorUpdate(buy, sell, neutral) {
+    // 최신값 저장 (항상)
+    _latestIndicator = {
+        buy: buy || 33,
+        sell: sell || 33,
+        neutral: neutral || 34
+    };
+
+    // 게이지 바늘은 즉시 업데이트
     if (typeof GaugePanel !== 'undefined' && GaugePanel.updateGauge) {
-        GaugePanel.updateGauge(b, s, n);
+        GaugePanel.updateGauge(_latestIndicator.buy, _latestIndicator.sell, _latestIndicator.neutral);
         if (!GaugePanel.animationFrameId && GaugePanel.startAnimation) {
             GaugePanel.startAnimation();
         }
     }
     if (typeof ChartGaugePanel !== 'undefined' && ChartGaugePanel.updateGauge) {
-        ChartGaugePanel.updateGauge(b, s, n);
+        ChartGaugePanel.updateGauge(_latestIndicator.buy, _latestIndicator.sell, _latestIndicator.neutral);
         if (!ChartGaugePanel.animationFrameId && ChartGaugePanel.startAnimation) {
             ChartGaugePanel.startAnimation();
         }
+    }
+
+    // 숫자 표시 타이머가 없으면 시작
+    if (!_indicatorDisplayTimer) {
+        _displayIndicatorNumbers();
     }
 }
 // ★★★ 시그널 게이지 + 인디케이터 끝 ★★★
