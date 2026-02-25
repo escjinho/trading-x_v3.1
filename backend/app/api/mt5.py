@@ -3579,7 +3579,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 margin = _u_acc.get("margin", 0)
                 free_margin = _u_acc.get("freeMargin", 0)
                 leverage = _u_acc.get("leverage", 0) or user_mt5_leverage or 500
-            elif metaapi_account and metaapi_account.get("balance") and not _ws_use_user_metaapi:
+            elif metaapi_account and metaapi_account.get("balance") and not _ws_use_user_metaapi and user_has_mt5:
                 # ★★★ 유저별 MetaAPI가 없는 경우에만 공유 MetaAPI 사용 ★★★
                 broker = "HedgeHood Pty Ltd"
                 login = user_mt5_account or 0
@@ -4084,7 +4084,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 })
 
             data = {
-                "mt5_connected": user_has_mt5 or mt5_connected or metaapi_connected,  # ★ 전체 연결 상태
+                "mt5_connected": user_has_mt5,  # ★ 전체 연결 상태
                 "metaapi_connected": metaapi_connected,  # ★★★ MetaAPI 연결 상태 (마틴 주문 제한용) ★★★
                 "broker": broker,
                 "account": display_account,  # ★ 유저 계정 우선
