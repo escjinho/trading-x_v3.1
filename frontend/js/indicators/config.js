@@ -27,7 +27,7 @@ const IndicatorConfig = {
             name: 'EMA',
             fullName: 'Exponential Moving Average',
             type: 'overlay',
-            enabled: false,
+            enabled: true,
             params: {
                 period: 20,
                 source: 'close'
@@ -75,7 +75,7 @@ const IndicatorConfig = {
             name: 'BB',
             fullName: 'Bollinger Bands',
             type: 'overlay',
-            enabled: true,  // 기본 활성화
+            enabled: false,
             params: {
                 period: 20,
                 stdDev: 2,
