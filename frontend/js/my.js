@@ -706,6 +706,11 @@ function openMyDetail(detail) {
 function myGoBack() {
     if (myPageStack.length <= 1) return;
 
+    // ★ 떠나는 뷰의 타이머 정리
+    var leavingId = myPageStack[myPageStack.length - 1];
+    if (leavingId === 'tradingReport' && typeof stopTradingReportRefresh === 'function') stopTradingReportRefresh();
+    if (leavingId === 'depositLive' && typeof stopLiveRefresh === 'function') stopLiveRefresh();
+
     // 현재 뷰 숨기기
     const currentId = myPageStack.pop();
     const currentEl = currentId === 'main'
@@ -1501,6 +1506,9 @@ function initDetailView(detail) {
             break;
         case 'loginHistory':
             loadLoginHistory();
+            break;
+        case 'tradingReport':
+            startTradingReportRefresh();
             break;
     }
 }
@@ -2481,4 +2489,78 @@ function toggleKycMenu() {
         arrow.textContent = 'expand_more';
         if (parent) parent.classList.remove('open');
     }
+}
+
+// ========== 트레이딩 리포트 — 실시간 계좌 데이터 ==========
+var _trRefreshTimer = null;
+
+async function loadTradingReportData() {
+    var spinBtn = document.getElementById('trRefreshBtn');
+    if (spinBtn) { spinBtn.classList.add('spinning'); setTimeout(function(){ spinBtn.classList.remove('spinning'); }, 800); }
+
+    try {
+        var tkn = localStorage.getItem('access_token');
+        var res = await fetch(API_URL + '/mt5/account-info', {
+            headers: { 'Authorization': 'Bearer ' + tkn }
+        });
+        if (!res.ok) { console.error("[TR] HTTP 에러:", res.status); return; }
+        var d = await res.json();
+
+        function fmtUSD(v) { return '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2 }); }
+
+        // 카드1: 잔고 히어로
+        var balEl = document.getElementById('trLiveBalance');
+        if (balEl) balEl.textContent = fmtUSD(d.balance);
+
+        var eqEl = document.getElementById('trLiveEquity');
+        if (eqEl) eqEl.textContent = fmtUSD(d.equity);
+
+        var mEl = document.getElementById('trLiveMargin');
+        if (mEl) mEl.textContent = fmtUSD(d.margin);
+
+        var pEl = document.getElementById('trLiveProfit');
+        if (pEl) {
+            var profit = Number(d.profit || d.current_pl || 0);
+            // 번쩍임 방지
+            if (profit === 0 && pEl.textContent !== '$0.00' && pEl.textContent !== '$--.--') {
+                // 기존값 유지
+            } else if (profit === 0) {
+                pEl.textContent = '$0.00';
+                pEl.className = 'my-live-stat-value';
+            } else {
+                pEl.textContent = (profit >= 0 ? '+$' : '-$') + Math.abs(profit).toLocaleString('en-US', { minimumFractionDigits: 2 });
+                pEl.className = 'my-live-stat-value ' + (profit > 0 ? 'profit-plus' : 'profit-minus');
+            }
+        }
+
+        // 카드2: 계좌 기본정보
+        var brEl = document.getElementById('trBroker');
+        if (brEl) brEl.textContent = d.broker || 'HedgeHood Pty Ltd';
+
+        var bnEl = document.getElementById('trBrokerName');
+        if (bnEl) bnEl.textContent = (d.broker || 'HedgeHood').replace(' Pty Ltd', '').replace(' Live', '');
+
+        var acEl = document.getElementById('trAccount');
+        if (acEl) acEl.textContent = d.account || '-';
+
+        var svEl = document.getElementById('trServer');
+        if (svEl) svEl.textContent = d.server || '-';
+
+        var lvEl = document.getElementById('trLeverage');
+        if (lvEl) lvEl.textContent = d.leverage ? '1:' + d.leverage : '-';
+
+        console.log('[TR] 데이터 로드 완료:', { balance: d.balance, equity: d.equity });
+    } catch (e) {
+        console.error("[TR] loadTradingReportData 에러:", e);
+    }
+}
+
+function startTradingReportRefresh() {
+    stopTradingReportRefresh();
+    loadTradingReportData();
+    _trRefreshTimer = setInterval(loadTradingReportData, 5000);
+}
+
+function stopTradingReportRefresh() {
+    if (_trRefreshTimer) { clearInterval(_trRefreshTimer); _trRefreshTimer = null; }
 }

@@ -62,7 +62,7 @@
         <link rel="stylesheet" href="css/quickeasy.css?v=20260226b">
     <link rel="stylesheet" href="css/chart.css?v=1771777952">
     <link rel="stylesheet" href="css/account.css?v=20260227c">
-    <link rel="stylesheet" href="css/my.css?v=1771994800">
+    <link rel="stylesheet" href="css/my.css?v=1772148879">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
@@ -2143,6 +2143,68 @@
                     </div>
                 </div>
 
+                <!-- ===== 트레이딩 리포트 ===== -->
+                <div class="my-view" id="myView-tradingReport">
+                    <div class="my-sub-header">
+                        <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
+                        <span class="my-sub-title">트레이딩 리포트</span>
+                    </div>
+                    <div class="my-sub-body">
+
+                        <!-- 카드1: 잔고 히어로 (Live 입출금과 동일 디자인) -->
+                        <div class="my-deposit-hero live">
+                            <div class="my-deposit-hero-top">
+                                <div class="my-deposit-broker-row">
+                                    <div class="my-deposit-broker-dot"></div>
+                                    <span class="my-deposit-broker-name" id="trBrokerName">HedgeHood</span>
+                                </div>
+                                <span class="material-icons-round my-live-refresh-btn" id="trRefreshBtn" onclick="loadTradingReportData()">refresh</span>
+                            </div>
+                            <div class="my-deposit-hero-label">LIVE BALANCE</div>
+                            <div class="my-deposit-hero-amount live" id="trLiveBalance">$--.--</div>
+                            <div class="my-live-stats-grid">
+                                <div class="my-live-stat-item">
+                                    <div class="my-live-stat-label">EQUITY</div>
+                                    <div class="my-live-stat-value cyan" id="trLiveEquity">$0.00</div>
+                                </div>
+                                <div class="my-live-stat-item">
+                                    <div class="my-live-stat-label">MARGIN</div>
+                                    <div class="my-live-stat-value" id="trLiveMargin">$0.00</div>
+                                </div>
+                                <div class="my-live-stat-item">
+                                    <div class="my-live-stat-label">CURRENT P/L</div>
+                                    <div class="my-live-stat-value" id="trLiveProfit">$0.00</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 카드2: 계좌 기본정보 2x2 그리드 -->
+                        <div class="tr-info-grid">
+                            <div class="tr-info-cell">
+                                <div class="tr-info-cell-label">Broker</div>
+                                <div class="tr-info-cell-value" id="trBroker">-</div>
+                            </div>
+                            <div class="tr-info-cell">
+                                <div class="tr-info-cell-label">Account</div>
+                                <div class="tr-info-cell-value" id="trAccount">-</div>
+                            </div>
+                            <div class="tr-info-cell">
+                                <div class="tr-info-cell-label">Server</div>
+                                <div class="tr-info-cell-value" id="trServer">-</div>
+                            </div>
+                            <div class="tr-info-cell">
+                                <div class="tr-info-cell-label">Leverage</div>
+                                <div class="tr-info-cell-value" id="trLeverage">-</div>
+                            </div>
+                        </div>
+
+                        <!-- 리포트 내역 (추후 구현) -->
+                        <div id="trReportContent" style="margin-top:8px;">
+                        </div>
+
+                    </div>
+                </div>
+
                 <!-- ===== 친구 초대 ===== -->
                 <div class="my-view" id="myView-invite">
                     <div class="my-sub-header">
@@ -3785,7 +3847,7 @@
     <script src="js/utils.js?v=1771777952"></script>
     <script src="js/watchlist.js?v=1771777952"></script>
     <script src="js/navigation.js?v=1771803124"></script>
-    <script src="js/my.js?v=20260227a"></script>
+    <script src="js/my.js?v=20260227b"></script>
 
     <!-- Chart Panels (모듈화) -->
     <script src="js/panels/gaugePanel.js?v=1771777952"></script>

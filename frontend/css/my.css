@@ -3477,3 +3477,34 @@
 #myVipTable td.current {
     background: rgba(0, 212, 255, 0.05);
 }
+
+/* ===== 트레이딩 리포트 — 2x2 계좌정보 그리드 ===== */
+.tr-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.tr-info-cell {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 14px 16px;
+}
+
+.tr-info-cell-label {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 0.5px;
+    text-transform: capitalize;
+    margin-bottom: 6px;
+}
+
+.tr-info-cell-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    font-family: 'Rajdhani', sans-serif;
+    word-break: break-all;
+}
