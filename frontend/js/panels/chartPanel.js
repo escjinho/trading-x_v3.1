@@ -714,6 +714,17 @@ const ChartPanel = {
         }
         this._isAutoReturning = false;
         this._indicatorsInitialized = false;
+        // ★ BB/LWMA 시리즈 데이터 초기화 (이전 타임프레임 데이터 잔존 방지)
+        try {
+            if (bbUpperSeries) bbUpperSeries.setData([]);
+            if (bbMiddleSeries) bbMiddleSeries.setData([]);
+            if (bbLowerSeries) bbLowerSeries.setData([]);
+            if (lwmaSeries) lwmaSeries.setData([]);
+        } catch(e) {}
+        // ★ IndicatorManager의 시리즈도 초기화
+        if (typeof IndicatorManager !== 'undefined') {
+            try { IndicatorManager.removeAll(); } catch(e) {}
+        }
         if (chart) {
             chart.remove();
             chart = null;
@@ -728,7 +739,7 @@ const ChartPanel = {
  * 보조지표 설정
  */
 setIndicators(settings) {
-    console.log('[ChartPanel] Indicator settings:', settings);
+    console.log('[ChartPanel] setIndicators 호출:', JSON.stringify(settings));
 
     // 볼린저 밴드 표시/숨김 + 데이터 제거
     if (bbUpperSeries) {
