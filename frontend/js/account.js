@@ -181,10 +181,15 @@ function goToTradingReport() {
     // My 탭으로 전환
     const myNav = document.querySelector('.nav-item[data-page="my"]');
     if (myNav) myNav.click();
-    // 약간의 딜레이 후 트레이딩 리포트 열기
+    // My 탭 리셋 완료 후 → 트레이딩 서브페이지 → 트레이딩 리포트 (2단계 이동)
     setTimeout(() => {
-        if (typeof openMyDetail === 'function') {
-            openMyDetail('tradingReport');
+        if (typeof openMySubPage === 'function') {
+            openMySubPage('trading');
         }
+        setTimeout(() => {
+            if (typeof openMyDetail === 'function') {
+                openMyDetail('tradingReport');
+            }
+        }, 100);
     }, 150);
 }
