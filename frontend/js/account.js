@@ -121,8 +121,7 @@ function updateAccountInfoFromHistory(historyData) {
     // Account Info UI 업데이트
     const winLoseEl = document.getElementById('accWinLose');
     const todayPLEl = document.getElementById('accTodayPL');
-    const currentPLEl = document.getElementById('accCurrentPL');
-    
+
     // ★ 항상 오늘 기준 Win/Lose (기간 필터 무관)
     const displayWins = todayWins;
     const displayLosses = todayLosses;
@@ -136,7 +135,7 @@ function updateAccountInfoFromHistory(historyData) {
     if (todayPLEl) {
         if (displayPL > 0) {
             todayPLEl.textContent = '+$' + displayPL.toFixed(2);
-            todayPLEl.style.color = 'var(--text-primary)';
+            todayPLEl.style.color = 'var(--buy-color)';
         } else if (displayPL < 0) {
             todayPLEl.textContent = '-$' + Math.abs(displayPL).toFixed(2);
             todayPLEl.style.color = 'var(--sell-color)';
@@ -145,11 +144,8 @@ function updateAccountInfoFromHistory(historyData) {
             todayPLEl.style.color = 'var(--text-primary)';
         }
     }
-    
-    if (currentPLEl) {
-        currentPLEl.textContent = '$0.00';
-        currentPLEl.style.color = 'var(--text-primary)';
-    }
+
+    // ★ Current P/L은 WS/polling에서만 업데이트 (히스토리 함수에서 건드리지 않음)
     
     console.log('[updateAccountInfoFromHistory] Today trades:', todayTrades.length, 'Total trades:', historyData.length);
 }
@@ -158,17 +154,13 @@ function updateAccountInfoFromHistory(historyData) {
 function resetAccountInfo() {
     const winLoseEl = document.getElementById('accWinLose');
     const todayPLEl = document.getElementById('accTodayPL');
-    const currentPLEl = document.getElementById('accCurrentPL');
-    
+
     if (winLoseEl) winLoseEl.textContent = '0 / 0';
     if (todayPLEl) {
         todayPLEl.textContent = '$0.00';
         todayPLEl.style.color = 'var(--text-primary)';
     }
-    if (currentPLEl) {
-        currentPLEl.textContent = '$0.00';
-        currentPLEl.style.color = 'var(--text-primary)';
-    }
+    // ★ Current P/L은 WS/polling에서만 업데이트 (리셋하지 않음)
 }
 
 // Account 탭 전환 시 자동 로드
