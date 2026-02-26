@@ -211,9 +211,18 @@ const ChartTypeManager = {
     setData(candles) {
         this.candleData = candles;
 
+        // ★ series가 없으면 생성 시도
+        if (!this.series && this.chart) {
+            console.warn('[ChartTypeManager] setData: series가 null — 생성 시도');
+            this.createSeries();
+        }
+
         if (this.series) {
             const formattedData = this.formatDataForType(candles);
             this.series.setData(formattedData);
+            console.log(`[ChartTypeManager] setData: ${candles.length}개 캔들 설정 완료`);
+        } else {
+            console.error('[ChartTypeManager] setData: series 생성 실패 — 데이터 설정 불가');
         }
     },
 

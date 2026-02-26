@@ -308,6 +308,7 @@ const ChartPanel = {
                 }
             };
             candleSeries = ChartTypeManager.createSeries();
+            console.log('[ChartPanel] initChart: candleSeries=', candleSeries ? 'OK' : 'NULL', 'ChartTypeManager.series=', ChartTypeManager.series ? 'OK' : 'NULL');
         } else {
             // ChartTypeManager 없으면 기본 캔들스틱
             candleSeries = chart.addCandlestickSeries({
@@ -405,8 +406,9 @@ const ChartPanel = {
         this._bidAnimFrameId = null;
 
         try {
+            console.log(`[ChartPanel.loadCandles] 요청 시작: ${chartSymbol} ${currentTimeframe}`);
             const data = await apiCall(`/mt5/candles/${chartSymbol}?timeframe=${currentTimeframe}&count=1000`);
-            console.log(`[ChartPanel.loadCandles] ${chartSymbol} ${currentTimeframe} → ${data?.candles?.length || 0}개 캔들`);
+            console.log(`[ChartPanel.loadCandles] ${chartSymbol} ${currentTimeframe} → ${data?.candles?.length || 0}개 캔들`, data?.error || '');
 
             if (data && data.candles && data.candles.length > 0) {
                 // ★ chart/series가 없으면 재생성
