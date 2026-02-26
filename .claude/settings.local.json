@@ -176,7 +176,10 @@
       "Bash(echo \"=== 파일 캐시 ===\" python3 -c \"\nimport json\nwith open\\(''''/var/www/trading-x/backend/candle_cache.json''''\\) as f:\n    data = json.load\\(f\\)\nprint\\(f''''BTCUSD M1: {len\\(data.get\\(\"\"BTCUSD\"\", {}\\).get\\(\"\"M1\"\", []\\)\\)}개''''\\)\n\" __NEW_LINE_2efe9422f4ee8ad6__ echo \"\" echo \"=== API 캔들 개수 \\(count=1000 요청\\) ===\" curl -s \"http://127.0.0.1:8000/api/mt5/candles/BTCUSD?timeframe=M1&count=1000\")",
       "Bash(__NEW_LINE_6221dc135dfb6b7f__ echo \"=== 1. indicator_symbol 변수 확인 ===\")",
       "Bash(__NEW_LINE_6221dc135dfb6b7f__ echo \"\")",
-      "Bash(cd /var/www/trading-x __NEW_LINE_09d1b51965fd61fd__ echo \"=== 캔들 수 확인 ===\" grep -A15 \"getVisibleBarsForTimeframe\" frontend/js/panels/chartPanel.js)"
+      "Bash(cd /var/www/trading-x __NEW_LINE_09d1b51965fd61fd__ echo \"=== 캔들 수 확인 ===\" grep -A15 \"getVisibleBarsForTimeframe\" frontend/js/panels/chartPanel.js)",
+      "Bash(node -e \"const fs=require\\(''fs''\\); try { new Function\\(fs.readFileSync\\(''/var/www/trading-x/frontend/js/panels/chartPanel.js'',''utf8''\\)\\); console.log\\(''✅ 문법 OK''\\); } catch\\(e\\) { console.log\\(''❌'', e.message\\); }\")",
+      "Bash(cd /var/www/trading-x __NEW_LINE_5b3a0b1e17a836f3__ echo \"=== 1. activeIndicators 현재값 확인 ===\" grep \"overlay:\" frontend/index.html)",
+      "Bash(node -e \"const fs=require\\(''fs''\\); try { new Function\\(fs.readFileSync\\(''/var/www/trading-x/frontend/js/indicators/index.js'',''utf8''\\)\\); console.log\\(''✅ OK''\\); } catch\\(e\\) { console.log\\(''❌'', e.message\\); }\")"
     ]
   }
 }

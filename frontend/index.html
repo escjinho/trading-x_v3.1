@@ -3506,18 +3506,38 @@
                             <div style="position: relative;">
                                 <div id="settingsSymbolBtn" style="padding: 10px 12px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="toggleSettingsSymbol()">
                                     <span style="display: flex; align-items: center; gap: 8px;">
-                                        <span id="settingsSymbolIcon" style="font-size: 16px;">₿</span>
+                                        <span id="settingsSymbolIcon" style="font-size: 16px; color: #f7931a;">₿</span>
                                         <span id="settingsSymbolName" style="font-weight: bold;">Bitcoin</span>
                                         <span id="settingsSymbolCode" style="font-size: 11px; color: var(--text-muted);">BTCUSD</span>
                                     </span>
                                     <span>▼</span>
                                 </div>
-                                <div id="settingsSymbolDropdown" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--bg-secondary); border: 1px solid var(--accent-cyan); border-radius: 6px; margin-top: 4px; z-index: 10;">
-                                    <div style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background=''" onclick="setSettingsSymbol('BTCUSD')"><span>₿</span><span>Bitcoin</span><span style="font-size:11px;color:var(--text-muted)">BTCUSD</span></div>
-                                    <div style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background=''" onclick="setSettingsSymbol('EURUSD.r')"><span>€</span><span>Euro</span><span style="font-size:11px;color:var(--text-muted)">EURUSD.r</span></div>
-                                    <div style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background=''" onclick="setSettingsSymbol('USDJPY.r')"><span>¥</span><span>Yen</span><span style="font-size:11px;color:var(--text-muted)">USDJPY.r</span></div>
-                                    <div style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background=''" onclick="setSettingsSymbol('XAUUSD.r')"><span style="font-size:14px;">🥇</span><span>Gold</span><span style="font-size:11px;color:var(--text-muted)">XAUUSD.r</span></div>
-                                    <div style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background=''" onclick="setSettingsSymbol('US100.')"><span style="font-size:14px;">📈</span><span>Nasdaq</span><span style="font-size:11px;color:var(--text-muted)">US100.</span></div>
+                                <div id="settingsSymbolDropdown" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--bg-secondary); border: 1px solid var(--accent-cyan); border-radius: 6px; margin-top: 4px; z-index: 10; overflow: hidden;">
+                                    <div style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background=''" onclick="setSettingsSymbol('BTCUSD')">
+                                        <span style="font-size: 16px; color: #f7931a;">₿</span>
+                                        <span style="font-weight: bold; margin-left: 6px; flex: 1;">Bitcoin</span>
+                                        <span style="font-size: 11px; color: var(--text-muted);">BTCUSD</span>
+                                    </div>
+                                    <div style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background=''" onclick="setSettingsSymbol('EURUSD.r')">
+                                        <span style="font-size: 16px; color: #0052cc;">€</span>
+                                        <span style="font-weight: bold; margin-left: 6px; flex: 1;">EUR/USD</span>
+                                        <span style="font-size: 11px; color: var(--text-muted);">EURUSD.r</span>
+                                    </div>
+                                    <div style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background=''" onclick="setSettingsSymbol('USDJPY.r')">
+                                        <span style="font-size: 16px; color: #dc143c;">¥</span>
+                                        <span style="font-weight: bold; margin-left: 6px; flex: 1;">USD/JPY</span>
+                                        <span style="font-size: 11px; color: var(--text-muted);">USDJPY.r</span>
+                                    </div>
+                                    <div style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background=''" onclick="setSettingsSymbol('XAUUSD.r')">
+                                        <span style="font-size: 16px; color: #ffd700;">✦</span>
+                                        <span style="font-weight: bold; margin-left: 6px; flex: 1;">Gold</span>
+                                        <span style="font-size: 11px; color: var(--text-muted);">XAUUSD.r</span>
+                                    </div>
+                                    <div style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background=''" onclick="setSettingsSymbol('US100.')">
+                                        <span style="font-size: 16px; color: #00b450;">⬡</span>
+                                        <span style="font-weight: bold; margin-left: 6px; flex: 1;">NASDAQ</span>
+                                        <span style="font-size: 11px; color: var(--text-muted);">US100.</span>
+                                    </div>
                                 </div>
                             </div>
                             <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px;" id="settingsSymbolDesc">Bitcoin | Spread: ~$11</div>
@@ -3780,7 +3800,7 @@
         <script src="js/panels/qeTickChart.js?v=1771986310"></script>
 
     <script src="js/chart.js?v=1771777952"></script>
-    <script src="js/settings.js?v=1771777952"></script>
+    <script src="js/settings.js?v=20260226a"></script>
     <script>
         // ========== 타임프레임 드롭다운 함수 ==========
         function toggleTimeframeDropdown() {
@@ -5244,7 +5264,7 @@
     <script src="js/account.js?v=1771777952"></script>
     <script src="js/trading.js?v=1771803124"></script>
     <script src="js/openPositions.js?v=1771777952"></script>
-    <script src="js/connection.js?v=1772049898"></script>
+    <script src="js/connection.js?v=20260226a"></script>
     <script src="js/init.js?v=1771992777"></script>
 <div id="txDialogContainer"></div>
 </body>
