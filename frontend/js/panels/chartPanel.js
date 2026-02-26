@@ -481,7 +481,7 @@ const ChartPanel = {
 
                 // ★★★ setVisibleLogicalRange 사용 (index 기반 = rightOffset 포함 가능) ★★★
                 const totalBars = data.candles.length;
-                const rightPadding = 8;  // 오른쪽 여백 (빈 봉 수)
+                const rightPadding = 6;  // 오른쪽 여백 (빈 봉 수)
 
                 if (totalBars > visibleBars) {
                     // 캔들 충분: 마지막 N개 + 오른쪽 여백
@@ -918,7 +918,7 @@ setIndicators(settings) {
                 candleCount = ChartTypeManager.candleData.length;
             }
 
-            const rightPadding = 8;
+            const rightPadding = 6;
             if (candleCount > visibleBars) {
                 try {
                     chart.timeScale().setVisibleLogicalRange({
