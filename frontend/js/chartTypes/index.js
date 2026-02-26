@@ -144,6 +144,10 @@ const ChartTypeManager = {
         }
 
         this.series = series;
+        // ★★★ 전역 candleSeries 동기화 ★★★
+        if (typeof candleSeries !== 'undefined') {
+            candleSeries = series;
+        }
         console.log('[ChartTypeManager] Series created for type:', type);
         return series;
     },
@@ -176,6 +180,11 @@ const ChartTypeManager = {
         if (typeof IndicatorManager !== 'undefined') {
             IndicatorManager.mainSeries = newSeries;
             IndicatorManager.recalculateAll();
+        }
+
+        // ★★★ 전역 candleSeries 동기화 ★★★
+        if (typeof candleSeries !== 'undefined') {
+            candleSeries = newSeries;
         }
 
         return newSeries;
@@ -215,11 +224,19 @@ const ChartTypeManager = {
         if (!this.series && this.chart) {
             console.warn('[ChartTypeManager] setData: series가 null — 생성 시도');
             this.createSeries();
+            // ★★★ 전역 candleSeries 동기화 ★★★
+            if (typeof candleSeries !== 'undefined') {
+                candleSeries = this.series;
+            }
         }
 
         if (this.series) {
             const formattedData = this.formatDataForType(candles);
             this.series.setData(formattedData);
+            // ★★★ 전역 candleSeries 동기화 (항상) ★★★
+            if (typeof candleSeries !== 'undefined') {
+                candleSeries = this.series;
+            }
             console.log(`[ChartTypeManager] setData: ${candles.length}개 캔들 설정 완료`);
         } else {
             console.error('[ChartTypeManager] setData: series 생성 실패 — 데이터 설정 불가');
