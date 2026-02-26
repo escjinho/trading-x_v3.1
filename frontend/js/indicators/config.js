@@ -436,7 +436,14 @@ const IndicatorConfig = {
      * 설정 초기화
      */
     reset(id) {
-        // 기본값으로 리셋 - 추후 구현
+        // BB/LWMA는 항상 비활성화 상태로 리셋
+        const forceDisabled = ['bb', 'lwma'];
+        if (this.overlay[id]) {
+            this.overlay[id].enabled = forceDisabled.includes(id) ? false : false;
+        }
+        if (this.panel[id]) {
+            this.panel[id].enabled = false;
+        }
         console.log(`[IndicatorConfig] Reset ${id} to defaults`);
     },
 
@@ -485,8 +492,10 @@ const IndicatorConfig = {
             if (state.overlay) {
                 Object.keys(state.overlay).forEach(id => {
                     if (this.overlay[id]) {
-                        // BB/LWMA의 enabled는 복원하지 않음 (항상 false 유지)
-                        if (!skipEnabledRestore.includes(id)) {
+                        // BB/LWMA의 enabled는 항상 false로 강제 (localStorage 값 무시)
+                        if (skipEnabledRestore.includes(id)) {
+                            this.overlay[id].enabled = false;
+                        } else {
                             this.overlay[id].enabled = state.overlay[id].enabled;
                         }
                         Object.assign(this.overlay[id].params, state.overlay[id].params);
