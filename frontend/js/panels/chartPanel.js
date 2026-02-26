@@ -308,6 +308,7 @@ const ChartPanel = {
                 }
             };
             candleSeries = ChartTypeManager.createSeries();
+            // createSeries에서 window.candleSeries 동기화됨
             console.log('[ChartPanel] initChart: candleSeries=', candleSeries ? 'OK' : 'NULL', 'ChartTypeManager.series=', ChartTypeManager.series ? 'OK' : 'NULL');
         } else {
             // ChartTypeManager 없으면 기본 캔들스틱
@@ -324,7 +325,11 @@ const ChartPanel = {
                     minMove: decimals === 5 ? 0.00001 : decimals === 3 ? 0.001 : 0.01,
                 },
             });
+            // ★★★ window 동기화 ★★★
+            window.candleSeries = candleSeries;
         }
+        // ★★★ chart도 window에 동기화 ★★★
+        window.chart = chart;
 
         // 볼린저 밴드 및 LWMA 지표 (기본값 숨김)
         bbUpperSeries = chart.addLineSeries({

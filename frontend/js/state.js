@@ -1,10 +1,15 @@
 // ========== 전역 변수 ==========
+// ★★★ window에 명시적 바인딩 (브라우저 콘솔/외부 스크립트 접근용) ★★★
 let chart = null;
 let candleSeries = null;
 let bbUpperSeries = null;
 let bbMiddleSeries = null;
 let bbLowerSeries = null;
 let lwmaSeries = null;
+
+// window에 참조 노출
+window.chart = null;
+window.candleSeries = null;
 let currentTimeframe = 'M1';
 let currentSymbol = 'BTCUSD';
 let chartSymbol = 'BTCUSD';
