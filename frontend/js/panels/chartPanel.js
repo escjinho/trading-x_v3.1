@@ -325,31 +325,35 @@ const ChartPanel = {
             });
         }
 
-        // 볼린저 밴드 및 LWMA 지표
+        // 볼린저 밴드 및 LWMA 지표 (기본값 숨김)
         bbUpperSeries = chart.addLineSeries({
             color: '#00bfff',
             lineWidth: 1,
             priceLineVisible: false,
-            lastValueVisible: false
+            lastValueVisible: false,
+            visible: false
         });
         bbMiddleSeries = chart.addLineSeries({
             color: '#00bfff',
             lineWidth: 1,
             lineStyle: 2,
             priceLineVisible: false,
-            lastValueVisible: false
+            lastValueVisible: false,
+            visible: false
         });
         bbLowerSeries = chart.addLineSeries({
             color: '#00bfff',
             lineWidth: 1,
             priceLineVisible: false,
-            lastValueVisible: false
+            lastValueVisible: false,
+            visible: false
         });
         lwmaSeries = chart.addLineSeries({
             color: '#ffff00',
             lineWidth: 2,
             priceLineVisible: false,
-            lastValueVisible: false
+            lastValueVisible: false,
+            visible: false
         });
 
         // 반응형 리사이즈 (★ 중복 방지: 기존 핸들러 제거 후 추가)
@@ -463,11 +467,10 @@ const ChartPanel = {
                     }
 
                     // ★★★ BB/LWMA 가시성 제어 ★★★
-                    // setIndicators()로 이미 visible 설정된 상태를 유지
-                    // 첫 로드 시에만 IndicatorConfig 기준으로 초기화
+                    // 기본값 비활성화 - 사용자가 명시적으로 켜야만 표시
                     if (typeof this._indicatorsInitialized === 'undefined' || !this._indicatorsInitialized) {
-                        const _bbOn = typeof IndicatorConfig !== 'undefined' && IndicatorConfig.overlay.bb ? IndicatorConfig.overlay.bb.enabled : false;
-                        const _lwmaOn = typeof IndicatorConfig !== 'undefined' && IndicatorConfig.overlay.lwma ? IndicatorConfig.overlay.lwma.enabled : false;
+                        const _bbOn = false;
+                        const _lwmaOn = false;
                         if (bbUpperSeries) bbUpperSeries.applyOptions({ visible: _bbOn });
                         if (bbMiddleSeries) bbMiddleSeries.applyOptions({ visible: _bbOn });
                         if (bbLowerSeries) bbLowerSeries.applyOptions({ visible: _bbOn });

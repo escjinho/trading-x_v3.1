@@ -479,10 +479,16 @@ const IndicatorConfig = {
 
             const state = JSON.parse(saved);
 
+            // ★★★ BB/LWMA는 기본값 비활성화 유지 (localStorage에서 복원하지 않음) ★★★
+            const skipEnabledRestore = ['bb', 'lwma'];
+
             if (state.overlay) {
                 Object.keys(state.overlay).forEach(id => {
                     if (this.overlay[id]) {
-                        this.overlay[id].enabled = state.overlay[id].enabled;
+                        // BB/LWMA의 enabled는 복원하지 않음 (항상 false 유지)
+                        if (!skipEnabledRestore.includes(id)) {
+                            this.overlay[id].enabled = state.overlay[id].enabled;
+                        }
                         Object.assign(this.overlay[id].params, state.overlay[id].params);
                         Object.assign(this.overlay[id].style, state.overlay[id].style);
                     }
