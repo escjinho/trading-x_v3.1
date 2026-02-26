@@ -95,6 +95,16 @@ const OpenPositions = {
 
         // ★ 하단 바 표시/숨김 업데이트
         this._updateBarVisibility();
+
+        // ★ 커미션 알림바: Trade History 탭에서만 표시
+        var commNotice = document.getElementById('accCommissionNotice');
+        if (commNotice) {
+            if (tab === 'history' && typeof isDemo !== 'undefined' && !isDemo) {
+                commNotice.style.display = 'flex';
+            } else {
+                commNotice.style.display = 'none';
+            }
+        }
     },
 
     // ========== WS 데이터 수신 → 업데이트 ==========
