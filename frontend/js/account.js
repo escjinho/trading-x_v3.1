@@ -178,18 +178,37 @@ function updateCommissionNotice() {
 
 // ★ 트레이딩 리포트로 이동
 function goToTradingReport() {
-    // My 탭으로 전환
-    const myNav = document.querySelector('.nav-item[data-page="my"]');
-    if (myNav) myNav.click();
-    // My 탭 리셋 완료 후 → 트레이딩 서브페이지 → 트레이딩 리포트 (2단계 이동)
-    setTimeout(() => {
-        if (typeof openMySubPage === 'function') {
-            openMySubPage('trading');
-        }
-        setTimeout(() => {
-            if (typeof openMyDetail === 'function') {
-                openMyDetail('tradingReport');
-            }
-        }, 100);
-    }, 150);
+    // ★ 중간 화면 없이 한번에 트레이딩 리포트로 이동
+
+    // 1. 모든 my-view 숨기기 (전환 애니메이션 방지)
+    document.querySelectorAll('.my-view').forEach(function(v) {
+        v.classList.remove('active', 'slide-back');
+    });
+
+    // 2. 네비게이션 스택 직접 설정 (main → trading → detail)
+    if (typeof myPageStack !== 'undefined') {
+        myPageStack.length = 0;
+        myPageStack.push('main', 'trading');
+    }
+
+    // 3. My 탭 페이지 직접 활성화 (nav 클릭 이벤트 우회 — resetMyTab 방지)
+    document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+    var myNav = document.querySelector('.nav-item[data-page="my"]');
+    if (myNav) myNav.classList.add('active');
+    document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+    var pageMy = document.getElementById('page-my');
+    if (pageMy) pageMy.classList.add('active');
+    document.body.classList.remove('chart-mode');
+
+    // 4. trading 뷰 임시 활성화 (openMyDetail이 currentEl 참조하기 위해)
+    var tradingView = document.getElementById('myView-trading');
+    if (tradingView) tradingView.classList.add('active');
+
+    // 5. openMyDetail 호출 → trading 숨기고 tradingReport 표시 (동기 실행 = 깜빡임 없음)
+    if (typeof openMyDetail === 'function') {
+        openMyDetail('tradingReport');
+    }
+
+    // 6. 스크롤 상단으로
+    if (pageMy) pageMy.scrollTop = 0;
 }

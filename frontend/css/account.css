@@ -797,12 +797,12 @@
 
 .acc-commission-link {
     font-size: 11px;
-    color: rgba(0, 212, 255, 0.65);
+    color: rgba(255, 255, 255, 0.6);
     white-space: nowrap;
     cursor: pointer;
     transition: color 0.2s;
 }
 
 .acc-commission-link:active {
-    color: rgba(0, 212, 255, 1);
+    color: rgba(255, 255, 255, 0.9);
 }
