@@ -933,6 +933,12 @@ const IndicatorManager = {
 
         let data;
 
+        // ★ 캔들 데이터 없으면 계산 스킵 (초기화 크래시 방지)
+        if (!closes || !times || closes.length === 0 || times.length === 0) {
+            console.warn('[IndicatorManager] 캔들 데이터 없음, 계산 스킵:', indicatorId);
+            return;
+        }
+
         switch (indicatorId) {
             case 'sma':
                 data = IndicatorCalculator.sma(closes, times, config.params.period);
