@@ -251,7 +251,7 @@ const ChartPanel = {
                 borderColor: 'rgba(255,255,255,0.4)',
                 borderVisible: false,    // CSS로 연장 구분선 처리 (#chart-wrapper::after)
                 timeVisible: true,
-                rightOffset: 8,
+                rightOffset: 12,
                 shiftVisibleRangeOnNewBar: true,
                 fixRightEdge: false,
                 fixLeftEdge: false
@@ -482,11 +482,20 @@ const ChartPanel = {
                     try {
                         chart.timeScale().setVisibleRange({ from, to });
                     } catch (e) {
-                        chart.timeScale().scrollToRealTime();
+                        try { chart.timeScale().scrollToRealTime(); } catch(e2) {}
+                    }
+                } else if (data.candles.length > 5) {
+                    // 캔들이 적당히 있으면: 전체 보여주기
+                    const from = data.candles[0].time;
+                    const to = data.candles[data.candles.length - 1].time;
+                    try {
+                        chart.timeScale().setVisibleRange({ from, to });
+                    } catch (e) {
+                        try { chart.timeScale().fitContent(); } catch(e2) {}
                     }
                 } else if (data.candles.length > 0) {
-                    // 캔들이 적으면: 전체 표시하되 scrollToRealTime
-                    chart.timeScale().scrollToRealTime();
+                    // 캔들이 극소수(1~5개): fitContent가 최선
+                    try { chart.timeScale().fitContent(); } catch(e) {}
                 }
 
                 // ★ 가격 스케일 자동 맞춤
@@ -500,6 +509,11 @@ const ChartPanel = {
                 // IndicatorManager에 캔들 데이터 전달
                 if (typeof IndicatorManager !== 'undefined') {
                     IndicatorManager.updateCandleData(data.candles);
+                }
+
+                // ★ 자동복귀 미설정 시 재설정 (초기 로드 완료 후)
+                if (!this._chartTouchHandler) {
+                    setTimeout(() => this.setupAutoReturn(), 500);
                 }
             }
         } catch (e) {
@@ -691,13 +705,15 @@ const ChartPanel = {
             clearTimeout(this._autoReturnTimer);
             this._autoReturnTimer = null;
         }
+        this._isAutoReturning = false;
         if (chart) {
             chart.remove();
             chart = null;
         }
         this.initChart();
         this.loadCandles();
-        setTimeout(() => this.setupAutoReturn(), 1000);
+        // ★ 차트 재생성 후 자동복귀 재설정
+        setTimeout(() => this.setupAutoReturn(), 1500);
     },
 
     /**
@@ -831,7 +847,11 @@ setIndicators(settings) {
 
     // ========== 차트 자동 복귀 시스템 ==========
     setupAutoReturn() {
-        if (!chart) return;
+        if (!chart) {
+            console.warn('[ChartPanel] setupAutoReturn: chart 없음, 1초 후 재시도');
+            setTimeout(() => this.setupAutoReturn(), 1000);
+            return;
+        }
         const self = this;
         const chartContainer = document.getElementById('chart-container');
         if (!chartContainer) return;
