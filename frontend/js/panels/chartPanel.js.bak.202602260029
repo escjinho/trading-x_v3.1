@@ -462,47 +462,40 @@ const ChartPanel = {
                         // lightweight-charts "Value is null" 무시
                     }
 
-                    // ★★★ BB/LWMA 가시성 제어 ★★★
-                    // setIndicators()로 이미 visible 설정된 상태를 유지
-                    // 첫 로드 시에만 IndicatorConfig 기준으로 초기화
-                    if (typeof this._indicatorsInitialized === 'undefined' || !this._indicatorsInitialized) {
-                        const _bbOn = typeof IndicatorConfig !== 'undefined' && IndicatorConfig.overlay.bb ? IndicatorConfig.overlay.bb.enabled : false;
-                        const _lwmaOn = typeof IndicatorConfig !== 'undefined' && IndicatorConfig.overlay.lwma ? IndicatorConfig.overlay.lwma.enabled : false;
-                        if (bbUpperSeries) bbUpperSeries.applyOptions({ visible: _bbOn });
-                        if (bbMiddleSeries) bbMiddleSeries.applyOptions({ visible: _bbOn });
-                        if (bbLowerSeries) bbLowerSeries.applyOptions({ visible: _bbOn });
-                        if (lwmaSeries) lwmaSeries.applyOptions({ visible: _lwmaOn });
-                        this._indicatorsInitialized = true;
-                    }
+                    // ★★★ BB/LWMA 가시성 제어: IndicatorConfig 기준으로 표시/숨김 ★★★
+                    const _bbOn = typeof IndicatorConfig !== 'undefined' && IndicatorConfig.overlay.bb ? IndicatorConfig.overlay.bb.enabled : false;
+                    const _lwmaOn = typeof IndicatorConfig !== 'undefined' && IndicatorConfig.overlay.lwma ? IndicatorConfig.overlay.lwma.enabled : false;
+                    if (bbUpperSeries) bbUpperSeries.applyOptions({ visible: _bbOn });
+                    if (bbMiddleSeries) bbMiddleSeries.applyOptions({ visible: _bbOn });
+                    if (bbLowerSeries) bbLowerSeries.applyOptions({ visible: _bbOn });
+                    if (lwmaSeries) lwmaSeries.applyOptions({ visible: _lwmaOn });
                 }
 
                 // ★★★ 적절한 줌 레벨로 현재가 부근 표시 ★★★
                 const visibleBars = this.getVisibleBarsForTimeframe();
 
-                // ★★★ setVisibleLogicalRange 사용 (index 기반 = rightOffset 포함 가능) ★★★
-                const totalBars = data.candles.length;
-                const rightPadding = 8;  // 오른쪽 여백 (빈 봉 수)
-
-                if (totalBars > visibleBars) {
-                    // 캔들 충분: 마지막 N개 + 오른쪽 여백
+                if (data.candles.length > visibleBars) {
+                    // 캔들이 충분하면: 마지막 N개만 표시
+                    const startIdx = Math.max(0, data.candles.length - visibleBars);
+                    const from = data.candles[startIdx].time;
+                    const to = data.candles[data.candles.length - 1].time;
                     try {
-                        chart.timeScale().setVisibleLogicalRange({
-                            from: totalBars - visibleBars,
-                            to: totalBars + rightPadding
-                        });
+                        chart.timeScale().setVisibleRange({ from, to });
                     } catch (e) {
                         try { chart.timeScale().scrollToRealTime(); } catch(e2) {}
                     }
-                } else if (totalBars > 0) {
-                    // 캔들 부족: 전체 표시 + 오른쪽 여백
+                } else if (data.candles.length > 5) {
+                    // 캔들이 적당히 있으면: 전체 보여주기
+                    const from = data.candles[0].time;
+                    const to = data.candles[data.candles.length - 1].time;
                     try {
-                        chart.timeScale().setVisibleLogicalRange({
-                            from: 0,
-                            to: totalBars + rightPadding
-                        });
+                        chart.timeScale().setVisibleRange({ from, to });
                     } catch (e) {
-                        try { chart.timeScale().scrollToRealTime(); } catch(e2) {}
+                        try { chart.timeScale().fitContent(); } catch(e2) {}
                     }
+                } else if (data.candles.length > 0) {
+                    // 캔들이 극소수(1~5개): fitContent가 최선
+                    try { chart.timeScale().fitContent(); } catch(e) {}
                 }
 
                 // ★ 가격 스케일 자동 맞춤
@@ -713,7 +706,6 @@ const ChartPanel = {
             this._autoReturnTimer = null;
         }
         this._isAutoReturning = false;
-        this._indicatorsInitialized = false;
         if (chart) {
             chart.remove();
             chart = null;
@@ -918,27 +910,20 @@ setIndicators(settings) {
                 candleCount = ChartTypeManager.candleData.length;
             }
 
-            const rightPadding = 8;
             if (candleCount > visibleBars) {
+                const candles = ChartTypeManager.candleData;
+                const startIdx = Math.max(0, candles.length - visibleBars);
+                const from = candles[startIdx].time;
+                const to = candles[candles.length - 1].time;
                 try {
-                    chart.timeScale().setVisibleLogicalRange({
-                        from: candleCount - visibleBars,
-                        to: candleCount + rightPadding
-                    });
+                    chart.timeScale().setVisibleRange({ from, to });
                 } catch (e) {
-                    try { chart.timeScale().scrollToRealTime(); } catch(e2) {}
+                    chart.timeScale().scrollToRealTime();
                 }
             } else if (candleCount > 0) {
-                try {
-                    chart.timeScale().setVisibleLogicalRange({
-                        from: 0,
-                        to: candleCount + rightPadding
-                    });
-                } catch (e) {
-                    try { chart.timeScale().scrollToRealTime(); } catch(e2) {}
-                }
+                chart.timeScale().fitContent();
             } else {
-                try { chart.timeScale().scrollToRealTime(); } catch(e) {}
+                chart.timeScale().scrollToRealTime();
             }
 
             console.log('[ChartPanel] ↩️ Auto-return (bars:', visibleBars, ', candles:', candleCount, ')');

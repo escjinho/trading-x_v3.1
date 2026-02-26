@@ -1084,7 +1084,7 @@ const IndicatorManager = {
         }
 
         // 디버깅: 패널 데이터 정보
-        if (data) {
+        if (data && data.length > 0) {
             const panelData = Array.isArray(data) ? data : (data.k || data.macd || data.volume || []);
             console.log('  Panel data count:', panelData.length);
             console.log('  Panel data first time:', panelData[0]?.time);
