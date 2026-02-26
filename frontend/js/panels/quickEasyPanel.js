@@ -344,7 +344,7 @@ const QuickEasyPanel = {
     updateDisplay() {
         const targetEl = document.getElementById('qeTargetValue');
         const lotEl = document.getElementById('qeLotValue');
-        if (targetEl) targetEl.textContent = '$' + this.target;
+        if (targetEl) targetEl.textContent = '$' + this.target.toLocaleString();
         if (lotEl) lotEl.textContent = this.lotSize.toFixed(2);
     },
 
@@ -447,7 +447,7 @@ const QuickEasyPanel = {
     confirmCustomInput() {
         const input = document.getElementById('qePickerInput');
         if (!input) return;
-        const val = parseFloat(input.value);
+        const val = parseFloat(input.value.replace(/,/g, ''));
         if (isNaN(val) || val <= 0) return;
 
         if (this._pickerMode === 'target') {
