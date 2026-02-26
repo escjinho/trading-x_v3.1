@@ -66,7 +66,7 @@ const ChartPanel = {
         } else if (candleData.time) {
             // ★ KST 변환 (+9시간) — 차트 표시용 (중복 변환 방지)
             const KST_OFFSET = 9 * 3600;
-            if (candleData.time < this.lastCandleTime - KST_OFFSET + 60) {
+            if (this.lastCandleTime > 0 && this.lastCandleTime - candleData.time > KST_OFFSET - 3600) {
                 candleData.time += KST_OFFSET;
             }
         }
