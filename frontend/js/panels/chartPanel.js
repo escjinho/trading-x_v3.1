@@ -474,28 +474,30 @@ const ChartPanel = {
                 // ★★★ 적절한 줌 레벨로 현재가 부근 표시 ★★★
                 const visibleBars = this.getVisibleBarsForTimeframe();
 
-                if (data.candles.length > visibleBars) {
-                    // 캔들이 충분하면: 마지막 N개만 표시
-                    const startIdx = Math.max(0, data.candles.length - visibleBars);
-                    const from = data.candles[startIdx].time;
-                    const to = data.candles[data.candles.length - 1].time;
+                // ★★★ setVisibleLogicalRange 사용 (index 기반 = rightOffset 포함 가능) ★★★
+                const totalBars = data.candles.length;
+                const rightPadding = 12;  // 오른쪽 여백 (빈 봉 수)
+
+                if (totalBars > visibleBars) {
+                    // 캔들 충분: 마지막 N개 + 오른쪽 여백
                     try {
-                        chart.timeScale().setVisibleRange({ from, to });
+                        chart.timeScale().setVisibleLogicalRange({
+                            from: totalBars - visibleBars,
+                            to: totalBars + rightPadding
+                        });
                     } catch (e) {
                         try { chart.timeScale().scrollToRealTime(); } catch(e2) {}
                     }
-                } else if (data.candles.length > 5) {
-                    // 캔들이 적당히 있으면: 전체 보여주기
-                    const from = data.candles[0].time;
-                    const to = data.candles[data.candles.length - 1].time;
+                } else if (totalBars > 0) {
+                    // 캔들 부족: 전체 표시 + 오른쪽 여백
                     try {
-                        chart.timeScale().setVisibleRange({ from, to });
+                        chart.timeScale().setVisibleLogicalRange({
+                            from: 0,
+                            to: totalBars + rightPadding
+                        });
                     } catch (e) {
-                        try { chart.timeScale().fitContent(); } catch(e2) {}
+                        try { chart.timeScale().scrollToRealTime(); } catch(e2) {}
                     }
-                } else if (data.candles.length > 0) {
-                    // 캔들이 극소수(1~5개): fitContent가 최선
-                    try { chart.timeScale().fitContent(); } catch(e) {}
                 }
 
                 // ★ 가격 스케일 자동 맞춤
@@ -910,20 +912,27 @@ setIndicators(settings) {
                 candleCount = ChartTypeManager.candleData.length;
             }
 
+            const rightPadding = 12;
             if (candleCount > visibleBars) {
-                const candles = ChartTypeManager.candleData;
-                const startIdx = Math.max(0, candles.length - visibleBars);
-                const from = candles[startIdx].time;
-                const to = candles[candles.length - 1].time;
                 try {
-                    chart.timeScale().setVisibleRange({ from, to });
+                    chart.timeScale().setVisibleLogicalRange({
+                        from: candleCount - visibleBars,
+                        to: candleCount + rightPadding
+                    });
                 } catch (e) {
-                    chart.timeScale().scrollToRealTime();
+                    try { chart.timeScale().scrollToRealTime(); } catch(e2) {}
                 }
             } else if (candleCount > 0) {
-                chart.timeScale().fitContent();
+                try {
+                    chart.timeScale().setVisibleLogicalRange({
+                        from: 0,
+                        to: candleCount + rightPadding
+                    });
+                } catch (e) {
+                    try { chart.timeScale().scrollToRealTime(); } catch(e2) {}
+                }
             } else {
-                chart.timeScale().scrollToRealTime();
+                try { chart.timeScale().scrollToRealTime(); } catch(e) {}
             }
 
             console.log('[ChartPanel] ↩️ Auto-return (bars:', visibleBars, ', candles:', candleCount, ')');
