@@ -2323,7 +2323,7 @@ async function loadLiveAccountData() {
 
     try {
         var tkn = localStorage.getItem('access_token');
-        var res = await fetch(API_URL + '/demo/account-info', {
+        var res = await fetch(API_URL + '/mt5/account-info', {
             headers: { 'Authorization': 'Bearer ' + tkn }
         });
         if (!res.ok) { console.error("[LIVE] HTTP 에러:", res.status); return; }
@@ -2352,7 +2352,10 @@ async function loadLiveAccountData() {
         var pEl = document.getElementById('myLiveProfit');
         if (pEl) {
             var profit = Number(d.profit || d.current_pl || 0);
-            if (profit === 0) {
+            // ★ 번쩍임 방지: 기존 값이 $0.00이 아닌데 새 값이 0이면 업데이트 건너뛰기
+            if (profit === 0 && pEl.textContent !== '$0.00' && pEl.textContent !== '$--.--') {
+                console.log('[LIVE] P/L 번쩍임 방지 — 기존값 유지:', pEl.textContent);
+            } else if (profit === 0) {
                 pEl.textContent = '$0.00';
                 pEl.className = 'my-live-stat-value';
             } else {
@@ -2368,7 +2371,11 @@ async function loadLiveAccountData() {
         var lvEl = document.getElementById('myLiveLeverage');
         if (lvEl) lvEl.textContent = d.leverage ? '1:' + d.leverage : '-';
         var opEl = document.getElementById('myLivePositions');
-        if (opEl) opEl.textContent = Number(d.positions_count || 0);
+        if (opEl) {
+            // positions 배열이 있으면 실제 길이 사용, 없으면 positions_count
+            var posCount = (d.positions && Array.isArray(d.positions)) ? d.positions.length : Number(d.positions_count || 0);
+            opEl.textContent = posCount;
+        }
 
     } catch (e) {
         console.error("[LIVE] loadLiveAccountData 에러:", e);

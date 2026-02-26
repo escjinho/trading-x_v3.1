@@ -839,22 +839,7 @@ function connectWebSocket() {
                 if (accLeverage) accLeverage.textContent = '1:' + (data.leverage || 500);
             }
 
-            // ★ Live 입출금 탭 실시간 업데이트 (WS)
-            if (data.has_mt5) {
-                const fmtUSD = (v) => '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
-                const myLiveBalance = document.getElementById('myLiveBalance');
-                if (myLiveBalance) myLiveBalance.textContent = fmtUSD(data.balance);
-                const myLiveEquity = document.getElementById('myLiveEquity');
-                if (myLiveEquity) myLiveEquity.textContent = fmtUSD(data.equity);
-                const myLiveMargin = document.getElementById('myLiveMargin');
-                if (myLiveMargin) myLiveMargin.textContent = fmtUSD(data.margin || data.total_margin);
-                const myLiveProfit = document.getElementById('myLiveProfit');
-                if (myLiveProfit) {
-                    const profit = Number(data.profit || data.current_pl || 0);
-                    myLiveProfit.textContent = profit === 0 ? '$0.00' : (profit >= 0 ? '+' : '-') + '$' + Math.abs(profit).toLocaleString('en-US', { minimumFractionDigits: 2 });
-                    myLiveProfit.className = 'my-live-stat-value' + (profit > 0 ? ' profit-plus' : profit < 0 ? ' profit-minus' : '');
-                }
-            }
+            // ★ Live 입출금 데이터는 라이브 WS + loadLiveAccountData(/mt5/account-info)에서만 업데이트
 
             // ★★★ Demo WS 자동청산 처리 (중복 방지 강화) ★★★
             if (data.auto_closed) {
