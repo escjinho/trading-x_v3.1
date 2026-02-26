@@ -26,6 +26,7 @@ const ChartPanel = {
      * 차트 패널 초기화
      */
     init() {
+        console.log('[ChartPanel] ★★★ init() 시작 ★★★');
         this.initChart();
         this.setupTimeframeButtons();
         this.lastCandleTime = 0;
@@ -398,6 +399,7 @@ const ChartPanel = {
      * 캔들 데이터 로드
      */
     async loadCandles() {
+        console.log('[ChartPanel.loadCandles] ★★★ 함수 진입 ★★★');
         // ★ 보간 상태 + 캔들 상태 초기화 (종목/타임프레임 변경 시 늘어남+번쩍임 방지)
         this._animTarget = null;
         this._animCurrent = null;

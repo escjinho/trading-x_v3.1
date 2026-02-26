@@ -1,6 +1,7 @@
 // ========== API Helper ==========
 let _lastApiErrorToast = 0;  // ★ 네트워크 에러 토스트 쿨다운
 async function apiCall(endpoint, method = 'GET', body = null) {
+    console.log(`[apiCall] ${method} ${API_URL}${endpoint}`);
     const headers = {
         'Content-Type': 'application/json'
     };
