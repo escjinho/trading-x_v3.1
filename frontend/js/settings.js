@@ -128,17 +128,7 @@ function closeSettings() {
 }
 
 function updateSettingsUI() {
-    const symbolInfo = {
-        'BTCUSD': { icon: '₿', name: 'Bitcoin' },
-        'EURUSD.r': { icon: '€', name: 'Euro' },
-        'USDJPY.r': { icon: '¥', name: 'Yen' },
-        'XAUUSD.r': { icon: '🥇', name: 'Gold' },
-        'US100.': { icon: '📈', name: 'Nasdaq' }
-    };
-    const info = symbolInfo[settingsSymbol] || { icon: '?', name: settingsSymbol };
-    document.getElementById('settingsSymbolIcon').textContent = info.icon;
-    document.getElementById('settingsSymbolName').textContent = info.name;
-    document.getElementById('settingsSymbolCode').textContent = settingsSymbol;
+    document.getElementById('settingsSymbolText').textContent = settingsSymbol;
     document.getElementById('settingsSymbolDesc').textContent = symbolData[settingsSymbol]?.desc || '';
 
     document.querySelectorAll('.mode-option').forEach(opt => {
@@ -241,17 +231,7 @@ function toggleSettingsSymbol() {
 
 function setSettingsSymbol(symbol) {
     settingsSymbol = symbol;
-    const symbolInfo = {
-        'BTCUSD': { icon: '₿', name: 'Bitcoin' },
-        'EURUSD.r': { icon: '€', name: 'Euro' },
-        'USDJPY.r': { icon: '¥', name: 'Yen' },
-        'XAUUSD.r': { icon: '🥇', name: 'Gold' },
-        'US100.': { icon: '📈', name: 'Nasdaq' }
-    };
-    const info = symbolInfo[symbol] || { icon: '?', name: symbol };
-    document.getElementById('settingsSymbolIcon').textContent = info.icon;
-    document.getElementById('settingsSymbolName').textContent = info.name;
-    document.getElementById('settingsSymbolCode').textContent = symbol;
+    document.getElementById('settingsSymbolText').textContent = symbol;
     document.getElementById('settingsSymbolDesc').textContent = symbolData[symbol]?.desc || '';
     document.getElementById('settingsSymbolDropdown').style.display = 'none';
 }
