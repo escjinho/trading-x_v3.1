@@ -2046,8 +2046,8 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                             "last": tick.last
                         }
 
-                        # 최신 캔들
-                        rates = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_H1, 0, 1)
+                        # 최신 캔들 (1분봉 기준)
+                        rates = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_M1, 0, 1)
                         if rates is not None and len(rates) > 0:
                             latest = rates[-1]
                             all_candles[symbol] = {
