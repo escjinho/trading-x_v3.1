@@ -5267,5 +5267,17 @@
     <script src="js/connection.js?v=20260226a"></script>
     <script src="js/init.js?v=1771992777"></script>
 <div id="txDialogContainer"></div>
+<script>
+// ★ 보조지표 localStorage 초기화 (1회성)
+try {
+    const resetKey = 'indicator_config_reset_v2';
+    if (!localStorage.getItem(resetKey)) {
+        localStorage.removeItem('trading_x_indicators');
+        localStorage.removeItem('indicatorConfig');
+        localStorage.setItem(resetKey, 'done');
+        console.log('[Init] 보조지표 설정 초기화 완료');
+    }
+} catch(e) {}
+</script>
 </body>
 </html>

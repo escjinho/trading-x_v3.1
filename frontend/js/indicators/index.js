@@ -939,6 +939,8 @@ const IndicatorManager = {
             return;
         }
 
+        try {
+
         switch (indicatorId) {
             case 'sma':
                 data = IndicatorCalculator.sma(closes, times, config.params.period);
@@ -986,6 +988,11 @@ const IndicatorManager = {
                 indicator.series[2].setData(data.spanA);
                 indicator.series[3].setData(data.spanB);
                 break;
+        }
+
+        } catch (calcErr) {
+            console.warn('[IndicatorManager] 지표 계산 실패:', indicatorId, calcErr.message);
+            return;
         }
     },
 
