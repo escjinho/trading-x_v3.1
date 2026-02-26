@@ -1980,6 +1980,7 @@ async function checkUserMode() {
         if (data.has_mt5) {
             // MT5 계정 연결됨 → Live 모드
             isDemo = false;
+            if (typeof updateCommissionNotice === 'function') updateCommissionNotice();
             window._checkUserModeRetries = 0;  // ★ 재시도 카운터 리셋
             document.getElementById('headerStatus').textContent = 'Connected';
             document.getElementById('statusDot').style.background = '#00ff88';
@@ -2042,6 +2043,7 @@ async function checkUserMode() {
         } else {
             // MT5 없음 → Demo 모드
             isDemo = true;
+            if (typeof updateCommissionNotice === 'function') updateCommissionNotice();
             window._checkUserModeRetries = 0;  // ★ 재시도 카운터 리셋
             document.getElementById('headerStatus').textContent = 'Connected';
             document.getElementById('statusDot').style.background = '#00d4ff';
@@ -2110,6 +2112,7 @@ async function checkUserMode() {
         console.warn('[checkUserMode] 3회 재시도 실패 → 데모 모드 전환');
         window._serverWasDown = true;
         isDemo = true;
+        if (typeof updateCommissionNotice === 'function') updateCommissionNotice();
         fetchDemoData();
     }
 }
@@ -2466,6 +2469,7 @@ function switchTradingMode(mode) {
         if (demoControl) demoControl.style.display = 'block';
         
         isDemo = true; window.isDemo = true;
+        if (typeof updateCommissionNotice === 'function') updateCommissionNotice();
         // ★★★ 모드 전환 시 히스토리 캐시 + 패널 리셋 ★★★
         window._weekHistoryData = null;
         window._todayPLFixed = null;
@@ -2542,6 +2546,7 @@ function switchTradingMode(mode) {
                 if (demoControl) demoControl.style.display = 'none';
                 
                 isDemo = false; window.isDemo = false;
+                if (typeof updateCommissionNotice === 'function') updateCommissionNotice();
                 // ★★★ 모드 전환 시 히스토리 캐시 + 패널 리셋 ★★★
                 window._weekHistoryData = null;
                 window._todayPLFixed = null;
@@ -2823,6 +2828,7 @@ async function connectMT5Account() {
             
             // Live 모드로 전환
             isDemo = false;
+            if (typeof updateCommissionNotice === 'function') updateCommissionNotice();
             if (typeof resetTradingPanel === 'function') resetTradingPanel();
 
             // 배지 업데이트

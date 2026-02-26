@@ -754,3 +754,55 @@
     font-weight: 600;
     color: rgba(255,255,255,0.9);
 }
+
+
+/* ★ 커미션 미반영 알림 바 */
+.acc-commission-notice {
+    position: fixed;
+    bottom: calc(env(safe-area-inset-bottom, 12px) + 52px);
+    left: 0;
+    right: 0;
+    max-width: 480px;
+    margin: 0 auto;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    background: rgba(17, 19, 24, 0.95);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    z-index: 99;
+    padding: 0 16px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.acc-commission-icon {
+    color: rgba(0, 212, 255, 0.55);
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+.acc-commission-text {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.4);
+    white-space: nowrap;
+}
+
+.acc-commission-dot {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.2);
+    margin: 0 2px;
+}
+
+.acc-commission-link {
+    font-size: 11px;
+    color: rgba(0, 212, 255, 0.65);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.acc-commission-link:active {
+    color: rgba(0, 212, 255, 1);
+}

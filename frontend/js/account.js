@@ -167,3 +167,24 @@ function resetAccountInfo() {
 function initAccountTab() {
     loadHistory();
 }
+
+// ★ 커미션 알림 바 표시/숨김 (라이브 모드 전용)
+function updateCommissionNotice() {
+    const notice = document.getElementById('accCommissionNotice');
+    if (!notice) return;
+    const isLive = typeof isDemo !== 'undefined' && !isDemo;
+    notice.style.display = isLive ? 'flex' : 'none';
+}
+
+// ★ 트레이딩 리포트로 이동
+function goToTradingReport() {
+    // My 탭으로 전환
+    const myNav = document.querySelector('.nav-item[data-page="my"]');
+    if (myNav) myNav.click();
+    // 약간의 딜레이 후 트레이딩 리포트 열기
+    setTimeout(() => {
+        if (typeof openMyDetail === 'function') {
+            openMyDetail('tradingReport');
+        }
+    }, 150);
+}
