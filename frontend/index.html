@@ -62,7 +62,7 @@
         <link rel="stylesheet" href="css/quickeasy.css?v=20260226b">
     <link rel="stylesheet" href="css/chart.css?v=1771777952">
     <link rel="stylesheet" href="css/account.css?v=20260227c">
-    <link rel="stylesheet" href="css/my.css?v=1772148879">
+    <link rel="stylesheet" href="css/my.css?v=1772152342">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
@@ -2178,28 +2178,32 @@
                             </div>
                         </div>
 
-                        <!-- 카드2: 계좌 기본정보 2x2 그리드 -->
-                        <div class="tr-info-grid">
-                            <div class="tr-info-cell">
-                                <div class="tr-info-cell-label">Broker</div>
-                                <div class="tr-info-cell-value" id="trBroker">-</div>
+                        <!-- 카드2: 서머리 / 분석 리포트 탭 카드 -->
+                        <div class="tr-tab-cards">
+                            <div class="tr-tab-card active" id="trTabSummary" onclick="switchTrTab('summary')">
+                                <span class="material-icons-round tr-tab-card-icon">summarize</span>
+                                <span class="tr-tab-card-label">서머리</span>
                             </div>
-                            <div class="tr-info-cell">
-                                <div class="tr-info-cell-label">Account</div>
-                                <div class="tr-info-cell-value" id="trAccount">-</div>
-                            </div>
-                            <div class="tr-info-cell">
-                                <div class="tr-info-cell-label">Server</div>
-                                <div class="tr-info-cell-value" id="trServer">-</div>
-                            </div>
-                            <div class="tr-info-cell">
-                                <div class="tr-info-cell-label">Leverage</div>
-                                <div class="tr-info-cell-value" id="trLeverage">-</div>
+                            <div class="tr-tab-card" id="trTabAnalysis" onclick="switchTrTab('analysis')">
+                                <span class="material-icons-round tr-tab-card-icon">analytics</span>
+                                <span class="tr-tab-card-label">분석 리포트</span>
                             </div>
                         </div>
 
-                        <!-- 리포트 내역 (추후 구현) -->
-                        <div id="trReportContent" style="margin-top:8px;">
+                        <!-- 서머리 콘텐츠 -->
+                        <div class="tr-tab-content active" id="trContentSummary">
+                            <div class="tr-content-placeholder">
+                                <span class="material-icons-round" style="font-size:32px;color:rgba(255,255,255,0.15);">summarize</span>
+                                <p>서머리 내용이 여기에 표시됩니다</p>
+                            </div>
+                        </div>
+
+                        <!-- 분석 리포트 콘텐츠 -->
+                        <div class="tr-tab-content" id="trContentAnalysis">
+                            <div class="tr-content-placeholder">
+                                <span class="material-icons-round" style="font-size:32px;color:rgba(255,255,255,0.15);">analytics</span>
+                                <p>분석 리포트 내용이 여기에 표시됩니다</p>
+                            </div>
                         </div>
 
                     </div>
@@ -3847,7 +3851,7 @@
     <script src="js/utils.js?v=1771777952"></script>
     <script src="js/watchlist.js?v=1771777952"></script>
     <script src="js/navigation.js?v=1771803124"></script>
-    <script src="js/my.js?v=20260227b"></script>
+    <script src="js/my.js?v=20260227c"></script>
 
     <!-- Chart Panels (모듈화) -->
     <script src="js/panels/gaugePanel.js?v=1771777952"></script>

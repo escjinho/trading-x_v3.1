@@ -2533,21 +2533,9 @@ async function loadTradingReportData() {
             }
         }
 
-        // 카드2: 계좌 기본정보
-        var brEl = document.getElementById('trBroker');
-        if (brEl) brEl.textContent = d.broker || 'HedgeHood Pty Ltd';
-
+        // 히어로 카드 브로커명 업데이트
         var bnEl = document.getElementById('trBrokerName');
         if (bnEl) bnEl.textContent = (d.broker || 'HedgeHood').replace(' Pty Ltd', '').replace(' Live', '');
-
-        var acEl = document.getElementById('trAccount');
-        if (acEl) acEl.textContent = d.account || '-';
-
-        var svEl = document.getElementById('trServer');
-        if (svEl) svEl.textContent = d.server || '-';
-
-        var lvEl = document.getElementById('trLeverage');
-        if (lvEl) lvEl.textContent = d.leverage ? '1:' + d.leverage : '-';
 
         console.log('[TR] 데이터 로드 완료:', { balance: d.balance, equity: d.equity });
     } catch (e) {
@@ -2563,4 +2551,17 @@ function startTradingReportRefresh() {
 
 function stopTradingReportRefresh() {
     if (_trRefreshTimer) { clearInterval(_trRefreshTimer); _trRefreshTimer = null; }
+}
+
+// ========== 트레이딩 리포트 — 탭 전환 ==========
+function switchTrTab(tab) {
+    // 카드 활성화 토글
+    document.querySelectorAll('.tr-tab-card').forEach(function(c) { c.classList.remove('active'); });
+    var targetCard = document.getElementById(tab === 'summary' ? 'trTabSummary' : 'trTabAnalysis');
+    if (targetCard) targetCard.classList.add('active');
+
+    // 콘텐츠 토글
+    document.querySelectorAll('.tr-tab-content').forEach(function(c) { c.classList.remove('active'); });
+    var targetContent = document.getElementById(tab === 'summary' ? 'trContentSummary' : 'trContentAnalysis');
+    if (targetContent) targetContent.classList.add('active');
 }
