@@ -880,7 +880,7 @@ const QuickEasyPanel = {
         if (typeof QeTickChart !== 'undefined' && this._posTPSL) {
             if (QeTickChart.initialized && QeTickChart.areaSeries) {
                 // 차트 준비됨 → 즉시 그리기
-                QeTickChart.showEntryLine(entryPrice, side.toLowerCase(), this._posTPSL.tp, this._posTPSL.sl);
+                QeTickChart.showEntryLine(entryPrice, side.toLowerCase(), this._posTPSL.tp, this._posTPSL.sl, this._posBEP);
             } else {
                 // ★ 차트 미초기화 → pending 저장 (init 완료 후 그림)
                 console.log('[QuickEasy] 차트 미초기화 → pending 라인 저장');
@@ -888,7 +888,8 @@ const QuickEasyPanel = {
                     price: entryPrice,
                     side: side.toLowerCase(),
                     tp: this._posTPSL.tp,
-                    sl: this._posTPSL.sl
+                    sl: this._posTPSL.sl,
+                    bep: this._posBEP
                 };
             }
         }

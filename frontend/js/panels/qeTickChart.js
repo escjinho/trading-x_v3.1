@@ -16,6 +16,7 @@ const QeTickChart = {
     animFrameId: null,
     animating: false,
     priceLine: null,         // 진입가격 라인
+    bepPriceLine: null,      // BEP(손익분기점) 라인
     tpPriceLine: null,       // TP 라인
     slPriceLine: null,       // SL 라인
     _autoReturnTimer: null,  // 자동복귀 타이머
@@ -27,6 +28,7 @@ const QeTickChart = {
     _entryData: null,        // { price, side, tp, sl }
     _totalSeriesCount: 0,    // ★ 시리즈 실제 데이터 수 (tickData와 별도 추적)
     _entryOverlay: null,     // ◉ BUY/SELL 커스텀 라벨
+    _bepOverlay: null,       // BEP 커스텀 라벨
     _tpOverlay: null,        // Win 커스텀 라벨
     _slOverlay: null,        // Lose 커스텀 라벨
 
@@ -184,7 +186,7 @@ const QeTickChart = {
             if (this._pendingEntryLine) {
                 const p = this._pendingEntryLine;
                 console.log('[QeTickChart] ★ pending 라인 그리기:', p);
-                this.showEntryLine(p.price, p.side, p.tp, p.sl);
+                this.showEntryLine(p.price, p.side, p.tp, p.sl, p.bep);
                 this._pendingEntryLine = null;
             }
         });
@@ -546,7 +548,7 @@ const QeTickChart = {
     },
 
     // ========== 진입가격 + SL/TP 라인 ==========
-    showEntryLine(price, side, tpPrice, slPrice) {
+    showEntryLine(price, side, tpPrice, slPrice, bepPrice) {
         this.removeEntryLine();
         if (!this.areaSeries) return;
 
@@ -579,6 +581,34 @@ const QeTickChart = {
             this._entryOverlay = ov;
             this._entryOverlayPrice = price;
             this.updateEntryOverlay();
+        }
+
+        // ★ BEP(손익분기점) 라인 — 밝은 회색 점선
+        if (bepPrice && bepPrice > 0 && bepPrice !== price) {
+            this.bepPriceLine = this.areaSeries.createPriceLine({
+                price: bepPrice,
+                color: '#aaaaaa',
+                lineWidth: 1,
+                lineStyle: 2,
+                axisLabelVisible: false,
+                title: ''
+            });
+            // ★ BEP 커스텀 오버레이
+            if (this._bepOverlay) this._bepOverlay.remove();
+            if (wrap) {
+                const bepOv = document.createElement('div');
+                bepOv.className = 'qe-bep-overlay';
+                bepOv.innerHTML = '<span style="color:#999;font-size:7px;">━</span> <span style="color:#ccc;font-weight:700;letter-spacing:0.5px;">BEP</span>';
+                bepOv.style.cssText = 'position:absolute;right:65px;pointer-events:none;z-index:6;' +
+                    'font-size:9px;font-weight:700;letter-spacing:0.5px;' +
+                    'color:#cccccc;' +
+                    'background:rgba(10,10,15,0.7);padding:1px 5px;border-radius:3px;' +
+                    'white-space:nowrap;transform:translateY(-50%);';
+                wrap.appendChild(bepOv);
+                this._bepOverlay = bepOv;
+                this._bepOverlayPrice = bepPrice;
+            }
+            console.log('[QeTickChart] BEP 라인 생성:', bepPrice);
         }
 
         // TP 라인 (호가에 초록 가격 표시)
@@ -643,7 +673,7 @@ const QeTickChart = {
         }
 
         // ★ SL/TP 진행도 바 시작
-        this._entryData = { price, side, tp: tpPrice, sl: slPrice };
+        this._entryData = { price, side, tp: tpPrice, sl: slPrice, bep: bepPrice || price };
         this.initProgressCanvas();
         this.drawProgressBars();
 
@@ -742,6 +772,10 @@ const QeTickChart = {
             this.areaSeries.removePriceLine(this.slPriceLine);
             this.slPriceLine = null;
         }
+        if (this.bepPriceLine && this.areaSeries) {
+            this.areaSeries.removePriceLine(this.bepPriceLine);
+            this.bepPriceLine = null;
+        }
         // ★ 오버레이 제거 + 트래킹 중지
         if (this._rafTrackingId) {
             cancelAnimationFrame(this._rafTrackingId);
@@ -758,6 +792,10 @@ const QeTickChart = {
         if (this._slOverlay) {
             this._slOverlay.remove();
             this._slOverlay = null;
+        }
+        if (this._bepOverlay) {
+            this._bepOverlay.remove();
+            this._bepOverlay = null;
         }
         // ★ 진행도 바 제거
         this._entryData = null;
@@ -798,6 +836,16 @@ const QeTickChart = {
                 this._slOverlay.style.display = 'block';
             } else {
                 this._slOverlay.style.display = 'none';
+            }
+        }
+        // BEP
+        if (this._bepOverlay && this._bepOverlayPrice) {
+            const by = this.areaSeries.priceToCoordinate(this._bepOverlayPrice);
+            if (by !== null && by > 0) {
+                this._bepOverlay.style.top = by + 'px';
+                this._bepOverlay.style.display = 'block';
+            } else {
+                this._bepOverlay.style.display = 'none';
             }
         }
     },
