@@ -2497,15 +2497,52 @@ function toggleKycMenu() {
 
 // ========== Account 탭 → 라이브 리포트 바로 이동 ==========
 function goToTradingReportLive() {
-    // 1) My 탭으로 전환
-    document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
-    document.querySelector('.nav-item[data-page="my"]').classList.add('active');
-    document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
-    document.getElementById('page-my').classList.add('active');
+    if (typeof checkMT5Connection !== 'function') {
+        _doGoToTradingReportLive();
+        return;
+    }
+    checkMT5Connection().then(function(hasMT5) {
+        if (hasMT5) {
+            _doGoToTradingReportLive();
+        } else {
+            if (typeof openMT5ConnectModal === 'function') {
+                openMT5ConnectModal();
+            } else {
+                showToast('MT5 라이브 계좌를 먼저 연결해주세요', 'error');
+            }
+        }
+    });
+}
 
-    // 2) My 탭 리셋 후 tradingReportLive까지 직행
+function _doGoToTradingReportLive() {
+    var navBottom = document.getElementById('navBottom');
+    var tabs = document.querySelectorAll('.tab-content');
+    tabs.forEach(function(t) { t.classList.remove('active'); });
+    document.getElementById('page-my').classList.add('active');
+    if (navBottom) {
+        navBottom.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+        var myNav = navBottom.querySelector('.nav-item:nth-child(5)');
+        if (myNav) myNav.classList.add('active');
+    }
     resetMyTab();
-    setTimeout(function() {
+    openMyDetail('tradingReportLive');
+}
+
+// ★ Live 리포트 진입 전 MT5 연결 확인 (계정 선택 화면용)
+function openLiveReport() {
+    if (typeof checkMT5Connection !== 'function') {
         openMyDetail('tradingReportLive');
-    }, 50);
+        return;
+    }
+    checkMT5Connection().then(function(hasMT5) {
+        if (hasMT5) {
+            openMyDetail('tradingReportLive');
+        } else {
+            if (typeof openMT5ConnectModal === 'function') {
+                openMT5ConnectModal();
+            } else {
+                showToast('MT5 라이브 계좌를 먼저 연결해주세요', 'error');
+            }
+        }
+    });
 }

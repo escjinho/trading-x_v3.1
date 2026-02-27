@@ -2468,11 +2468,10 @@ async def get_trading_report_summary(
                 raw_deals = result.get('deals', []) if isinstance(result, dict) else (result or [])
                 print(f"[TradingReport] User {user_id}: raw deals {len(raw_deals)}개 조회")
 
-        # ★ 공유 MetaAPI (유저별 MetaAPI가 없는 경우)
-        elif is_metaapi_connected() and metaapi_service.trade_connection:
-            result = await metaapi_service.trade_connection.get_deals_by_time_range(start_time, end_time)
-            raw_deals = result.get('deals', []) if isinstance(result, dict) else (result or [])
-            print(f"[TradingReport] Shared MetaAPI: raw deals {len(raw_deals)}개 조회")
+        # ★ 유저 본인 MetaAPI 없으면 빈 데이터 (공유 계좌 fallback 제거)
+        else:
+            print(f"[TradingReport] User {user_id}: MetaAPI 미연결 — 빈 데이터 반환")
+            raw_deals = []
 
         # ★ 딜 분류 및 집계
         for deal in raw_deals:
@@ -2640,9 +2639,10 @@ async def get_trading_report_analysis(
             if rpc:
                 result = await rpc.get_deals_by_time_range(start_time, end_time)
                 raw_deals = result.get('deals', []) if isinstance(result, dict) else (result or [])
-        elif is_metaapi_connected() and metaapi_service.trade_connection:
-            result = await metaapi_service.trade_connection.get_deals_by_time_range(start_time, end_time)
-            raw_deals = result.get('deals', []) if isinstance(result, dict) else (result or [])
+        else:
+            # ★ 유저 본인 MetaAPI 없으면 빈 데이터 (공유 계좌 fallback 제거)
+            print(f"[TradingReport] Analysis User {user_id}: MetaAPI 미연결 — 빈 데이터 반환")
+            raw_deals = []
     except Exception as e:
         print(f"[AnalysisReport] deals 조회 실패: {e}")
 
@@ -2950,60 +2950,9 @@ async def get_history(
         except Exception as e:
             print(f"[MT5 History] User MetaAPI 조회 실패: {e}")
 
-    # ★★★ 1순위: 공유 MetaAPI에서 히스토리 조회 (유저별 MetaAPI 없는 경우) ★★★
-    if not _use_user_metaapi and is_metaapi_connected():
-        try:
-            metaapi_history = await metaapi_service.get_history(start_time=start_time)
-            if metaapi_history:
-                # 포맷 맞추기
-                formatted_history = []
-                kst = pytz.timezone('Asia/Seoul')
-                for h in metaapi_history:
-                    # ★★★ entryType IN 필터 (청산 거래만) ★★★
-                    entry_type = h.get("entryType", "")
-                    if entry_type == "DEAL_ENTRY_IN":
-                        continue  # 진입 거래는 스킵, 청산 거래만 표시
-
-                    # ★★★ 시간 변환 + KST 변환 ★★★
-                    trade_time = h.get("time", "")
-                    try:
-                        if isinstance(trade_time, datetime):
-                            # datetime 객체인 경우
-                            dt = trade_time
-                            if dt.tzinfo is None:
-                                dt = pytz.utc.localize(dt)
-                            dt_kst = dt.astimezone(kst)
-                            trade_time = dt_kst.strftime("%m/%d %H:%M")
-                        elif isinstance(trade_time, str) and trade_time:
-                            # ISO 문자열인 경우
-                            dt = dateutil_parser.isoparse(trade_time)
-                            if dt.tzinfo is None:
-                                dt = pytz.utc.localize(dt)
-                            dt_kst = dt.astimezone(kst)
-                            trade_time = dt_kst.strftime("%m/%d %H:%M")
-                        elif isinstance(trade_time, (int, float)):
-                            # Unix timestamp인 경우
-                            dt = datetime.fromtimestamp(trade_time, tz=pytz.utc)
-                            dt_kst = dt.astimezone(kst)
-                            trade_time = dt_kst.strftime("%m/%d %H:%M")
-                    except Exception as parse_err:
-                        print(f"[MT5 History] 시간 변환 실패: {trade_time} - {parse_err}")
-
-                    formatted_history.append({
-                        "ticket": h.get("ticket", 0),
-                        "time": trade_time,
-                        "symbol": h.get("symbol", ""),
-                        "type": h.get("type", ""),
-                        "volume": h.get("volume", 0),
-                        "price": h.get("price", 0),
-                        "profit": h.get("profit", 0),
-                        "entry": h.get("entry", h.get("price", 0)),
-                        "exit": h.get("exit", h.get("price", 0))
-                    })
-                print(f"[MT5 History] User {user_id}: {len(formatted_history)}개 (from MetaAPI)")
-                return {"history": formatted_history, "source": "metaapi"}
-        except Exception as e:
-            print(f"[MT5 History] MetaAPI 조회 실패: {e}")
+    # ★★★ 유저별 MetaAPI 없으면 공유 MetaAPI 사용 안 함 (데이터 혼선 방지) ★★★
+    if not _use_user_metaapi:
+        print(f"[MT5 History] User {user_id}: MetaAPI 미연결 — 공유 계좌 fallback 스킵")
 
     # ★★★ 2순위: user_live_cache에서 히스토리 확인 ★★★
     user_cache = user_live_cache.get(user_id)
