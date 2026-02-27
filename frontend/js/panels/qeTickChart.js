@@ -598,8 +598,8 @@ const QeTickChart = {
             if (wrap) {
                 const bepOv = document.createElement('div');
                 bepOv.className = 'qe-bep-overlay';
-                bepOv.innerHTML = '<span style="color:#999;font-size:7px;">━</span> <span style="color:#ccc;font-weight:700;letter-spacing:0.5px;">BEP</span>';
-                bepOv.style.cssText = 'position:absolute;right:65px;pointer-events:none;z-index:6;' +
+                bepOv.innerHTML = '<span style="color:#aaa;font-size:8px;">⬥</span> <span style="color:#ccc;font-weight:700;letter-spacing:0.5px;">BEP</span>';
+                bepOv.style.cssText = 'position:absolute;right:65px;pointer-events:none;z-index:5;' +
                     'font-size:9px;font-weight:700;letter-spacing:0.5px;' +
                     'color:#cccccc;' +
                     'background:rgba(10,10,15,0.7);padding:1px 5px;border-radius:3px;' +
@@ -895,8 +895,9 @@ const QeTickChart = {
         if (tpHeight > 0) {
             const tpGrad = ctx.createLinearGradient(0, bepY, 0, tpY);
             tpGrad.addColorStop(0, 'rgba(50, 255, 160, 0)');
+            tpGrad.addColorStop(0.3, 'rgba(50, 255, 160, 0.15)');
             tpGrad.addColorStop(0.5, 'rgba(50, 255, 160, 0.30)');
-            tpGrad.addColorStop(0.501, 'rgba(50, 255, 160, 0.50)');
+            tpGrad.addColorStop(0.7, 'rgba(50, 255, 160, 0.55)');
             tpGrad.addColorStop(1, 'rgba(50, 255, 160, 1.0)');
             ctx.fillStyle = tpGrad;
             ctx.fillRect(barX, tpTop, barWidth, tpHeight);
@@ -910,8 +911,9 @@ const QeTickChart = {
         if (slHeight > 0) {
             const slGrad = ctx.createLinearGradient(0, bepY, 0, slY);
             slGrad.addColorStop(0, 'rgba(255, 110, 120, 0)');
+            slGrad.addColorStop(0.3, 'rgba(255, 110, 120, 0.15)');
             slGrad.addColorStop(0.5, 'rgba(255, 110, 120, 0.30)');
-            slGrad.addColorStop(0.501, 'rgba(255, 110, 120, 0.50)');
+            slGrad.addColorStop(0.7, 'rgba(255, 110, 120, 0.55)');
             slGrad.addColorStop(1, 'rgba(255, 110, 120, 1.0)');
             ctx.fillStyle = slGrad;
             ctx.fillRect(barX, slTop, barWidth, slHeight);
