@@ -45,7 +45,7 @@
 }
 
 .tr-tab-card-label {
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 600;
     color: rgba(255, 255, 255, 0.5);
     font-family: 'Rajdhani', sans-serif;
@@ -476,5 +476,5 @@
     height: 2px;
     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
     margin-top: 6px;
-    margin-bottom: 10px;
+    margin-bottom: 11px;
 }
