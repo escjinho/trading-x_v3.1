@@ -140,18 +140,25 @@ const IndicatorManager = {
      */
     restoreSavedIndicators() {
         const enabledIndicators = IndicatorConfig.getEnabled();
-        // ★ BB/LWMA는 IndicatorManager가 아닌 ChartPanel 내장 시리즈로 관리 (중복 방지)
+        // ★ BB/LWMA는 ChartPanel 내장 시리즈로 관리 (중복 방지)
         const skipIds = ['bb', 'lwma'];
         const filtered = enabledIndicators.filter(i => !skipIds.includes(i.id));
-        console.log('[IndicatorManager] Restoring saved indicators:', filtered.map(i => i.id));
+        const skipped = enabledIndicators.filter(i => skipIds.includes(i.id));
+
+        console.log('[IndicatorManager] Restoring indicators — total:', enabledIndicators.map(i => i.id));
+        console.log('[IndicatorManager] → IndicatorManager 처리:', filtered.map(i => i.id));
+        console.log('[IndicatorManager] → ChartPanel 내장 (skip):', skipped.map(i => i.id));
 
         filtered.forEach(config => {
-            // 이미 활성화된 지표는 건너뛰기
             if (!this.activeIndicators[config.id]) {
                 this.addIndicator(config.id);
-                // 모달 체크박스 동기화
                 this.syncModalCheckbox(config.id, true);
             }
+        });
+
+        // ★ BB/LWMA도 모달 체크박스는 동기화
+        skipped.forEach(config => {
+            this.syncModalCheckbox(config.id, true);
         });
 
         // 레이아웃 업데이트

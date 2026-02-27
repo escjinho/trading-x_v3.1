@@ -485,6 +485,16 @@ const ChartPanel = {
                         if (lwmaSeries) lwmaSeries.applyOptions({ visible: _lwmaOn });
                         this._indicatorsInitialized = true;
                         console.log('[ChartPanel] BB/LWMA visibility restored — BB:', _bbOn, 'LWMA:', _lwmaOn);
+
+                        // ★ BB/LWMA 활성화 상태인데 데이터가 이미 로드된 경우 visible 재적용
+                        if (_bbOn && data.indicators.bb_upper) {
+                            if (bbUpperSeries) bbUpperSeries.applyOptions({ visible: true });
+                            if (bbMiddleSeries) bbMiddleSeries.applyOptions({ visible: true });
+                            if (bbLowerSeries) bbLowerSeries.applyOptions({ visible: true });
+                        }
+                        if (_lwmaOn && data.indicators.lwma) {
+                            if (lwmaSeries) lwmaSeries.applyOptions({ visible: true });
+                        }
                     }
                 }
 
@@ -741,9 +751,38 @@ const ChartPanel = {
             if (bbLowerSeries) bbLowerSeries.setData([]);
             if (lwmaSeries) lwmaSeries.setData([]);
         } catch(e) {}
-        // ★ IndicatorManager의 시리즈도 초기화
+        // ★ IndicatorManager 시리즈만 정리 (enabled 상태는 보존!)
+        // removeAll()은 config.enabled를 전부 false로 리셋하므로 사용하지 않음
         if (typeof IndicatorManager !== 'undefined') {
-            try { IndicatorManager.removeAll(); } catch(e) {}
+            try {
+                // 시각적 시리즈만 제거 (config.enabled는 건드리지 않음)
+                Object.keys(IndicatorManager.activeIndicators).forEach(id => {
+                    const config = IndicatorConfig.get(id);
+                    if (config && config.type === 'overlay') {
+                        IndicatorManager.removeOverlayIndicator(id);
+                    } else if (config && config.type === 'panel') {
+                        IndicatorManager.removePanelIndicator(id);
+                    }
+                });
+                IndicatorManager.activeIndicators = {};
+
+                // 패널 차트 정리
+                Object.keys(IndicatorManager.panelCharts).forEach(id => {
+                    try { IndicatorManager.panelCharts[id].remove(); } catch(e) {}
+                });
+                IndicatorManager.panelCharts = {};
+
+                // 패널 DOM 정리
+                const panelsEl = document.getElementById('indicator-panels');
+                if (panelsEl) panelsEl.innerHTML = '';
+
+                // 메인 차트 높이 복원
+                IndicatorManager.restoreMainChartHeight();
+
+                console.log('[reinit] IndicatorManager 시리즈만 정리 (enabled 상태 보존)');
+            } catch(e) {
+                console.warn('[reinit] IndicatorManager 정리 실패:', e);
+            }
         }
         if (chart) {
             chart.remove();
