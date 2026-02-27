@@ -876,49 +876,43 @@ const QeTickChart = {
         // Y축 경계 = 차트 플롯 영역 끝
         let plotW = 0;
         try { plotW = this.chart.timeScale().width(); } catch(e) {}
-        if (!plotW || plotW <= 0) plotW = canvas.width - 100; // fallback
+        if (!plotW || plotW <= 0) plotW = canvas.width - 100;
         const barX = plotW - 2;
         const barWidth = 4;
 
-        // 가격 → 픽셀 좌표 변환
-        const entryY = this.areaSeries.priceToCoordinate(ed.price);
+        // ★ BEP 기준으로 막대 그리기 (진입가가 아닌 손익분기점)
+        const bepPrice = ed.bep || ed.price;
+        const bepY = this.areaSeries.priceToCoordinate(bepPrice);
         const tpY = this.areaSeries.priceToCoordinate(ed.tp);
         const slY = this.areaSeries.priceToCoordinate(ed.sl);
-        if (entryY === null || tpY === null || slY === null) return;
+        if (bepY === null || tpY === null || slY === null) return;
 
-        // 현재 가격의 진행도 계산
-        const currentPrice = this.lastPrice || ed.price;
-        const tpProgress = Math.max(0, Math.min(1,
-            (currentPrice - ed.price) / (ed.tp - ed.price)
-        ));
-        const slProgress = Math.max(0, Math.min(1,
-            (currentPrice - ed.price) / (ed.sl - ed.price)
-        ));
-
-        // TP 바 (초록): entry → TP, 진행도에 따라 진해짐
-        const tpTop = Math.min(entryY, tpY);
-        const tpBottom = Math.max(entryY, tpY);
+        // ★ TP 막대 (초록): BEP → TP — 2단계 그라디언트
+        // 1단계(BEP~중간): 0% → 30%  |  2단계(중간~TP): 50% → 100%
+        const tpTop = Math.min(bepY, tpY);
+        const tpBottom = Math.max(bepY, tpY);
         const tpHeight = tpBottom - tpTop;
         if (tpHeight > 0) {
-            const tpGrad = ctx.createLinearGradient(0, entryY, 0, tpY);
-            const tpAlphaBase = 0.5;
-            const tpAlphaMax = 0.5 + tpProgress * 0.45;
-            tpGrad.addColorStop(0, 'rgba(50, 255, 160, ' + tpAlphaBase + ')');
-            tpGrad.addColorStop(1, 'rgba(50, 255, 160, ' + tpAlphaMax + ')');
+            const tpGrad = ctx.createLinearGradient(0, bepY, 0, tpY);
+            tpGrad.addColorStop(0, 'rgba(50, 255, 160, 0)');
+            tpGrad.addColorStop(0.5, 'rgba(50, 255, 160, 0.30)');
+            tpGrad.addColorStop(0.501, 'rgba(50, 255, 160, 0.50)');
+            tpGrad.addColorStop(1, 'rgba(50, 255, 160, 1.0)');
             ctx.fillStyle = tpGrad;
             ctx.fillRect(barX, tpTop, barWidth, tpHeight);
         }
 
-        // SL 바 (빨강): entry → SL, 진행도에 따라 진해짐
-        const slTop = Math.min(entryY, slY);
-        const slBottom = Math.max(entryY, slY);
+        // ★ SL 막대 (빨강): BEP → SL — 2단계 그라디언트
+        // 1단계(BEP~중간): 0% → 30%  |  2단계(중간~SL): 50% → 100%
+        const slTop = Math.min(bepY, slY);
+        const slBottom = Math.max(bepY, slY);
         const slHeight = slBottom - slTop;
         if (slHeight > 0) {
-            const slGrad = ctx.createLinearGradient(0, entryY, 0, slY);
-            const slAlphaBase = 0.5;
-            const slAlphaMax = 0.5 + slProgress * 0.45;
-            slGrad.addColorStop(0, 'rgba(255, 110, 120, ' + slAlphaBase + ')');
-            slGrad.addColorStop(1, 'rgba(255, 110, 120, ' + slAlphaMax + ')');
+            const slGrad = ctx.createLinearGradient(0, bepY, 0, slY);
+            slGrad.addColorStop(0, 'rgba(255, 110, 120, 0)');
+            slGrad.addColorStop(0.5, 'rgba(255, 110, 120, 0.30)');
+            slGrad.addColorStop(0.501, 'rgba(255, 110, 120, 0.50)');
+            slGrad.addColorStop(1, 'rgba(255, 110, 120, 1.0)');
             ctx.fillStyle = slGrad;
             ctx.fillRect(barX, slTop, barWidth, slHeight);
         }
