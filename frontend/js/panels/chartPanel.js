@@ -540,6 +540,26 @@ const ChartPanel = {
                     IndicatorManager.updateCandleData(data.candles);
                 }
 
+                // ★ BB/LWMA visible 최종 안전망 (addIndicator의 setTimeout 이후에 실행)
+                // addIndicator가 100ms, 300ms, 600ms setTimeout을 사용하므로 그 이후에 재적용
+                setTimeout(() => {
+                    if (typeof IndicatorConfig !== 'undefined') {
+                        const bbOn = IndicatorConfig.overlay.bb ? IndicatorConfig.overlay.bb.enabled : false;
+                        const lwmaOn = IndicatorConfig.overlay.lwma ? IndicatorConfig.overlay.lwma.enabled : false;
+                        if (bbUpperSeries) bbUpperSeries.applyOptions({ visible: bbOn });
+                        if (bbMiddleSeries) bbMiddleSeries.applyOptions({ visible: bbOn });
+                        if (bbLowerSeries) bbLowerSeries.applyOptions({ visible: bbOn });
+                        if (lwmaSeries) lwmaSeries.applyOptions({ visible: lwmaOn });
+                        // BB/LWMA 데이터가 비어있으면 리로드
+                        if ((bbOn || lwmaOn) && typeof this.loadIndicatorsOnly === 'function') {
+                            this.loadIndicatorsOnly();
+                        }
+                        if (bbOn || lwmaOn) {
+                            console.log('[ChartPanel] BB/LWMA visible 안전망 실행 — BB:', bbOn, 'LWMA:', lwmaOn);
+                        }
+                    }
+                }, 800);
+
                 // ★ 자동복귀 미설정 시 재설정 (초기 로드 완료 후)
                 if (!this._chartTouchHandler) {
                     setTimeout(() => this.setupAutoReturn(), 500);
