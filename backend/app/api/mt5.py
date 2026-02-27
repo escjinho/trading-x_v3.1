@@ -2581,6 +2581,285 @@ async def get_trading_report_summary(
     }
 
 
+@router.get("/trading-report-analysis")
+async def get_trading_report_analysis(
+    period: str = Query("week", description="조회 기간: today, week, month, 3month, custom"),
+    start_date: str = Query(None, description="커스텀 시작일 (YYYY-MM-DD)"),
+    end_date: str = Query(None, description="커스텀 종료일 (YYYY-MM-DD)"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """트레이딩 리포트 분석 — 6개 카드 데이터 (MT5 원본 deals 기반)"""
+    user_id = current_user.id
+
+    # ★ 기간 설정 (summary와 동일)
+    now = datetime.now()
+    if period == "custom" and start_date and end_date:
+        try:
+            start_time = datetime.strptime(start_date, "%Y-%m-%d")
+            end_time = datetime.strptime(end_date, "%Y-%m-%d").replace(hour=23, minute=59, second=59)
+        except:
+            start_time = now - timedelta(days=7)
+            end_time = now
+    elif period == "today":
+        start_time = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_time = now
+    elif period == "week":
+        start_time = now - timedelta(days=7)
+        end_time = now
+    elif period == "month":
+        start_time = now - timedelta(days=30)
+        end_time = now
+    elif period == "3month":
+        start_time = now - timedelta(days=90)
+        end_time = now
+    else:
+        start_time = now - timedelta(days=365)
+        end_time = now
+
+    # ★ MetaAPI 원본 deals 조회
+    from .metaapi_service import metaapi_service, is_metaapi_connected, get_user_trade_connection
+
+    _use_user_metaapi = bool(current_user.metaapi_account_id and current_user.metaapi_status == 'deployed')
+
+    raw_deals = []
+    try:
+        if _use_user_metaapi:
+            rpc = await get_user_trade_connection(user_id, current_user.metaapi_account_id)
+            if rpc:
+                result = await rpc.get_deals_by_time_range(start_time, end_time)
+                raw_deals = result.get('deals', []) if isinstance(result, dict) else (result or [])
+        elif is_metaapi_connected() and metaapi_service.trade_connection:
+            result = await metaapi_service.trade_connection.get_deals_by_time_range(start_time, end_time)
+            raw_deals = result.get('deals', []) if isinstance(result, dict) else (result or [])
+    except Exception as e:
+        print(f"[AnalysisReport] deals 조회 실패: {e}")
+
+    # ★ 청산 딜만 필터 (DEAL_ENTRY_OUT + 거래 딜만)
+    closed_deals = []
+    for deal in raw_deals:
+        deal_type = deal.get('type', '')
+        entry_type = deal.get('entryType', '')
+        if 'BALANCE' in str(deal_type).upper() or 'CREDIT' in str(deal_type).upper():
+            continue
+        if 'OUT' not in str(entry_type).upper():
+            continue
+
+        profit = (deal.get('profit', 0) or 0) + (deal.get('swap', 0) or 0) + (deal.get('commission', 0) or 0)
+        profit = round(profit, 2)
+
+        # 시간 파싱
+        deal_time = deal.get('time')
+        hour = -1
+        time_str = ""
+        if deal_time:
+            try:
+                if isinstance(deal_time, datetime):
+                    dt = deal_time
+                elif isinstance(deal_time, str):
+                    dt = dateutil_parser.isoparse(deal_time)
+                elif isinstance(deal_time, (int, float)):
+                    dt = datetime.fromtimestamp(deal_time)
+                else:
+                    dt = None
+                if dt:
+                    if dt.tzinfo:
+                        kst = pytz.timezone('Asia/Seoul')
+                        dt = dt.astimezone(kst)
+                    hour = dt.hour
+                    time_str = dt.strftime("%m/%d")
+            except:
+                pass
+
+        closed_deals.append({
+            "symbol": deal.get('symbol', ''),
+            "type": 'BUY' if 'BUY' in str(deal.get('type', '')).upper() else 'SELL',
+            "volume": deal.get('volume', 0) or 0,
+            "profit": profit,
+            "raw_profit": deal.get('profit', 0) or 0,
+            "hour": hour,
+            "time_str": time_str
+        })
+
+    total_count = len(closed_deals)
+    if total_count == 0:
+        return {
+            "total_count": 0, "period": period,
+            "winrate": {}, "symbols": [], "buysell": {}, "hourly": {},
+            "volume": {}, "risk": {}
+        }
+
+    # ═══════════════════════════════════════
+    # 카드 1: 승률 분석
+    # ═══════════════════════════════════════
+    wins = [d for d in closed_deals if d["profit"] > 0]
+    losses = [d for d in closed_deals if d["profit"] <= 0]
+    win_count = len(wins)
+    lose_count = len(losses)
+    win_rate = round(win_count / total_count * 100, 1) if total_count > 0 else 0
+    avg_win = round(sum(d["profit"] for d in wins) / win_count, 2) if win_count > 0 else 0
+    avg_loss = round(sum(d["profit"] for d in losses) / lose_count, 2) if lose_count > 0 else 0
+    rr_ratio = round(abs(avg_win / avg_loss), 2) if avg_loss != 0 else 0
+
+    winrate_data = {
+        "total": total_count, "win": win_count, "lose": lose_count,
+        "rate": win_rate, "avg_win": avg_win, "avg_loss": avg_loss, "rr_ratio": rr_ratio
+    }
+
+    # ═══════════════════════════════════════
+    # 카드 2: 종목별 분석
+    # ═══════════════════════════════════════
+    symbol_map = {}
+    for d in closed_deals:
+        s = d["symbol"]
+        if s not in symbol_map:
+            symbol_map[s] = {"count": 0, "wins": 0, "total_pl": 0, "volume": 0}
+        symbol_map[s]["count"] += 1
+        if d["profit"] > 0:
+            symbol_map[s]["wins"] += 1
+        symbol_map[s]["total_pl"] += d["profit"]
+        symbol_map[s]["volume"] += d["volume"]
+
+    symbols_data = []
+    for s, v in sorted(symbol_map.items(), key=lambda x: abs(x[1]["total_pl"]), reverse=True):
+        symbols_data.append({
+            "symbol": s,
+            "count": v["count"],
+            "win_rate": round(v["wins"] / v["count"] * 100, 1) if v["count"] > 0 else 0,
+            "total_pl": round(v["total_pl"], 2),
+            "volume": round(v["volume"], 2)
+        })
+
+    # ═══════════════════════════════════════
+    # 카드 3: Buy/Sell 분석
+    # ═══════════════════════════════════════
+    buys = [d for d in closed_deals if d["type"] == "BUY"]
+    sells = [d for d in closed_deals if d["type"] == "SELL"]
+    buy_wins = len([d for d in buys if d["profit"] > 0])
+    sell_wins = len([d for d in sells if d["profit"] > 0])
+    buy_pl = round(sum(d["profit"] for d in buys), 2)
+    sell_pl = round(sum(d["profit"] for d in sells), 2)
+
+    buysell_data = {
+        "buy": {
+            "count": len(buys),
+            "win_rate": round(buy_wins / len(buys) * 100, 1) if buys else 0,
+            "total_pl": buy_pl,
+            "avg_pl": round(buy_pl / len(buys), 2) if buys else 0
+        },
+        "sell": {
+            "count": len(sells),
+            "win_rate": round(sell_wins / len(sells) * 100, 1) if sells else 0,
+            "total_pl": sell_pl,
+            "avg_pl": round(sell_pl / len(sells), 2) if sells else 0
+        }
+    }
+
+    # ═══════════════════════════════════════
+    # 카드 4: 시간대별 분석
+    # ═══════════════════════════════════════
+    hourly_map = {}
+    for h in range(24):
+        hourly_map[h] = {"count": 0, "total_pl": 0}
+    for d in closed_deals:
+        if 0 <= d["hour"] <= 23:
+            hourly_map[d["hour"]]["count"] += 1
+            hourly_map[d["hour"]]["total_pl"] += d["profit"]
+
+    best_hour = max(hourly_map.items(), key=lambda x: x[1]["total_pl"])
+    worst_hour = min(hourly_map.items(), key=lambda x: x[1]["total_pl"])
+
+    hourly_data = {
+        "hours": {str(k): {"count": v["count"], "pl": round(v["total_pl"], 2)} for k, v in hourly_map.items()},
+        "best_hour": best_hour[0],
+        "best_hour_pl": round(best_hour[1]["total_pl"], 2),
+        "worst_hour": worst_hour[0],
+        "worst_hour_pl": round(worst_hour[1]["total_pl"], 2)
+    }
+
+    # ═══════════════════════════════════════
+    # 카드 5: 거래량 분석
+    # ═══════════════════════════════════════
+    volumes = [d["volume"] for d in closed_deals]
+    total_vol = round(sum(volumes), 2)
+    avg_vol = round(total_vol / total_count, 2) if total_count > 0 else 0
+    max_vol_deal = max(closed_deals, key=lambda d: d["volume"])
+    min_vol_deal = min(closed_deals, key=lambda d: d["volume"])
+
+    volume_data = {
+        "total": total_vol,
+        "avg": avg_vol,
+        "max": round(max_vol_deal["volume"], 2),
+        "max_detail": f"{max_vol_deal['symbol']} {max_vol_deal['type']} · {max_vol_deal['time_str']}",
+        "min": round(min_vol_deal["volume"], 2)
+    }
+
+    # ═══════════════════════════════════════
+    # 카드 6: 리스크 지표
+    # ═══════════════════════════════════════
+    # 연속 승/패 계산
+    max_win_streak = 0; max_loss_streak = 0
+    cur_win = 0; cur_loss = 0
+    win_streak_pl = 0; loss_streak_pl = 0
+    best_streak_pl = 0; worst_streak_pl = 0
+
+    # 시간순 정렬
+    sorted_deals = sorted(closed_deals, key=lambda d: d.get("time_str", ""))
+    for d in sorted_deals:
+        if d["profit"] > 0:
+            cur_win += 1
+            win_streak_pl += d["profit"]
+            if cur_win > max_win_streak:
+                max_win_streak = cur_win
+                best_streak_pl = win_streak_pl
+            cur_loss = 0
+            loss_streak_pl = 0
+        else:
+            cur_loss += 1
+            loss_streak_pl += d["profit"]
+            if cur_loss > max_loss_streak:
+                max_loss_streak = cur_loss
+                worst_streak_pl = loss_streak_pl
+            cur_win = 0
+            win_streak_pl = 0
+
+    # 최대 단일 수익/손실
+    best_deal = max(closed_deals, key=lambda d: d["profit"])
+    worst_deal = min(closed_deals, key=lambda d: d["profit"])
+
+    # Profit Factor
+    gross_profit = sum(d["profit"] for d in closed_deals if d["profit"] > 0)
+    gross_loss = abs(sum(d["profit"] for d in closed_deals if d["profit"] < 0))
+    profit_factor = round(gross_profit / gross_loss, 2) if gross_loss > 0 else 0
+
+    risk_data = {
+        "max_win_streak": max_win_streak,
+        "max_win_streak_pl": round(best_streak_pl, 2),
+        "max_loss_streak": max_loss_streak,
+        "max_loss_streak_pl": round(worst_streak_pl, 2),
+        "best_deal_pl": round(best_deal["profit"], 2),
+        "best_deal_detail": f"{best_deal['symbol']} · {best_deal['time_str']}",
+        "worst_deal_pl": round(worst_deal["profit"], 2),
+        "worst_deal_detail": f"{worst_deal['symbol']} · {worst_deal['time_str']}",
+        "profit_factor": profit_factor
+    }
+
+    print(f"[AnalysisReport] User {user_id}: {total_count}건 분석 완료 (period={period})")
+
+    return {
+        "total_count": total_count,
+        "period": period,
+        "start_date": start_time.strftime("%Y-%m-%d"),
+        "end_date": end_time.strftime("%Y-%m-%d"),
+        "winrate": winrate_data,
+        "symbols": symbols_data,
+        "buysell": buysell_data,
+        "hourly": hourly_data,
+        "volume": volume_data,
+        "risk": risk_data
+    }
+
+
 # ========== 거래 내역 ==========
 @router.get("/history")
 async def get_history(
