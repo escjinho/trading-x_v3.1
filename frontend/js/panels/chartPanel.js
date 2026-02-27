@@ -475,16 +475,16 @@ const ChartPanel = {
                         // lightweight-charts "Value is null" 무시
                     }
 
-                    // ★★★ BB/LWMA 가시성 제어 ★★★
-                    // 기본값 비활성화 - 사용자가 명시적으로 켜야만 표시
+                    // ★★★ BB/LWMA 가시성 제어 — localStorage 상태 기반 복원 ★★★
                     if (typeof this._indicatorsInitialized === 'undefined' || !this._indicatorsInitialized) {
-                        const _bbOn = false;
-                        const _lwmaOn = false;
+                        const _bbOn = (typeof IndicatorConfig !== 'undefined' && IndicatorConfig.overlay.bb) ? IndicatorConfig.overlay.bb.enabled : false;
+                        const _lwmaOn = (typeof IndicatorConfig !== 'undefined' && IndicatorConfig.overlay.lwma) ? IndicatorConfig.overlay.lwma.enabled : false;
                         if (bbUpperSeries) bbUpperSeries.applyOptions({ visible: _bbOn });
                         if (bbMiddleSeries) bbMiddleSeries.applyOptions({ visible: _bbOn });
                         if (bbLowerSeries) bbLowerSeries.applyOptions({ visible: _bbOn });
                         if (lwmaSeries) lwmaSeries.applyOptions({ visible: _lwmaOn });
                         this._indicatorsInitialized = true;
+                        console.log('[ChartPanel] BB/LWMA visibility restored — BB:', _bbOn, 'LWMA:', _lwmaOn);
                     }
                 }
 

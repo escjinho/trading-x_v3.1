@@ -851,27 +851,6 @@ const IndicatorCalculator = {
         }
 
         return { upper, middle, lower };
-    },
-
-    /**
-     * Moving Average Envelope
-     * Middle = SMA(close, period)
-     * Upper = Middle * (1 + percent/100)
-     * Lower = Middle * (1 - percent/100)
-     */
-    envelope(closes, times, period, percent) {
-        const middle = this.sma(closes, times, period);
-        const upper = [];
-        const lower = [];
-
-        const factor = percent / 100;
-
-        middle.forEach(m => {
-            upper.push({ time: m.time, value: m.value * (1 + factor) });
-            lower.push({ time: m.time, value: m.value * (1 - factor) });
-        });
-
-        return { upper, middle, lower };
     }
 };
 

@@ -2546,7 +2546,9 @@ async function loadTradingReportData() {
 function startTradingReportRefresh() {
     stopTradingReportRefresh();
     loadTradingReportData();
+    loadTradingReportSummary();  // ★ Summary 데이터도 함께 로드
     _trRefreshTimer = setInterval(loadTradingReportData, 5000);
+    // Summary는 자동 갱신 불필요 (기간 변경 시에만)
 }
 
 function stopTradingReportRefresh() {
@@ -2565,3 +2567,151 @@ function switchTrTab(tab) {
     var targetContent = document.getElementById(tab === 'summary' ? 'trContentSummary' : 'trContentAnalysis');
     if (targetContent) targetContent.classList.add('active');
 }
+
+// ========== 트레이딩 리포트 — Summary API 연동 ==========
+var _trCurrentPeriod = 'week';
+
+function toggleTrPeriod() {
+    var dd = document.getElementById('trPeriodDropdown');
+    if (dd) dd.classList.toggle('open');
+}
+
+function selectTrPeriod(period, label) {
+    _trCurrentPeriod = period;
+    var labelEl = document.getElementById('trPeriodLabel');
+    if (labelEl) labelEl.textContent = label;
+
+    // 드롭다운 닫기 + 활성 표시
+    document.querySelectorAll('.tr-period-option').forEach(function(o) {
+        o.classList.toggle('active', o.dataset.period === period);
+    });
+    document.getElementById('trPeriodDropdown').classList.remove('open');
+
+    // 커스텀 기간 숨기기
+    var custom = document.getElementById('trCustomPeriod');
+    if (custom) custom.style.display = 'none';
+
+    // 데이터 새로 조회
+    loadTradingReportSummary(period);
+}
+
+function openTrCustomPeriod() {
+    document.getElementById('trPeriodDropdown').classList.remove('open');
+    var custom = document.getElementById('trCustomPeriod');
+    if (custom) custom.style.display = 'flex';
+
+    // 기본값: 최근 7일
+    var today = new Date();
+    var weekAgo = new Date(today);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    var endInput = document.getElementById('trEndDate');
+    var startInput = document.getElementById('trStartDate');
+    if (endInput) endInput.value = today.toISOString().split('T')[0];
+    if (startInput) startInput.value = weekAgo.toISOString().split('T')[0];
+
+    var labelEl = document.getElementById('trPeriodLabel');
+    if (labelEl) labelEl.textContent = '기간설정';
+    document.querySelectorAll('.tr-period-option').forEach(function(o) {
+        o.classList.toggle('active', o.dataset.period === 'custom');
+    });
+}
+
+function applyTrCustomPeriod() {
+    var s = document.getElementById('trStartDate').value;
+    var e = document.getElementById('trEndDate').value;
+    if (!s || !e) return;
+    _trCurrentPeriod = 'custom';
+    loadTradingReportSummary('custom', s, e);
+}
+
+async function loadTradingReportSummary(period, startDate, endDate) {
+    period = period || _trCurrentPeriod;
+
+    // 로딩 표시
+    var loading = document.getElementById('trSummaryLoading');
+    var card = document.getElementById('trSummaryCard');
+    if (loading) loading.style.display = 'flex';
+    if (card) card.style.opacity = '0.4';
+
+    try {
+        var tkn = localStorage.getItem('access_token');
+        var url = API_URL + '/mt5/trading-report-summary?period=' + period;
+        if (period === 'custom' && startDate && endDate) {
+            url += '&start_date=' + startDate + '&end_date=' + endDate;
+        }
+
+        var res = await fetch(url, {
+            headers: { 'Authorization': 'Bearer ' + tkn }
+        });
+        if (!res.ok) { console.error('[TR Summary] HTTP 에러:', res.status); return; }
+        var d = await res.json();
+
+        function fmtUSD(v) {
+            var n = Number(v || 0);
+            if (n === 0) return '$0.00';
+            var sign = n >= 0 ? '' : '-';
+            return sign + '$' + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2 });
+        }
+        function fmtPL(v) {
+            var n = Number(v || 0);
+            if (n === 0) return '$0.00';
+            return (n >= 0 ? '+$' : '-$') + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2 });
+        }
+        function plClass(v) {
+            var n = Number(v || 0);
+            return n > 0 ? 'tr-summary-value tr-val-profit' : n < 0 ? 'tr-summary-value tr-val-loss' : 'tr-summary-value';
+        }
+
+        // 데이터 업데이트
+        var el;
+        el = document.getElementById('trSumBroker');
+        if (el) el.textContent = d.broker || '-';
+
+        el = document.getElementById('trSumAccount');
+        if (el) el.textContent = d.account || '-';
+
+        el = document.getElementById('trSumInitial');
+        if (el) el.textContent = fmtUSD(d.initial_balance);
+
+        el = document.getElementById('trSumTotalPL');
+        if (el) { el.textContent = fmtPL(d.total_pl); el.className = plClass(d.total_pl); }
+
+        el = document.getElementById('trSumTradeProfit');
+        if (el) { el.textContent = fmtPL(d.trade_profit); el.className = plClass(d.trade_profit); }
+
+        el = document.getElementById('trSumSwap');
+        if (el) { el.textContent = fmtPL(d.swap); el.className = plClass(d.swap); }
+
+        el = document.getElementById('trSumCommission');
+        if (el) { el.textContent = fmtPL(d.commission); el.className = plClass(d.commission); }
+
+        el = document.getElementById('trSumBalance');
+        if (el) el.textContent = fmtUSD(d.current_balance);
+
+        el = document.getElementById('trSumReturn');
+        if (el) {
+            var rate = Number(d.return_rate || 0);
+            el.textContent = (rate >= 0 ? '+' : '') + rate.toFixed(2) + '%';
+            el.className = plClass(rate);
+        }
+
+        // ★ daily_pl 저장 (그래프용 — 다음 단계에서 사용)
+        window._trDailyPL = d.daily_pl || [];
+
+        console.log('[TR Summary] 로드 완료:', d);
+
+    } catch (e) {
+        console.error('[TR Summary] 에러:', e);
+    } finally {
+        if (loading) loading.style.display = 'none';
+        if (card) card.style.opacity = '1';
+    }
+}
+
+// ★ 드롭다운 외부 클릭 시 닫기
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.tr-period-selector')) {
+        var dd = document.getElementById('trPeriodDropdown');
+        if (dd) dd.classList.remove('open');
+    }
+});

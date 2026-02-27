@@ -575,7 +575,6 @@ const IndicatorManager = {
 
             case 'keltner':
             case 'donchian':
-            case 'envelope':
                 // Upper band
                 indicator.series.push(this.mainChart.addLineSeries({
                     color: config.style.upperColor,
@@ -1033,12 +1032,6 @@ const IndicatorManager = {
                 indicator.series[2].setData(data.lower);
                 break;
 
-            case 'envelope':
-                data = IndicatorCalculator.envelope(closes, times, config.params.period, config.params.percent);
-                indicator.series[0].setData(data.upper);
-                indicator.series[1].setData(data.middle);
-                indicator.series[2].setData(data.lower);
-                break;
         }
 
         } catch (calcErr) {

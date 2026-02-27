@@ -62,7 +62,7 @@
         <link rel="stylesheet" href="css/quickeasy.css?v=20260226b">
     <link rel="stylesheet" href="css/chart.css?v=1771777952">
     <link rel="stylesheet" href="css/account.css?v=20260227c">
-    <link rel="stylesheet" href="css/my.css?v=1772152342">
+    <link rel="stylesheet" href="css/my.css?v=20260227d">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
@@ -2192,10 +2192,79 @@
 
                         <!-- 서머리 콘텐츠 -->
                         <div class="tr-tab-content active" id="trContentSummary">
-                            <div class="tr-content-placeholder">
-                                <span class="material-icons-round" style="font-size:32px;color:rgba(255,255,255,0.15);">summarize</span>
-                                <p>서머리 내용이 여기에 표시됩니다</p>
+
+                            <!-- 기간 선택 헤더 -->
+                            <div class="tr-summary-header">
+                                <div class="tr-summary-title">Summary</div>
+                                <div class="tr-period-selector" id="trPeriodSelector">
+                                    <div class="tr-period-btn" onclick="toggleTrPeriod()">
+                                        <span id="trPeriodLabel">이번주</span>
+                                        <span class="material-icons-round">expand_more</span>
+                                    </div>
+                                    <div class="tr-period-dropdown" id="trPeriodDropdown">
+                                        <div class="tr-period-option" data-period="today" onclick="selectTrPeriod('today','오늘')">오늘</div>
+                                        <div class="tr-period-option active" data-period="week" onclick="selectTrPeriod('week','이번주')">이번주</div>
+                                        <div class="tr-period-option" data-period="month" onclick="selectTrPeriod('month','이번달')">이번달</div>
+                                        <div class="tr-period-option" data-period="3month" onclick="selectTrPeriod('3month','3개월')">3개월</div>
+                                        <div class="tr-period-option" data-period="custom" onclick="openTrCustomPeriod()">기간설정</div>
+                                    </div>
+                                </div>
                             </div>
+
+                            <!-- 커스텀 기간 입력 (숨김) -->
+                            <div class="tr-custom-period" id="trCustomPeriod" style="display:none;">
+                                <input type="date" id="trStartDate" class="tr-date-input">
+                                <span class="tr-date-sep">~</span>
+                                <input type="date" id="trEndDate" class="tr-date-input">
+                                <button class="tr-date-apply" onclick="applyTrCustomPeriod()">조회</button>
+                            </div>
+
+                            <!-- 서머리 데이터 카드 -->
+                            <div class="tr-summary-card" id="trSummaryCard">
+                                <div class="tr-summary-row">
+                                    <span class="tr-summary-label">Broker</span>
+                                    <span class="tr-summary-value" id="trSumBroker">-</span>
+                                </div>
+                                <div class="tr-summary-row">
+                                    <span class="tr-summary-label">Account</span>
+                                    <span class="tr-summary-value" id="trSumAccount">-</span>
+                                </div>
+                                <div class="tr-summary-row">
+                                    <span class="tr-summary-label">초기 금액</span>
+                                    <span class="tr-summary-value" id="trSumInitial">-</span>
+                                </div>
+                                <div class="tr-summary-row tr-summary-total">
+                                    <span class="tr-summary-label">Total P&L</span>
+                                    <span class="tr-summary-value" id="trSumTotalPL">-</span>
+                                </div>
+                                <div class="tr-summary-row tr-summary-sub">
+                                    <span class="tr-summary-label">거래손익</span>
+                                    <span class="tr-summary-value" id="trSumTradeProfit">-</span>
+                                </div>
+                                <div class="tr-summary-row tr-summary-sub">
+                                    <span class="tr-summary-label">스왑</span>
+                                    <span class="tr-summary-value" id="trSumSwap">-</span>
+                                </div>
+                                <div class="tr-summary-row tr-summary-sub">
+                                    <span class="tr-summary-label">커미션</span>
+                                    <span class="tr-summary-value" id="trSumCommission">-</span>
+                                </div>
+                                <div class="tr-summary-row">
+                                    <span class="tr-summary-label">현재 잔고</span>
+                                    <span class="tr-summary-value" id="trSumBalance">-</span>
+                                </div>
+                                <div class="tr-summary-row">
+                                    <span class="tr-summary-label">수익률</span>
+                                    <span class="tr-summary-value" id="trSumReturn">-</span>
+                                </div>
+                            </div>
+
+                            <!-- 로딩 표시 -->
+                            <div class="tr-summary-loading" id="trSummaryLoading" style="display:none;">
+                                <span class="material-icons-round tr-loading-spin">refresh</span>
+                                <span>데이터 조회 중...</span>
+                            </div>
+
                         </div>
 
                         <!-- 분석 리포트 콘텐츠 -->
@@ -3851,21 +3920,21 @@
     <script src="js/utils.js?v=1771777952"></script>
     <script src="js/watchlist.js?v=1771777952"></script>
     <script src="js/navigation.js?v=1771803124"></script>
-    <script src="js/my.js?v=20260227c"></script>
+    <script src="js/my.js?v=20260227d"></script>
 
     <!-- Chart Panels (모듈화) -->
     <script src="js/panels/gaugePanel.js?v=1771777952"></script>
     <script src="js/panels/chartGaugePanel.js?v=1771777952"></script>
 
     <!-- Indicator System -->
-    <script src="js/indicators/config.js?v=20260227d"></script>
+    <script src="js/indicators/config.js?v=20260227e"></script>
     <script src="js/indicators/calculator.js?v=20260227d"></script>
-    <script src="js/indicators/index.js?v=20260227d"></script>
+    <script src="js/indicators/index.js?v=20260227e"></script>
 
     <!-- Chart Type System -->
     <script src="js/chartTypes/index.js?v=20260227c"></script>
 
-    <script src="js/panels/chartPanel.js?v=20260227e"></script>
+    <script src="js/panels/chartPanel.js?v=20260227f"></script>
     <script src="js/panels/symbolSelectorPanel.js?v=1771777952"></script>
     <script src="js/panels/randomWalkPanel.js?v=1771777952"></script>
     <script src="js/panels/multiOrderPanelV5.js?v=1771777952"></script>
@@ -4001,7 +4070,6 @@
         bb: { name: 'Bollinger Bands', color: '#2196F3', type: 'overlay' },
         keltner: { name: 'Keltner Channel', color: '#00ACC1', type: 'overlay' },
         donchian: { name: 'Donchian Channel', color: '#26A69A', type: 'overlay' },
-        envelope: { name: 'Envelope', color: '#7E57C2', type: 'overlay' },
         psar: { name: 'Parabolic SAR', color: '#FFEB3B', type: 'overlay' },
         ichimoku: { name: 'Ichimoku Cloud', color: '#E040FB', type: 'overlay' },
         vwap: { name: 'VWAP', color: '#673AB7', type: 'overlay' },
@@ -4024,6 +4092,32 @@
     };
     
     function openIndPopup() {
+        // ★ 모달 열 때 체크박스를 현재 IndicatorConfig 상태와 동기화
+        if (typeof IndicatorConfig !== 'undefined') {
+            document.querySelectorAll('.ind-item').forEach(item => {
+                const indId = item.dataset.ind;
+                if (!indId) return;
+                const config = IndicatorConfig.get(indId);
+                const checkbox = item.querySelector('.ind-checkbox');
+                if (!checkbox) return;
+
+                // ★ activeIndicators에도 있는지 확인 (BB/LWMA는 ChartPanel 내장)
+                let isActive = false;
+                if (config) {
+                    isActive = config.enabled;
+                } else if (indId === 'bb' && IndicatorConfig.overlay.bb) {
+                    isActive = IndicatorConfig.overlay.bb.enabled;
+                } else if (indId === 'lwma' && IndicatorConfig.overlay.lwma) {
+                    isActive = IndicatorConfig.overlay.lwma.enabled;
+                }
+
+                if (isActive) {
+                    checkbox.classList.add('checked');
+                } else {
+                    checkbox.classList.remove('checked');
+                }
+            });
+        }
         updatePanelCount();
         document.getElementById('indModalOverlay').style.display = 'flex';
     }
@@ -4211,6 +4305,11 @@
 
         // 차트 래퍼 클래스 업데이트 (높이 조절)
         updateChartWrapperClass(selectedPanel.length);
+
+        // ★ 지표 설정 localStorage에 저장 (재접속 시 복원용)
+        if (typeof IndicatorConfig !== 'undefined') {
+            IndicatorConfig.save();
+        }
 
         closeIndPopup();
 
@@ -5193,13 +5292,6 @@
                     <div class="ind-color-dot" style="background: #26A69A;"></div>
                     <div class="ind-info">
                         <span class="ind-name">Donchian Channel</span><span class="ind-desc">· 돈치안 채널</span>
-                    </div>
-                </div>
-                <div class="ind-item" data-ind="envelope" data-type="overlay" onclick="toggleIndicator(this)">
-                    <div class="ind-checkbox"></div>
-                    <div class="ind-color-dot" style="background: #7E57C2;"></div>
-                    <div class="ind-info">
-                        <span class="ind-name">Envelope</span><span class="ind-desc">· 엔벨로프</span>
                     </div>
                 </div>
                 <div class="ind-item" data-ind="psar" data-type="overlay" onclick="toggleIndicator(this)">

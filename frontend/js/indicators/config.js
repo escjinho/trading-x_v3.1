@@ -181,26 +181,6 @@ const IndicatorConfig = {
                 middleLineStyle: 2,
                 fillColor: 'rgba(38, 166, 154, 0.1)'
             }
-        },
-        envelope: {
-            id: 'envelope',
-            name: 'ENV',
-            fullName: 'Moving Average Envelope',
-            type: 'overlay',
-            enabled: false,
-            params: {
-                period: 20,
-                percent: 2.5,
-                source: 'close'
-            },
-            style: {
-                upperColor: '#FF7043',
-                middleColor: '#FF7043',
-                lowerColor: '#FF7043',
-                lineWidth: 1,
-                middleLineStyle: 2,
-                fillColor: 'rgba(255, 112, 67, 0.1)'
-            }
         }
     },
 
@@ -544,18 +524,11 @@ const IndicatorConfig = {
 
             const state = JSON.parse(saved);
 
-            // ★★★ BB/LWMA는 기본값 비활성화 유지 (localStorage에서 복원하지 않음) ★★★
-            const skipEnabledRestore = ['bb', 'lwma'];
-
             if (state.overlay) {
                 Object.keys(state.overlay).forEach(id => {
                     if (this.overlay[id]) {
-                        // BB/LWMA의 enabled는 항상 false로 강제 (localStorage 값 무시)
-                        if (skipEnabledRestore.includes(id)) {
-                            this.overlay[id].enabled = false;
-                        } else {
-                            this.overlay[id].enabled = state.overlay[id].enabled;
-                        }
+                        // ★ 모든 지표의 enabled 상태를 localStorage에서 복원 (BB/LWMA 포함)
+                        this.overlay[id].enabled = state.overlay[id].enabled;
                         Object.assign(this.overlay[id].params, state.overlay[id].params);
                         Object.assign(this.overlay[id].style, state.overlay[id].style);
                     }
