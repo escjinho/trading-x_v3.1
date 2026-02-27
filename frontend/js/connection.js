@@ -1281,6 +1281,30 @@ function connectWebSocket() {
             }
         }
 
+        // ★★★ 트레이딩 리포트 탭 실시간 업데이트 (라이브 WS) ★★★
+        {
+            const fmtUSD = (v) => '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
+            const trBal = document.getElementById('trLiveBalance');
+            if (trBal) trBal.textContent = fmtUSD(data.balance);
+            const trEq = document.getElementById('trLiveEquity');
+            if (trEq) trEq.textContent = fmtUSD(data._realtimeEquity || data.equity);
+            const trMar = document.getElementById('trLiveMargin');
+            if (trMar) trMar.textContent = fmtUSD(data.margin);
+            const trProfit = document.getElementById('trLiveProfit');
+            if (trProfit) {
+                let totalProfit = 0;
+                if (data.positions && Array.isArray(data.positions)) {
+                    data.positions.forEach(p => { totalProfit += p.profit || 0; });
+                } else if (data.position) {
+                    totalProfit = data.position.profit || 0;
+                } else {
+                    totalProfit = Number(data.profit || 0);
+                }
+                trProfit.textContent = totalProfit === 0 ? '\$0.00' : (totalProfit >= 0 ? '+\$' : '-\$') + Math.abs(totalProfit).toLocaleString('en-US', { minimumFractionDigits: 2 });
+                trProfit.className = 'my-live-stat-value' + (totalProfit > 0 ? ' profit-plus' : totalProfit < 0 ? ' profit-minus' : '');
+            }
+        }
+
         // ★ Open Positions 탭 실시간 업데이트
         if (typeof OpenPositions !== 'undefined' && data.positions) {
             OpenPositions.updatePositions(data.positions);
