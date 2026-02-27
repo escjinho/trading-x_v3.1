@@ -180,7 +180,10 @@
       "Bash(node -e \"const fs=require\\(''fs''\\); try { new Function\\(fs.readFileSync\\(''/var/www/trading-x/frontend/js/panels/chartPanel.js'',''utf8''\\)\\); console.log\\(''✅ 문법 OK''\\); } catch\\(e\\) { console.log\\(''❌'', e.message\\); }\")",
       "Bash(cd /var/www/trading-x __NEW_LINE_5b3a0b1e17a836f3__ echo \"=== 1. activeIndicators 현재값 확인 ===\" grep \"overlay:\" frontend/index.html)",
       "Bash(node -e \"const fs=require\\(''fs''\\); try { new Function\\(fs.readFileSync\\(''/var/www/trading-x/frontend/js/indicators/index.js'',''utf8''\\)\\); console.log\\(''✅ OK''\\); } catch\\(e\\) { console.log\\(''❌'', e.message\\); }\")",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(echo:*)",
+      "Bash(__NEW_LINE_18e71e99be99a73c__ echo \"=== 1. 파일 존재 + 크기 ===\")",
+      "Bash(__NEW_LINE_18e71e99be99a73c__ echo \"\")"
     ]
   }
 }

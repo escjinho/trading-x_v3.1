@@ -588,7 +588,9 @@ function openMyDetail(detail) {
         kyc: 'KYC',
         depositDemo: 'Demo 입출금',
         depositLive: 'Live 입출금',
-        tradingReport: '트레이딩 리포트',
+        tradingReport: 'Trading Report',
+        tradingReportLive: 'Live Trading Report',
+        tradingReportDemo: 'Demo Trading Report',
         trAlert: '체결 알림 설정',
         invite: '친구 초대',
         vip: 'VIP 프로그램',
@@ -708,7 +710,7 @@ function myGoBack() {
 
     // ★ 떠나는 뷰의 타이머 정리
     var leavingId = myPageStack[myPageStack.length - 1];
-    if (leavingId === 'tradingReport' && typeof stopTradingReportRefresh === 'function') stopTradingReportRefresh();
+    if (leavingId === 'tradingReportLive' && typeof stopTradingReportRefresh === 'function') stopTradingReportRefresh();
     if (leavingId === 'depositLive' && typeof stopLiveRefresh === 'function') stopLiveRefresh();
 
     // 현재 뷰 숨기기
@@ -1507,8 +1509,8 @@ function initDetailView(detail) {
         case 'loginHistory':
             loadLoginHistory();
             break;
-        case 'tradingReport':
-            startTradingReportRefresh();
+        case 'tradingReportLive':
+            if (typeof startTradingReportRefresh === 'function') startTradingReportRefresh();
             break;
     }
 }
@@ -2492,3 +2494,18 @@ function toggleKycMenu() {
 }
 
 // ========== 트레이딩 리포트 함수들은 tradingReport.js로 이동됨 ==========
+
+// ========== Account 탭 → 라이브 리포트 바로 이동 ==========
+function goToTradingReportLive() {
+    // 1) My 탭으로 전환
+    document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+    document.querySelector('.nav-item[data-page="my"]').classList.add('active');
+    document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+    document.getElementById('page-my').classList.add('active');
+
+    // 2) My 탭 리셋 후 tradingReportLive까지 직행
+    resetMyTab();
+    setTimeout(function() {
+        openMyDetail('tradingReportLive');
+    }, 50);
+}

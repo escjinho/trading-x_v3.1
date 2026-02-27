@@ -806,3 +806,19 @@
 .acc-commission-link:active {
     color: rgba(255, 255, 255, 0.9);
 }
+
+/* ===== Account 상세내역 보기 버튼 ===== */
+.acc-detail-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 12px;
+    margin: 10px 0;
+    color: rgba(255,255,255,0.5);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+.acc-detail-btn:active { color: var(--accent-cyan); }

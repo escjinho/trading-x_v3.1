@@ -61,9 +61,9 @@
     <link rel="stylesheet" href="css/styles.css?v=1771777952">
         <link rel="stylesheet" href="css/quickeasy.css?v=20260226b">
     <link rel="stylesheet" href="css/chart.css?v=1771777952">
-    <link rel="stylesheet" href="css/account.css?v=20260227c">
+    <link rel="stylesheet" href="css/account.css?v=20260227d">
     <link rel="stylesheet" href="css/my.css?v=20260227g">
-    <link rel="stylesheet" href="css/tradingReport.css?v=20260227f">
+    <link rel="stylesheet" href="css/tradingReport.css?v=20260227g">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
@@ -1350,6 +1350,12 @@
 
     </div>
 
+    <!-- ★ 상세내역 보기 하단 고정 버튼 -->
+    <div class="acc-detail-btn" onclick="goToTradingReportLive()">
+        <span>상세내역 보기</span>
+        <span class="material-icons-round" style="font-size:16px;">chevron_right</span>
+    </div>
+
     <!-- ★ 커미션 미반영 알림 바 (라이브 모드 전용) -->
     <div class="acc-commission-notice" id="accCommissionNotice" style="display:none;">
         <span class="acc-commission-icon">ⓘ</span>
@@ -2144,11 +2150,37 @@
                     </div>
                 </div>
 
-                <!-- ===== 트레이딩 리포트 ===== -->
+                <!-- ===== 트레이딩 리포트 — 계정 선택 ===== -->
                 <div class="my-view" id="myView-tradingReport">
                     <div class="my-sub-header">
                         <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
-                        <span class="my-sub-title">트레이딩 리포트</span>
+                        <span class="my-sub-title">Trading Report</span>
+                    </div>
+                    <div class="my-sub-body" style="padding:16px;">
+                        <div class="tr-acct-select-card" onclick="openMyDetail('tradingReportDemo')">
+                            <div class="tr-acct-select-icon"><span class="material-icons-round">science</span></div>
+                            <div class="tr-acct-select-info">
+                                <div class="tr-acct-select-title">Demo Account</div>
+                                <div class="tr-acct-select-desc">데모 계정 리포트</div>
+                            </div>
+                            <span class="material-icons-round tr-acct-select-arrow">chevron_right</span>
+                        </div>
+                        <div class="tr-acct-select-card" onclick="openMyDetail('tradingReportLive')">
+                            <div class="tr-acct-select-icon tr-acct-live"><span class="material-icons-round">trending_up</span></div>
+                            <div class="tr-acct-select-info">
+                                <div class="tr-acct-select-title">Live Account</div>
+                                <div class="tr-acct-select-desc">라이브 계정 리포트</div>
+                            </div>
+                            <span class="material-icons-round tr-acct-select-arrow">chevron_right</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== 트레이딩 리포트 — Live ===== -->
+                <div class="my-view" id="myView-tradingReportLive">
+                    <div class="my-sub-header">
+                        <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
+                        <span class="my-sub-title">Live Trading Report</span>
                     </div>
                     <div class="my-sub-body">
 
@@ -4126,7 +4158,7 @@
     <script src="js/utils.js?v=1771777952"></script>
     <script src="js/watchlist.js?v=1771777952"></script>
     <script src="js/navigation.js?v=1771803124"></script>
-    <script src="js/my.js?v=20260227e"></script>
+    <script src="js/my.js?v=20260227f"></script>
     <script src="js/tradingReport.js?v=20260227c"></script>
 
     <!-- Chart Panels (모듈화) -->

@@ -478,3 +478,31 @@
     margin-top: 6px;
     margin-bottom: 11px;
 }
+
+/* ===== 계정 선택 화면 ===== */
+.tr-acct-select-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 18px 16px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+.tr-acct-select-card:active { border-color: rgba(255,255,255,0.15); }
+.tr-acct-select-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: rgba(255,255,255,0.04);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.tr-acct-select-icon .material-icons-round { font-size: 22px; color: rgba(255,255,255,0.5); }
+.tr-acct-select-icon.tr-acct-live { background: rgba(0,212,255,0.08); }
+.tr-acct-select-icon.tr-acct-live .material-icons-round { color: var(--accent-cyan); }
+.tr-acct-select-info { flex: 1; }
+.tr-acct-select-title { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.9); font-family: 'Rajdhani',sans-serif; margin-bottom: 2px; }
+.tr-acct-select-desc { font-size: 11px; color: rgba(255,255,255,0.35); }
+.tr-acct-select-arrow { font-size: 20px; color: rgba(255,255,255,0.2); }
