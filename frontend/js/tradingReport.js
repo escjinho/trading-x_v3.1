@@ -79,6 +79,11 @@ function switchTrTab(tab) {
     document.querySelectorAll('.tr-tab-content').forEach(function(c) { c.classList.remove('active'); });
     var targetContent = document.getElementById(tab === 'summary' ? 'trContentSummary' : 'trContentAnalysis');
     if (targetContent) targetContent.classList.add('active');
+
+    // ★ 분석 탭 클릭 시 데이터 로드
+    if (tab === 'analysis') {
+        loadAnalysisReport(_trCurrentPeriod);
+    }
 }
 
 // ========== 트레이딩 리포트 — Summary API 연동 ==========
@@ -106,6 +111,12 @@ function selectTrPeriod(period, label) {
 
     // 데이터 새로 조회
     loadTradingReportSummary(period);
+
+    // ★ 분석 탭 활성화 되어 있으면 같이 갱신
+    var analysisTab = document.getElementById('trContentAnalysis');
+    if (analysisTab && analysisTab.classList.contains('active')) {
+        loadAnalysisReport(period);
+    }
 }
 
 function openTrCustomPeriod() {
@@ -135,6 +146,12 @@ function applyTrCustomPeriod() {
     if (!s || !e) return;
     _trCurrentPeriod = 'custom';
     loadTradingReportSummary('custom', s, e);
+
+    // ★ 분석 탭 활성화 되어 있으면 같이 갱신
+    var analysisTab = document.getElementById('trContentAnalysis');
+    if (analysisTab && analysisTab.classList.contains('active')) {
+        loadAnalysisReport('custom', s, e);
+    }
 }
 
 async function loadTradingReportSummary(period, startDate, endDate) {
@@ -468,5 +485,145 @@ function renderTrChart(dailyData, periodStart, periodEnd) {
             span.textContent = dailyData[n - 1].date.substring(5).replace('-', '/');
             xAxisEl.appendChild(span);
         }
+    }
+}
+
+// ========== 분석 리포트 — API 연동 + 렌더링 ==========
+async function loadAnalysisReport(period, startDate, endDate) {
+    period = period || _trCurrentPeriod;
+
+    var loading = document.getElementById('traLoading');
+    var content = document.getElementById('traContent');
+    if (loading) loading.style.display = 'flex';
+    if (content) content.style.display = 'none';
+
+    try {
+        var tkn = localStorage.getItem('access_token');
+        var url = API_URL + '/mt5/trading-report-analysis?period=' + period;
+        if (period === 'custom' && startDate && endDate) {
+            url += '&start_date=' + startDate + '&end_date=' + endDate;
+        }
+
+        var res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + tkn } });
+        if (!res.ok) { console.error('[Analysis] HTTP:', res.status); return; }
+        var d = await res.json();
+
+        if (!d.total_count || d.total_count === 0) {
+            if (loading) loading.style.display = 'none';
+            if (content) { content.style.display = 'block'; content.innerHTML = '<div style="text-align:center;padding:40px;color:rgba(255,255,255,0.25);font-size:13px;">해당 기간 거래 내역이 없습니다.</div>'; }
+            return;
+        }
+
+        // 기간 배지
+        var badge = document.getElementById('traPeriodBadge');
+        if (badge) badge.textContent = (d.start_date || '').substring(5).replace('-','/') + ' — ' + (d.end_date || '').substring(5).replace('-','/');
+
+        function fmtPL(v) { var n = Number(v||0); return (n >= 0 ? '+' : '-') + Math.abs(n).toLocaleString('en-US', {minimumFractionDigits:2}); }
+        function plColor(v) { return Number(v||0) >= 0 ? '#00d4a4' : '#ff4d5a'; }
+
+        // ═══ 카드 1: 승률 ═══
+        var w = d.winrate || {};
+        var el;
+        el = document.getElementById('traWinPct'); if (el) el.textContent = (w.rate || 0) + '%';
+        el = document.getElementById('traWinRing'); if (el) el.setAttribute('stroke-dasharray', (w.rate || 0) + ' ' + (100 - (w.rate || 0)));
+        el = document.getElementById('traWinLabel'); if (el) el.textContent = 'Win ' + (w.win || 0) + '건';
+        el = document.getElementById('traLoseLabel'); if (el) el.textContent = 'Lose ' + (w.lose || 0) + '건';
+        el = document.getElementById('traWinBar'); if (el) el.style.width = (w.rate || 0) + '%';
+        el = document.getElementById('traLoseBar'); if (el) el.style.width = (100 - (w.rate || 0)) + '%';
+        el = document.getElementById('traTotal'); if (el) el.textContent = (w.total || 0) + '건';
+        el = document.getElementById('traAvgWin'); if (el) el.textContent = fmtPL(w.avg_win);
+        el = document.getElementById('traAvgLoss'); if (el) el.textContent = fmtPL(w.avg_loss);
+        el = document.getElementById('traRR'); if (el) el.textContent = '1 : ' + (w.rr_ratio || 0);
+
+        // ═══ 카드 2: 종목별 ═══
+        var symbolCard = document.getElementById('traSymbolCard');
+        if (symbolCard && d.symbols && d.symbols.length > 0) {
+            var maxAbs = Math.max.apply(null, d.symbols.map(function(s) { return Math.abs(s.total_pl); })) || 1;
+            var html = '';
+            d.symbols.forEach(function(s) {
+                var pct = Math.min(48, Math.abs(s.total_pl) / maxAbs * 48);
+                var isProfit = s.total_pl >= 0;
+                var barClass = isProfit ? 'tra-symbol-bar tra-profit-bar' : 'tra-symbol-bar tra-loss-bar';
+                var barText = (isProfit ? '+' : '-') + Math.abs(s.total_pl).toLocaleString('en-US', {minimumFractionDigits:0});
+                html += '<div class="tra-symbol-row">';
+                html += '<div class="tra-symbol-name">' + s.symbol + '</div>';
+                html += '<div class="tra-symbol-bar-wrap"><div class="tra-symbol-center-line"></div>';
+                html += '<div class="' + barClass + '" style="width:' + pct + '%;">' + barText + '</div></div>';
+                html += '<div class="tra-symbol-meta">' + s.count + '건 · ' + s.win_rate + '%</div>';
+                html += '</div>';
+            });
+            symbolCard.innerHTML = html;
+        }
+
+        // ═══ 카드 3: Buy/Sell ═══
+        var bs = d.buysell || {};
+        var buy = bs.buy || {}; var sell = bs.sell || {};
+        el = document.getElementById('traBuyCount'); if (el) el.textContent = (buy.count||0) + '건';
+        el = document.getElementById('traBuyPL'); if (el) { el.textContent = fmtPL(buy.total_pl); el.style.color = plColor(buy.total_pl); }
+        el = document.getElementById('traBuyWinRate'); if (el) { el.textContent = (buy.win_rate||0) + '%'; el.style.color = '#00d4ff'; }
+        el = document.getElementById('traBuyAvg'); if (el) { el.textContent = fmtPL(buy.avg_pl); el.style.color = plColor(buy.avg_pl); }
+        el = document.getElementById('traSellCount'); if (el) el.textContent = (sell.count||0) + '건';
+        el = document.getElementById('traSellPL'); if (el) { el.textContent = fmtPL(sell.total_pl); el.style.color = plColor(sell.total_pl); }
+        el = document.getElementById('traSellWinRate'); if (el) { el.textContent = (sell.win_rate||0) + '%'; el.style.color = '#00d4ff'; }
+        el = document.getElementById('traSellAvg'); if (el) { el.textContent = fmtPL(sell.avg_pl); el.style.color = plColor(sell.avg_pl); }
+
+        // ═══ 카드 4: 시간대별 ═══
+        var hr = d.hourly || {};
+        var hours = hr.hours || {};
+        var timeChart = document.getElementById('traTimeChart');
+        if (timeChart) {
+            var maxCount = 0;
+            for (var h = 0; h < 24; h++) {
+                var hd = hours[String(h)] || {};
+                if ((hd.count || 0) > maxCount) maxCount = hd.count;
+            }
+            maxCount = maxCount || 1;
+            var barsHtml = '';
+            for (var h = 0; h < 24; h++) {
+                var hd = hours[String(h)] || {};
+                var cnt = hd.count || 0;
+                var pl = hd.pl || 0;
+                var heightPct = Math.max(2, cnt / maxCount * 100);
+                var color;
+                if (cnt === 0) color = 'rgba(255,255,255,0.04)';
+                else if (pl > 0) color = 'rgba(0,212,164,' + (0.3 + cnt / maxCount * 0.5) + ')';
+                else if (pl < 0) color = 'rgba(255,77,90,' + (0.3 + cnt / maxCount * 0.5) + ')';
+                else color = 'rgba(255,255,255,0.06)';
+                barsHtml += '<div class="tra-time-bar" style="height:' + heightPct + '%;background:' + color + ';"></div>';
+            }
+            timeChart.innerHTML = barsHtml;
+        }
+        el = document.getElementById('traBestHour');
+        if (el) el.textContent = (hr.best_hour != null ? String(hr.best_hour).padStart(2,'0') + ':00 ~ ' + String(hr.best_hour+1).padStart(2,'0') + ':00' : '-');
+        el = document.getElementById('traWorstHour');
+        if (el) el.textContent = (hr.worst_hour != null ? String(hr.worst_hour).padStart(2,'0') + ':00 ~ ' + String(hr.worst_hour+1).padStart(2,'0') + ':00' : '-');
+
+        // ═══ 카드 5: 거래량 ═══
+        var vol = d.volume || {};
+        el = document.getElementById('traVolTotal'); if (el) el.textContent = (vol.total || 0).toFixed(2);
+        el = document.getElementById('traVolAvg'); if (el) el.textContent = (vol.avg || 0).toFixed(2) + ' lot / 건';
+        el = document.getElementById('traVolMax'); if (el) el.textContent = (vol.max || 0).toFixed(2) + ' lot';
+        el = document.getElementById('traVolMin'); if (el) el.textContent = (vol.min || 0).toFixed(2) + ' lot';
+        el = document.getElementById('traVolMaxDetail'); if (el) el.textContent = vol.max_detail || '-';
+
+        // ═══ 카드 6: 리스크 ═══
+        var rk = d.risk || {};
+        el = document.getElementById('traStreakWin'); if (el) el.textContent = (rk.max_win_streak || 0) + '건';
+        el = document.getElementById('traStreakWinPL'); if (el) el.textContent = fmtPL(rk.max_win_streak_pl);
+        el = document.getElementById('traStreakLoss'); if (el) el.textContent = (rk.max_loss_streak || 0) + '건';
+        el = document.getElementById('traStreakLossPL'); if (el) el.textContent = fmtPL(rk.max_loss_streak_pl);
+        el = document.getElementById('traBestDeal'); if (el) el.textContent = fmtPL(rk.best_deal_pl);
+        el = document.getElementById('traBestDealDetail'); if (el) el.textContent = rk.best_deal_detail || '-';
+        el = document.getElementById('traWorstDeal'); if (el) el.textContent = fmtPL(rk.worst_deal_pl);
+        el = document.getElementById('traWorstDealDetail'); if (el) el.textContent = rk.worst_deal_detail || '-';
+        el = document.getElementById('traProfitFactor'); if (el) el.textContent = (rk.profit_factor || 0).toFixed(2);
+
+        console.log('[Analysis] 로드 완료:', d.total_count + '건');
+
+    } catch (e) {
+        console.error('[Analysis] 에러:', e);
+    } finally {
+        if (loading) loading.style.display = 'none';
+        if (content) content.style.display = 'block';
     }
 }

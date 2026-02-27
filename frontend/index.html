@@ -63,7 +63,7 @@
     <link rel="stylesheet" href="css/chart.css?v=1771777952">
     <link rel="stylesheet" href="css/account.css?v=20260227c">
     <link rel="stylesheet" href="css/my.css?v=20260227e">
-    <link rel="stylesheet" href="css/tradingReport.css?v=20260227a">
+    <link rel="stylesheet" href="css/tradingReport.css?v=20260227c">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
@@ -2302,10 +2302,183 @@
 
                         <!-- 분석 리포트 콘텐츠 -->
                         <div class="tr-tab-content" id="trContentAnalysis">
-                            <div class="tr-content-placeholder">
-                                <span class="material-icons-round" style="font-size:32px;color:rgba(255,255,255,0.15);">analytics</span>
-                                <p>분석 리포트 내용이 여기에 표시됩니다</p>
+
+                            <!-- 분석 헤더 + 기간 표시 -->
+                            <div class="tra-header">
+                                <span class="tra-title">분석 리포트</span>
+                                <span class="tra-period-badge" id="traPeriodBadge">-</span>
                             </div>
+
+                            <!-- 로딩 -->
+                            <div class="tra-loading" id="traLoading" style="display:none;">
+                                <span class="material-icons-round tr-loading-spin">refresh</span>
+                                <span>분석 데이터 조회 중...</span>
+                            </div>
+
+                            <!-- 분석 콘텐츠 -->
+                            <div id="traContent" style="display:none;">
+
+                            <!-- ═══ 카드 1: 승률 분석 ═══ -->
+                            <div class="tra-section-label">
+                                <span class="material-icons-round">emoji_events</span> 승률 분석
+                            </div>
+                            <div class="tra-card">
+                                <div class="tra-winrate-hero">
+                                    <div class="tra-winrate-ring">
+                                        <svg viewBox="0 0 42 42">
+                                            <circle cx="21" cy="21" r="15.9" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="3.5"/>
+                                            <circle cx="21" cy="21" r="15.9" fill="none" stroke="#00d4ff" stroke-width="3.5"
+                                                id="traWinRing" stroke-dasharray="0 100" stroke-linecap="round"/>
+                                        </svg>
+                                        <div class="tra-winrate-center">
+                                            <div class="tra-winrate-pct" id="traWinPct">-</div>
+                                            <div class="tra-winrate-lbl">승률</div>
+                                        </div>
+                                    </div>
+                                    <div class="tra-winrate-stats">
+                                        <div class="tra-winrate-bar-row">
+                                            <div class="tra-winrate-bar-label">
+                                                <span id="traWinLabel">Win -</span><span id="traLoseLabel">Lose -</span>
+                                            </div>
+                                            <div class="tra-winrate-bar-track">
+                                                <div class="tra-winrate-bar-win" id="traWinBar" style="width:0%"></div>
+                                                <div class="tra-winrate-bar-lose" id="traLoseBar" style="width:0%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="tra-row"><span class="tra-row-label">총 거래 수</span><span class="tra-row-value" id="traTotal">-</span></div>
+                                <div class="tra-row"><span class="tra-row-label">평균 수익</span><span class="tra-row-value tra-profit" id="traAvgWin">-</span></div>
+                                <div class="tra-row"><span class="tra-row-label">평균 손실</span><span class="tra-row-value tra-loss" id="traAvgLoss">-</span></div>
+                                <div class="tra-row"><span class="tra-row-label">손익비 (R:R)</span><span class="tra-row-value tra-cyan" id="traRR">-</span></div>
+                            </div>
+
+                            <!-- ═══ 카드 2: 종목별 분석 ═══ -->
+                            <div class="tra-section-label">
+                                <span class="material-icons-round">bar_chart</span> 종목별 분석
+                            </div>
+                            <div class="tra-card" id="traSymbolCard">
+                                <div class="tra-symbol-empty">데이터 없음</div>
+                            </div>
+
+                            <!-- ═══ 카드 3: Buy/Sell 분석 ═══ -->
+                            <div class="tra-section-label">
+                                <span class="material-icons-round">swap_vert</span> Buy / Sell 분석
+                            </div>
+                            <div class="tra-buysell-grid">
+                                <div class="tra-buysell-card tra-buy-card">
+                                    <div class="tra-buysell-header">
+                                        <span class="tra-buysell-type" style="color:#00d4a4;">BUY</span>
+                                        <span class="tra-buysell-count" id="traBuyCount">-</span>
+                                    </div>
+                                    <div class="tra-buysell-pl" id="traBuyPL" style="color:#00d4a4;">-</div>
+                                    <div class="tra-buysell-meta">
+                                        <div class="tra-buysell-meta-item">
+                                            <div class="tra-buysell-meta-label">승률</div>
+                                            <div class="tra-buysell-meta-val" id="traBuyWinRate">-</div>
+                                        </div>
+                                        <div class="tra-buysell-meta-item">
+                                            <div class="tra-buysell-meta-label">평균 P&L</div>
+                                            <div class="tra-buysell-meta-val" id="traBuyAvg">-</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="tra-buysell-card tra-sell-card">
+                                    <div class="tra-buysell-header">
+                                        <span class="tra-buysell-type" style="color:#ff4d5a;">SELL</span>
+                                        <span class="tra-buysell-count" id="traSellCount">-</span>
+                                    </div>
+                                    <div class="tra-buysell-pl" id="traSellPL" style="color:#ff4d5a;">-</div>
+                                    <div class="tra-buysell-meta">
+                                        <div class="tra-buysell-meta-item">
+                                            <div class="tra-buysell-meta-label">승률</div>
+                                            <div class="tra-buysell-meta-val" id="traSellWinRate">-</div>
+                                        </div>
+                                        <div class="tra-buysell-meta-item">
+                                            <div class="tra-buysell-meta-label">평균 P&L</div>
+                                            <div class="tra-buysell-meta-val" id="traSellAvg">-</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ═══ 카드 4: 시간대별 분석 ═══ -->
+                            <div class="tra-section-label">
+                                <span class="material-icons-round">schedule</span> 시간대별 분석
+                            </div>
+                            <div class="tra-card">
+                                <div class="tra-time-chart" id="traTimeChart"></div>
+                                <div class="tra-time-labels">
+                                    <span>0시</span><span>4시</span><span>8시</span><span>12시</span><span>16시</span><span>20시</span><span>23시</span>
+                                </div>
+                                <div class="tra-time-legend">
+                                    <div class="tra-time-legend-item"><div class="tra-time-legend-dot" style="background:#00d4a4;"></div>수익</div>
+                                    <div class="tra-time-legend-item"><div class="tra-time-legend-dot" style="background:#ff4d5a;"></div>손실</div>
+                                </div>
+                                <div style="height:8px;"></div>
+                                <div class="tra-row"><span class="tra-row-label">최고 수익 시간대</span><span class="tra-row-value tra-profit" id="traBestHour">-</span></div>
+                                <div class="tra-row"><span class="tra-row-label">최대 손실 시간대</span><span class="tra-row-value tra-loss" id="traWorstHour">-</span></div>
+                            </div>
+
+                            <!-- ═══ 카드 5: 거래량 분석 ═══ -->
+                            <div class="tra-section-label">
+                                <span class="material-icons-round">speed</span> 거래량 분석
+                            </div>
+                            <div class="tra-card">
+                                <div class="tra-volume-hero">
+                                    <div class="tra-volume-big" id="traVolTotal">-</div>
+                                    <div class="tra-volume-big-label">TOTAL LOT</div>
+                                </div>
+                                <div class="tra-row"><span class="tra-row-label">평균 거래량</span><span class="tra-row-value" id="traVolAvg">-</span></div>
+                                <div class="tra-row"><span class="tra-row-label">최대 거래량</span><span class="tra-row-value tra-cyan" id="traVolMax">-</span></div>
+                                <div class="tra-row"><span class="tra-row-label">최소 거래량</span><span class="tra-row-value" id="traVolMin">-</span></div>
+                                <div class="tra-row"><span class="tra-row-label">최대 거래 상세</span><span class="tra-row-value" id="traVolMaxDetail" style="font-size:11px;">-</span></div>
+                            </div>
+
+                            <!-- ═══ 카드 6: 리스크 지표 ═══ -->
+                            <div class="tra-section-label">
+                                <span class="material-icons-round">shield</span> 리스크 지표
+                            </div>
+                            <div class="tra-card">
+                                <div class="tra-risk-grid">
+                                    <div class="tra-risk-item">
+                                        <span class="material-icons-round" style="font-size:18px;color:#00d4a4;margin-bottom:6px;">local_fire_department</span>
+                                        <div class="tra-risk-label">최대 연속 수익</div>
+                                        <div class="tra-risk-value tra-profit" id="traStreakWin">-</div>
+                                        <div class="tra-risk-detail" id="traStreakWinPL">-</div>
+                                    </div>
+                                    <div class="tra-risk-item">
+                                        <span class="material-icons-round" style="font-size:18px;color:#ff4d5a;margin-bottom:6px;">ac_unit</span>
+                                        <div class="tra-risk-label">최대 연속 손실</div>
+                                        <div class="tra-risk-value tra-loss" id="traStreakLoss">-</div>
+                                        <div class="tra-risk-detail" id="traStreakLossPL">-</div>
+                                    </div>
+                                    <div class="tra-risk-item">
+                                        <span class="material-icons-round" style="font-size:18px;color:#00d4a4;margin-bottom:6px;">rocket_launch</span>
+                                        <div class="tra-risk-label">최대 단일 수익</div>
+                                        <div class="tra-risk-value tra-profit" id="traBestDeal">-</div>
+                                        <div class="tra-risk-detail" id="traBestDealDetail">-</div>
+                                    </div>
+                                    <div class="tra-risk-item">
+                                        <span class="material-icons-round" style="font-size:18px;color:#ff4d5a;margin-bottom:6px;">thunderstorm</span>
+                                        <div class="tra-risk-label">최대 단일 손실</div>
+                                        <div class="tra-risk-value tra-loss" id="traWorstDeal">-</div>
+                                        <div class="tra-risk-detail" id="traWorstDealDetail">-</div>
+                                    </div>
+                                </div>
+                                <div class="tra-pf-row">
+                                    <div class="tra-pf-left">
+                                        <div class="tra-pf-icon"><span class="material-icons-round">balance</span></div>
+                                        <div>
+                                            <div class="tra-pf-label">Profit Factor</div>
+                                            <div class="tra-pf-sub">총수익 ÷ 총손실</div>
+                                        </div>
+                                    </div>
+                                    <div class="tra-pf-value" id="traProfitFactor">-</div>
+                                </div>
+                            </div>
+
+                            </div><!-- /traContent -->
                         </div>
 
                     </div>
@@ -3954,7 +4127,7 @@
     <script src="js/watchlist.js?v=1771777952"></script>
     <script src="js/navigation.js?v=1771803124"></script>
     <script src="js/my.js?v=20260227e"></script>
-    <script src="js/tradingReport.js?v=20260227b"></script>
+    <script src="js/tradingReport.js?v=20260227c"></script>
 
     <!-- Chart Panels (모듈화) -->
     <script src="js/panels/gaugePanel.js?v=1771777952"></script>

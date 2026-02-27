@@ -385,3 +385,88 @@
     color: rgba(255, 255, 255, 0.25);
     font-family: 'Rajdhani', sans-serif;
 }
+
+/* ===== 분석 리포트 — Analysis Report ===== */
+.tra-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.tra-title { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.9); font-family: 'Rajdhani',sans-serif; letter-spacing: 0.3px; }
+.tra-period-badge { font-size: 11px; font-weight: 600; color: var(--accent-cyan); background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.15); border-radius: 6px; padding: 3px 10px; font-family: 'Rajdhani',sans-serif; }
+.tra-loading { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 40px; color: rgba(255,255,255,0.3); font-size: 12px; }
+.tra-section-label { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.9); font-family: 'Rajdhani',sans-serif; letter-spacing: 0.3px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.tra-section-label .material-icons-round { font-size: 16px; color: var(--accent-cyan); }
+.tra-card { background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+.tra-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+.tra-row:last-child { border-bottom: none; }
+.tra-row-label { font-size: 12px; color: rgba(255,255,255,0.5); }
+.tra-row-value { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.9); font-family: 'Rajdhani',sans-serif; }
+.tra-profit { color: #00d4a4 !important; }
+.tra-loss { color: #ff4d5a !important; }
+.tra-cyan { color: var(--accent-cyan) !important; }
+
+/* 승률 분석 */
+.tra-winrate-hero { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
+.tra-winrate-ring { position: relative; width: 80px; height: 80px; flex-shrink: 0; }
+.tra-winrate-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.tra-winrate-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); text-align: center; }
+.tra-winrate-pct { font-size: 22px; font-weight: 700; font-family: 'Rajdhani',sans-serif; color: var(--accent-cyan); }
+.tra-winrate-lbl { font-size: 9px; color: rgba(255,255,255,0.35); }
+.tra-winrate-stats { flex: 1; }
+.tra-winrate-bar-row { margin-bottom: 4px; }
+.tra-winrate-bar-label { font-size: 10px; color: rgba(255,255,255,0.4); margin-bottom: 4px; display: flex; justify-content: space-between; }
+.tra-winrate-bar-track { height: 6px; background: rgba(255,255,255,0.04); border-radius: 3px; overflow: hidden; display: flex; }
+.tra-winrate-bar-win { height: 100%; background: linear-gradient(90deg, #00d4a4, #00d4a4aa); border-radius: 3px 0 0 3px; transition: width 0.5s; }
+.tra-winrate-bar-lose { height: 100%; background: linear-gradient(90deg, #ff4d5aaa, #ff4d5a); border-radius: 0 3px 3px 0; transition: width 0.5s; }
+
+/* 종목별 분석 */
+.tra-symbol-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+.tra-symbol-row:last-child { border-bottom: none; }
+.tra-symbol-name { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.85); width: 70px; flex-shrink: 0; font-family: 'Rajdhani',sans-serif; }
+.tra-symbol-bar-wrap { flex: 1; position: relative; height: 20px; }
+.tra-symbol-center-line { position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: rgba(255,255,255,0.08); }
+.tra-symbol-bar { position: absolute; top: 0; height: 100%; border-radius: 4px; display: flex; align-items: center; padding: 0 6px; font-size: 10px; font-weight: 600; font-family: 'Rajdhani',sans-serif; min-width: 40px; }
+.tra-symbol-bar.tra-profit-bar { background: linear-gradient(90deg, rgba(0,212,164,0.5), rgba(0,212,164,0.2)); left: 50%; color: #00d4a4; }
+.tra-symbol-bar.tra-loss-bar { background: linear-gradient(270deg, rgba(255,77,90,0.5), rgba(255,77,90,0.2)); right: 50%; color: #ff4d5a; justify-content: flex-end; }
+.tra-symbol-meta { font-size: 9px; color: rgba(255,255,255,0.3); width: 55px; text-align: right; flex-shrink: 0; }
+.tra-symbol-empty { text-align: center; padding: 20px; color: rgba(255,255,255,0.2); font-size: 12px; }
+
+/* Buy/Sell 분석 */
+.tra-buysell-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.tra-buysell-card { background: var(--bg-tertiary); border-radius: 12px; padding: 16px 14px; border: 1px solid var(--border-color); position: relative; overflow: hidden; }
+.tra-buysell-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+.tra-buy-card::before { background: linear-gradient(90deg, #00d4a4, transparent); }
+.tra-sell-card::before { background: linear-gradient(90deg, #ff4d5a, transparent); }
+.tra-buysell-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.tra-buysell-type { font-size: 12px; font-weight: 700; letter-spacing: 0.5px; }
+.tra-buysell-count { font-size: 11px; color: rgba(255,255,255,0.35); font-family: 'Rajdhani',sans-serif; font-weight: 600; }
+.tra-buysell-pl { font-size: 20px; font-weight: 700; font-family: 'Rajdhani',sans-serif; margin-bottom: 12px; }
+.tra-buysell-meta { display: flex; justify-content: space-between; gap: 8px; }
+.tra-buysell-meta-item { text-align: center; flex: 1; }
+.tra-buysell-meta-label { font-size: 9px; color: rgba(255,255,255,0.3); margin-bottom: 2px; }
+.tra-buysell-meta-val { font-size: 13px; font-weight: 600; font-family: 'Rajdhani',sans-serif; color: rgba(255,255,255,0.8); }
+
+/* 시간대별 분석 */
+.tra-time-chart { display: flex; align-items: flex-end; gap: 2px; height: 80px; padding: 0 2px; margin-bottom: 4px; }
+.tra-time-bar { flex: 1; border-radius: 2px 2px 0 0; min-height: 1px; transition: height 0.3s; }
+.tra-time-labels { display: flex; justify-content: space-between; padding: 4px 2px 0; }
+.tra-time-labels span { font-size: 7px; color: rgba(255,255,255,0.2); font-family: 'Rajdhani',sans-serif; }
+.tra-time-legend { display: flex; gap: 16px; margin-top: 8px; justify-content: center; }
+.tra-time-legend-item { display: flex; align-items: center; gap: 4px; font-size: 9px; color: rgba(255,255,255,0.4); }
+.tra-time-legend-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+/* 거래량 분석 */
+.tra-volume-hero { margin-bottom: 12px; }
+.tra-volume-big { font-size: 28px; font-weight: 700; font-family: 'Rajdhani',sans-serif; color: var(--accent-cyan); }
+.tra-volume-big-label { font-size: 10px; color: rgba(255,255,255,0.35); margin-top: -4px; }
+
+/* 리스크 지표 */
+.tra-risk-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.tra-risk-item { background: rgba(255,255,255,0.02); border-radius: 10px; padding: 14px; border: 1px solid rgba(255,255,255,0.04); text-align: center; }
+.tra-risk-label { font-size: 10px; color: rgba(255,255,255,0.35); margin-bottom: 4px; }
+.tra-risk-value { font-size: 16px; font-weight: 700; font-family: 'Rajdhani',sans-serif; margin-bottom: 2px; }
+.tra-risk-detail { font-size: 9px; color: rgba(255,255,255,0.3); font-family: 'Rajdhani',sans-serif; }
+.tra-pf-row { display: flex; align-items: center; justify-content: space-between; background: rgba(0,212,255,0.04); border: 1px solid rgba(0,212,255,0.1); border-radius: 10px; padding: 14px 16px; }
+.tra-pf-left { display: flex; align-items: center; gap: 10px; }
+.tra-pf-icon { width: 36px; height: 36px; border-radius: 10px; background: rgba(0,212,255,0.08); display: flex; align-items: center; justify-content: center; }
+.tra-pf-icon .material-icons-round { font-size: 20px; color: var(--accent-cyan); }
+.tra-pf-label { font-size: 12px; color: rgba(255,255,255,0.6); }
+.tra-pf-sub { font-size: 9px; color: rgba(255,255,255,0.3); }
+.tra-pf-value { font-size: 24px; font-weight: 700; font-family: 'Rajdhani',sans-serif; color: var(--accent-cyan); }
