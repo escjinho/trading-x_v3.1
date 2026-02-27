@@ -506,64 +506,9 @@ async def get_account_info(
                     "metaapi_mode": "user"
                 }
 
-            # ★★★ 1순위: 공유 MetaAPI (유저별 MetaAPI가 없는 경우만) ★★★
-            if metaapi_connected and metaapi_account and not _use_user_metaapi:
-                balance = metaapi_account.get("balance", 0)
-                equity = metaapi_account.get("equity", balance)
-                margin = metaapi_account.get("margin", 0)
-                free_margin = metaapi_account.get("freeMargin", balance)
-                profit = metaapi_account.get("profit", 0)
-                leverage = metaapi_account.get("leverage", 500)
-
-                # 패널용 포지션 (magic 파라미터로 필터링)
-                position_data = None
-                for pos in metaapi_positions:
-                    if pos.get("magic") == magic:
-                        pos_type = pos.get("type", "")
-                        if isinstance(pos_type, int):
-                            pos_type = "BUY" if pos_type == 0 else "SELL"
-                        position_data = {
-                            "type": pos_type,
-                            "symbol": pos.get("symbol", ""),
-                            "volume": pos.get("volume", 0),
-                            "entry": pos.get("openPrice", 0),
-                            "profit": pos.get("profit", 0),
-                            "ticket": pos.get("id", 0),
-                            "magic": pos.get("magic", 0)
-                        }
-                        break
-
-                # ★★★ 유저 DB 업데이트 ★★★
-                if current_user.has_mt5_account:
-                    current_user.mt5_balance = balance
-                    current_user.mt5_equity = equity
-                    current_user.mt5_margin = margin
-                    current_user.mt5_free_margin = free_margin
-                    current_user.mt5_profit = profit
-                    current_user.mt5_leverage = leverage
-                    db.commit()
-
-                return {
-                    "broker": "MetaAPI Live",
-                    "account": current_user.mt5_account_number or "MetaAPI",
-                    "server": current_user.mt5_server or "HedgeHood-MT5",
-                    "balance": balance,
-                    "equity": equity,
-                    "margin": margin,
-                    "free_margin": free_margin,
-                    "profit": profit,
-                    "leverage": leverage,
-                    "currency": "USD",
-                    "positions_count": len(metaapi_positions),
-                    "position": position_data,
-                    "buy_count": buy_count,
-                    "sell_count": sell_count,
-                    "neutral_count": neutral_count,
-                    "base_score": base_score,
-                    "prices": get_bridge_prices(),
-                    "martin": martin_service.get_state(),
-                    "has_mt5": True
-                }
+            # ★★★ 공유 MetaAPI fallback 제거 (데이터 혼선 + DB 오염 방지) ★★★
+            if not _use_user_metaapi:
+                print(f"[MT5 AccountInfo] User {current_user.id}: 유저 MetaAPI 미연결 — 공유 계좌 fallback 스킵")
 
             # ★★★ Bridge 캐시 fallback ★★★
             cached_positions = bridge_cache.get("positions", [])

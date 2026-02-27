@@ -2546,3 +2546,22 @@ function openLiveReport() {
         }
     });
 }
+
+// ★ Live 입출금 진입 전 MT5 연결 확인
+function openLiveDeposit() {
+    if (typeof checkMT5Connection !== 'function') {
+        openMyDetail('depositLive');
+        return;
+    }
+    checkMT5Connection().then(function(hasMT5) {
+        if (hasMT5) {
+            openMyDetail('depositLive');
+        } else {
+            if (typeof openMT5ConnectModal === 'function') {
+                openMT5ConnectModal();
+            } else {
+                showToast('MT5 라이브 계좌를 먼저 연결해주세요', 'error');
+            }
+        }
+    });
+}
