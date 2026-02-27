@@ -62,7 +62,7 @@
         <link rel="stylesheet" href="css/quickeasy.css?v=20260226b">
     <link rel="stylesheet" href="css/chart.css?v=1771777952">
     <link rel="stylesheet" href="css/account.css?v=20260227c">
-    <link rel="stylesheet" href="css/my.css?v=20260227d">
+    <link rel="stylesheet" href="css/my.css?v=20260227e">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
@@ -2265,6 +2265,38 @@
                                 <span>데이터 조회 중...</span>
                             </div>
 
+                            <!-- 손익 그래프 (누적 라인 + 일별 바 결합) -->
+                            <div class="tr-chart-section" id="trChartSection" style="display:none;">
+                                <div class="tr-chart-header">
+                                    <span class="tr-chart-title">P&L Chart</span>
+                                    <span class="tr-chart-period" id="trChartPeriod"></span>
+                                </div>
+                                <div class="tr-chart-card">
+                                    <div class="tr-chart-summary-row">
+                                        <div class="tr-chart-summary-item">
+                                            <span class="tr-chart-summary-label">누적 P&L</span>
+                                            <span class="tr-chart-summary-val" id="trChartCumPL">-</span>
+                                        </div>
+                                        <div class="tr-chart-summary-item">
+                                            <span class="tr-chart-summary-label">거래일</span>
+                                            <span class="tr-chart-summary-val" id="trChartDays">-</span>
+                                        </div>
+                                        <div class="tr-chart-summary-item">
+                                            <span class="tr-chart-summary-label">최고 수익일</span>
+                                            <span class="tr-chart-summary-val tr-val-profit" id="trChartBestDay">-</span>
+                                        </div>
+                                        <div class="tr-chart-summary-item">
+                                            <span class="tr-chart-summary-label">최대 손실일</span>
+                                            <span class="tr-chart-summary-val tr-val-loss" id="trChartWorstDay">-</span>
+                                        </div>
+                                    </div>
+                                    <div class="tr-chart-container" id="trChartContainer">
+                                        <canvas id="trChartCanvas"></canvas>
+                                    </div>
+                                    <div class="tr-chart-xaxis" id="trChartXAxis"></div>
+                                </div>
+                            </div>
+
                         </div>
 
                         <!-- 분석 리포트 콘텐츠 -->
@@ -3920,7 +3952,7 @@
     <script src="js/utils.js?v=1771777952"></script>
     <script src="js/watchlist.js?v=1771777952"></script>
     <script src="js/navigation.js?v=1771803124"></script>
-    <script src="js/my.js?v=20260227d"></script>
+    <script src="js/my.js?v=20260227e"></script>
 
     <!-- Chart Panels (모듈화) -->
     <script src="js/panels/gaugePanel.js?v=1771777952"></script>

@@ -3765,3 +3765,98 @@
     font-size: 18px;
     animation: liveSpin 1s linear infinite;
 }
+
+/* ===== 트레이딩 리포트 — P&L Chart ===== */
+.tr-chart-section {
+    margin-top: 8px;
+    margin-bottom: 16px;
+}
+
+.tr-chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.tr-chart-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    font-family: 'Rajdhani', sans-serif;
+    letter-spacing: 0.3px;
+}
+
+.tr-chart-period {
+    font-size: 11px;
+    color: var(--accent-cyan);
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+.tr-chart-card {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 16px;
+    overflow: hidden;
+}
+
+/* 차트 상단 요약 */
+.tr-chart-summary-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 4px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.tr-chart-summary-item {
+    text-align: center;
+}
+
+.tr-chart-summary-label {
+    display: block;
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.35);
+    letter-spacing: 0.3px;
+    margin-bottom: 4px;
+}
+
+.tr-chart-summary-val {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.85);
+    font-family: 'Rajdhani', sans-serif;
+}
+
+.tr-chart-summary-val.tr-val-profit { color: #00d4a4; }
+.tr-chart-summary-val.tr-val-loss { color: #ff4d5a; }
+
+/* 차트 캔버스 */
+.tr-chart-container {
+    position: relative;
+    width: 100%;
+    height: 180px;
+}
+
+.tr-chart-container canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* X축 날짜 라벨 */
+.tr-chart-xaxis {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0 0;
+}
+
+.tr-chart-xaxis span {
+    font-size: 8px;
+    color: rgba(255, 255, 255, 0.25);
+    font-family: 'Rajdhani', sans-serif;
+}

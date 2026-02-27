@@ -2695,8 +2695,9 @@ async function loadTradingReportSummary(period, startDate, endDate) {
             el.className = plClass(rate);
         }
 
-        // ★ daily_pl 저장 (그래프용 — 다음 단계에서 사용)
+        // ★ daily_pl 저장 + 그래프 렌더링
         window._trDailyPL = d.daily_pl || [];
+        renderTrChart(window._trDailyPL);
 
         console.log('[TR Summary] 로드 완료:', d);
 
@@ -2715,3 +2716,244 @@ document.addEventListener('click', function(e) {
         if (dd) dd.classList.remove('open');
     }
 });
+
+// ========== 트레이딩 리포트 — P&L 그래프 (누적 라인 + 일별 바 결합) ==========
+function renderTrChart(dailyData) {
+    var section = document.getElementById('trChartSection');
+    if (!dailyData || dailyData.length === 0) {
+        if (section) section.style.display = 'none';
+        return;
+    }
+    if (section) section.style.display = 'block';
+
+    // ★ 상단 요약 업데이트
+    var lastCum = dailyData[dailyData.length - 1].cumulative || 0;
+    var cumEl = document.getElementById('trChartCumPL');
+    if (cumEl) {
+        cumEl.textContent = (lastCum >= 0 ? '+' : '-') + Math.abs(lastCum).toLocaleString('en-US', { minimumFractionDigits: 2 });
+        cumEl.className = 'tr-chart-summary-val ' + (lastCum > 0 ? 'tr-val-profit' : lastCum < 0 ? 'tr-val-loss' : '');
+    }
+
+    var daysEl = document.getElementById('trChartDays');
+    if (daysEl) daysEl.textContent = dailyData.length + '일';
+
+    // 최고 수익일 / 최대 손실일
+    var bestDay = null, worstDay = null;
+    dailyData.forEach(function(d) {
+        if (!bestDay || d.total > bestDay.total) bestDay = d;
+        if (!worstDay || d.total < worstDay.total) worstDay = d;
+    });
+
+    var bestEl = document.getElementById('trChartBestDay');
+    if (bestEl && bestDay) {
+        bestEl.textContent = '+' + Math.abs(bestDay.total).toLocaleString('en-US', { minimumFractionDigits: 0 });
+        bestEl.className = 'tr-chart-summary-val ' + (bestDay.total >= 0 ? 'tr-val-profit' : 'tr-val-loss');
+    }
+    var worstEl = document.getElementById('trChartWorstDay');
+    if (worstEl && worstDay) {
+        worstEl.textContent = '-' + Math.abs(worstDay.total).toLocaleString('en-US', { minimumFractionDigits: 0 });
+        worstEl.className = 'tr-chart-summary-val tr-val-loss';
+    }
+
+    // 기간 표시
+    var periodEl = document.getElementById('trChartPeriod');
+    if (periodEl) {
+        var first = dailyData[0].date.substring(5).replace('-', '/');
+        var last = dailyData[dailyData.length - 1].date.substring(5).replace('-', '/');
+        periodEl.textContent = first + ' — ' + last;
+    }
+
+    // ★ Canvas 렌더링
+    var canvas = document.getElementById('trChartCanvas');
+    if (!canvas) return;
+    var container = document.getElementById('trChartContainer');
+    var dpr = window.devicePixelRatio || 1;
+    var W = container.offsetWidth;
+    var H = container.offsetHeight;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    var ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    var n = dailyData.length;
+    var padL = 2, padR = 2, padT = 8, padB = 4;
+    var chartW = W - padL - padR;
+    var chartH = H - padT - padB;
+
+    // 값 범위 계산
+    var allVals = [];
+    dailyData.forEach(function(d) { allVals.push(d.total, d.cumulative); });
+    var maxVal = Math.max.apply(null, allVals);
+    var minVal = Math.min.apply(null, allVals);
+    // 약간의 여유
+    var range = maxVal - minVal || 1;
+    maxVal += range * 0.1;
+    minVal -= range * 0.1;
+    range = maxVal - minVal;
+
+    function yPos(v) { return padT + (1 - (v - minVal) / range) * chartH; }
+    var zeroY = yPos(0);
+
+    // 바 너비
+    var barGap = Math.max(2, Math.floor(chartW / n * 0.2));
+    var barW = Math.max(4, Math.floor((chartW - barGap * (n - 1)) / n));
+    if (barW > 28) barW = 28;
+    var totalBarArea = barW * n + barGap * (n - 1);
+    var startX = padL + (chartW - totalBarArea) / 2;
+
+    // ── 배경 그리드 ──
+    ctx.clearRect(0, 0, W, H);
+    ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+    ctx.lineWidth = 1;
+    for (var g = 0; g < 4; g++) {
+        var gy = padT + (chartH / 3) * g;
+        ctx.beginPath(); ctx.moveTo(padL, gy); ctx.lineTo(W - padR, gy); ctx.stroke();
+    }
+
+    // ── 제로 라인 ──
+    if (minVal < 0 && maxVal > 0) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath(); ctx.moveTo(padL, zeroY); ctx.lineTo(W - padR, zeroY); ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    // ── 일별 바 차트 ──
+    dailyData.forEach(function(d, i) {
+        var x = startX + i * (barW + barGap);
+        var val = d.total;
+        var top = val >= 0 ? yPos(val) : zeroY;
+        var bottom = val >= 0 ? zeroY : yPos(val);
+        var h = Math.max(2, bottom - top);
+
+        // 그라디언트
+        var grad;
+        if (val >= 0) {
+            grad = ctx.createLinearGradient(0, top, 0, bottom);
+            grad.addColorStop(0, 'rgba(0, 212, 164, 0.6)');
+            grad.addColorStop(1, 'rgba(0, 212, 164, 0.15)');
+        } else {
+            grad = ctx.createLinearGradient(0, top, 0, bottom);
+            grad.addColorStop(0, 'rgba(255, 77, 90, 0.15)');
+            grad.addColorStop(1, 'rgba(255, 77, 90, 0.6)');
+        }
+        ctx.fillStyle = grad;
+
+        // 둥근 상단 바
+        var radius = Math.min(3, barW / 2);
+        ctx.beginPath();
+        if (val >= 0) {
+            ctx.moveTo(x + radius, top);
+            ctx.arcTo(x + barW, top, x + barW, bottom, radius);
+            ctx.lineTo(x + barW, bottom);
+            ctx.lineTo(x, bottom);
+            ctx.arcTo(x, top, x + radius, top, radius);
+        } else {
+            ctx.moveTo(x, top);
+            ctx.lineTo(x + barW, top);
+            ctx.arcTo(x + barW, bottom, x, bottom, radius);
+            ctx.arcTo(x, bottom, x, top, radius);
+        }
+        ctx.closePath();
+        ctx.fill();
+    });
+
+    // ── 누적 P&L 에어리어 ──
+    var linePoints = [];
+    dailyData.forEach(function(d, i) {
+        var x = startX + i * (barW + barGap) + barW / 2;
+        var y = yPos(d.cumulative);
+        linePoints.push({ x: x, y: y });
+    });
+
+    if (linePoints.length > 1) {
+        // 에어리어 그라디언트
+        var lastPoint = linePoints[linePoints.length - 1];
+        var isProfit = lastPoint.y < zeroY;
+        var areaGrad = ctx.createLinearGradient(0, padT, 0, H);
+        if (isProfit) {
+            areaGrad.addColorStop(0, 'rgba(0, 212, 164, 0.15)');
+            areaGrad.addColorStop(1, 'rgba(0, 212, 164, 0)');
+        } else {
+            areaGrad.addColorStop(0, 'rgba(255, 77, 90, 0.12)');
+            areaGrad.addColorStop(1, 'rgba(255, 77, 90, 0)');
+        }
+
+        // 에어리어 채우기
+        ctx.beginPath();
+        ctx.moveTo(linePoints[0].x, linePoints[0].y);
+        for (var i = 1; i < linePoints.length; i++) {
+            // 스무스 커브 (bezier)
+            var prev = linePoints[i - 1];
+            var curr = linePoints[i];
+            var cpx = (prev.x + curr.x) / 2;
+            ctx.quadraticCurveTo(prev.x + (cpx - prev.x) * 0.8, prev.y, cpx, (prev.y + curr.y) / 2);
+            ctx.quadraticCurveTo(cpx + (curr.x - cpx) * 0.2, curr.y, curr.x, curr.y);
+        }
+        ctx.lineTo(lastPoint.x, zeroY);
+        ctx.lineTo(linePoints[0].x, zeroY);
+        ctx.closePath();
+        ctx.fillStyle = areaGrad;
+        ctx.fill();
+
+        // 라인
+        ctx.beginPath();
+        ctx.moveTo(linePoints[0].x, linePoints[0].y);
+        for (var i = 1; i < linePoints.length; i++) {
+            var prev = linePoints[i - 1];
+            var curr = linePoints[i];
+            var cpx = (prev.x + curr.x) / 2;
+            ctx.quadraticCurveTo(prev.x + (cpx - prev.x) * 0.8, prev.y, cpx, (prev.y + curr.y) / 2);
+            ctx.quadraticCurveTo(cpx + (curr.x - cpx) * 0.2, curr.y, curr.x, curr.y);
+        }
+        ctx.strokeStyle = isProfit ? '#00d4a4' : '#ff4d5a';
+        ctx.lineWidth = 2.5;
+        ctx.shadowColor = isProfit ? 'rgba(0,212,164,0.4)' : 'rgba(255,77,90,0.4)';
+        ctx.shadowBlur = 8;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // ── 끝점 글로우 도트 ──
+        ctx.beginPath();
+        ctx.arc(lastPoint.x, lastPoint.y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = isProfit ? '#00d4a4' : '#ff4d5a';
+        ctx.fill();
+        // 외곽 링
+        ctx.beginPath();
+        ctx.arc(lastPoint.x, lastPoint.y, 7, 0, Math.PI * 2);
+        ctx.strokeStyle = isProfit ? 'rgba(0,212,164,0.35)' : 'rgba(255,77,90,0.35)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // ── 끝점 금액 라벨 ──
+        var labelText = (lastCum >= 0 ? '+' : '-') + Math.abs(lastCum).toLocaleString('en-US', { minimumFractionDigits: 0 });
+        ctx.font = '600 11px Rajdhani, sans-serif';
+        ctx.fillStyle = isProfit ? '#00d4a4' : '#ff4d5a';
+        var labelW = ctx.measureText(labelText).width;
+        var labelX = lastPoint.x - labelW - 12;
+        if (labelX < padL + 10) labelX = lastPoint.x + 12;
+        ctx.fillText(labelText, labelX, lastPoint.y - 10);
+    }
+
+    // ── X축 날짜 라벨 ──
+    var xAxisEl = document.getElementById('trChartXAxis');
+    if (xAxisEl) {
+        xAxisEl.innerHTML = '';
+        // 최대 7개 라벨만 표시
+        var step = Math.max(1, Math.ceil(n / 7));
+        for (var i = 0; i < n; i += step) {
+            var span = document.createElement('span');
+            var dateStr = dailyData[i].date.substring(5).replace('-', '/');
+            span.textContent = dateStr;
+            xAxisEl.appendChild(span);
+        }
+        // 마지막 날짜 항상 표시
+        if ((n - 1) % step !== 0) {
+            var span = document.createElement('span');
+            span.textContent = dailyData[n - 1].date.substring(5).replace('-', '/');
+            xAxisEl.appendChild(span);
+        }
+    }
+}
