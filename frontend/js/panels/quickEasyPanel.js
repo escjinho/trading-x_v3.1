@@ -195,6 +195,8 @@ const QuickEasyPanel = {
         this._posVolume = 0;
         this._posTarget = 0;
         this._posTPSL = null;
+        this._posBEP = 0;
+        this._posSpread = 0;
 
         // 종목 전환
         if (prevSymbol !== symbol) {
@@ -944,6 +946,8 @@ const QuickEasyPanel = {
         this._posVolume = 0;
         this._posTarget = 0;
         this._posTPSL = null;
+        this._posBEP = 0;
+        this._posSpread = 0;
 
         // Win/Lose 초기화
         const wlEl = document.getElementById('qeWinLose');
@@ -964,21 +968,22 @@ const QuickEasyPanel = {
             ? (window.allPrices[symbol].bid || 0) : 0;
         if (currentPrice <= 0 || !this._posEntryPrice || !this._posTPSL) return;
 
-        const entry = this._posEntryPrice;
+        // ★ BEP 기준으로 Win/Lose 계산 (진입가가 아닌 손익분기점)
+        const bep = this._posBEP || this._posEntryPrice;  // fallback: 진입가
         const tp = this._posTPSL.tp;
         const sl = this._posTPSL.sl;
         const side = this._posSide;
 
-        // 가격 기반 이동 거리 계산
+        // 가격 기반 이동 거리 계산 (BEP 기준)
         let tpDist, slDist, movement;
         if (side === 'BUY') {
-            tpDist = tp - entry;
-            slDist = entry - sl;
-            movement = currentPrice - entry;
+            tpDist = tp - bep;
+            slDist = bep - sl;
+            movement = currentPrice - bep;
         } else {
-            tpDist = entry - tp;
-            slDist = sl - entry;
-            movement = entry - currentPrice;
+            tpDist = bep - tp;
+            slDist = sl - bep;
+            movement = bep - currentPrice;
         }
 
         const wlEl = document.getElementById('qeWinLose');
@@ -1035,12 +1040,16 @@ const QuickEasyPanel = {
             const price = (window.allPrices[sym] && window.allPrices[sym].bid) || 0;
             if (price <= 0) return;
 
-            let movement;
-            if (pos.side === 'BUY') movement = price - pos.entry;
-            else movement = pos.entry - price;
+            // ★ BEP 기준 자동청산 (스프레드 감안)
+            const spread = pos.spread || 0;
+            const bep = pos.side === 'BUY' ? (pos.entry + spread) : (pos.entry - spread);
 
-            const tpDist = pos.side === 'BUY' ? (pos.tpsl.tp - pos.entry) : (pos.entry - pos.tpsl.tp);
-            const slDist = pos.side === 'BUY' ? (pos.entry - pos.tpsl.sl) : (pos.tpsl.sl - pos.entry);
+            let movement;
+            if (pos.side === 'BUY') movement = price - bep;
+            else movement = bep - price;
+
+            const tpDist = pos.side === 'BUY' ? (pos.tpsl.tp - bep) : (bep - pos.tpsl.tp);
+            const slDist = pos.side === 'BUY' ? (bep - pos.tpsl.sl) : (pos.tpsl.sl - bep);
 
             if (tpDist > 0 && movement >= tpDist) {
                 console.log('[QE] 🎯 백그라운드 TP:', sym);
