@@ -2536,19 +2536,22 @@ async def get_trading_report_summary(
     total_pl = round(trade_profit + total_swap + total_commission, 2)
     net_deposits = round(net_deposits, 2)
 
-    # ★ 초기 금액 = 현재잔고 - 기간내 Total P&L - 기간내 순입출금 (MT5 공식)
-    initial_balance_raw = round(current_balance - total_pl - net_deposits, 2)
+    # ★ 기간 시작 시점 잔고 = 현재잔고 - 기간내 Total P&L - 기간내 순입출금
+    period_start_balance = round(current_balance - total_pl - net_deposits, 2)
 
-    # ★ 초기 금액이 음수 = 기간 내 계정 생성됨 → 0으로 표시
-    initial_balance = max(initial_balance_raw, 0)
+    # ★ 초기 금액 (투입 자본):
+    #   - 기간 전에 계좌 존재 (시작잔고 > 0) → 시작 잔고 + 기간내 순입금(양수만)
+    #   - 기간 내 계좌 생성 (시작잔고 <= 0) → 순입금이 곧 투입자본
+    if period_start_balance > 0:
+        initial_balance = round(period_start_balance + max(net_deposits, 0), 2)
+    else:
+        initial_balance = round(max(net_deposits, 0), 2)
 
-    # ★ 수익률 = Total P&L / 투입자본 × 100
-    # 투입자본 = 초기금액 + 기간내 순입금 (양수인 경우만)
-    invested_capital = initial_balance + max(net_deposits, 0)
-    return_rate = round((total_pl / invested_capital * 100), 2) if invested_capital > 0 else 0
+    # ★ 수익률 = Total P&L / 초기금액(투입자본) × 100
+    return_rate = round((total_pl / initial_balance * 100), 2) if initial_balance > 0 else 0
 
-    print(f"[TradingReport] initial_raw={initial_balance_raw}, initial={initial_balance}, "
-          f"net_deposits={net_deposits}, invested={invested_capital}, return_rate={return_rate}%")
+    print(f"[TradingReport] start_balance={period_start_balance}, net_deposits={net_deposits}, "
+          f"initial(invested)={initial_balance}, total_pl={total_pl}, return_rate={return_rate}%")
 
     # ★ 일별 데이터 정렬 + 누적 계산 (그래프용)
     sorted_daily = sorted(daily_pl.items())
