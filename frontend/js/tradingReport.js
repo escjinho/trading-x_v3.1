@@ -208,9 +208,9 @@ async function loadTradingReportSummary(period, startDate, endDate) {
             el.className = plClass(rate);
         }
 
-        // ★ daily_pl 저장 + 그래프 렌더링
+        // ★ daily_pl 저장 + 그래프 렌더링 (조회 기간도 전달)
         window._trDailyPL = d.daily_pl || [];
-        renderTrChart(window._trDailyPL);
+        renderTrChart(window._trDailyPL, d.start_date, d.end_date);
 
         console.log('[TR Summary] 로드 완료:', d);
 
@@ -231,7 +231,7 @@ document.addEventListener('click', function(e) {
 });
 
 // ========== 트레이딩 리포트 — P&L 그래프 (누적 라인 + 일별 바 결합) ==========
-function renderTrChart(dailyData) {
+function renderTrChart(dailyData, periodStart, periodEnd) {
     var section = document.getElementById('trChartSection');
     if (!dailyData || dailyData.length === 0) {
         if (section) section.style.display = 'none';
@@ -268,12 +268,12 @@ function renderTrChart(dailyData) {
         worstEl.className = 'tr-chart-summary-val tr-val-loss';
     }
 
-    // 기간 표시
+    // 기간 표시 (API 조회 기간 사용)
     var periodEl = document.getElementById('trChartPeriod');
     if (periodEl) {
-        var first = dailyData[0].date.substring(5).replace('-', '/');
-        var last = dailyData[dailyData.length - 1].date.substring(5).replace('-', '/');
-        periodEl.textContent = first + ' — ' + last;
+        var startStr = periodStart ? periodStart.substring(5).replace('-', '/') : dailyData[0].date.substring(5).replace('-', '/');
+        var endStr = periodEnd ? periodEnd.substring(5).replace('-', '/') : dailyData[dailyData.length - 1].date.substring(5).replace('-', '/');
+        periodEl.textContent = startStr + ' — ' + endStr;
     }
 
     // ★ Canvas 렌더링
