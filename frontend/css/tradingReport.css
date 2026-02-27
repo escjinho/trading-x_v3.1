@@ -45,7 +45,7 @@
 }
 
 .tr-tab-card-label {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: rgba(255, 255, 255, 0.5);
     font-family: 'Rajdhani', sans-serif;
@@ -473,8 +473,8 @@
 
 /* 히어로 카드 ~ 탭 구분선 */
 .tr-divider {
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
-    margin-top: 5px;
-    margin-bottom: 2px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+    margin-top: 6px;
+    margin-bottom: 10px;
 }

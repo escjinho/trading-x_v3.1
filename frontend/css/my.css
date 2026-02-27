@@ -1084,9 +1084,9 @@
 .my-deposit-hero.live {
     background: linear-gradient(145deg, var(--bg-tertiary), var(--bg-secondary));
     border: none;
-    border-top: 1px solid transparent;
-    border-bottom: 1px solid transparent;
-    border-image: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent) 1;
+    border-top: 2px solid transparent;
+    border-bottom: 2px solid transparent;
+    border-image: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent) 1;
     box-shadow: none;
     padding: 20px;
 }
