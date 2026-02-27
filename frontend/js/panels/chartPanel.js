@@ -545,6 +545,14 @@ const ChartPanel = {
         try {
             const data = await apiCall(`/mt5/candles/${chartSymbol}?timeframe=${currentTimeframe}&count=100`);
             if (data && data.indicators) {
+                // ★ KST 변환 (+9시간) — loadCandles와 동일하게 적용
+                const KST_OFFSET = 9 * 3600;
+                ['bb_upper', 'bb_middle', 'bb_lower', 'lwma'].forEach(key => {
+                    if (data.indicators[key]) {
+                        data.indicators[key].forEach(d => { d.time += KST_OFFSET; });
+                    }
+                });
+
                 try {
                     if (data.indicators.bb_upper && bbUpperSeries) bbUpperSeries.setData(data.indicators.bb_upper);
                     if (data.indicators.bb_middle && bbMiddleSeries) bbMiddleSeries.setData(data.indicators.bb_middle);
