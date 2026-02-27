@@ -172,7 +172,8 @@ const QuickEasyPanel = {
                 target: this._posTarget,
                 tpsl: this._posTPSL,
                 startTime: this._posStartTime,
-                openedAt: this._posOpenedAt
+                openedAt: this._posOpenedAt,
+                spread: this._posSpread || 0
             };
         }
 
@@ -223,7 +224,8 @@ const QuickEasyPanel = {
                 savedPos.side,
                 savedPos.entry,
                 savedPos.volume,
-                savedPos.target
+                savedPos.target,
+                savedPos.spread || 0
             );
             // 타이머 시작 시간 복원 (경과시간 연속)
             this._posStartTime = savedPos.startTime;
@@ -644,15 +646,24 @@ const QuickEasyPanel = {
                 // 해결: 짧은 지연으로 차트 렌더링 완료 후 라인 그리기
                 const _entryPrice = entryPrice;
                 const _side = side;
+                // ★ 진입 시점 스프레드 캡처 (BEP 계산용 — 고정값)
+                let _entrySpread = 0;
+                if (window.allPrices && window.allPrices[symbol]) {
+                    const _ask = window.allPrices[symbol].ask || 0;
+                    const _bid = window.allPrices[symbol].bid || 0;
+                    _entrySpread = (_ask > 0 && _bid > 0) ? (_ask - _bid) : 0;
+                }
+                console.log('[QE] ★ 진입 스프레드 캡처:', _entrySpread, symbol);
                 // ★ localStorage에 포지션 데이터 저장 (새로고침 복원용)
                 qeSavePosition(symbol, {
                     target: target,
                     volume: volume,
                     side: side,
-                    entry: _entryPrice
+                    entry: _entryPrice,
+                    spread: _entrySpread
                 });
                 setTimeout(() => {
-                    this.showPositionView(_side, _entryPrice);
+                    this.showPositionView(_side, _entryPrice, null, null, _entrySpread);
                 }, 300);
                 // 버튼 4초 비활성화 (중복 진입 방지)
                 const buyBtn = document.getElementById('qeBuyBtn');
@@ -772,7 +783,7 @@ const QuickEasyPanel = {
     _posStartTime: 0,
     _posOrderId: null,
 
-    showPositionView(side, entryPrice, volume = null, target = null) {
+    showPositionView(side, entryPrice, volume = null, target = null, spread = null) {
         const orderSection = document.querySelector('.qe-order-section');
         const tradeButtons = document.querySelector('.qe-trade-buttons');
         const posView = document.getElementById('qePositionView');
@@ -834,6 +845,23 @@ const QuickEasyPanel = {
 
         this._posEntryPrice = entryPrice;
         this._posOpenedAt = Date.now();  // No position 안전장치 쿨다운용
+        // ★ BEP(손익분기점) 계산용 스프레드 저장
+        if (spread && spread > 0) {
+            this._posSpread = spread;
+        } else if (!this._posSpread || this._posSpread <= 0) {
+            // fallback: 현재 실시간 스프레드
+            const _sym = window.currentSymbol || 'BTCUSD';
+            if (window.allPrices && window.allPrices[_sym]) {
+                this._posSpread = (window.allPrices[_sym].ask || 0) - (window.allPrices[_sym].bid || 0);
+            } else {
+                this._posSpread = 0;
+            }
+        }
+        const bepPrice = (side === 'BUY' || side === 'buy')
+            ? entryPrice + (this._posSpread || 0)
+            : entryPrice - (this._posSpread || 0);
+        this._posBEP = bepPrice;
+        console.log('[QE] BEP 계산 — entry:', entryPrice, 'spread:', this._posSpread, 'bep:', bepPrice, 'side:', side);
         this._posSide = side;
         this._posSymbol = window.currentSymbol || 'BTCUSD';
         this._posVolume = posVolume;
@@ -882,7 +910,8 @@ const QuickEasyPanel = {
             target: this._posTarget,
             tpsl: this._posTPSL,
             startTime: this._posStartTime,
-            openedAt: this._posOpenedAt
+            openedAt: this._posOpenedAt,
+            spread: this._posSpread || 0
         };
         this._updatePositionBadge();
     },
