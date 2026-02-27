@@ -4311,6 +4311,16 @@
                     IndicatorManager.addIndicator(id, 'panel');
                 });
 
+                // ★ BB/LWMA의 config.enabled 상태도 반드시 업데이트 (removeAll이 false로 리셋하므로)
+                if (typeof IndicatorConfig !== 'undefined') {
+                    if (IndicatorConfig.overlay.bb) {
+                        IndicatorConfig.overlay.bb.enabled = selectedOverlay.includes('bb');
+                    }
+                    if (IndicatorConfig.overlay.lwma) {
+                        IndicatorConfig.overlay.lwma.enabled = selectedOverlay.includes('lwma');
+                    }
+                }
+
                 // ★ ChartPanel 내장 BB/LWMA 시리즈 동기화 (체크 해제 시 차트에서 제거)
                 if (typeof ChartPanel !== 'undefined' && ChartPanel.setIndicators) {
                     ChartPanel.setIndicators({
