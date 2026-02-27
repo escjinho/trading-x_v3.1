@@ -758,11 +758,29 @@ async def get_candles(
                 lows.append(r['low'])
     else:
         # MT5 없음 - MetaAPI 캔들 캐시에서 직접 반환 (모든 TF 실시간 업데이트됨)
-        from .metaapi_service import quote_candle_cache
+        from .metaapi_service import quote_candle_cache, initialize_candles_from_api, metaapi_service
         cached_candles = quote_candle_cache.get(symbol, {}).get(timeframe, [])
         # fallback: 브릿지 캐시
         if not cached_candles:
             cached_candles = get_bridge_candles(symbol, timeframe)
+
+        # ★★★ 캐시에 데이터가 부족하면 MetaAPI에서 히스토리 로딩 ★★★
+        if len(cached_candles) < count:
+            print(f"[Candles] {symbol}/{timeframe} - 캐시 {len(cached_candles)}개 < 요청 {count}개 → 히스토리 로딩 시도")
+            try:
+                # MetaAPIService의 quote_account 사용
+                if metaapi_service and metaapi_service.quote_account:
+                    account = metaapi_service.quote_account
+                    success = await initialize_candles_from_api(account, symbol, timeframe, count)
+                    if success:
+                        # 로딩 후 캐시 다시 확인
+                        cached_candles = quote_candle_cache.get(symbol, {}).get(timeframe, [])
+                        print(f"[Candles] {symbol}/{timeframe} - 히스토리 로딩 후 {len(cached_candles)}개")
+                else:
+                    print(f"[Candles] MetaAPI service 없음 - 히스토리 로딩 불가")
+            except Exception as e:
+                print(f"[Candles] 히스토리 로딩 실패: {e}")
+
         if cached_candles:
             candles = cached_candles[-count:] if len(cached_candles) > count else cached_candles
             closes = [c['close'] for c in candles]
@@ -2375,6 +2393,192 @@ async def get_last_trade(
     except Exception as e:
         print(f"[last-trade] Error: {e}")
         return {"success": False, "message": str(e)}
+
+
+# ========== 트레이딩 리포트 Summary ==========
+@router.get("/trading-report-summary")
+async def get_trading_report_summary(
+    period: str = Query("week", description="조회 기간: today, week, month, 3month, custom"),
+    start_date: str = Query(None, description="커스텀 시작일 (YYYY-MM-DD)"),
+    end_date: str = Query(None, description="커스텀 종료일 (YYYY-MM-DD)"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """트레이딩 리포트 Summary — MT5 리포트와 동일한 기간별 P&L 요약
+
+    계산 로직 (MT5 공식):
+    - 거래손익: DEAL_ENTRY_OUT 딜의 profit 합산
+    - 스왑: DEAL_ENTRY_OUT 딜의 swap 합산
+    - 커미션: 모든 거래 딜(IN+OUT)의 commission 합산
+    - 입출금: DEAL_TYPE_BALANCE 딜의 profit 합산
+    - 초기 금액: 현재잔고 - Total P&L - 기간내 순입출금
+    """
+    user_id = current_user.id
+
+    # ★ 기간 설정
+    now = datetime.now()
+    if period == "custom" and start_date and end_date:
+        try:
+            start_time = datetime.strptime(start_date, "%Y-%m-%d")
+            end_time = datetime.strptime(end_date, "%Y-%m-%d").replace(hour=23, minute=59, second=59)
+        except:
+            start_time = now - timedelta(days=7)
+            end_time = now
+    elif period == "today":
+        start_time = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_time = now
+    elif period == "week":
+        start_time = now - timedelta(days=7)
+        end_time = now
+    elif period == "month":
+        start_time = now - timedelta(days=30)
+        end_time = now
+    elif period == "3month":
+        start_time = now - timedelta(days=90)
+        end_time = now
+    else:
+        start_time = now - timedelta(days=365)
+        end_time = now
+
+    # ★ 계정 정보
+    broker = "HedgeHood Pty Ltd"
+    account = current_user.mt5_account_number or "-"
+    current_balance = current_user.mt5_balance or 0
+
+    # ★ MetaAPI에서 원본 deals 직접 조회 (type 변환 없이 raw 데이터)
+    from .metaapi_service import metaapi_service, is_metaapi_connected, get_user_trade_connection
+
+    _use_user_metaapi = bool(current_user.metaapi_account_id and current_user.metaapi_status == 'deployed')
+
+    trade_profit = 0.0   # 거래손익 (OUT 딜 profit만)
+    total_swap = 0.0     # 스왑 (OUT 딜 swap만)
+    total_commission = 0.0  # 커미션 (IN+OUT 모든 거래 딜)
+    net_deposits = 0.0   # 순입출금 (BALANCE 딜)
+    deal_count = 0       # 청산 거래 수
+    daily_pl = {}        # 일별 손익 집계 (그래프용)
+
+    try:
+        raw_deals = []
+
+        # ★ 유저별 MetaAPI — RPC에서 raw deals 직접 조회
+        if _use_user_metaapi:
+            rpc = await get_user_trade_connection(user_id, current_user.metaapi_account_id)
+            if rpc:
+                result = await rpc.get_deals_by_time_range(start_time, end_time)
+                raw_deals = result.get('deals', []) if isinstance(result, dict) else (result or [])
+                print(f"[TradingReport] User {user_id}: raw deals {len(raw_deals)}개 조회")
+
+        # ★ 공유 MetaAPI (유저별 MetaAPI가 없는 경우)
+        elif is_metaapi_connected() and metaapi_service.trade_connection:
+            result = await metaapi_service.trade_connection.get_deals_by_time_range(start_time, end_time)
+            raw_deals = result.get('deals', []) if isinstance(result, dict) else (result or [])
+            print(f"[TradingReport] Shared MetaAPI: raw deals {len(raw_deals)}개 조회")
+
+        # ★ 딜 분류 및 집계
+        for deal in raw_deals:
+            deal_type = deal.get('type', '')       # DEAL_TYPE_BUY, DEAL_TYPE_SELL, DEAL_TYPE_BALANCE 등
+            entry_type = deal.get('entryType', '')  # DEAL_ENTRY_IN, DEAL_ENTRY_OUT
+            profit = deal.get('profit', 0) or 0
+            swap = deal.get('swap', 0) or 0
+            commission = deal.get('commission', 0) or 0
+
+            # ── 입출금 딜 (DEAL_TYPE_BALANCE) ──
+            if 'BALANCE' in str(deal_type).upper():
+                net_deposits += profit  # 입금은 +, 출금은 -
+                continue
+
+            # ── 크레딧/보정 등 비거래 딜 제외 ──
+            if 'CREDIT' in str(deal_type).upper() or 'CORRECTION' in str(deal_type).upper():
+                continue
+
+            # ── 거래 딜 (BUY/SELL) ──
+            # 커미션: IN + OUT 모든 거래 딜에서 합산 (MT5 공식)
+            total_commission += commission
+
+            # 거래손익 + 스왑: OUT 딜에서만 합산 (청산 기준)
+            if 'OUT' in str(entry_type).upper():
+                trade_profit += profit
+                total_swap += swap
+                deal_count += 1
+
+                # 일별 집계 (그래프용)
+                deal_time = deal.get('time')
+                if deal_time:
+                    try:
+                        if isinstance(deal_time, datetime):
+                            day_key = deal_time.strftime("%Y-%m-%d")
+                        elif isinstance(deal_time, str):
+                            day_key = deal_time[:10]
+                        elif isinstance(deal_time, (int, float)):
+                            day_key = datetime.fromtimestamp(deal_time).strftime("%Y-%m-%d")
+                        else:
+                            continue
+
+                        total_deal_pl = profit + swap + commission
+                        if day_key not in daily_pl:
+                            daily_pl[day_key] = {"profit": 0, "swap": 0, "commission": 0, "total": 0}
+                        daily_pl[day_key]["profit"] += profit
+                        daily_pl[day_key]["swap"] += swap
+                        daily_pl[day_key]["commission"] += commission
+                        daily_pl[day_key]["total"] += total_deal_pl
+                    except:
+                        pass
+
+    except Exception as e:
+        print(f"[TradingReport] deals 조회 실패: {e}")
+        import traceback
+        traceback.print_exc()
+
+    # ★ 합산 (소수점 2자리)
+    trade_profit = round(trade_profit, 2)
+    total_swap = round(total_swap, 2)
+    total_commission = round(total_commission, 2)
+    total_pl = round(trade_profit + total_swap + total_commission, 2)
+    net_deposits = round(net_deposits, 2)
+
+    # ★ 초기 금액 = 현재잔고 - 기간내 Total P&L - 기간내 순입출금 (MT5 공식)
+    initial_balance = round(current_balance - total_pl - net_deposits, 2)
+
+    # ★ 수익률 = Total P&L / 초기금액 × 100
+    return_rate = round((total_pl / initial_balance * 100), 2) if initial_balance != 0 else 0
+
+    # ★ 일별 데이터 정렬 + 누적 계산 (그래프용)
+    sorted_daily = sorted(daily_pl.items())
+    cumulative = 0
+    daily_data = []
+    for k, v in sorted_daily:
+        cumulative += v["total"]
+        daily_data.append({
+            "date": k,
+            "profit": round(v["profit"], 2),
+            "swap": round(v["swap"], 2),
+            "commission": round(v["commission"], 2),
+            "total": round(v["total"], 2),
+            "cumulative": round(cumulative, 2)
+        })
+
+    print(f"[TradingReport] User {user_id}: period={period}, deals={deal_count}, "
+          f"trade_profit={trade_profit}, swap={total_swap}, commission={total_commission}, "
+          f"total_pl={total_pl}, net_deposits={net_deposits}, "
+          f"initial={initial_balance}, current={current_balance}, rate={return_rate}%")
+
+    return {
+        "broker": broker,
+        "account": account,
+        "initial_balance": initial_balance,
+        "trade_profit": trade_profit,
+        "swap": total_swap,
+        "commission": total_commission,
+        "total_pl": total_pl,
+        "net_deposits": net_deposits,
+        "current_balance": current_balance,
+        "return_rate": return_rate,
+        "deal_count": deal_count,
+        "period": period,
+        "start_date": start_time.strftime("%Y-%m-%d"),
+        "end_date": end_time.strftime("%Y-%m-%d"),
+        "daily_pl": daily_data
+    }
 
 
 # ========== 거래 내역 ==========
