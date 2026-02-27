@@ -143,6 +143,64 @@ const IndicatorConfig = {
                 lineWidth: 2,
                 lineStyle: 0
             }
+        },
+        keltner: {
+            id: 'keltner',
+            name: 'KC',
+            fullName: 'Keltner Channel',
+            type: 'overlay',
+            enabled: false,
+            params: {
+                period: 20,
+                atrPeriod: 10,
+                multiplier: 1.5
+            },
+            style: {
+                upperColor: '#00ACC1',
+                middleColor: '#00ACC1',
+                lowerColor: '#00ACC1',
+                lineWidth: 1,
+                middleLineStyle: 2,
+                fillColor: 'rgba(0, 172, 193, 0.1)'
+            }
+        },
+        donchian: {
+            id: 'donchian',
+            name: 'DC',
+            fullName: 'Donchian Channel',
+            type: 'overlay',
+            enabled: false,
+            params: {
+                period: 20
+            },
+            style: {
+                upperColor: '#26A69A',
+                middleColor: '#26A69A',
+                lowerColor: '#26A69A',
+                lineWidth: 1,
+                middleLineStyle: 2,
+                fillColor: 'rgba(38, 166, 154, 0.1)'
+            }
+        },
+        envelope: {
+            id: 'envelope',
+            name: 'ENV',
+            fullName: 'Moving Average Envelope',
+            type: 'overlay',
+            enabled: false,
+            params: {
+                period: 20,
+                percent: 2.5,
+                source: 'close'
+            },
+            style: {
+                upperColor: '#FF7043',
+                middleColor: '#FF7043',
+                lowerColor: '#FF7043',
+                lineWidth: 1,
+                middleLineStyle: 2,
+                fillColor: 'rgba(255, 112, 67, 0.1)'
+            }
         }
     },
 

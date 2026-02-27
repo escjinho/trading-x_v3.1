@@ -795,6 +795,83 @@ const IndicatorCalculator = {
         }
 
         return result;
+    },
+
+    /**
+     * Keltner Channel
+     * Middle = EMA(close, period)
+     * Upper = Middle + multiplier * ATR(atrPeriod)
+     * Lower = Middle - multiplier * ATR(atrPeriod)
+     */
+    keltnerChannel(highs, lows, closes, times, period, atrPeriod, multiplier) {
+        const middle = this.ema(closes, times, period);
+        const atrData = this.atr(highs, lows, closes, times, atrPeriod);
+
+        // ATR 값을 time 기준으로 매핑
+        const atrMap = {};
+        atrData.forEach(d => { atrMap[d.time] = d.value; });
+
+        const upper = [];
+        const lower = [];
+
+        middle.forEach(m => {
+            const atrVal = atrMap[m.time];
+            if (atrVal !== undefined) {
+                upper.push({ time: m.time, value: m.value + multiplier * atrVal });
+                lower.push({ time: m.time, value: m.value - multiplier * atrVal });
+            }
+        });
+
+        return { upper, middle, lower };
+    },
+
+    /**
+     * Donchian Channel
+     * Upper = Highest high over period
+     * Lower = Lowest low over period
+     * Middle = (Upper + Lower) / 2
+     */
+    donchianChannel(highs, lows, times, period) {
+        const upper = [];
+        const lower = [];
+        const middle = [];
+
+        for (let i = period - 1; i < highs.length; i++) {
+            let highestHigh = -Infinity;
+            let lowestLow = Infinity;
+
+            for (let j = i - period + 1; j <= i; j++) {
+                if (highs[j] > highestHigh) highestHigh = highs[j];
+                if (lows[j] < lowestLow) lowestLow = lows[j];
+            }
+
+            upper.push({ time: times[i], value: highestHigh });
+            lower.push({ time: times[i], value: lowestLow });
+            middle.push({ time: times[i], value: (highestHigh + lowestLow) / 2 });
+        }
+
+        return { upper, middle, lower };
+    },
+
+    /**
+     * Moving Average Envelope
+     * Middle = SMA(close, period)
+     * Upper = Middle * (1 + percent/100)
+     * Lower = Middle * (1 - percent/100)
+     */
+    envelope(closes, times, period, percent) {
+        const middle = this.sma(closes, times, period);
+        const upper = [];
+        const lower = [];
+
+        const factor = percent / 100;
+
+        middle.forEach(m => {
+            upper.push({ time: m.time, value: m.value * (1 + factor) });
+            lower.push({ time: m.time, value: m.value * (1 - factor) });
+        });
+
+        return { upper, middle, lower };
     }
 };
 

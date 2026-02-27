@@ -572,6 +572,33 @@ const IndicatorManager = {
                     lastValueVisible: false
                 }));
                 break;
+
+            case 'keltner':
+            case 'donchian':
+            case 'envelope':
+                // Upper band
+                indicator.series.push(this.mainChart.addLineSeries({
+                    color: config.style.upperColor,
+                    lineWidth: config.style.lineWidth,
+                    priceLineVisible: false,
+                    lastValueVisible: false
+                }));
+                // Middle band (dashed)
+                indicator.series.push(this.mainChart.addLineSeries({
+                    color: config.style.middleColor,
+                    lineWidth: config.style.lineWidth,
+                    lineStyle: config.style.middleLineStyle,
+                    priceLineVisible: false,
+                    lastValueVisible: false
+                }));
+                // Lower band
+                indicator.series.push(this.mainChart.addLineSeries({
+                    color: config.style.lowerColor,
+                    lineWidth: config.style.lineWidth,
+                    priceLineVisible: false,
+                    lastValueVisible: false
+                }));
+                break;
         }
 
         this.activeIndicators[indicatorId] = indicator;
@@ -990,6 +1017,27 @@ const IndicatorManager = {
                 indicator.series[1].setData(data.base);
                 indicator.series[2].setData(data.spanA);
                 indicator.series[3].setData(data.spanB);
+                break;
+
+            case 'keltner':
+                data = IndicatorCalculator.keltnerChannel(highs, lows, closes, times, config.params.period, config.params.atrPeriod, config.params.multiplier);
+                indicator.series[0].setData(data.upper);
+                indicator.series[1].setData(data.middle);
+                indicator.series[2].setData(data.lower);
+                break;
+
+            case 'donchian':
+                data = IndicatorCalculator.donchianChannel(highs, lows, times, config.params.period);
+                indicator.series[0].setData(data.upper);
+                indicator.series[1].setData(data.middle);
+                indicator.series[2].setData(data.lower);
+                break;
+
+            case 'envelope':
+                data = IndicatorCalculator.envelope(closes, times, config.params.period, config.params.percent);
+                indicator.series[0].setData(data.upper);
+                indicator.series[1].setData(data.middle);
+                indicator.series[2].setData(data.lower);
                 break;
         }
 
