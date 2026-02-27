@@ -3860,7 +3860,7 @@
     <!-- Indicator System -->
     <script src="js/indicators/config.js?v=20260227b"></script>
     <script src="js/indicators/calculator.js?v=1771777952"></script>
-    <script src="js/indicators/index.js?v=20260227b"></script>
+    <script src="js/indicators/index.js?v=20260227c"></script>
 
     <!-- Chart Type System -->
     <script src="js/chartTypes/index.js?v=20260227c"></script>
@@ -4099,15 +4099,6 @@
             cb.classList.remove('checked');
         });
 
-        // 기본 지표만 활성화: BB, LWMA
-        ['bb', 'lwma'].forEach(indId => {
-            const item = document.querySelector(`.ind-item[data-ind="${indId}"]`);
-            if (item) {
-                const checkbox = item.querySelector('.ind-checkbox');
-                if (checkbox) checkbox.classList.add('checked');
-            }
-        });
-
         // IndicatorConfig 설정 초기화
         if (typeof IndicatorConfig !== 'undefined') {
             Object.values(IndicatorConfig.overlay).forEach(ind => ind.enabled = false);
@@ -4121,7 +4112,7 @@
 
         // 오버레이 지표 기본 설정 적용
         if (typeof ChartPanel !== 'undefined' && ChartPanel.setIndicators) {
-            ChartPanel.setIndicators({ bb: true, lwma: true, ema: false, sma: false });
+            ChartPanel.setIndicators({ bb: false, lwma: false, ema: false, sma: false });
         }
 
         // 차트 다시 로드
@@ -5168,7 +5159,7 @@
                     </div>
                 </div>
                 <div class="ind-item" data-ind="lwma" data-type="overlay" onclick="toggleIndicator(this)">
-                    <div class="ind-checkbox checked"></div>
+                    <div class="ind-checkbox"></div>
                     <div class="ind-color-dot" style="background: #FFC107;"></div>
                     <div class="ind-info">
                         <span class="ind-name">LWMA (50)</span><span class="ind-desc">· 선형가중이동평균</span>
@@ -5184,7 +5175,7 @@
 
                 <!-- 밴드/채널 계열 -->
                 <div class="ind-item" data-ind="bb" data-type="overlay" onclick="toggleIndicator(this)">
-                    <div class="ind-checkbox checked"></div>
+                    <div class="ind-checkbox"></div>
                     <div class="ind-color-dot" style="background: #2196F3;"></div>
                     <div class="ind-info">
                         <span class="ind-name">Bollinger Bands</span><span class="ind-desc">· 볼린저 밴드</span>

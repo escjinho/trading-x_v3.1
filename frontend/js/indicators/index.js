@@ -140,9 +140,12 @@ const IndicatorManager = {
      */
     restoreSavedIndicators() {
         const enabledIndicators = IndicatorConfig.getEnabled();
-        console.log('[IndicatorManager] Restoring saved indicators:', enabledIndicators.map(i => i.id));
+        // ★ BB/LWMA는 IndicatorManager가 아닌 ChartPanel 내장 시리즈로 관리 (중복 방지)
+        const skipIds = ['bb', 'lwma'];
+        const filtered = enabledIndicators.filter(i => !skipIds.includes(i.id));
+        console.log('[IndicatorManager] Restoring saved indicators:', filtered.map(i => i.id));
 
-        enabledIndicators.forEach(config => {
+        filtered.forEach(config => {
             // 이미 활성화된 지표는 건너뛰기
             if (!this.activeIndicators[config.id]) {
                 this.addIndicator(config.id);
