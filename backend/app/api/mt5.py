@@ -136,6 +136,9 @@ auto_close_cooldown = {}
 # ★★★ MetaAPI 프로비저닝 에러 메시지 (metaapi-status에서 전달) ★★★
 metaapi_error_messages = {}
 
+# ★★★ 유저별 프로비저닝 Lock (레이스 컨디션 방지) ★★★
+_provisioning_locks = {}  # { user_id: True }
+
 # ★ 자동 deploy 쿨다운 (유저별 마지막 시도 시간)
 _auto_deploy_cooldown = {}  # {user_id: timestamp}
 AUTO_DEPLOY_COOLDOWN_SEC = 60  # 60초 쿨다운
@@ -3329,6 +3332,12 @@ async def _provision_metaapi_background(user_id: int, login: str, password: str,
     from .metaapi_service import provision_user_metaapi, deploy_user_metaapi, get_user_account_info
     import time as time_module
 
+    # ★★★ 레이스 컨디션 방지: 이미 실행 중이면 스킵 ★★★
+    if _provisioning_locks.get(user_id):
+        print(f"[MetaAPI BG] ⏳ User {user_id} 이미 프로비저닝 진행 중 → 스킵")
+        return
+    _provisioning_locks[user_id] = True
+
     print(f"[MetaAPI BG] 🔵 User {user_id} 백그라운드 프로비저닝 시작")
     start_time = time_module.time()
 
@@ -3426,6 +3435,10 @@ async def _provision_metaapi_background(user_id: int, login: str, password: str,
     except Exception as e:
         print(f"[MetaAPI BG] ❌ User {user_id} 백그라운드 오류: {e}")
         _save_error(str(e))
+    finally:
+        # ★★★ Lock 해제 (성공/실패 모두) ★★★
+        _provisioning_locks.pop(user_id, None)
+        print(f"[MetaAPI BG] 🔓 User {user_id} 프로비저닝 Lock 해제")
 
 
 # ========== MT5 계정 연결 ==========
@@ -3460,6 +3473,11 @@ async def connect_mt5_account(
     if existing_user:
         print(f"[CONNECT] ⛔ User {current_user.id} 차단 - 계좌 {request.account}는 User {existing_user.id}가 이미 사용 중")
         return JSONResponse({"success": False, "message": "이 계좌는 다른 사용자가 이미 연결하고 있습니다"})
+
+    # ★★★ 프로비저닝 중복 실행 방지 (레이스 컨디션 Lock) ★★★
+    if _provisioning_locks.get(current_user.id):
+        print(f"[CONNECT] ⏳ User {current_user.id} 프로비저닝 진행 중 → 중복 요청 차단")
+        return JSONResponse({"success": True, "message": "MT5 계정 연결 중입니다. 잠시 기다려주세요.", "metaapi_status": "deploying"})
 
     # ★★★ 이전 에러 메시지 초기화 ★★★
     metaapi_error_messages.pop(current_user.id, None)
