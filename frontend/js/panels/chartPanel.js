@@ -45,20 +45,9 @@ const ChartPanel = {
             return false;
         }
 
-        // ★ 장 마감 시 차트 업데이트 중단 (MarketSchedule 우선)
-        if (typeof MarketSchedule !== 'undefined' && MarketSchedule.isMarketOpen) {
-            if (!MarketSchedule.isMarketOpen(chartSymbol)) return false;
-        } else {
-            const _si = typeof getSymbolInfo === 'function' ? getSymbolInfo(chartSymbol) : null;
-            const _isCrypto = _si && _si.category === 'Crypto Currency';
-            if (!_isCrypto) {
-                const _now = new Date();
-                const _day = _now.getUTCDay();
-                const _hour = _now.getUTCHours();
-                if (_day === 6) return false;
-                if (_day === 0 && _hour < 22) return false;
-                if (_day === 5 && _hour >= 22) return false;
-            }
+        // ★ 장 마감 시 차트 업데이트 중단 (isCurrentMarketClosed — MT5 크로스 체크 포함)
+        if (typeof isCurrentMarketClosed === 'function' && isCurrentMarketClosed(chartSymbol)) {
+            return false;
         }
 
         // time이 없으면 lastCandleTime 사용 (WS에서 {close: bid}만 전달하는 경우)
@@ -686,10 +675,10 @@ const ChartPanel = {
             overlayCategory.textContent = symbolInfo.category || 'Currency';
         }
 
-        // 장 운영 상태 (★ MarketSchedule 모듈 — 정확한 브로커 스케줄 기반)
+        // 장 운영 상태 (★ isCurrentMarketClosed — MT5 크로스 체크 포함)
         if (overlayMarketStatus) {
-            const isMarketOpen = typeof MarketSchedule !== 'undefined'
-                ? MarketSchedule.isMarketOpen(chartSymbol)
+            const isMarketOpen = typeof isCurrentMarketClosed === 'function'
+                ? !isCurrentMarketClosed(chartSymbol)
                 : true;
             overlayMarketStatus.classList.toggle('closed', !isMarketOpen);
             const statusText = document.getElementById('overlayMarketStatusText');

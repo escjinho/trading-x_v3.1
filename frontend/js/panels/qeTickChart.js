@@ -517,11 +517,11 @@ const QeTickChart = {
         if (symbolEl) symbolEl.textContent = symbol.replace('.r', '').replace('.', '');
         if (catEl) catEl.textContent = this.CATEGORIES[symbol] || 'Market';
 
-        // ★ 장 운영 상태 (차트와 동일한 MarketSchedule 사용)
+        // ★ 장 운영 상태 (isCurrentMarketClosed — MT5 크로스 체크 포함)
         const statusEl = document.getElementById('qeInfoStatus');
         if (statusEl) {
-            const isOpen = typeof MarketSchedule !== 'undefined' && MarketSchedule.isMarketOpen
-                ? MarketSchedule.isMarketOpen(symbol) : true;
+            const isOpen = typeof isCurrentMarketClosed === 'function'
+                ? !isCurrentMarketClosed(symbol) : true;
             if (isOpen) {
                 statusEl.style.display = 'none';
             } else {
