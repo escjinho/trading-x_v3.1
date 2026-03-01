@@ -711,6 +711,7 @@ function myGoBack() {
     // ★ 떠나는 뷰의 타이머 정리
     var leavingId = myPageStack[myPageStack.length - 1];
     if (leavingId === 'tradingReportLive' && typeof stopTradingReportRefresh === 'function') stopTradingReportRefresh();
+    if (leavingId === 'tradingReportDemo' && typeof stopDemoReportRefresh === 'function') stopDemoReportRefresh();
     if (leavingId === 'depositLive' && typeof stopLiveRefresh === 'function') stopLiveRefresh();
 
     // 현재 뷰 숨기기
@@ -1508,6 +1509,9 @@ function initDetailView(detail) {
             break;
         case 'loginHistory':
             loadLoginHistory();
+            break;
+        case 'tradingReportDemo':
+            if (typeof startDemoReportRefresh === 'function') startDemoReportRefresh();
             break;
         case 'tradingReportLive':
             if (typeof startTradingReportRefresh === 'function') startTradingReportRefresh();
