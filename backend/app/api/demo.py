@@ -2421,9 +2421,366 @@ async def get_deposit_history(
     """입출금 내역 조회 (최근 6개월)"""
     from datetime import timedelta
     six_months_ago = datetime.now() - timedelta(days=180)
-    
+
     # MetaAPI를 통한 실제 입출금 내역은 추후 연동
     # 현재는 빈 배열 반환 (더미 데이터 제거)
     history = []
-    
+
     return {"history": history}
+
+
+# ========== 데모 트레이딩 리포트 — Summary ==========
+@router.get("/trading-report-summary")
+async def get_demo_trading_report_summary(
+    period: str = Query("week", description="조회 기간: today, week, month, 3month, custom"),
+    start_date: str = Query(None, description="커스텀 시작일 (YYYY-MM-DD)"),
+    end_date: str = Query(None, description="커스텀 종료일 (YYYY-MM-DD)"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """데모 트레이딩 리포트 Summary — DemoTrade 테이블 기반 기간별 P&L 요약"""
+    user_id = current_user.id
+
+    # ★ 기간 설정
+    now = datetime.now()
+    if period == "custom" and start_date and end_date:
+        try:
+            start_time = datetime.strptime(start_date, "%Y-%m-%d")
+            end_time = datetime.strptime(end_date, "%Y-%m-%d").replace(hour=23, minute=59, second=59)
+        except:
+            start_time = now - timedelta(days=7)
+            end_time = now
+    elif period == "today":
+        start_time = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_time = now
+    elif period == "week":
+        start_time = now - timedelta(days=7)
+        end_time = now
+    elif period == "month":
+        start_time = now - timedelta(days=30)
+        end_time = now
+    elif period == "3month":
+        start_time = now - timedelta(days=90)
+        end_time = now
+    else:
+        start_time = now - timedelta(days=365)
+        end_time = now
+
+    # ★ 계정 정보
+    broker = "Trading-X Demo"
+    account = f"DEMO-{user_id}"
+    current_balance = current_user.demo_balance or 10000.0
+
+    # ★ DemoTrade 테이블에서 청산 거래 조회
+    trades = db.query(DemoTrade).filter(
+        DemoTrade.user_id == user_id,
+        DemoTrade.is_closed == True,
+        DemoTrade.closed_at >= start_time,
+        DemoTrade.closed_at <= end_time
+    ).order_by(DemoTrade.closed_at.asc()).all()
+
+    trade_profit = 0.0
+    deal_count = len(trades)
+    daily_pl = {}
+
+    for t in trades:
+        profit = t.profit or 0
+        trade_profit += profit
+
+        # 일별 집계 (그래프용)
+        if t.closed_at:
+            day_key = t.closed_at.strftime("%Y-%m-%d")
+            if day_key not in daily_pl:
+                daily_pl[day_key] = {"profit": 0, "swap": 0, "commission": 0, "total": 0}
+            daily_pl[day_key]["profit"] += profit
+            daily_pl[day_key]["total"] += profit
+
+    # ★ 합산 (데모는 스왑/커미션 없음)
+    trade_profit = round(trade_profit, 2)
+    total_pl = trade_profit  # 스왑/커미션 없으므로 동일
+    total_swap = 0.0
+    total_commission = 0.0
+    net_deposits = 0.0
+
+    # ★ 초기 금액 = 현재잔고 - Total P&L
+    period_start_balance = round(current_balance - total_pl, 2)
+    initial_balance = max(period_start_balance, 0)
+    if initial_balance == 0:
+        initial_balance = 10000.0  # 데모 기본값
+
+    # ★ 수익률
+    return_rate = round((total_pl / initial_balance * 100), 2) if initial_balance > 0 else 0
+
+    # ★ 일별 데이터 정렬 + 누적 계산
+    sorted_daily = sorted(daily_pl.items())
+    cumulative = 0
+    daily_data = []
+    for k, v in sorted_daily:
+        cumulative += v["total"]
+        daily_data.append({
+            "date": k,
+            "profit": round(v["profit"], 2),
+            "swap": 0,
+            "commission": 0,
+            "total": round(v["total"], 2),
+            "cumulative": round(cumulative, 2)
+        })
+
+    print(f"[DemoReport] User {user_id}: period={period}, deals={deal_count}, "
+          f"trade_profit={trade_profit}, total_pl={total_pl}, "
+          f"initial={initial_balance}, current={current_balance}, rate={return_rate}%")
+
+    return {
+        "broker": broker,
+        "account": account,
+        "initial_balance": initial_balance,
+        "trade_profit": trade_profit,
+        "swap": total_swap,
+        "commission": total_commission,
+        "total_pl": total_pl,
+        "net_deposits": net_deposits,
+        "current_balance": current_balance,
+        "return_rate": return_rate,
+        "deal_count": deal_count,
+        "period": period,
+        "start_date": start_time.strftime("%Y-%m-%d"),
+        "end_date": end_time.strftime("%Y-%m-%d"),
+        "daily_pl": daily_data
+    }
+
+
+# ========== 데모 트레이딩 리포트 — Analysis ==========
+@router.get("/trading-report-analysis")
+async def get_demo_trading_report_analysis(
+    period: str = Query("week", description="조회 기간: today, week, month, 3month, custom"),
+    start_date: str = Query(None, description="커스텀 시작일 (YYYY-MM-DD)"),
+    end_date: str = Query(None, description="커스텀 종료일 (YYYY-MM-DD)"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """데모 트레이딩 리포트 분석 — 6개 카드 데이터 (DemoTrade 테이블 기반)"""
+    user_id = current_user.id
+
+    # ★ 기간 설정 (summary와 동일)
+    now = datetime.now()
+    if period == "custom" and start_date and end_date:
+        try:
+            start_time = datetime.strptime(start_date, "%Y-%m-%d")
+            end_time = datetime.strptime(end_date, "%Y-%m-%d").replace(hour=23, minute=59, second=59)
+        except:
+            start_time = now - timedelta(days=7)
+            end_time = now
+    elif period == "today":
+        start_time = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_time = now
+    elif period == "week":
+        start_time = now - timedelta(days=7)
+        end_time = now
+    elif period == "month":
+        start_time = now - timedelta(days=30)
+        end_time = now
+    elif period == "3month":
+        start_time = now - timedelta(days=90)
+        end_time = now
+    else:
+        start_time = now - timedelta(days=365)
+        end_time = now
+
+    # ★ DemoTrade에서 청산 거래 조회
+    trades = db.query(DemoTrade).filter(
+        DemoTrade.user_id == user_id,
+        DemoTrade.is_closed == True,
+        DemoTrade.closed_at >= start_time,
+        DemoTrade.closed_at <= end_time
+    ).order_by(DemoTrade.closed_at.asc()).all()
+
+    # ★ 딜 데이터 가공
+    closed_deals = []
+    for t in trades:
+        profit = round(t.profit or 0, 2)
+        hour = -1
+        time_str = ""
+        if t.closed_at:
+            kst_time = t.closed_at + timedelta(hours=9)  # UTC → KST
+            hour = kst_time.hour
+            time_str = kst_time.strftime("%m/%d")
+
+        closed_deals.append({
+            "symbol": t.symbol,
+            "type": t.trade_type,
+            "volume": t.volume or 0.01,
+            "profit": profit,
+            "raw_profit": profit,
+            "hour": hour,
+            "time_str": time_str
+        })
+
+    total_count = len(closed_deals)
+    if total_count == 0:
+        return {
+            "total_count": 0, "period": period,
+            "winrate": {}, "symbols": [], "buysell": {}, "hourly": {},
+            "volume": {}, "risk": {}
+        }
+
+    # ═══════════════════════════════════════
+    # 카드 1: 승률 분석
+    # ═══════════════════════════════════════
+    wins = [d for d in closed_deals if d["profit"] > 0]
+    losses = [d for d in closed_deals if d["profit"] <= 0]
+    win_count = len(wins)
+    lose_count = len(losses)
+    win_rate = round(win_count / total_count * 100, 1) if total_count > 0 else 0
+    avg_win = round(sum(d["profit"] for d in wins) / win_count, 2) if win_count > 0 else 0
+    avg_loss = round(sum(d["profit"] for d in losses) / lose_count, 2) if lose_count > 0 else 0
+    rr_ratio = round(abs(avg_win / avg_loss), 2) if avg_loss != 0 else 0
+
+    winrate_data = {
+        "total": total_count, "win": win_count, "lose": lose_count,
+        "rate": win_rate, "avg_win": avg_win, "avg_loss": avg_loss, "rr_ratio": rr_ratio
+    }
+
+    # ═══════════════════════════════════════
+    # 카드 2: 종목별 분석
+    # ═══════════════════════════════════════
+    symbol_map = {}
+    for d in closed_deals:
+        s = d["symbol"]
+        if s not in symbol_map:
+            symbol_map[s] = {"count": 0, "wins": 0, "total_pl": 0, "volume": 0}
+        symbol_map[s]["count"] += 1
+        if d["profit"] > 0:
+            symbol_map[s]["wins"] += 1
+        symbol_map[s]["total_pl"] += d["profit"]
+        symbol_map[s]["volume"] += d["volume"]
+
+    symbols_data = []
+    for s, v in sorted(symbol_map.items(), key=lambda x: abs(x[1]["total_pl"]), reverse=True):
+        symbols_data.append({
+            "symbol": s,
+            "count": v["count"],
+            "win_rate": round(v["wins"] / v["count"] * 100, 1) if v["count"] > 0 else 0,
+            "total_pl": round(v["total_pl"], 2),
+            "volume": round(v["volume"], 2)
+        })
+
+    # ═══════════════════════════════════════
+    # 카드 3: Buy/Sell 분석
+    # ═══════════════════════════════════════
+    buys = [d for d in closed_deals if d["type"] == "BUY"]
+    sells = [d for d in closed_deals if d["type"] == "SELL"]
+    buy_wins = len([d for d in buys if d["profit"] > 0])
+    sell_wins = len([d for d in sells if d["profit"] > 0])
+    buy_pl = round(sum(d["profit"] for d in buys), 2)
+    sell_pl = round(sum(d["profit"] for d in sells), 2)
+
+    buysell_data = {
+        "buy": {
+            "count": len(buys),
+            "win_rate": round(buy_wins / len(buys) * 100, 1) if buys else 0,
+            "total_pl": buy_pl,
+            "avg_pl": round(buy_pl / len(buys), 2) if buys else 0
+        },
+        "sell": {
+            "count": len(sells),
+            "win_rate": round(sell_wins / len(sells) * 100, 1) if sells else 0,
+            "total_pl": sell_pl,
+            "avg_pl": round(sell_pl / len(sells), 2) if sells else 0
+        }
+    }
+
+    # ═══════════════════════════════════════
+    # 카드 4: 시간대별 분석
+    # ═══════════════════════════════════════
+    hourly_map = {}
+    for h in range(24):
+        hourly_map[h] = {"count": 0, "total_pl": 0}
+    for d in closed_deals:
+        if 0 <= d["hour"] <= 23:
+            hourly_map[d["hour"]]["count"] += 1
+            hourly_map[d["hour"]]["total_pl"] += d["profit"]
+
+    best_hour = max(hourly_map.items(), key=lambda x: x[1]["total_pl"])
+    worst_hour = min(hourly_map.items(), key=lambda x: x[1]["total_pl"])
+
+    hourly_data = {
+        "hours": {str(k): {"count": v["count"], "pl": round(v["total_pl"], 2)} for k, v in hourly_map.items()},
+        "best_hour": best_hour[0],
+        "best_hour_pl": round(best_hour[1]["total_pl"], 2),
+        "worst_hour": worst_hour[0],
+        "worst_hour_pl": round(worst_hour[1]["total_pl"], 2)
+    }
+
+    # ═══════════════════════════════════════
+    # 카드 5: 거래량 분석
+    # ═══════════════════════════════════════
+    volumes = [d["volume"] for d in closed_deals]
+    total_vol = round(sum(volumes), 2)
+    avg_vol = round(total_vol / total_count, 2) if total_count > 0 else 0
+    max_vol_deal = max(closed_deals, key=lambda d: d["volume"])
+    min_vol_deal = min(closed_deals, key=lambda d: d["volume"])
+
+    volume_data = {
+        "total": total_vol,
+        "avg": avg_vol,
+        "max": round(max_vol_deal["volume"], 2),
+        "max_detail": f"{max_vol_deal['symbol']} {max_vol_deal['type']} · {max_vol_deal['time_str']}",
+        "min": round(min_vol_deal["volume"], 2)
+    }
+
+    # ═══════════════════════════════════════
+    # 카드 6: 리스크 지표
+    # ═══════════════════════════════════════
+    max_win_streak = 0; max_loss_streak = 0
+    cur_win = 0; cur_loss = 0
+    win_streak_pl = 0; loss_streak_pl = 0
+    best_streak_pl = 0; worst_streak_pl = 0
+
+    for d in closed_deals:
+        if d["profit"] > 0:
+            cur_win += 1
+            win_streak_pl += d["profit"]
+            if cur_win > max_win_streak:
+                max_win_streak = cur_win
+                best_streak_pl = win_streak_pl
+            cur_loss = 0; loss_streak_pl = 0
+        else:
+            cur_loss += 1
+            loss_streak_pl += d["profit"]
+            if cur_loss > max_loss_streak:
+                max_loss_streak = cur_loss
+                worst_streak_pl = loss_streak_pl
+            cur_win = 0; win_streak_pl = 0
+
+    best_deal = max(closed_deals, key=lambda d: d["profit"])
+    worst_deal = min(closed_deals, key=lambda d: d["profit"])
+
+    gross_profit = sum(d["profit"] for d in closed_deals if d["profit"] > 0)
+    gross_loss = abs(sum(d["profit"] for d in closed_deals if d["profit"] < 0))
+    profit_factor = round(gross_profit / gross_loss, 2) if gross_loss > 0 else 0
+
+    risk_data = {
+        "max_win_streak": max_win_streak,
+        "max_win_streak_pl": round(best_streak_pl, 2),
+        "max_loss_streak": max_loss_streak,
+        "max_loss_streak_pl": round(worst_streak_pl, 2),
+        "best_deal_pl": round(best_deal["profit"], 2),
+        "best_deal_detail": f"{best_deal['symbol']} · {best_deal['time_str']}",
+        "worst_deal_pl": round(worst_deal["profit"], 2),
+        "worst_deal_detail": f"{worst_deal['symbol']} · {worst_deal['time_str']}",
+        "profit_factor": profit_factor
+    }
+
+    print(f"[DemoAnalysis] User {user_id}: period={period}, deals={total_count}, "
+          f"winrate={win_rate}%, profit_factor={profit_factor}")
+
+    return {
+        "total_count": total_count,
+        "period": period,
+        "winrate": winrate_data,
+        "symbols": symbols_data,
+        "buysell": buysell_data,
+        "hourly": hourly_data,
+        "volume": volume_data,
+        "risk": risk_data
+    }
