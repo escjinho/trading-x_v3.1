@@ -22,6 +22,9 @@ import random
 from datetime import datetime, timedelta
 from dateutil import parser as dateutil_parser
 import pytz
+KST = pytz.timezone('Asia/Seoul')
+def _kst_now():
+    return datetime.now(KST).replace(tzinfo=None)
 
 # ★★★ JSON 직렬화 안전 변환 헬퍼 ★★★
 def safe_json_value(val):
@@ -2364,7 +2367,7 @@ async def get_trading_report_summary(
     user_id = current_user.id
 
     # ★ 기간 설정
-    now = datetime.now()
+    now = _kst_now()
     if period == "custom" and start_date and end_date:
         try:
             start_time = datetime.strptime(start_date, "%Y-%m-%d")
@@ -2453,13 +2456,19 @@ async def get_trading_report_summary(
                 if deal_time:
                     try:
                         if isinstance(deal_time, datetime):
-                            day_key = deal_time.strftime("%Y-%m-%d")
+                            dt_for_key = deal_time
                         elif isinstance(deal_time, str):
-                            day_key = deal_time[:10]
+                            dt_for_key = dateutil_parser.isoparse(deal_time)
                         elif isinstance(deal_time, (int, float)):
-                            day_key = datetime.fromtimestamp(deal_time).strftime("%Y-%m-%d")
+                            dt_for_key = datetime.fromtimestamp(deal_time)
                         else:
                             continue
+                        # UTC → KST 변환 후 날짜 키 추출
+                        if dt_for_key.tzinfo:
+                            dt_for_key = dt_for_key.astimezone(KST)
+                        else:
+                            dt_for_key = pytz.utc.localize(dt_for_key).astimezone(KST)
+                        day_key = dt_for_key.strftime("%Y-%m-%d")
 
                         total_deal_pl = profit + swap + commission
                         if day_key not in daily_pl:
@@ -2551,7 +2560,7 @@ async def get_trading_report_analysis(
     user_id = current_user.id
 
     # ★ 기간 설정 (summary와 동일)
-    now = datetime.now()
+    now = _kst_now()
     if period == "custom" and start_date and end_date:
         try:
             start_time = datetime.strptime(start_date, "%Y-%m-%d")
@@ -2830,7 +2839,7 @@ async def get_history(
     user_id = current_user.id
 
     # ★★★ period에 따른 조회 기간 설정 ★★★
-    now = datetime.now()
+    now = _kst_now()
     if period == "today":
         start_time = now.replace(hour=0, minute=0, second=0, microsecond=0)
     elif period == "week":

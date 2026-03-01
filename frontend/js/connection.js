@@ -2054,6 +2054,7 @@ async function checkUserMode() {
         if (data.has_mt5) {
             // MT5 계정 연결됨 → Live 모드
             isDemo = false;
+            { var _btn = document.getElementById("accDemoReportBtn"); if (_btn) _btn.style.display = "none"; }
             if (typeof updateCommissionNotice === 'function') updateCommissionNotice();
             window._checkUserModeRetries = 0;  // ★ 재시도 카운터 리셋
             document.getElementById('headerStatus').textContent = 'Connected';
@@ -2117,6 +2118,7 @@ async function checkUserMode() {
         } else {
             // MT5 없음 → Demo 모드
             isDemo = true;
+            { var _btn = document.getElementById("accDemoReportBtn"); if (_btn) _btn.style.display = "flex"; }
             if (typeof updateCommissionNotice === 'function') updateCommissionNotice();
             window._checkUserModeRetries = 0;  // ★ 재시도 카운터 리셋
             document.getElementById('headerStatus').textContent = 'Connected';
@@ -2186,6 +2188,7 @@ async function checkUserMode() {
         console.warn('[checkUserMode] 3회 재시도 실패 → 데모 모드 전환');
         window._serverWasDown = true;
         isDemo = true;
+        { var _btn = document.getElementById("accDemoReportBtn"); if (_btn) _btn.style.display = "flex"; }
         if (typeof updateCommissionNotice === 'function') updateCommissionNotice();
         fetchDemoData();
     }
@@ -2543,6 +2546,8 @@ function switchTradingMode(mode) {
         if (demoControl) demoControl.style.display = 'block';
         
         isDemo = true; window.isDemo = true;
+        var _demoReportBtn = document.getElementById('accDemoReportBtn');
+        if (_demoReportBtn) _demoReportBtn.style.display = 'flex';
         if (typeof updateCommissionNotice === 'function') updateCommissionNotice();
         // ★★★ 모드 전환 시 히스토리 캐시 + 패널 리셋 ★★★
         window._weekHistoryData = null;
@@ -2621,6 +2626,8 @@ function switchTradingMode(mode) {
                 if (demoControl) demoControl.style.display = 'none';
                 
                 isDemo = false; window.isDemo = false;
+                var _demoReportBtn2 = document.getElementById('accDemoReportBtn');
+                if (_demoReportBtn2) _demoReportBtn2.style.display = 'none';
                 if (typeof updateCommissionNotice === 'function') updateCommissionNotice();
                 // ★★★ 모드 전환 시 히스토리 캐시 + 패널 리셋 ★★★
                 window._weekHistoryData = null;
@@ -2904,6 +2911,7 @@ async function connectMT5Account() {
             
             // Live 모드로 전환
             isDemo = false;
+            { var _btn = document.getElementById("accDemoReportBtn"); if (_btn) _btn.style.display = "none"; }
             if (typeof updateCommissionNotice === 'function') updateCommissionNotice();
             if (typeof resetTradingPanel === 'function') resetTradingPanel();
 

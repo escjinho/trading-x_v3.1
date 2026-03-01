@@ -166,6 +166,9 @@ function resetAccountInfo() {
 // Account 탭 전환 시 자동 로드
 function initAccountTab() {
     loadHistory();
+    // ★ 데모 리포트 버튼 초기 표시 (탭 첫 진입 시)
+    var _btn = document.getElementById('accDemoReportBtn');
+    if (_btn) _btn.style.display = (typeof isDemo !== 'undefined' && isDemo) ? 'flex' : 'none';
 }
 
 // ★ 커미션 알림 바 표시/숨김 (라이브 모드 전용)
@@ -174,6 +177,49 @@ function updateCommissionNotice() {
     if (!notice) return;
     const isLive = typeof isDemo !== 'undefined' && !isDemo;
     notice.style.display = isLive ? 'flex' : 'none';
+}
+
+
+// ★ Account 탭 Trade History → 데모 트레이딩 리포트로 이동
+function goToDemoTradingReport() {
+    // 1. 모든 my-view 숨기기
+    document.querySelectorAll('.my-view').forEach(function(v) {
+        v.classList.remove('active', 'slide-back');
+    });
+
+    // 2. 네비게이션 스택 설정
+    if (typeof myPageStack !== 'undefined') {
+        myPageStack.length = 0;
+        myPageStack.push('main', 'trading');
+    }
+
+    // 3. My 탭 활성화
+    document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+    var myNav = document.querySelector('.nav-item[data-page="my"]');
+    if (myNav) myNav.classList.add('active');
+    document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+    var pageMy = document.getElementById('page-my');
+    if (pageMy) pageMy.classList.add('active');
+    document.body.classList.remove('chart-mode');
+
+    // 4. trading 뷰 임시 활성화 (openMyDetail 참조용)
+    var tradingView = document.getElementById('myView-trading');
+    if (tradingView) tradingView.classList.add('active');
+
+    // 5. 스크롤 먼저 상단으로 (openMyDetail 전에!)
+    if (pageMy) pageMy.scrollTop = 0;
+    window.scrollTo(0, 0);
+
+    // 6. 데모 트레이딩 리포트로 이동
+    if (typeof openMyDetail === 'function') {
+        openMyDetail('tradingReportDemo');
+    }
+
+    // 7. 상세 뷰 스크롤도 상단으로
+    var demoView = document.getElementById('myView-tradingReportDemo');
+    if (demoView) demoView.scrollTop = 0;
+    if (pageMy) pageMy.scrollTop = 0;
+    window.scrollTo(0, 0);
 }
 
 // ★ 트레이딩 리포트로 이동

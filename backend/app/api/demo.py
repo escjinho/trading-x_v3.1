@@ -9,6 +9,10 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
+import pytz as _demo_pytz
+_DEMO_KST = _demo_pytz.timezone('Asia/Seoul')
+def _demo_kst_now():
+    return datetime.now(_DEMO_KST).replace(tzinfo=None)
 try:
     import MetaTrader5 as mt5
     MT5_AVAILABLE = True
@@ -2440,7 +2444,7 @@ async def get_demo_trading_report_summary(
     user_id = current_user.id
 
     # ★ 기간 설정
-    now = datetime.now()
+    now = _demo_kst_now()
     if period == "custom" and start_date and end_date:
         try:
             start_time = datetime.strptime(start_date, "%Y-%m-%d")
@@ -2560,7 +2564,7 @@ async def get_demo_trading_report_analysis(
     user_id = current_user.id
 
     # ★ 기간 설정 (summary와 동일)
-    now = datetime.now()
+    now = _demo_kst_now()
     if period == "custom" and start_date and end_date:
         try:
             start_time = datetime.strptime(start_date, "%Y-%m-%d")
@@ -2587,6 +2591,9 @@ async def get_demo_trading_report_analysis(
     # ★ 앵커 기반 거래 조회 (리셋 이후 데이터만)
     anchor_time, anchor_balance = get_anchor_point(current_user)
     trades = get_filtered_trades(db, user_id, start_time, end_time, anchor_time)
+
+    print(f"[ANALYSIS] User {user_id}: period={period}, anchor={anchor_time}, "
+          f"start={start_time}, end={end_time}, trades={len(trades)}")
 
     # ★ 딜 데이터 가공
     closed_deals = []

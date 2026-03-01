@@ -76,6 +76,9 @@ const OpenPositions = {
     // ========== 탭 전환 ==========
     switchTab(tab) {
         this._currentTab = tab;
+        // ★ 데모 리포트 버튼: 데모 모드 + Trade History 탭에서만 표시
+        var _btn = document.getElementById('accDemoReportBtn');
+        if (_btn) _btn.style.display = (tab === 'history' && typeof isDemo !== 'undefined' && isDemo) ? 'flex' : 'none';
         // 탭 헤더
         document.querySelectorAll('.acc-tab').forEach(t => {
             t.classList.toggle('active', t.dataset.tab === tab);
@@ -105,6 +108,9 @@ const OpenPositions = {
                 commNotice.style.display = 'none';
             }
         }
+
+        // ★ 데모 리포트 버튼: 데모 모드 + Trade History 탭에서만 표시
+        if (typeof updateDemoReportBtn === 'function') updateDemoReportBtn();
     },
 
     // ========== WS 데이터 수신 → 업데이트 ==========

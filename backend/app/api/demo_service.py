@@ -12,12 +12,29 @@ API 엔드포인트(demo.py)와 향후 어드민(admin.py)에서 공통 호출.
   Model Layer (DemoTransaction, DemoTrade, User)
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from sqlalchemy import func as sa_func
 
 from ..models.demo_trade import DemoTrade, DemoPosition, DemoMartinState, DemoTransaction
 from ..models.user import User
+
+
+# ================================================================
+# 헬퍼: 타임존 안전 비교 (Python-side only)
+# DB에서 읽은 TIMESTAMPTZ는 UTC-aware, datetime.now()는 naive(로컬)
+# Python 비교용으로만 사용, SQL 쿼리에는 원본 그대로 전달
+# ================================================================
+def _make_naive(dt):
+    """UTC-aware datetime → naive local time (서버 시간대 기준)"""
+    if dt is None:
+        return None
+    if dt.tzinfo is not None:
+        # UTC-aware → 로컬 naive (서버 시간대: KST = UTC+9)
+        import time
+        utc_offset = timedelta(seconds=-time.timezone if time.daylight == 0 else -time.altzone)
+        return dt.replace(tzinfo=None) + utc_offset
+    return dt
 
 
 # ================================================================
@@ -48,7 +65,6 @@ def record_transaction(
         reference_id=reference_id
     )
     db.add(tx)
-    # flush만 수행 (커밋은 호출자가 관리)
     db.flush()
     return tx
 
@@ -64,11 +80,9 @@ def reset_account(db: Session, user: User) -> dict:
     - 잔고 $10,000 초기화
     - 앵커 포인트(demo_reset_at) 설정
     - DemoTransaction 기록
-
-    Returns: {"success": True, "old_balance": ..., "new_balance": 10000.0}
     """
     old_balance = user.demo_balance or 10000.0
-    now = datetime.now(timezone.utc)
+    now = datetime.now()
 
     # 열린 포지션 삭제
     db.query(DemoPosition).filter(
@@ -85,7 +99,7 @@ def reset_account(db: Session, user: User) -> dict:
     user.demo_equity = 10000.0
     user.demo_today_profit = 0.0
 
-    # 앵커 포인트 설정
+    # 앵커 포인트 설정 (naive local time — DemoTrade.closed_at과 동일 방식)
     user.demo_reset_at = now
     user.demo_reset_balance = 10000.0
 
@@ -115,15 +129,7 @@ def reset_account(db: Session, user: User) -> dict:
 # 3) topup_account — 데모 잔고 충전 + 원장 기록
 # ================================================================
 def topup_account(db: Session, user: User, amount: float) -> dict:
-    """
-    데모 잔고 충전:
-    - 금액 유효성 검사
-    - 최대 $100,000 제한
-    - DemoTransaction 기록
-
-    Returns: {"success": True/False, "message": ..., "balance": ..., "added": ...}
-    """
-    # 유효성 검사
+    """데모 잔고 충전 + DemoTransaction 기록"""
     allowed_amounts = [5000, 10000, 50000, 100000]
     if amount not in allowed_amounts:
         amount = 10000.0
@@ -142,11 +148,9 @@ def topup_account(db: Session, user: User, amount: float) -> dict:
     new_balance = min(current_balance + amount, max_balance)
     added = new_balance - current_balance
 
-    # 잔고 업데이트
     user.demo_balance = new_balance
     user.demo_equity = new_balance
 
-    # 원장 기록
     record_transaction(
         db=db,
         user_id=user.id,
@@ -181,10 +185,7 @@ def record_trade_transaction(
     balance_before: float,
     balance_after: float
 ) -> DemoTransaction:
-    """
-    거래 청산 시 DemoTransaction 원장에 기록.
-    demo.py의 거래 청산 코드에서 db.add(trade) 직후에 호출.
-    """
+    """거래 청산 시 DemoTransaction 원장에 기록."""
     return record_transaction(
         db=db,
         user_id=user_id,
@@ -203,9 +204,10 @@ def record_trade_transaction(
 def get_anchor_point(user: User) -> tuple:
     """
     현재 앵커 포인트 반환.
-    리셋 이력이 없으면 None을 반환 (전체 기간 사용).
-
     Returns: (anchor_time: datetime|None, anchor_balance: float)
+
+    ★ anchor_time은 DB 원본 그대로 반환 (SQL 비교용).
+       Python 비교가 필요하면 호출자가 _make_naive() 사용.
     """
     anchor_time = user.demo_reset_at
     anchor_balance = user.demo_reset_balance or 10000.0
@@ -213,7 +215,7 @@ def get_anchor_point(user: User) -> tuple:
 
 
 # ================================================================
-# 6) get_period_initial_balance — 정방향 계산으로 기간 시작 시점 잔고 산출
+# 6) get_period_initial_balance — 정방향 계산
 # ================================================================
 def get_period_initial_balance(
     db: Session,
@@ -224,28 +226,16 @@ def get_period_initial_balance(
 ) -> float:
     """
     정방향 계산: 앵커 → 기간 시작 시점의 잔고를 정확하게 산출.
-
-    초기금액 = anchor_balance
-             + (앵커 ~ 기간시작) topup 합산
-             + (앵커 ~ 기간시작) 거래 P/L 합산
-
-    앵커가 기간 시작보다 뒤이면 (리셋이 기간 내에 있으면)
-    → 앵커잔고를 초기금액으로 사용
     """
     # 앵커가 없으면 전체 기간 (최초 가입 시점부터)
     if anchor_time is None:
-        # 리셋 이력 없음 → $10,000에서 시작한 것으로 간주
-        # 기간 시작 전까지의 모든 거래 P/L + 충전액을 더함
         base = 10000.0
-
-        # 기간 시작 전 거래 P/L 합산
         trade_pl = db.query(sa_func.coalesce(sa_func.sum(DemoTrade.profit), 0)).filter(
             DemoTrade.user_id == user_id,
             DemoTrade.is_closed == True,
             DemoTrade.closed_at < period_start
         ).scalar() or 0
 
-        # 기간 시작 전 충전 합산
         topup_sum = db.query(sa_func.coalesce(sa_func.sum(DemoTransaction.amount), 0)).filter(
             DemoTransaction.user_id == user_id,
             DemoTransaction.tx_type == "topup",
@@ -255,12 +245,24 @@ def get_period_initial_balance(
         initial = round(base + float(trade_pl) + float(topup_sum), 2)
         return max(initial, 0) or 10000.0
 
+    # Python 비교용 naive 변환
+    naive_anchor = _make_naive(anchor_time)
+
     # 앵커가 기간 시작보다 뒤 (리셋이 기간 중에 발생)
-    if anchor_time >= period_start:
-        return anchor_balance
+    if naive_anchor >= period_start:
+        # 앵커 이후 충전도 초기금액에 포함
+        topup_after_anchor = db.query(sa_func.coalesce(sa_func.sum(DemoTransaction.amount), 0)).filter(
+            DemoTransaction.user_id == user_id,
+            DemoTransaction.tx_type == "topup",
+            DemoTransaction.created_at >= anchor_time  # ★ SQL에는 원본 전달
+        ).scalar() or 0
+
+        initial = round(anchor_balance + float(topup_after_anchor), 2)
+        print(f"[INITIAL] User {user_id}: anchor({naive_anchor}) >= start({period_start}) → base={anchor_balance} + topup={topup_after_anchor} = {initial}")
+        return initial
 
     # 앵커 ~ 기간 시작 사이의 변동 합산 (정방향)
-    # 1) 거래 P/L
+    # ★ SQL 쿼리에는 anchor_time 원본 전달 (PostgreSQL이 TIMESTAMPTZ 비교 처리)
     trade_pl = db.query(sa_func.coalesce(sa_func.sum(DemoTrade.profit), 0)).filter(
         DemoTrade.user_id == user_id,
         DemoTrade.is_closed == True,
@@ -268,7 +270,6 @@ def get_period_initial_balance(
         DemoTrade.closed_at < period_start
     ).scalar() or 0
 
-    # 2) 충전액
     topup_sum = db.query(sa_func.coalesce(sa_func.sum(DemoTransaction.amount), 0)).filter(
         DemoTransaction.user_id == user_id,
         DemoTransaction.tx_type == "topup",
@@ -291,10 +292,14 @@ def get_net_deposits(
     anchor_time: datetime = None
 ) -> float:
     """기간 내 충전(topup) 합계. 리셋은 입금으로 보지 않음."""
+    # 앵커가 기간 시작보다 뒤면 앵커 이후부터 집계
     effective_start = start_time
-    # 앵커가 기간 시작보다 뒤면, 앵커 이후부터만 집계
-    if anchor_time and anchor_time > start_time:
-        effective_start = anchor_time
+    if anchor_time:
+        naive_anchor = _make_naive(anchor_time)
+        if naive_anchor > start_time:
+            effective_start = anchor_time  # ★ SQL에는 원본
+        else:
+            effective_start = start_time
 
     topup_sum = db.query(sa_func.coalesce(sa_func.sum(DemoTransaction.amount), 0)).filter(
         DemoTransaction.user_id == user_id,
@@ -307,7 +312,7 @@ def get_net_deposits(
 
 
 # ================================================================
-# 8) get_filtered_trades_query — 앵커 이후 + 기간 내 거래 필터
+# 8) get_filtered_trades — 앵커 이후 + 기간 내 거래 필터
 # ================================================================
 def get_filtered_trades(
     db: Session,
@@ -318,7 +323,7 @@ def get_filtered_trades(
 ) -> list:
     """
     앵커(리셋) 이후 + 기간 내 청산 거래 목록 반환.
-    리셋 이전 거래는 제외.
+    ★ SQL 쿼리에는 anchor_time 원본 전달 (PostgreSQL이 TIMESTAMPTZ 비교 처리)
     """
     query = db.query(DemoTrade).filter(
         DemoTrade.user_id == user_id,
@@ -327,8 +332,10 @@ def get_filtered_trades(
         DemoTrade.closed_at <= end_time
     )
 
-    # 앵커 이후 거래만 (리셋 이전 거래 제외)
     if anchor_time:
+        # ★ 원본 그대로 전달 — PostgreSQL이 TIMESTAMPTZ vs TIMESTAMPTZ 비교
         query = query.filter(DemoTrade.closed_at >= anchor_time)
 
-    return query.order_by(DemoTrade.closed_at.asc()).all()
+    trades = query.order_by(DemoTrade.closed_at.asc()).all()
+    print(f"[FILTER] User {user_id}: start={start_time}, end={end_time}, anchor={anchor_time} → {len(trades)}건")
+    return trades

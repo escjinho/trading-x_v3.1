@@ -186,7 +186,11 @@
       "Bash(__NEW_LINE_18e71e99be99a73c__ echo \"\")",
       "Bash(ip addr:*)",
       "Bash(nginx -t:*)",
-      "Bash(systemctl reload:*)"
+      "Bash(systemctl reload:*)",
+      "Bash(./backend/venv/bin/python3:*)",
+      "Bash(../backend/venv/bin/python3:*)",
+      "Bash(./venv/bin/python3:*)",
+      "Bash(timedatectl:*)"
     ]
   }
 }

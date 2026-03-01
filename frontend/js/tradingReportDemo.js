@@ -205,108 +205,229 @@ document.addEventListener('click', function(e) {
 });
 
 function renderDemoTrChart(dailyData, periodStart, periodEnd) {
+    var section = document.getElementById('trdChartSection');
+    if (!dailyData || dailyData.length === 0) {
+        if (section) section.style.display = 'none';
+        return;
+    }
+    if (section) section.style.display = 'block';
+
+    // ★ 상단 요약
+    var lastCum = dailyData[dailyData.length - 1].cumulative || 0;
+    var fmtPLshort = function(v) { var n = Number(v||0); return (n>=0?'+$':'-$')+Math.abs(n).toFixed(2); };
+
+    var cumEl = document.getElementById('trdChartCumPL');
+    if (cumEl) {
+        cumEl.textContent = fmtPLshort(lastCum);
+        cumEl.className = 'tr-chart-summary-val ' + (lastCum > 0 ? 'tr-val-profit' : lastCum < 0 ? 'tr-val-loss' : '');
+    }
+
+    var daysEl = document.getElementById('trdChartDays');
+    if (daysEl) daysEl.textContent = dailyData.length + '일';
+
+    var bestDay = null, worstDay = null;
+    dailyData.forEach(function(d) {
+        if (!bestDay || d.total > bestDay.total) bestDay = d;
+        if (!worstDay || d.total < worstDay.total) worstDay = d;
+    });
+
+    var bestEl = document.getElementById('trdChartBestDay');
+    if (bestEl && bestDay) {
+        bestEl.textContent = fmtPLshort(bestDay.total);
+        bestEl.className = 'tr-chart-summary-val ' + (bestDay.total >= 0 ? 'tr-val-profit' : 'tr-val-loss');
+    }
+    var worstEl = document.getElementById('trdChartWorstDay');
+    if (worstEl && worstDay) {
+        worstEl.textContent = fmtPLshort(worstDay.total);
+        worstEl.className = 'tr-chart-summary-val tr-val-loss';
+    }
+
+    // 기간 표시
+    var periodEl = document.getElementById('trdChartPeriod');
+    if (periodEl) {
+        var startStr = periodStart ? periodStart.replace(/-/g, '/') : dailyData[0].date.replace(/-/g, '/');
+        var endStr = periodEnd ? periodEnd.replace(/-/g, '/') : dailyData[dailyData.length - 1].date.replace(/-/g, '/');
+        periodEl.textContent = startStr + ' ~ ' + endStr;
+    }
+
+    // ★ Canvas 렌더링
     var canvas = document.getElementById('trdChartCanvas');
     if (!canvas) return;
-    var ctx = canvas.getContext('2d');
     var container = document.getElementById('trdChartContainer');
-    if (!container) return;
-    var W = container.clientWidth || 340;
-    var H = 200;
-    canvas.width = W * 2; canvas.height = H * 2;
-    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
-    ctx.scale(2, 2);
-    ctx.clearRect(0, 0, W, H);
+    var dpr = window.devicePixelRatio || 1;
+    var W = container.offsetWidth;
+    var H = container.offsetHeight;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    var ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
 
-    var padL = 50, padR = 10, padT = 20, padB = 30;
+    var n = dailyData.length;
+    var padL = 2, padR = 2, padT = 8, padB = 4;
     var chartW = W - padL - padR;
     var chartH = H - padT - padB;
 
-    var cumPL = dailyData.length > 0 ? dailyData[dailyData.length - 1].cumulative : 0;
-    var bestDay = dailyData.reduce(function(a, b) { return b.total > a.total ? b : a; }, dailyData[0] || {total:0});
-    var worstDay = dailyData.reduce(function(a, b) { return b.total < a.total ? b : a; }, dailyData[0] || {total:0});
-    var fmtPLshort = function(v) { var n = Number(v||0); return (n>=0?'+':'-')+'$'+Math.abs(n).toFixed(2); };
-
-    var el1 = document.getElementById('trdChartCumPL');
-    if (el1) { el1.textContent = fmtPLshort(cumPL); el1.style.color = cumPL >= 0 ? '#00d4a4' : '#ff4d5a'; }
-    var el2 = document.getElementById('trdChartDays');
-    if (el2) el2.textContent = dailyData.length + '일';
-    var el3 = document.getElementById('trdChartBestDay');
-    if (el3) el3.textContent = fmtPLshort(bestDay.total);
-    var el4 = document.getElementById('trdChartWorstDay');
-    if (el4) el4.textContent = fmtPLshort(worstDay.total);
-    var el5 = document.getElementById('trdChartPeriod');
-    if (el5) el5.textContent = (periodStart||'') + ' ~ ' + (periodEnd||'');
-
-    var allVals = [0];
+    // 값 범위
+    var allVals = [];
     dailyData.forEach(function(d) { allVals.push(d.total, d.cumulative); });
     var maxVal = Math.max.apply(null, allVals);
     var minVal = Math.min.apply(null, allVals);
     var range = maxVal - minVal || 1;
-    maxVal += range * 0.1; minVal -= range * 0.1;
+    maxVal += range * 0.1;
+    minVal -= range * 0.1;
     range = maxVal - minVal;
 
     function yPos(v) { return padT + (1 - (v - minVal) / range) * chartH; }
+    var zeroY = yPos(0);
 
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-    ctx.lineWidth = 0.5;
-    for (var g = 0; g <= 4; g++) {
-        var gy = padT + chartH * g / 4;
+    // 바 너비
+    var barGap = Math.max(2, Math.floor(chartW / n * 0.2));
+    var barW = Math.max(4, Math.floor((chartW - barGap * (n - 1)) / n));
+    if (barW > 28) barW = 28;
+    var totalBarArea = barW * n + barGap * (n - 1);
+    var startX = padL + (chartW - totalBarArea) / 2;
+
+    // ── 배경 그리드 ──
+    ctx.clearRect(0, 0, W, H);
+    ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+    ctx.lineWidth = 1;
+    for (var g = 0; g < 4; g++) {
+        var gy = padT + (chartH / 3) * g;
         ctx.beginPath(); ctx.moveTo(padL, gy); ctx.lineTo(W - padR, gy); ctx.stroke();
-        var gv = maxVal - (range * g / 4);
-        ctx.fillStyle = 'rgba(255,255,255,0.3)';
-        ctx.font = '9px sans-serif';
-        ctx.textAlign = 'right';
-        ctx.fillText('$' + gv.toFixed(0), padL - 5, gy + 3);
     }
 
-    var zeroY = yPos(0);
-    ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 1;
-    ctx.setLineDash([3,3]);
-    ctx.beginPath(); ctx.moveTo(padL, zeroY); ctx.lineTo(W - padR, zeroY); ctx.stroke();
-    ctx.setLineDash([]);
+    // ── 제로 라인 ──
+    if (minVal < 0 && maxVal > 0) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath(); ctx.moveTo(padL, zeroY); ctx.lineTo(W - padR, zeroY); ctx.stroke();
+        ctx.setLineDash([]);
+    }
 
-    var n = dailyData.length;
-    var barW = Math.max(4, Math.min(20, (chartW / n) * 0.6));
-    var gap = chartW / n;
+    // ── 일별 바 차트 (그라데이션 + 둥근 모서리) ──
     dailyData.forEach(function(d, i) {
-        var x = padL + gap * i + gap / 2;
+        var x = startX + i * (barW + barGap);
         var val = d.total;
         var top = val >= 0 ? yPos(val) : zeroY;
-        var h = Math.abs(yPos(val) - zeroY);
-        h = Math.max(h, 1);
-        ctx.fillStyle = val >= 0 ? 'rgba(0,212,164,0.5)' : 'rgba(255,77,90,0.5)';
-        ctx.fillRect(x - barW/2, top, barW, h);
+        var bottom = val >= 0 ? zeroY : yPos(val);
+        var h = Math.max(2, bottom - top);
+
+        var grad;
+        if (val >= 0) {
+            grad = ctx.createLinearGradient(0, top, 0, bottom);
+            grad.addColorStop(0, 'rgba(0, 212, 164, 0.6)');
+            grad.addColorStop(1, 'rgba(0, 212, 164, 0.15)');
+        } else {
+            grad = ctx.createLinearGradient(0, top, 0, bottom);
+            grad.addColorStop(0, 'rgba(255, 77, 90, 0.15)');
+            grad.addColorStop(1, 'rgba(255, 77, 90, 0.6)');
+        }
+        ctx.fillStyle = grad;
+
+        var radius = Math.min(3, barW / 2);
+        ctx.beginPath();
+        if (val >= 0) {
+            ctx.moveTo(x + radius, top);
+            ctx.arcTo(x + barW, top, x + barW, bottom, radius);
+            ctx.lineTo(x + barW, bottom);
+            ctx.lineTo(x, bottom);
+            ctx.arcTo(x, top, x + radius, top, radius);
+        } else {
+            ctx.moveTo(x, top);
+            ctx.lineTo(x + barW, top);
+            ctx.arcTo(x + barW, bottom, x, bottom, radius);
+            ctx.arcTo(x, bottom, x, top, radius);
+        }
+        ctx.closePath();
+        ctx.fill();
     });
 
-    ctx.strokeStyle = '#00d4ff'; ctx.lineWidth = 2;
-    ctx.beginPath();
+    // ── 누적 P&L 에어리어 + 베지어 곡선 ──
+    var linePoints = [];
     dailyData.forEach(function(d, i) {
-        var x = padL + gap * i + gap / 2;
+        var x = startX + i * (barW + barGap) + barW / 2;
         var y = yPos(d.cumulative);
-        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-    });
-    ctx.stroke();
-
-    dailyData.forEach(function(d, i) {
-        var x = padL + gap * i + gap / 2;
-        var y = yPos(d.cumulative);
-        ctx.beginPath(); ctx.arc(x, y, 2.5, 0, Math.PI * 2);
-        ctx.fillStyle = '#00d4ff'; ctx.fill();
+        linePoints.push({ x: x, y: y });
     });
 
-    var xAxis = document.getElementById('trdChartXAxis');
-    if (xAxis) {
-        xAxis.innerHTML = '';
-        var step = Math.max(1, Math.floor(n / 6));
+    if (linePoints.length > 1) {
+        var lastPoint = linePoints[linePoints.length - 1];
+        var isProfit = lastPoint.y < zeroY;
+        var areaGrad = ctx.createLinearGradient(0, padT, 0, H);
+        if (isProfit) {
+            areaGrad.addColorStop(0, 'rgba(0, 212, 164, 0.15)');
+            areaGrad.addColorStop(1, 'rgba(0, 212, 164, 0)');
+        } else {
+            areaGrad.addColorStop(0, 'rgba(255, 77, 90, 0.12)');
+            areaGrad.addColorStop(1, 'rgba(255, 77, 90, 0)');
+        }
+
+        // 에어리어
+        ctx.beginPath();
+        ctx.moveTo(linePoints[0].x, linePoints[0].y);
+        for (var i = 1; i < linePoints.length; i++) {
+            var prev = linePoints[i - 1];
+            var curr = linePoints[i];
+            var cpx = (prev.x + curr.x) / 2;
+            ctx.quadraticCurveTo(prev.x + (cpx - prev.x) * 0.8, prev.y, cpx, (prev.y + curr.y) / 2);
+            ctx.quadraticCurveTo(cpx + (curr.x - cpx) * 0.2, curr.y, curr.x, curr.y);
+        }
+        ctx.lineTo(lastPoint.x, zeroY);
+        ctx.lineTo(linePoints[0].x, zeroY);
+        ctx.closePath();
+        ctx.fillStyle = areaGrad;
+        ctx.fill();
+
+        // 라인
+        ctx.beginPath();
+        ctx.moveTo(linePoints[0].x, linePoints[0].y);
+        for (var i = 1; i < linePoints.length; i++) {
+            var prev = linePoints[i - 1];
+            var curr = linePoints[i];
+            var cpx = (prev.x + curr.x) / 2;
+            ctx.quadraticCurveTo(prev.x + (cpx - prev.x) * 0.8, prev.y, cpx, (prev.y + curr.y) / 2);
+            ctx.quadraticCurveTo(cpx + (curr.x - cpx) * 0.2, curr.y, curr.x, curr.y);
+        }
+        ctx.strokeStyle = isProfit ? '#00d4a4' : '#ff4d5a';
+        ctx.lineWidth = 2.5;
+        ctx.shadowColor = isProfit ? 'rgba(0,212,164,0.4)' : 'rgba(255,77,90,0.4)';
+        ctx.shadowBlur = 8;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // 끝점 글로우 도트
+        ctx.beginPath();
+        ctx.arc(lastPoint.x, lastPoint.y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = isProfit ? '#00d4a4' : '#ff4d5a';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(lastPoint.x, lastPoint.y, 7, 0, Math.PI * 2);
+        ctx.strokeStyle = isProfit ? 'rgba(0,212,164,0.35)' : 'rgba(255,77,90,0.35)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // 끝점 금액 라벨
+        var labelText = (lastCum >= 0 ? '+$' : '-$') + Math.abs(lastCum).toLocaleString('en-US', { minimumFractionDigits: 0 });
+        ctx.font = '600 11px Rajdhani, sans-serif';
+        ctx.fillStyle = isProfit ? '#00d4a4' : '#ff4d5a';
+        var labelW = ctx.measureText(labelText).width;
+        var labelX = lastPoint.x - labelW - 12;
+        if (labelX < padL + 10) labelX = lastPoint.x + 12;
+        ctx.fillText(labelText, labelX, lastPoint.y - 10);
+    }
+
+    // ── X축 날짜 라벨 ──
+    var xAxisEl = document.getElementById('trdChartXAxis');
+    if (xAxisEl) {
+        xAxisEl.innerHTML = '';
+        var step = Math.max(1, Math.ceil(n / 7));
         for (var i = 0; i < n; i += step) {
-            var lbl = document.createElement('span');
-            lbl.textContent = dailyData[i].date.slice(5);
-            lbl.style.position = 'absolute';
-            lbl.style.left = (padL + gap * i + gap / 2) + 'px';
-            lbl.style.transform = 'translateX(-50%)';
-            lbl.style.fontSize = '9px';
-            lbl.style.color = 'rgba(255,255,255,0.4)';
-            xAxis.appendChild(lbl);
+            var span = document.createElement('span');
+            var dateStr = dailyData[i].date.substring(5).replace('-', '/');
+            span.textContent = dateStr;
+            xAxisEl.appendChild(span);
         }
     }
 }
@@ -348,26 +469,33 @@ async function loadDemoAnalysisReport(period, startDate, endDate) {
             var ring = document.getElementById('trdaWinRing');
             if (ring) ring.setAttribute('stroke-dasharray', w.rate + ' ' + (100 - w.rate));
             var pct = document.getElementById('trdaWinPct'); if (pct) pct.textContent = w.rate + '%';
-            var wl = document.getElementById('trdaWinLabel'); if (wl) wl.textContent = 'Win ' + w.win;
-            var ll = document.getElementById('trdaLoseLabel'); if (ll) ll.textContent = 'Lose ' + w.lose;
+            var wl = document.getElementById('trdaWinLabel'); if (wl) wl.textContent = 'Win ' + w.win + '건';
+            var ll = document.getElementById('trdaLoseLabel'); if (ll) ll.textContent = 'Lose ' + w.lose + '건';
             var wb = document.getElementById('trdaWinBar'); if (wb) wb.style.width = w.rate + '%';
             var lb = document.getElementById('trdaLoseBar'); if (lb) lb.style.width = (100 - w.rate) + '%';
             var tot = document.getElementById('trdaTotal'); if (tot) tot.textContent = w.total + '건';
             var aw = document.getElementById('trdaAvgWin'); if (aw) { aw.textContent = fmtPL(w.avg_win); aw.style.color = plColor(w.avg_win); }
             var al = document.getElementById('trdaAvgLoss'); if (al) { al.textContent = fmtPL(w.avg_loss); al.style.color = plColor(w.avg_loss); }
-            var rr = document.getElementById('trdaRR'); if (rr) rr.textContent = w.rr_ratio + ':1';
+            var rr = document.getElementById('trdaRR'); if (rr) rr.textContent = '1 : ' + (w.rr_ratio || 0);
         }
 
-        // 카드2: 종목별
+        // 카드2: 종목별 (라이브와 동일한 센터라인 + 좌우 그라데이션)
         if (d.symbols && d.symbols.length > 0) {
             var sc = document.getElementById('trdaSymbolCard');
             if (sc) {
                 var maxAbs = Math.max.apply(null, d.symbols.map(function(s) { return Math.abs(s.total_pl); })) || 1;
                 var html = '';
                 d.symbols.forEach(function(s) {
-                    var pct = Math.min(Math.abs(s.total_pl) / maxAbs * 100, 100);
-                    var c = s.total_pl >= 0 ? '#00d4a4' : '#ff4d5a';
-                    html += '<div class="tra-symbol-row"><div class="tra-symbol-name">' + s.symbol + '</div><div class="tra-symbol-bar-wrap"><div class="tra-symbol-bar" style="width:'+pct+'%;background:'+c+'"></div></div><div class="tra-symbol-pl" style="color:'+c+'">' + fmtPL(s.total_pl) + '</div><div class="tra-symbol-meta">' + s.count + '건 · 승률 ' + s.win_rate + '%</div></div>';
+                    var pct = Math.min(48, Math.abs(s.total_pl) / maxAbs * 48);
+                    var isProfit = s.total_pl >= 0;
+                    var barClass = isProfit ? 'tra-symbol-bar tra-profit-bar' : 'tra-symbol-bar tra-loss-bar';
+                    var barText = (isProfit ? '+$' : '-$') + Math.abs(s.total_pl).toLocaleString('en-US', {minimumFractionDigits:0});
+                    html += '<div class="tra-symbol-row">';
+                    html += '<div class="tra-symbol-name">' + s.symbol + '</div>';
+                    html += '<div class="tra-symbol-bar-wrap"><div class="tra-symbol-center-line"></div>';
+                    html += '<div class="' + barClass + '" style="width:' + pct + '%;">' + barText + '</div></div>';
+                    html += '<div class="tra-symbol-meta">' + s.count + '건 · 승률 ' + s.win_rate + '%</div>';
+                    html += '</div>';
                 });
                 sc.innerHTML = html;
             }
@@ -379,11 +507,11 @@ async function loadDemoAnalysisReport(period, startDate, endDate) {
             var el;
             el = document.getElementById('trdaBuyCount'); if (el) el.textContent = b.count + '건';
             el = document.getElementById('trdaBuyPL'); if (el) { el.textContent = fmtPL(b.total_pl); el.style.color = plColor(b.total_pl); }
-            el = document.getElementById('trdaBuyWinRate'); if (el) el.textContent = b.win_rate + '%';
+            el = document.getElementById('trdaBuyWinRate'); if (el) { el.textContent = b.win_rate + '%'; el.style.color = '#ffffff'; }
             el = document.getElementById('trdaBuyAvg'); if (el) { el.textContent = fmtPL(b.avg_pl); el.style.color = plColor(b.avg_pl); }
             el = document.getElementById('trdaSellCount'); if (el) el.textContent = sl.count + '건';
             el = document.getElementById('trdaSellPL'); if (el) { el.textContent = fmtPL(sl.total_pl); el.style.color = plColor(sl.total_pl); }
-            el = document.getElementById('trdaSellWinRate'); if (el) el.textContent = sl.win_rate + '%';
+            el = document.getElementById('trdaSellWinRate'); if (el) { el.textContent = sl.win_rate + '%'; el.style.color = '#ffffff'; }
             el = document.getElementById('trdaSellAvg'); if (el) { el.textContent = fmtPL(sl.avg_pl); el.style.color = plColor(sl.avg_pl); }
         }
 

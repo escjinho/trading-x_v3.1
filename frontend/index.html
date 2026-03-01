@@ -61,9 +61,9 @@
     <link rel="stylesheet" href="css/styles.css?v=1771777952">
         <link rel="stylesheet" href="css/quickeasy.css?v=20260226b">
     <link rel="stylesheet" href="css/chart.css?v=1771777952">
-    <link rel="stylesheet" href="css/account.css?v=20260227d">
+    <link rel="stylesheet" href="css/account.css?v=20260302a">
     <link rel="stylesheet" href="css/my.css?v=20260227g">
-    <link rel="stylesheet" href="css/tradingReport.css?v=20260227g">
+    <link rel="stylesheet" href="css/tradingReport.css?v=20260302b">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
@@ -1350,9 +1350,9 @@
 
     </div>
 
-    <!-- ★ 상세내역 보기 하단 고정 버튼 -->
-    <div class="acc-detail-btn" onclick="goToTradingReportLive()">
-        <span>상세내역 보기</span>
+    <!-- ★ 데모 모드 전용: 트레이딩 리포트 버튼 (이전 '상세내역 보기' 위치) -->
+    <div class="acc-detail-btn" id="accDemoReportBtn" onclick="goToDemoTradingReport()">
+        <span>트레이딩 리포트 보기</span>
         <span class="material-icons-round" style="font-size:16px;">chevron_right</span>
     </div>
 
@@ -2323,7 +2323,7 @@
                                             <circle cx="21" cy="21" r="15.9" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="3.5"/>
                                             <circle cx="21" cy="21" r="15.9" fill="none" stroke="#00d4ff" stroke-width="3.5" id="trdaWinRing" stroke-dasharray="0 100" stroke-linecap="round"/>
                                         </svg>
-                                        <div class="tra-winrate-center"><div class="tra-winrate-pct" id="trdaWinPct">-</div><div class="tra-winrate-lbl">승률</div></div>
+                                        <div class="tra-winrate-center"><div class="tra-winrate-pct" id="trdaWinPct">-</div></div>
                                     </div>
                                     <div class="tra-winrate-stats">
                                         <div class="tra-winrate-bar-row">
@@ -2591,7 +2591,6 @@
                                         </svg>
                                         <div class="tra-winrate-center">
                                             <div class="tra-winrate-pct" id="traWinPct">-</div>
-                                            <div class="tra-winrate-lbl">승률</div>
                                         </div>
                                     </div>
                                     <div class="tra-winrate-stats">
@@ -4381,10 +4380,10 @@
     <script src="js/api.js?v=20260227a"></script>
     <script src="js/utils.js?v=1771777952"></script>
     <script src="js/watchlist.js?v=1771777952"></script>
-    <script src="js/navigation.js?v=1771803124"></script>
+    <script src="js/navigation.js?v=20260302a"></script>
     <script src="js/my.js?v=20260301a"></script>
-    <script src="js/tradingReport.js?v=20260227c"></script>
-    <script src="js/tradingReportDemo.js?v=20260301d"></script>
+    <script src="js/tradingReport.js?v=20260302c"></script>
+    <script src="js/tradingReportDemo.js?v=20260302e"></script>
 
     <!-- Chart Panels (모듈화) -->
     <script src="js/panels/gaugePanel.js?v=1771777952"></script>
@@ -5882,10 +5881,10 @@
     </div>
 
     <script src="js/market-schedule.js?v=1771777952"></script>
-    <script src="js/account.js?v=20260227d"></script>
+    <script src="js/account.js?v=20260302a"></script>
     <script src="js/trading.js?v=20260301a"></script>
-    <script src="js/openPositions.js?v=1772148129"></script>
-    <script src="js/connection.js?v=20260301c"></script>
+    <script src="js/openPositions.js?v=20260302a"></script>
+    <script src="js/connection.js?v=20260302a"></script>
     <script src="js/init.js?v=1771992777"></script>
 <div id="txDialogContainer"></div>
 </body>
