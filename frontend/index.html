@@ -2250,13 +2250,42 @@
                                 <button class="tr-date-apply" onclick="applyDemoTrCustomPeriod()">조회</button>
                             </div>
                             <div class="tr-summary-card" id="trdSummaryCard">
-                                <div class="tr-summary-row"><span class="tr-summary-label">Broker</span><span class="tr-summary-value" id="trdSumBroker">-</span></div>
-                                <div class="tr-summary-row"><span class="tr-summary-label">Account</span><span class="tr-summary-value" id="trdSumAccount">-</span></div>
-                                <div class="tr-summary-row"><span class="tr-summary-label">초기 금액</span><span class="tr-summary-value" id="trdSumInitial">-</span></div>
-                                <div class="tr-summary-row tr-summary-total"><span class="tr-summary-label">Total P&L</span><span class="tr-summary-value" id="trdSumTotalPL">-</span></div>
-                                <div class="tr-summary-row tr-summary-sub"><span class="tr-summary-label">거래손익</span><span class="tr-summary-value" id="trdSumTradeProfit">-</span></div>
-                                <div class="tr-summary-row"><span class="tr-summary-label">현재 잔고</span><span class="tr-summary-value" id="trdSumBalance">-</span></div>
-                                <div class="tr-summary-row"><span class="tr-summary-label">수익률</span><span class="tr-summary-value" id="trdSumReturn">-</span></div>
+                                <div class="tr-summary-row">
+                                    <span class="tr-summary-label">Broker</span>
+                                    <span class="tr-summary-value" id="trdSumBroker">-</span>
+                                </div>
+                                <div class="tr-summary-row">
+                                    <span class="tr-summary-label">Account</span>
+                                    <span class="tr-summary-value" id="trdSumAccount">-</span>
+                                </div>
+                                <div class="tr-summary-row">
+                                    <span class="tr-summary-label">초기 금액</span>
+                                    <span class="tr-summary-value" id="trdSumInitial">-</span>
+                                </div>
+                                <div class="tr-summary-row tr-summary-total">
+                                    <span class="tr-summary-label">Total P&L</span>
+                                    <span class="tr-summary-value" id="trdSumTotalPL">-</span>
+                                </div>
+                                <div class="tr-summary-row tr-summary-sub">
+                                    <span class="tr-summary-label">거래손익</span>
+                                    <span class="tr-summary-value" id="trdSumTradeProfit">-</span>
+                                </div>
+                                <div class="tr-summary-row tr-summary-sub">
+                                    <span class="tr-summary-label">스왑</span>
+                                    <span class="tr-summary-value" id="trdSumSwap">$0.00</span>
+                                </div>
+                                <div class="tr-summary-row tr-summary-sub">
+                                    <span class="tr-summary-label">커미션</span>
+                                    <span class="tr-summary-value" id="trdSumCommission">$0.00</span>
+                                </div>
+                                <div class="tr-summary-row">
+                                    <span class="tr-summary-label">현재 잔고</span>
+                                    <span class="tr-summary-value" id="trdSumBalance">-</span>
+                                </div>
+                                <div class="tr-summary-row">
+                                    <span class="tr-summary-label">수익률</span>
+                                    <span class="tr-summary-value" id="trdSumReturn">-</span>
+                                </div>
                             </div>
                             <div class="tr-summary-loading" id="trdSummaryLoading" style="display:none;">
                                 <span class="material-icons-round tr-loading-spin">refresh</span><span>데이터 조회 중...</span>
@@ -4355,7 +4384,7 @@
     <script src="js/navigation.js?v=1771803124"></script>
     <script src="js/my.js?v=20260301a"></script>
     <script src="js/tradingReport.js?v=20260227c"></script>
-    <script src="js/tradingReportDemo.js?v=20260301a"></script>
+    <script src="js/tradingReportDemo.js?v=20260301d"></script>
 
     <!-- Chart Panels (모듈화) -->
     <script src="js/panels/gaugePanel.js?v=1771777952"></script>

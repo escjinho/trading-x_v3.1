@@ -26,6 +26,8 @@ class User(Base):
     demo_balance = Column(Float, default=10000.0)      # 데모 잔고
     demo_equity = Column(Float, default=10000.0)       # 데모 자산
     demo_today_profit = Column(Float, default=0.0)     # 오늘 수익
+    demo_reset_at = Column(DateTime(timezone=True), nullable=True)  # 마지막 리셋 시점 (앵커)
+    demo_reset_balance = Column(Float, default=10000.0)  # 리셋 시점 잔고
     has_mt5_account = Column(Boolean, default=False)   # MT5 계정 연결 여부
     mt5_account_number = Column(String(50), nullable=True)  # MT5 계좌번호
     mt5_server = Column(String(100), nullable=True)         # MT5 서버

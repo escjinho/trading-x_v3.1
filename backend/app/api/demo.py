@@ -83,7 +83,8 @@ async def fetch_external_prices():
     }
 from math import ceil
 from ..models.user import User
-from ..models.demo_trade import DemoTrade, DemoPosition, DemoMartinState
+from ..models.demo_trade import DemoTrade, DemoPosition, DemoMartinState, DemoTransaction
+from .demo_service import reset_account, topup_account, record_trade_transaction, get_anchor_point, get_period_initial_balance, get_net_deposits, get_filtered_trades
 from ..utils.security import decode_token
 from ..services.indicator_service import IndicatorService
 from .mt5 import get_bridge_prices, get_bridge_candles, bridge_cache
@@ -438,6 +439,9 @@ async def get_demo_account(
                     closed_at=datetime.now()
                 )
                 db.add(trade)
+                db.flush()
+                _bal_bf = current_user.demo_balance or 10000.0
+                record_trade_transaction(db, current_user.id, trade.id, position.symbol, position.trade_type, profit, _bal_bf, round(_bal_bf + profit, 2))
 
                 current_user.demo_balance = (current_user.demo_balance or 10000.0) + profit
                 current_user.demo_equity = current_user.demo_balance
@@ -595,7 +599,10 @@ async def get_demo_account(
                         closed_at=datetime.now()
                     )
                     db.add(trade)
-                    
+                    db.flush()
+                    _bal_bf = current_user.demo_balance or 10000.0
+                    record_trade_transaction(db, current_user.id, trade.id, position.symbol, position.trade_type, profit, _bal_bf, round(_bal_bf + profit, 2))
+
                     # 잔고 업데이트
                     current_user.demo_balance = (current_user.demo_balance or 10000.0) + profit
                     current_user.demo_equity = current_user.demo_balance
@@ -1196,7 +1203,10 @@ async def close_demo_position(
     )
     
     db.add(trade)
-    
+    db.flush()
+    _bal_bf = current_user.demo_balance or 10000.0
+    record_trade_transaction(db, current_user.id, trade.id, trade.symbol, trade.trade_type, profit, _bal_bf, round(_bal_bf + profit, 2))
+
     # 잔고 업데이트
     current_user.demo_balance = (current_user.demo_balance or 10000.0) + profit
     current_user.demo_equity = current_user.demo_balance
@@ -1296,19 +1306,8 @@ async def reset_demo_balance(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """데모 잔고 초기화"""
-    # 열린 포지션 삭제
-    db.query(DemoPosition).filter(
-        DemoPosition.user_id == current_user.id
-    ).delete()
-    
-    # 잔고 리셋
-    current_user.demo_balance = 10000.0
-    current_user.demo_equity = 10000.0
-    current_user.demo_today_profit = 0.0
-    
-    db.commit()
-    
+    """데모 잔고 초기화 — 서비스 레이어 호출"""
+    result = reset_account(db, current_user)
     return JSONResponse({
         "success": True,
         "message": "데모 계정이 초기화되었습니다. 잔고: $10,000",
@@ -1323,39 +1322,18 @@ async def topup_demo_balance(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """데모 잔고 충전 (금액 선택 가능, 최대 $100,000)"""
-    # 요청에서 금액 읽기 (없으면 기본 10000)
+    """데모 잔고 충전 — 서비스 레이어 호출"""
     try:
         body = await request.json()
         topup_amount = float(body.get("amount", 10000))
     except:
         topup_amount = 10000.0
-    
-    # 유효성 검사
-    allowed_amounts = [5000, 10000, 50000, 100000]
-    if topup_amount not in allowed_amounts:
-        topup_amount = 10000.0
-    
-    current_balance = current_user.demo_balance or 10000.0
-    max_balance = 100000.0
-    
-    if current_balance >= max_balance:
-        return JSONResponse({
-            "success": False,
-            "message": f"최대 잔고 ${max_balance:,.0f}에 도달했습니다."
-        })
-    
-    new_balance = min(current_balance + topup_amount, max_balance)
-    added = new_balance - current_balance
-    
-    current_user.demo_balance = new_balance
-    current_user.demo_equity = new_balance
-    db.commit()
-    
+
+    result = topup_account(db, current_user, topup_amount)
     return JSONResponse({
-        "success": True,
-        "message": f"💰 ${added:,.0f} 충전 완료! 잔고: ${new_balance:,.0f}",
-        "balance": new_balance
+        "success": result["success"],
+        "message": result["message"],
+        "balance": result["balance"]
     })
 
     # ========== 데모 마틴 모드 API ==========
@@ -1703,6 +1681,7 @@ async def close_all_demo_positions(
         return JSONResponse({"success": False, "message": "열린 포지션 없음"})
 
     total_profit = 0
+    _running_bal = current_user.demo_balance or 10000.0
     closed_count = 0
     mt5_connected = MT5_AVAILABLE and mt5.initialize() if MT5_AVAILABLE else False
 
@@ -1751,6 +1730,10 @@ async def close_all_demo_positions(
             closed_at=datetime.now()
         )
         db.add(trade)
+        db.flush()
+        _bal_after = round(_running_bal + profit, 2)
+        record_trade_transaction(db, current_user.id, trade.id, position.symbol, position.trade_type, profit, _running_bal, _bal_after)
+        _running_bal = _bal_after
         db.delete(position)
         closed_count += 1
 
@@ -1791,6 +1774,7 @@ async def close_demo_by_type(
         return JSONResponse({"success": False, "message": f"{type} 포지션 없음"})
 
     total_profit = 0
+    _running_bal = current_user.demo_balance or 10000.0
     closed_count = 0
     mt5_connected = MT5_AVAILABLE and mt5.initialize() if MT5_AVAILABLE else False
 
@@ -1839,6 +1823,10 @@ async def close_demo_by_type(
             closed_at=datetime.now()
         )
         db.add(trade)
+        db.flush()
+        _bal_after = round(_running_bal + profit, 2)
+        record_trade_transaction(db, current_user.id, trade.id, position.symbol, position.trade_type, profit, _running_bal, _bal_after)
+        _running_bal = _bal_after
         db.delete(position)
         closed_count += 1
 
@@ -1880,6 +1868,7 @@ async def close_demo_by_profit(
     mt5_connected = MT5_AVAILABLE and mt5.initialize() if MT5_AVAILABLE else False
 
     total_profit = 0
+    _running_bal = current_user.demo_balance or 10000.0
     closed_count = 0
 
     for position in positions:
@@ -1930,9 +1919,13 @@ async def close_demo_by_profit(
             closed_at=datetime.now()
         )
         db.add(trade)
+        db.flush()
+        _bal_after = round(_running_bal + profit, 2)
+        record_trade_transaction(db, current_user.id, trade.id, position.symbol, position.trade_type, profit, _running_bal, _bal_after)
+        _running_bal = _bal_after
         db.delete(position)
         closed_count += 1
-    
+
     if closed_count == 0:
         msg = "수익 포지션 없음" if profit_type == "positive" else "손실 포지션 없음"
         return JSONResponse({"success": False, "message": msg})
@@ -2260,6 +2253,9 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                                             closed_at=datetime.now()
                                         )
                                         db.add(trade)
+                                        db.flush()
+                                        _bal_bf = user.demo_balance or 10000.0
+                                        record_trade_transaction(db, user_id, trade.id, pos.symbol, pos.trade_type, profit, _bal_bf, round(_bal_bf + profit, 2))
 
                                         # 잔고 업데이트
                                         user.demo_balance = (user.demo_balance or 10000.0) + profit
@@ -2440,7 +2436,7 @@ async def get_demo_trading_report_summary(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """데모 트레이딩 리포트 Summary — DemoTrade 테이블 기반 기간별 P&L 요약"""
+    """데모 트레이딩 리포트 Summary — 정방향 계산 + 앵커 기반 필터"""
     user_id = current_user.id
 
     # ★ 기간 설정
@@ -2473,13 +2469,11 @@ async def get_demo_trading_report_summary(
     account = f"DEMO-{user_id}"
     current_balance = current_user.demo_balance or 10000.0
 
-    # ★ DemoTrade 테이블에서 청산 거래 조회
-    trades = db.query(DemoTrade).filter(
-        DemoTrade.user_id == user_id,
-        DemoTrade.is_closed == True,
-        DemoTrade.closed_at >= start_time,
-        DemoTrade.closed_at <= end_time
-    ).order_by(DemoTrade.closed_at.asc()).all()
+    # ★ 앵커 포인트 조회 (마지막 리셋 시점)
+    anchor_time, anchor_balance = get_anchor_point(current_user)
+
+    # ★ 서비스 함수로 거래 조회 (앵커 이후 + 기간 내)
+    trades = get_filtered_trades(db, user_id, start_time, end_time, anchor_time)
 
     trade_profit = 0.0
     deal_count = len(trades)
@@ -2489,7 +2483,6 @@ async def get_demo_trading_report_summary(
         profit = t.profit or 0
         trade_profit += profit
 
-        # 일별 집계 (그래프용)
         if t.closed_at:
             day_key = t.closed_at.strftime("%Y-%m-%d")
             if day_key not in daily_pl:
@@ -2497,21 +2490,23 @@ async def get_demo_trading_report_summary(
             daily_pl[day_key]["profit"] += profit
             daily_pl[day_key]["total"] += profit
 
-    # ★ 합산 (데모는 스왑/커미션 없음)
+    # ★ 합산
     trade_profit = round(trade_profit, 2)
-    total_pl = trade_profit  # 스왑/커미션 없으므로 동일
+    total_pl = trade_profit
     total_swap = 0.0
     total_commission = 0.0
-    net_deposits = 0.0
 
-    # ★ 초기 금액 = 현재잔고 - Total P&L
-    period_start_balance = round(current_balance - total_pl, 2)
-    initial_balance = max(period_start_balance, 0)
-    if initial_balance == 0:
-        initial_balance = 10000.0  # 데모 기본값
+    # ★ 정방향 계산: 초기 금액
+    initial_balance = get_period_initial_balance(
+        db, user_id, start_time, anchor_time, anchor_balance
+    )
 
-    # ★ 수익률
-    return_rate = round((total_pl / initial_balance * 100), 2) if initial_balance > 0 else 0
+    # ★ 순입금액 (기간 내 충전 합계)
+    deposits = get_net_deposits(db, user_id, start_time, end_time, anchor_time)
+
+    # ★ 수익률 = 거래 P/L / (초기금액 + 순입금) × 100
+    invested = initial_balance + deposits
+    return_rate = round((total_pl / invested * 100), 2) if invested > 0 else 0
 
     # ★ 일별 데이터 정렬 + 누적 계산
     sorted_daily = sorted(daily_pl.items())
@@ -2530,7 +2525,8 @@ async def get_demo_trading_report_summary(
 
     print(f"[DemoReport] User {user_id}: period={period}, deals={deal_count}, "
           f"trade_profit={trade_profit}, total_pl={total_pl}, "
-          f"initial={initial_balance}, current={current_balance}, rate={return_rate}%")
+          f"initial={initial_balance}(정방향), deposits={deposits}, "
+          f"current={current_balance}, rate={return_rate}%")
 
     return {
         "broker": broker,
@@ -2540,7 +2536,7 @@ async def get_demo_trading_report_summary(
         "swap": total_swap,
         "commission": total_commission,
         "total_pl": total_pl,
-        "net_deposits": net_deposits,
+        "net_deposits": deposits,
         "current_balance": current_balance,
         "return_rate": return_rate,
         "deal_count": deal_count,
@@ -2588,13 +2584,9 @@ async def get_demo_trading_report_analysis(
         start_time = now - timedelta(days=365)
         end_time = now
 
-    # ★ DemoTrade에서 청산 거래 조회
-    trades = db.query(DemoTrade).filter(
-        DemoTrade.user_id == user_id,
-        DemoTrade.is_closed == True,
-        DemoTrade.closed_at >= start_time,
-        DemoTrade.closed_at <= end_time
-    ).order_by(DemoTrade.closed_at.asc()).all()
+    # ★ 앵커 기반 거래 조회 (리셋 이후 데이터만)
+    anchor_time, anchor_balance = get_anchor_point(current_user)
+    trades = get_filtered_trades(db, user_id, start_time, end_time, anchor_time)
 
     # ★ 딜 데이터 가공
     closed_deals = []

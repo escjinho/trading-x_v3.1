@@ -140,7 +140,13 @@ function applyDemoTrCustomPeriod() {
 async function loadDemoReportSummary(period, startDate, endDate) {
     var loading = document.getElementById('trdSummaryLoading');
     var chartSec = document.getElementById('trdChartSection');
-    if (loading) loading.style.display = 'flex';
+    var summaryCard = document.getElementById('trdSummaryCard');
+    // 첫 로드 시에는 로딩 스피너만 표시, 이후에는 기존 카드 유지하며 조용히 갱신
+    if (summaryCard && summaryCard.querySelector('.tr-summary-value') && summaryCard.querySelector('.tr-summary-value').textContent !== '-') {
+        // 이미 데이터 있음 → 로딩 표시 없이 조용히 갱신
+    } else {
+        if (loading) loading.style.display = 'flex';
+    }
     if (chartSec) chartSec.style.display = 'none';
     var token = localStorage.getItem('access_token');
     if (!token) return;
@@ -173,6 +179,8 @@ async function loadDemoReportSummary(period, startDate, endDate) {
         set('trdSumInitial', fmtUSD(d.initial_balance));
         set('trdSumTotalPL', fmtPL(d.total_pl), plClass(d.total_pl));
         set('trdSumTradeProfit', fmtPL(d.trade_profit), plClass(d.trade_profit));
+        set('trdSumSwap', '$0.00');
+        set('trdSumCommission', '$0.00');
         set('trdSumBalance', fmtUSD(d.current_balance));
         set('trdSumReturn', (d.return_rate >= 0 ? '+' : '') + d.return_rate + '%', plClass(d.return_rate));
 

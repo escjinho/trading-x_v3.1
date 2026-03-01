@@ -49,3 +49,18 @@ class DemoMartinState(Base):
     base_lot = Column(Float, default=0.01)
     base_target = Column(Float, default=50.0)
     enabled = Column(Boolean, default=False)
+
+
+# ========== 데모 잔고 변동 이력 (거래소 원장) ==========
+class DemoTransaction(Base):
+    __tablename__ = "demo_transactions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False, index=True)
+    tx_type = Column(String(20), nullable=False)  # reset / topup / trade
+    amount = Column(Float, nullable=False)          # 변동 금액 (reset: 리셋후잔고, topup: 충전액, trade: 손익)
+    balance_before = Column(Float, default=0.0)     # 변동 전 잔고
+    balance_after = Column(Float, default=0.0)      # 변동 후 잔고
+    description = Column(String(200), default="")   # 설명 (예: "리셋", "충전 $5,000", "BTCUSD BUY +$150")
+    reference_id = Column(Integer, nullable=True)    # trade인 경우 DemoTrade.id 참조
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
