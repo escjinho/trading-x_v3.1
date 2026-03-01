@@ -838,12 +838,18 @@ function connectWebSocket() {
                 if (accBalance) accBalance.textContent = '$' + data.balance.toLocaleString(undefined, {minimumFractionDigits: 2});
                 const homeFreeMargin = document.getElementById('homeFreeMargin');
                 if (homeFreeMargin) homeFreeMargin.textContent = '$' + data.balance.toLocaleString(undefined, {minimumFractionDigits: 2});
+                // ★ Demo Trading Report 밸런스 실시간
+                const trdBal = document.getElementById('trdDemoBalance');
+                if (trdBal) trdBal.textContent = '$' + data.balance.toLocaleString(undefined, {minimumFractionDigits: 2});
             }
             if (data.equity !== undefined) {
                 const homeEquity = document.getElementById('homeEquity');
                 if (homeEquity) homeEquity.textContent = '$' + data.equity.toLocaleString(undefined, {minimumFractionDigits: 2});
                 const accEquity = document.getElementById('accEquity');
                 if (accEquity) accEquity.textContent = '$' + data.equity.toLocaleString(undefined, {minimumFractionDigits: 2});
+                // ★ Demo Trading Report 에쿼티 실시간
+                const trdEq = document.getElementById('trdDemoEquity');
+                if (trdEq) trdEq.textContent = '$' + data.equity.toLocaleString(undefined, {minimumFractionDigits: 2});
             }
 
             // ★ Demo Margin / Free Margin / Current P/L 업데이트
@@ -855,6 +861,9 @@ function connectWebSocket() {
                 if (accFree) accFree.textContent = '$' + Math.round(freeMargin).toLocaleString();
                 const homeFreeMargin = document.getElementById('homeFreeMargin');
                 if (homeFreeMargin) homeFreeMargin.textContent = '$' + freeMargin.toLocaleString(undefined, {minimumFractionDigits: 2});
+                // ★ Demo Trading Report 마진 실시간
+                const trdMar = document.getElementById('trdDemoMargin');
+                if (trdMar) trdMar.textContent = '$' + (data.margin || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
             }
             // ★ Current P/L 업데이트 (current_pl 또는 position.profit 사용)
             const accCurrentPL = document.getElementById('accCurrentPL');
@@ -866,6 +875,23 @@ function connectWebSocket() {
                     pl = data.position.profit || 0;
                 }
                 safeUpdateCurrentPL(accCurrentPL, pl);
+            }
+            // ★ Demo Trading Report Current P/L 실시간
+            const trdProfit = document.getElementById('trdDemoProfit');
+            if (trdProfit) {
+                let trdPl = 0;
+                if ('current_pl' in data) {
+                    trdPl = data.current_pl || 0;
+                } else if (data.position && data.position.profit !== undefined) {
+                    trdPl = data.position.profit || 0;
+                }
+                if (trdPl === 0) {
+                    trdProfit.textContent = '$0.00';
+                    trdProfit.className = 'my-live-stat-value';
+                } else {
+                    trdProfit.textContent = (trdPl >= 0 ? '+$' : '-$') + Math.abs(trdPl).toLocaleString('en-US', { minimumFractionDigits: 2 });
+                    trdProfit.className = 'my-live-stat-value ' + (trdPl > 0 ? 'profit-plus' : 'profit-minus');
+                }
             }
             if ('leverage' in data) {
                 const accLeverage = document.getElementById('accLeverage');

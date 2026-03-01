@@ -2184,21 +2184,25 @@
                     </div>
                     <div class="my-sub-body">
 
-                        <!-- 카드1: 잔고 히어로 -->
-                        <div class="my-deposit-hero">
+                        <!-- 카드1: 잔고 히어로 (Live와 동일 디자인) -->
+                        <div class="my-deposit-hero live">
                             <div class="my-deposit-hero-top">
                                 <div class="my-deposit-broker-row">
-                                    <div class="my-deposit-broker-dot" style="background:#00d4ff;"></div>
-                                    <span class="my-deposit-broker-name">Trading-X Demo</span>
+                                    <div class="my-deposit-broker-dot"></div>
+                                    <span class="my-deposit-broker-name" id="trdBrokerName">Trading-X Demo</span>
                                 </div>
                                 <span class="material-icons-round my-live-refresh-btn" id="trdRefreshBtn" onclick="loadDemoReportData()">refresh</span>
                             </div>
                             <div class="my-deposit-hero-label">DEMO BALANCE</div>
-                            <div class="my-deposit-hero-amount" id="trdDemoBalance" style="color:#00d4ff;">$--.--</div>
+                            <div class="my-deposit-hero-amount live" id="trdDemoBalance">$--.--</div>
                             <div class="my-live-stats-grid">
                                 <div class="my-live-stat-item">
                                     <div class="my-live-stat-label">EQUITY</div>
                                     <div class="my-live-stat-value cyan" id="trdDemoEquity">$0.00</div>
+                                </div>
+                                <div class="my-live-stat-item">
+                                    <div class="my-live-stat-label">MARGIN</div>
+                                    <div class="my-live-stat-value" id="trdDemoMargin">$0.00</div>
                                 </div>
                                 <div class="my-live-stat-item">
                                     <div class="my-live-stat-label">CURRENT P/L</div>
@@ -5852,7 +5856,7 @@
     <script src="js/account.js?v=20260227d"></script>
     <script src="js/trading.js?v=20260301a"></script>
     <script src="js/openPositions.js?v=1772148129"></script>
-    <script src="js/connection.js?v=20260301b"></script>
+    <script src="js/connection.js?v=20260301c"></script>
     <script src="js/init.js?v=1771992777"></script>
 <div id="txDialogContainer"></div>
 </body>

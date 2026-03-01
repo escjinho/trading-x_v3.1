@@ -323,6 +323,7 @@ async def get_current_user(
 # ========== 데모 계정 정보 ==========
 @router.get("/account-info")
 async def get_demo_account(
+    _force_mode: str = Query(None, alias="mode", description="mode=demo이면 항상 데모 데이터 반환"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -739,7 +740,8 @@ async def get_demo_account(
     print("[ACCOUNT-INFO] 🔴 END\n")
 
     # ★★★ 라이브 모드 (MT5 계정 연결됨) - 유저 MT5 계정 정보 반환 ★★★
-    if current_user.has_mt5_account:
+    # mode=demo 파라미터가 있으면 항상 데모 데이터 반환 (Demo Trading Report용)
+    if current_user.has_mt5_account and _force_mode != "demo":
         # MT5 포지션 수: margin > 0이면 포지션 있음 (MetaAPI 기반)
         mt5_margin_val = current_user.mt5_margin or 0
         # ★ P/L = Equity - Balance (MT5 표준 공식)

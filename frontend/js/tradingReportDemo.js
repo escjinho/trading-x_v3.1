@@ -7,33 +7,61 @@ async function loadDemoReportData() {
     var token = localStorage.getItem('access_token');
     if (!token) return;
     try {
-        var res = await fetch(API_URL + '/demo/account-info', {
+        var res = await fetch(API_URL + '/demo/account-info?mode=demo', {
             headers: { 'Authorization': 'Bearer ' + token }
         });
-        var data = await res.json();
+        if (!res.ok) { console.error("[DemoReport] HTTP error:", res.status); return; }
+        var d = await res.json();
+
         function fmtUSD(v) { return '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2 }); }
-        var el = document.getElementById('trdDemoBalance');
-        if (el) el.textContent = fmtUSD(data.balance);
-        var eq = document.getElementById('trdDemoEquity');
-        if (eq) eq.textContent = fmtUSD(data.equity);
-        var pl = document.getElementById('trdDemoProfit');
-        if (pl) {
-            var todayPL = (data.equity || 0) - (data.balance || 0);
-            pl.textContent = (todayPL >= 0 ? '+' : '') + fmtUSD(todayPL);
-            pl.style.color = todayPL >= 0 ? '#00d4a4' : '#ff4d5a';
+
+        // 잔고
+        var balEl = document.getElementById('trdDemoBalance');
+        if (balEl) balEl.textContent = fmtUSD(d.balance);
+
+        // 에쿼티
+        var eqEl = document.getElementById('trdDemoEquity');
+        if (eqEl) eqEl.textContent = fmtUSD(d.equity);
+
+        // 마진
+        var mEl = document.getElementById('trdDemoMargin');
+        if (mEl) mEl.textContent = fmtUSD(d.margin);
+
+        // Current P/L (Live와 동일 로직)
+        var pEl = document.getElementById('trdDemoProfit');
+        if (pEl) {
+            var profit = Number(d.current_pl || 0);
+            if (profit === 0 && pEl.textContent !== '$0.00' && pEl.textContent !== '$--.--') {
+                // 번쩍임 방지: 기존값 유지
+            } else if (profit === 0) {
+                pEl.textContent = '$0.00';
+                pEl.className = 'my-live-stat-value';
+            } else {
+                pEl.textContent = (profit >= 0 ? '+$' : '-$') + Math.abs(profit).toLocaleString('en-US', { minimumFractionDigits: 2 });
+                pEl.className = 'my-live-stat-value ' + (profit > 0 ? 'profit-plus' : 'profit-minus');
+            }
         }
+
+        console.log('[DemoReport] data loaded:', { balance: d.balance, equity: d.equity, margin: d.margin, current_pl: d.current_pl });
     } catch(e) { console.error('[DemoReport] account-info error:', e); }
 
-    loadDemoReportSummary(_trdCurrentPeriod);
+    // 첫 로드 시에만 Summary 호출, 자동 리프레시에서는 히어로 카드만 갱신
+    if (!window._trdSummaryLoaded) {
+        window._trdSummaryLoaded = false;
+        loadDemoReportSummary(_trdCurrentPeriod);
+        window._trdSummaryLoaded = true;
+    }
 }
 
 function startDemoReportRefresh() {
+    window._trdSummaryLoaded = false;
     loadDemoReportData();
     _trdRefreshTimer = setInterval(loadDemoReportData, 30000);
 }
 
 function stopDemoReportRefresh() {
     if (_trdRefreshTimer) { clearInterval(_trdRefreshTimer); _trdRefreshTimer = null; }
+    window._trdSummaryLoaded = false;
 }
 
 function switchDemoTrTab(tab) {
