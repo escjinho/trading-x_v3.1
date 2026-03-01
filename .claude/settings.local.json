@@ -183,7 +183,10 @@
       "Bash(node:*)",
       "Bash(echo:*)",
       "Bash(__NEW_LINE_18e71e99be99a73c__ echo \"=== 1. 파일 존재 + 크기 ===\")",
-      "Bash(__NEW_LINE_18e71e99be99a73c__ echo \"\")"
+      "Bash(__NEW_LINE_18e71e99be99a73c__ echo \"\")",
+      "Bash(ip addr:*)",
+      "Bash(nginx -t:*)",
+      "Bash(systemctl reload:*)"
     ]
   }
 }

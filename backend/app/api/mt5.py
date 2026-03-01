@@ -3622,6 +3622,105 @@ async def disconnect_mt5_account(
     })
 
 
+# ★★★ Live 모드 전환 시 사전 Deploy 엔드포인트 ★★★
+@router.post("/pre-deploy")
+async def pre_deploy_metaapi(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Live 모드 전환 시 사전 Deploy 요청
+    - deployed → 즉시 성공 + last_active 갱신
+    - deploying → 대기 상태 반환
+    - undeployed/error → 쿨다운 체크 → 슬롯 확인 → Deploy 시작
+    """
+    import time as _time
+    from datetime import datetime
+    from .metaapi_service import (
+        _get_slot_usage_ratio, _evict_least_active_user,
+        SLOT_CRITICAL_RATIO, _provision_metaapi_background,
+        _auto_deploy_cooldown, AUTO_DEPLOY_COOLDOWN_SEC
+    )
+    from ..database import SessionLocal as _MetaSL
+
+    _status = current_user.metaapi_status
+    _account_id = current_user.metaapi_account_id
+
+    # 1) 이미 deployed → last_active 갱신 후 즉시 성공
+    if _status == 'deployed' and _account_id:
+        current_user.metaapi_last_active = datetime.utcnow()
+        db.commit()
+        return JSONResponse({
+            "success": True,
+            "status": "deployed",
+            "message": "이미 준비됨"
+        })
+
+    # 2) deploying 중 → 대기 상태 반환
+    if _status == 'deploying':
+        return JSONResponse({
+            "success": True,
+            "status": "deploying",
+            "message": "연결 준비 중..."
+        })
+
+    # 3) MT5 계정 정보 없음
+    if not _account_id or not current_user.mt5_account_number or not current_user.mt5_password_encrypted:
+        return JSONResponse({
+            "success": False,
+            "status": "no_account",
+            "message": "MT5 계정이 연결되지 않았습니다"
+        })
+
+    # 4) 쿨다운 체크 (60초)
+    _now = _time.time()
+    _last_attempt = _auto_deploy_cooldown.get(current_user.id, 0)
+    if _now - _last_attempt < AUTO_DEPLOY_COOLDOWN_SEC:
+        remaining = int(AUTO_DEPLOY_COOLDOWN_SEC - (_now - _last_attempt))
+        return JSONResponse({
+            "success": True,
+            "status": "cooldown",
+            "message": f"잠시 후 다시 시도해주세요 ({remaining}초)"
+        })
+
+    # 5) 슬롯 사용률 체크 — 긴급 시 퇴출
+    meta_db = _MetaSL()
+    try:
+        usage_ratio = _get_slot_usage_ratio(meta_db)
+        if usage_ratio >= SLOT_CRITICAL_RATIO:
+            print(f"[PreDeploy] 🔴 슬롯 긴급 ({usage_ratio*100:.1f}%) - User {current_user.id}를 위해 퇴출 시도")
+            evicted = await _evict_least_active_user(meta_db, exclude_user_id=current_user.id)
+            if not evicted:
+                return JSONResponse({
+                    "success": False,
+                    "status": "slot_full",
+                    "message": "서버가 혼잡합니다. 잠시 후 다시 시도해주세요"
+                })
+    finally:
+        meta_db.close()
+
+    # 6) Deploy 시작
+    _auto_deploy_cooldown[current_user.id] = _now
+    current_user.metaapi_status = 'deploying'
+    db.commit()
+
+    _mt5_pw = decrypt(current_user.mt5_password_encrypted)
+    asyncio.create_task(_provision_metaapi_background(
+        user_id=current_user.id,
+        login=current_user.mt5_account_number,
+        password=_mt5_pw,
+        server=current_user.mt5_server or "Exness-MT5Trial9"
+    ))
+
+    print(f"[PreDeploy] 🚀 User {current_user.id} deploy 시작")
+
+    return JSONResponse({
+        "success": True,
+        "status": "deploying",
+        "message": "연결 준비 중..."
+    })
+
+
 @router.get("/metaapi-status")
 async def get_metaapi_status(
     current_user: User = Depends(get_current_user),

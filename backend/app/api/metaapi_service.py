@@ -99,6 +99,13 @@ METAAPI_TOKEN = os.environ.get('METAAPI_TOKEN')
 QUOTE_ACCOUNT_ID = '265f13fb-26ae-4505-b13c-13339616c2a2'
 TRADE_ACCOUNT_ID = 'ab8b3c02-5390-4d9a-b879-8b8c86f1ebf5'
 
+# ★★★ 스마트 슬롯 관리 설정 ★★★
+MAX_DEPLOYED_SLOTS = 100
+SYSTEM_ACCOUNTS = [QUOTE_ACCOUNT_ID, TRADE_ACCOUNT_ID]
+SLOT_WARN_RATIO = 0.70
+SLOT_BUSY_RATIO = 0.85
+SLOT_CRITICAL_RATIO = 0.90
+
 # 지원 심볼
 SYMBOLS = [
     'BTCUSD',
@@ -2788,21 +2795,72 @@ async def get_user_history(user_id: int, metaapi_account_id: str, start_time=Non
 
 
 # ============================================================
-# 비활동 유저 자동 Undeploy 백그라운드 태스크
+# 비활동 유저 자동 Undeploy 백그라운드 태스크 (★ 스마트 슬롯 관리)
 # ============================================================
+
+def _get_deployed_user_count_from_db(db) -> int:
+    """DB에서 현재 deployed 유저 수 조회 (시스템 계정 제외)"""
+    from ..models.user import User
+    return db.query(User).filter(
+        User.metaapi_status == 'deployed',
+        User.metaapi_account_id.isnot(None),
+        ~User.metaapi_account_id.in_(SYSTEM_ACCOUNTS)
+    ).count()
+
+def _get_slot_usage_ratio(db) -> float:
+    """슬롯 사용률 계산 (0.0 ~ 1.0)"""
+    deployed = _get_deployed_user_count_from_db(db)
+    max_user_slots = MAX_DEPLOYED_SLOTS - len(SYSTEM_ACCOUNTS)
+    if max_user_slots <= 0:
+        return 1.0
+    return deployed / max_user_slots
+
+async def _evict_least_active_user(db, exclude_user_id=None) -> bool:
+    """가장 오래 비활성인 유저 1명 퇴출 (긴급 슬롯 확보용)"""
+    from ..models.user import User
+    try:
+        query = db.query(User).filter(
+            User.metaapi_status == 'deployed',
+            User.metaapi_account_id.isnot(None),
+            ~User.metaapi_account_id.in_(SYSTEM_ACCOUNTS)
+        )
+        if exclude_user_id:
+            query = query.filter(User.id != exclude_user_id)
+        # NULL last_active를 먼저 퇴출 (nullsfirst)
+        victim = query.order_by(User.metaapi_last_active.asc().nullsfirst()).first()
+        if not victim:
+            return False
+        print(f"[MetaAPI SlotEvict] 🚨 긴급 퇴출: User {victim.id} (last_active={victim.metaapi_last_active})")
+        result = await undeploy_user_metaapi(victim.metaapi_account_id)
+        if result and result.get("success"):
+            victim.metaapi_status = 'undeployed'
+            db.commit()
+            if victim.id in user_trade_connections:
+                del user_trade_connections[victim.id]
+            if victim.id in user_metaapi_cache:
+                del user_metaapi_cache[victim.id]
+            print(f"[MetaAPI SlotEvict] ✅ User {victim.id} 퇴출 완료")
+            return True
+        return False
+    except Exception as e:
+        print(f"[MetaAPI SlotEvict] ❌ 퇴출 실패: {e}")
+        return False
+
 async def _auto_undeploy_inactive_users():
     """
-    5분마다 비활동(30분 이상) 유저의 MetaAPI 계정을 undeploy
-    비용 절감 목적
+    3분마다 슬롯 사용률 기반 동적 임계값으로 비활동 유저 undeploy
+    - 90%+ → 3분 비활동 퇴출
+    - 70%+ → 10분 비활동 퇴출
+    - 기본 → 30분 비활동 퇴출
     """
     from ..database import SessionLocal
     from ..models.user import User
+    from sqlalchemy import or_
     from datetime import datetime, timedelta
 
-    INACTIVITY_THRESHOLD = 30 * 60  # 30분 (초)
-    CHECK_INTERVAL = 5 * 60  # 5분마다 체크
+    CHECK_INTERVAL = 3 * 60  # 3분마다 체크
 
-    print("[MetaAPI AutoUndeploy] 비활동 계정 자동 undeploy 태스크 시작")
+    print("[MetaAPI AutoUndeploy] ★ 스마트 슬롯 관리 태스크 시작")
 
     while True:
         try:
@@ -2810,24 +2868,49 @@ async def _auto_undeploy_inactive_users():
 
             db = SessionLocal()
             try:
-                now = datetime.utcnow()
-                threshold_time = now - timedelta(seconds=INACTIVITY_THRESHOLD)
+                usage_ratio = _get_slot_usage_ratio(db)
+                deployed_count = _get_deployed_user_count_from_db(db)
+                max_user_slots = MAX_DEPLOYED_SLOTS - len(SYSTEM_ACCOUNTS)
 
-                # deployed 상태이고 마지막 활동이 30분 이상 된 사용자 조회
+                # 슬롯 상태 로그 (색상 이모지)
+                if usage_ratio >= SLOT_CRITICAL_RATIO:
+                    status_emoji = "🔴"
+                    inactivity_threshold = 3 * 60  # 3분
+                elif usage_ratio >= SLOT_BUSY_RATIO:
+                    status_emoji = "🟠"
+                    inactivity_threshold = 10 * 60  # 10분
+                elif usage_ratio >= SLOT_WARN_RATIO:
+                    status_emoji = "🟡"
+                    inactivity_threshold = 10 * 60  # 10분
+                else:
+                    status_emoji = "🟢"
+                    inactivity_threshold = 30 * 60  # 30분
+
+                print(f"[MetaAPI Slots] {status_emoji} {deployed_count}/{max_user_slots} ({usage_ratio*100:.1f}%) — threshold={inactivity_threshold//60}분")
+
+                now = datetime.utcnow()
+                threshold_time = now - timedelta(seconds=inactivity_threshold)
+
+                # deployed 상태이고 (마지막 활동이 임계값 이상 OR NULL)인 사용자 조회
                 inactive_users = db.query(User).filter(
                     User.metaapi_status == 'deployed',
-                    User.metaapi_last_active < threshold_time
-                ).all()
+                    User.metaapi_account_id.isnot(None),
+                    ~User.metaapi_account_id.in_(SYSTEM_ACCOUNTS),
+                    or_(
+                        User.metaapi_last_active < threshold_time,
+                        User.metaapi_last_active.is_(None)
+                    )
+                ).order_by(User.metaapi_last_active.asc().nullsfirst()).all()
 
                 for user in inactive_users:
                     if user.metaapi_account_id:
-                        print(f"[MetaAPI AutoUndeploy] User {user.id} 비활동 감지 - undeploy 시작")
+                        last_active_str = user.metaapi_last_active.strftime('%H:%M:%S') if user.metaapi_last_active else 'NULL'
+                        print(f"[MetaAPI AutoUndeploy] User {user.id} 비활동 감지 (last={last_active_str}) - undeploy")
                         try:
                             result = await undeploy_user_metaapi(user.metaapi_account_id)
-                            if result:
+                            if result and result.get("success"):
                                 user.metaapi_status = 'undeployed'
                                 db.commit()
-                                # 연결 풀 정리
                                 if user.id in user_trade_connections:
                                     del user_trade_connections[user.id]
                                 if user.id in user_metaapi_cache:

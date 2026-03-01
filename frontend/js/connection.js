@@ -2536,6 +2536,7 @@ function switchTradingMode(mode) {
             if (typeof QeTickChart !== 'undefined') QeTickChart._pendingEntryLine = null;
         }
         showToast('Demo 모드로 전환되었습니다', 'demo');
+        stopPreDeployPoll(); hideRedeployOverlay(); enableLiveOrderButtons();  // ★ Pre-deploy 정리
         if (typeof updateMyModeDisplay === 'function') updateMyModeDisplay();
         updateHeroCTA('demo_with_live');
 
@@ -2613,6 +2614,7 @@ function switchTradingMode(mode) {
                     if (typeof QeTickChart !== 'undefined') QeTickChart._pendingEntryLine = null;
                 }
                 showToast('Live 모드로 전환되었습니다', 'success');
+                triggerPreDeploy();  // ★ 사전 Deploy 시작
                 if (typeof updateMyModeDisplay === 'function') updateMyModeDisplay();
                 updateHeroCTA('live');
 
@@ -2981,6 +2983,151 @@ function stopMetaAPIStatusPoll() {
         _metaapiPollTimer = null;
         console.log('[MetaAPI] 폴링 중지');
     }
+}
+
+// ★★★ Pre-deploy 함수들 (Live 모드 전환 시 사전 준비) ★★★
+let _preDeployPollTimer = null;
+let _preDeployAttempts = 0;
+const PRE_DEPLOY_MAX_ATTEMPTS = 40;  // 최대 40회 (2분)
+
+async function triggerPreDeploy() {
+    if (!token || isDemo) return;
+    console.log('[PreDeploy] 🚀 Live 모드 사전 Deploy 시작');
+    _preDeployAttempts = 0;
+    disableLiveOrderButtons();
+
+    try {
+        const response = await fetch(`${API_URL}/mt5/pre-deploy`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        const data = await response.json();
+        console.log('[PreDeploy] 응답:', data);
+
+        if (data.status === 'deployed') {
+            // 이미 준비됨
+            hideRedeployOverlay();
+            enableLiveOrderButtons();
+            window._metaapiConnected = true;
+        } else if (data.status === 'deploying') {
+            // 준비 중 — 오버레이 표시 + 폴링 시작
+            showRedeployOverlay();
+            startPreDeployPoll();
+        } else if (data.status === 'no_account') {
+            // MT5 계정 미연결
+            enableLiveOrderButtons();
+        } else if (data.status === 'slot_full') {
+            showToast('서버가 혼잡합니다\n잠시 후 다시 시도해주세요', 'warning', 5000);
+            enableLiveOrderButtons();
+        } else if (data.status === 'cooldown') {
+            // 쿨다운 중 — 폴링으로 상태 확인
+            startPreDeployPoll();
+        }
+    } catch (e) {
+        console.error('[PreDeploy] 오류:', e);
+        enableLiveOrderButtons();
+    }
+}
+
+function startPreDeployPoll() {
+    stopPreDeployPoll();
+    _preDeployAttempts = 0;
+
+    _preDeployPollTimer = setInterval(async () => {
+        _preDeployAttempts++;
+        if (_preDeployAttempts > PRE_DEPLOY_MAX_ATTEMPTS) {
+            console.log('[PreDeploy] ⏰ 타임아웃');
+            stopPreDeployPoll();
+            hideRedeployOverlay();
+            enableLiveOrderButtons();
+            showToast('연결 준비 시간 초과\n다시 시도해주세요', 'warning', 5000);
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_URL}/mt5/metaapi-status`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.metaapi_status === 'deployed') {
+                console.log('[PreDeploy] ✅ Deploy 완료');
+                stopPreDeployPoll();
+                hideRedeployOverlay();
+                enableLiveOrderButtons();
+                window._metaapiConnected = true;
+            } else if (data.metaapi_status === 'error') {
+                console.log('[PreDeploy] ❌ Deploy 실패');
+                stopPreDeployPoll();
+                hideRedeployOverlay();
+                enableLiveOrderButtons();
+                showToast('Trading API 연결 실패\n다시 시도해주세요', 'error', 5000);
+            }
+            // deploying 상태면 계속 폴링
+        } catch (e) {
+            console.error('[PreDeploy] 폴링 오류:', e);
+        }
+    }, 3000);  // 3초마다 체크
+}
+
+function stopPreDeployPoll() {
+    if (_preDeployPollTimer) {
+        clearInterval(_preDeployPollTimer);
+        _preDeployPollTimer = null;
+    }
+}
+
+function showRedeployOverlay() {
+    let overlay = document.getElementById('redeployOverlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'redeployOverlay';
+        overlay.innerHTML = `
+            <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;">
+                <div style="background:#1a1a2e;padding:30px 40px;border-radius:12px;text-align:center;color:#fff;">
+                    <div style="font-size:24px;margin-bottom:15px;">⏳</div>
+                    <div style="font-size:16px;font-weight:600;margin-bottom:8px;">Trading API 연결 중...</div>
+                    <div style="font-size:13px;color:#aaa;">잠시만 기다려주세요</div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+    }
+    overlay.style.display = 'block';
+}
+
+function hideRedeployOverlay() {
+    const overlay = document.getElementById('redeployOverlay');
+    if (overlay) overlay.style.display = 'none';
+}
+
+function disableLiveOrderButtons() {
+    // Buy/Sell 패널 버튼 비활성화
+    document.querySelectorAll('.trade-btn.buy-btn, .trade-btn.sell-btn').forEach(btn => {
+        btn.style.opacity = '0.5';
+        btn.style.pointerEvents = 'none';
+    });
+    // Quick&Easy 버튼 비활성화
+    const qeBuy = document.getElementById('qeBuyBtn');
+    const qeSell = document.getElementById('qeSellBtn');
+    if (qeBuy) { qeBuy.style.opacity = '0.5'; qeBuy.style.pointerEvents = 'none'; }
+    if (qeSell) { qeSell.style.opacity = '0.5'; qeSell.style.pointerEvents = 'none'; }
+}
+
+function enableLiveOrderButtons() {
+    // Buy/Sell 패널 버튼 활성화
+    document.querySelectorAll('.trade-btn.buy-btn, .trade-btn.sell-btn').forEach(btn => {
+        btn.style.opacity = '1';
+        btn.style.pointerEvents = 'auto';
+    });
+    // Quick&Easy 버튼 활성화
+    const qeBuy = document.getElementById('qeBuyBtn');
+    const qeSell = document.getElementById('qeSellBtn');
+    if (qeBuy) { qeBuy.style.opacity = '1'; qeBuy.style.pointerEvents = 'auto'; }
+    if (qeSell) { qeSell.style.opacity = '1'; qeSell.style.pointerEvents = 'auto'; }
 }
 
 async function checkMetaAPIStatus() {
