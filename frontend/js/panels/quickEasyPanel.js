@@ -588,6 +588,12 @@ const QuickEasyPanel = {
             return;
         }
 
+        // ★ 장 마감 체크
+        if (typeof isCurrentMarketClosed === 'function' && isCurrentMarketClosed(symbol)) {
+            if (typeof showToast === 'function') showToast('현재 시장이 닫혀있습니다\n운영시간을 확인해주세요', 'error', 3000);
+            return;
+        }
+
         if (!token) {
             if (typeof showToast === 'function') showToast('로그인이 필요합니다', 'error');
             return;

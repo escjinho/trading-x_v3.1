@@ -552,6 +552,12 @@ async function placeBuy() {
         return;
     }
 
+    // ★ 장 마감 체크
+    if (typeof isCurrentMarketClosed === 'function' && isCurrentMarketClosed(window.currentSymbol)) {
+        showToast('현재 시장이 닫혀있습니다\n운영시간을 확인해주세요', 'error', 3000);
+        return;
+    }
+
     // Demo 모드면 Demo API 사용
     if (isDemo) {
         console.log('[placeBuy] → Demo 모드');
@@ -687,6 +693,12 @@ async function placeSell() {
 
     if (!checkGuestAction('trade')) {
         console.log('[placeSell] ⛔ guest 체크 실패');
+        return;
+    }
+
+    // ★ 장 마감 체크
+    if (typeof isCurrentMarketClosed === 'function' && isCurrentMarketClosed(window.currentSymbol)) {
+        showToast('현재 시장이 닫혀있습니다\n운영시간을 확인해주세요', 'error', 3000);
         return;
     }
 

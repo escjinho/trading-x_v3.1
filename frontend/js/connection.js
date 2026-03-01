@@ -172,14 +172,31 @@ let wsConnectionStartTime = 0;  // ★ WS 연결 시작 시간 (가짜 이벤트
 let _wsHasConnectedBefore = false;  // ★ 재연결 감지용 (최초 연결 vs 재연결 구분)
 let _lastSoftRefreshAt = 0;  // ★★★ softRefresh 쿨다운용 타임스탬프 ★★★
 
-// ★ 장 마감 체크 헬퍼 (MarketSchedule 우선 — 공휴일 포함)
-function isCurrentMarketClosed() {
+// ★ 장 마감 체크 헬퍼 (MarketSchedule + MT5 크로스 체크)
+// 가격 변동 추적 (크로스 체크용)
+window._prevBidPrices = window._prevBidPrices || {};
+window._lastPriceChange = window._lastPriceChange || {};
+
+function isCurrentMarketClosed(symbol) {
+    const sym = symbol || chartSymbol || 'BTCUSD';
+
     // MarketSchedule 모듈 우선 (정확한 브로커 스케줄)
     if (typeof MarketSchedule !== 'undefined' && MarketSchedule.isMarketOpen) {
-        return !MarketSchedule.isMarketOpen(chartSymbol);
+        const scheduleOpen = MarketSchedule.isMarketOpen(sym);
+        if (scheduleOpen) return false;  // 스케줄 오픈 → 열림
+
+        // ★ 스케줄 클로즈 → MT5 크로스 체크 (실제 가격 변동 있으면 오버라이드)
+        const lastChange = (window._lastPriceChange || {})[sym] || 0;
+        if (Date.now() - lastChange < 60000) {
+            // 60초 내 가격 변동 있음 → MT5 실제 운영 중 → 오픈 처리
+            console.log('[MarketCheck] ' + sym + ': 스케줄 Closed but MT5 active → OPEN override');
+            return false;
+        }
+        return true;  // 스케줄 Closed + MT5 비활성 → 진짜 Closed
     }
+
     // 폴백: 단순 주말 체크
-    const _si = typeof getSymbolInfo === 'function' ? getSymbolInfo(chartSymbol) : null;
+    const _si = typeof getSymbolInfo === 'function' ? getSymbolInfo(sym) : null;
     const _isCrypto = _si && _si.category === 'Crypto Currency';
     if (_isCrypto) return false;
     const _now = new Date();
@@ -189,6 +206,16 @@ function isCurrentMarketClosed() {
     if (_day === 0 && _hour < 22) return true;
     if (_day === 5 && _hour >= 22) return true;
     return false;
+}
+
+// ★ 가격 변동 추적 함수 (WebSocket에서 호출)
+function trackPriceChange(sym, bid) {
+    if (!sym || !bid || bid <= 0) return;
+    const prev = window._prevBidPrices[sym] || 0;
+    if (prev > 0 && Math.abs(bid - prev) > 0.0001) {
+        window._lastPriceChange[sym] = Date.now();
+    }
+    window._prevBidPrices[sym] = bid;
 }
 
 // ★★★ softRefresh() — 화면 전환/이벤트 시 페이지 리로드 없이 데이터만 갱신 ★★★
@@ -734,16 +761,22 @@ function connectWebSocket() {
             // ★ 전역 가격 저장 (V5 패널에서 사용)
             if (data.all_prices) {
                 window.allPrices = data.all_prices;
-                // Quick&Easy 틱차트 업데이트
+                // ★ 가격 변동 추적 (모든 심볼)
+                for (const _s in data.all_prices) {
+                    if (data.all_prices[_s] && data.all_prices[_s].bid) {
+                        trackPriceChange(_s, data.all_prices[_s].bid);
+                    }
+                }
+                // Quick&Easy 틱차트 업데이트 (★ 장 마감 시 차단)
                 if (typeof QeTickChart !== 'undefined' && QeTickChart.initialized) {
                     const sym = window.currentSymbol || 'BTCUSD';
-                    if (window.allPrices && window.allPrices[sym]) {
+                    if (!isCurrentMarketClosed(sym) && window.allPrices && window.allPrices[sym]) {
                         const bid = window.allPrices[sym].bid || 0;
                         if (bid > 0) QeTickChart.addTick(bid);
                     }
                 }
             }
-            
+
             // Chart prices만 업데이트 (★ 장 마감 시 업데이트 차단)
             if (!isCurrentMarketClosed() && data.all_prices && data.all_prices[chartSymbol]) {
                 const symbolPrice = data.all_prices[chartSymbol];
@@ -1123,10 +1156,16 @@ function connectWebSocket() {
         // ★ 전역 가격 저장 (V5 패널에서 사용)
         if (data.all_prices) {
             window.allPrices = data.all_prices;
-                // Quick&Easy 틱차트 업데이트
+                // ★ 가격 변동 추적 (모든 심볼)
+                for (const _s in data.all_prices) {
+                    if (data.all_prices[_s] && data.all_prices[_s].bid) {
+                        trackPriceChange(_s, data.all_prices[_s].bid);
+                    }
+                }
+                // Quick&Easy 틱차트 업데이트 (★ 장 마감 시 차단)
                 if (typeof QeTickChart !== 'undefined' && QeTickChart.initialized) {
                     const sym = window.currentSymbol || 'BTCUSD';
-                    if (window.allPrices && window.allPrices[sym]) {
+                    if (!isCurrentMarketClosed(sym) && window.allPrices && window.allPrices[sym]) {
                         const bid = window.allPrices[sym].bid || 0;
                         if (bid > 0) QeTickChart.addTick(bid);
                     }
