@@ -739,6 +739,11 @@ function connectWebSocket() {
             if (askEl) {
                 askEl.textContent = price.ask.toLocaleString(undefined, {minimumFractionDigits: decimals, maximumFractionDigits: decimals});
             }
+
+            // ★ Chart Order Panel 가격 업데이트
+            if (typeof ChartOrderPanel !== 'undefined') {
+                ChartOrderPanel.updatePrices(price.bid, price.ask);
+            }
         } else {
         }
 
@@ -1055,6 +1060,11 @@ function connectWebSocket() {
             // ★ Open Positions 탭 실시간 업데이트
             if (typeof OpenPositions !== 'undefined' && data.positions) {
                 OpenPositions.updatePositions(data.positions);
+            }
+
+            // ★ Chart Order Panel 포지션 업데이트
+            if (typeof ChartOrderPanel !== 'undefined' && data.positions) {
+                ChartOrderPanel.updatePositions(data.positions);
             }
 
             // ★★★ Quick&Easy 포지션 동기화 (완전 교체 방식 — MT5 실제 데이터로) ★★★
@@ -2060,6 +2070,7 @@ async function checkUserMode() {
             // ★★★ MT5 연결되어 있어도 데모 모드부터 시작 ★★★
             isDemo = true; window.isDemo = true;
             window._hasDemoAccount = data.has_demo_account !== false;
+            window._hasMT5 = true;
             { var _btn = document.getElementById("accDemoReportBtn"); if (_btn) _btn.style.display = "flex"; }
             if (typeof updateCommissionNotice === 'function') updateCommissionNotice();
             window._checkUserModeRetries = 0;
@@ -2092,9 +2103,9 @@ async function checkUserMode() {
             }
             if (demoControl) demoControl.style.display = 'block';
 
-            // ★ MT5 Account 섹션 숨기기 (Account Overview에서 정보 표시)
-            var mt5Section = document.getElementById('mt5AccountSection');
-            if (mt5Section) mt5Section.style.display = 'none';
+            // ★ MT5 연결 카드 숨기기
+            var mt5Card = document.getElementById('mt5ConnectCard');
+            if (mt5Card) mt5Card.style.display = 'none';
 
             updateHeroCTA('demo_with_live');
 
@@ -2113,7 +2124,7 @@ async function checkUserMode() {
                 // 데모 계좌 미개설 → 뱃지 숨기기 + 개설 카드 표시
                 if (typeof updateAccountBadge === 'function') updateAccountBadge('hidden');
                 if (typeof updateAccountTitle === 'function') updateAccountTitle(true);
-                setTimeout(function() { showDemoCreateCard(); }, 1500);
+                setTimeout(function() { showHomeActionCards(); }, 2000);
             } else {
                 if (typeof updateAccountBadge === 'function') updateAccountBadge('active');
                 if (typeof updateAccountTitle === 'function') updateAccountTitle(true);
@@ -2127,13 +2138,13 @@ async function checkUserMode() {
             // MT5 없음 → Demo 모드
             isDemo = true;
             window._hasDemoAccount = data.has_demo_account !== false;
+            window._hasMT5 = false;
             { var _btn = document.getElementById("accDemoReportBtn"); if (_btn) _btn.style.display = "flex"; }
             if (typeof updateCommissionNotice === 'function') updateCommissionNotice();
             window._checkUserModeRetries = 0;  // ★ 재시도 카운터 리셋
             updateHeaderStatus('connected_demo');
-            // ★ MT5 Account 섹션 표시 (연결 안내)
-            var mt5Section = document.getElementById('mt5AccountSection');
-            if (mt5Section) mt5Section.style.display = '';
+            // ★ MT5 연결 카드는 showHomeActionCards에서 처리
+            // (별도 표시 로직 불필요)
 
             // ★ Trading Mode UI를 Demo로 설정
             const liveBtn = document.getElementById('modeLiveBtn');
@@ -2179,7 +2190,7 @@ async function checkUserMode() {
             // ★ 데모 계좌 개설 여부에 따라 뱃지/카드 처리
             if (data.has_demo_account === false) {
                 if (typeof updateAccountBadge === 'function') updateAccountBadge('hidden');
-                setTimeout(function() { showDemoCreateCard(); }, 1500);
+                setTimeout(function() { showHomeActionCards(); }, 2000);
             } else {
                 if (typeof updateAccountBadge === 'function') updateAccountBadge('active');
             }
@@ -2661,9 +2672,9 @@ function switchTradingMode(mode) {
                 isDemo = false; window.isDemo = false;
                 if (typeof updateAccountBadge === 'function') updateAccountBadge('preparing');
                 if (typeof updateAccountTitle === 'function') updateAccountTitle(false);
-                // ★ MT5 Account 섹션 숨기기
-                var mt5Sec = document.getElementById('mt5AccountSection');
-                if (mt5Sec) mt5Sec.style.display = 'none';
+                // ★ MT5 연결 카드 숨기기
+                var mt5Card = document.getElementById('mt5ConnectCard');
+                if (mt5Card) mt5Card.style.display = 'none';
                 var _demoReportBtn2 = document.getElementById('accDemoReportBtn');
                 if (_demoReportBtn2) _demoReportBtn2.style.display = 'none';
                 if (typeof updateCommissionNotice === 'function') updateCommissionNotice();
@@ -2725,7 +2736,7 @@ function switchTradingMode(mode) {
             } else {
                 showToast('MT5 계정을 먼저 연결해주세요', 'error');
                 // MT5 연결 섹션으로 스크롤
-                document.getElementById('mt5AccountSection')?.scrollIntoView({ behavior: 'smooth' });
+                document.getElementById('mt5ConnectCard')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         });
     }
@@ -2793,7 +2804,8 @@ function initTradingModeUI() {
 function updateMT5AccountUI(hasMT5, mt5Data = null) {
     const notConnected = document.getElementById('mt5NotConnected');
     const connected = document.getElementById('mt5Connected');
-    
+    if (!notConnected && !connected) return; // 홈에서 제거된 경우 안전 스킵
+
     if (hasMT5 && mt5Data) {
         // 연결됨 상태 표시
         notConnected.style.display = 'none';
@@ -2822,9 +2834,10 @@ async function disconnectMT5() {
         
         if (data.success) {
             updateMT5AccountUI(false);
-            // ★ MT5 Account 섹션 다시 표시
-            var mt5Sec = document.getElementById('mt5AccountSection');
-            if (mt5Sec) mt5Sec.style.display = '';
+            // ★ MT5 연결 카드 다시 표시
+            window._hasMT5 = false;
+            var mt5Card = document.getElementById('mt5ConnectCard');
+            if (mt5Card) { mt5Card.style.display = 'flex'; mt5Card.classList.add('show'); }
             switchTradingMode('demo');
             stopMetaAPIStatusPoll();
             showToast('MT5 계좌 연결이 해제되었습니다', 'success');
@@ -3282,12 +3295,12 @@ async function createDemoAccount() {
         var data = await response.json();
 
         if (data.success || data.account_number) {
-            // ★ 성공: 카드 슬라이드 아웃
+            // ★ 성공: 모달 닫기 + 카드 숨기기
+            closeDemoCreateModal();
             var card = document.getElementById('demoCreateCard');
             if (card) {
-                card.classList.remove('slide-in');
-                card.classList.add('slide-out');
-                setTimeout(function() { card.style.display = 'none'; }, 700);
+                card.classList.remove('show');
+                setTimeout(function() { card.style.display = 'none'; }, 400);
             }
 
             // ★ 플래그 업데이트 + Account Overview 뱃지 표시 + 데이터 갱신
@@ -3313,17 +3326,47 @@ async function createDemoAccount() {
     }
 }
 
-// ★★★ 데모 개설 카드 슬라이드 표시 ★★★
+// ★★★ 홈 액션 카드 표시 (슬라이드 인) ★★★
+function showHomeActionCards() {
+    var demoCard = document.getElementById('demoCreateCard');
+    var mt5Card = document.getElementById('mt5ConnectCard');
+
+    // 데모 카드 (미개설 시)
+    if (demoCard && window._hasDemoAccount === false) {
+        demoCard.style.display = 'flex';
+        setTimeout(function() { demoCard.classList.add('show'); }, 50);
+    }
+
+    // MT5 카드 (미연결 시) - 데모보다 0.2초 뒤
+    if (mt5Card && !window._hasMT5) {
+        mt5Card.style.display = 'flex';
+        setTimeout(function() { mt5Card.classList.add('show'); }, 250);
+    }
+}
+
+// 기존 호환용 래퍼
 function showDemoCreateCard() {
-    var card = document.getElementById('demoCreateCard');
-    if (!card) return;
-    card.style.display = 'block';
-    // 다음 프레임에서 클래스 추가 (transition 트리거)
-    requestAnimationFrame(function() {
-        requestAnimationFrame(function() {
-            card.classList.add('slide-in');
-        });
-    });
+    showHomeActionCards();
+}
+
+// ★★★ 데모 계좌 개설 모달 ★★★
+function openDemoCreateModal() {
+    var modal = document.getElementById('demoCreateModal');
+    if (modal) modal.classList.add('show');
+}
+function closeDemoCreateModal() {
+    var modal = document.getElementById('demoCreateModal');
+    if (modal) modal.classList.remove('show');
+}
+
+// ★★★ MT5 계좌 연결 가이드 시트 ★★★
+function openMT5GuideSheet() {
+    var modal = document.getElementById('mt5GuideSheet');
+    if (modal) modal.classList.add('show');
+}
+function closeMT5GuideSheet() {
+    var modal = document.getElementById('mt5GuideSheet');
+    if (modal) modal.classList.remove('show');
 }
 
 // ★★★ 헤더 상태 표시 통합 관리 ★★★
