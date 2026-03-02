@@ -560,3 +560,55 @@
 .chart-pl-overlay.negative .chart-pl-value {
     color: var(--sell-color);
 }
+
+/* ===== 9. 종목명 아래 고정 뱃지 (진입 포지션 정보) ===== */
+.chart-entry-badges {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.chart-entry-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    background: rgba(10, 10, 15, 0.6);
+    padding: 2px 7px;
+    border-radius: 4px;
+    white-space: nowrap;
+    width: fit-content;
+}
+.chart-entry-badge-arrow {
+    font-size: 9px;
+}
+.chart-entry-badge-type {
+    font-size: 10px;
+    font-weight: 800;
+}
+.chart-entry-badge-vol {
+    font-size: 10px;
+    opacity: 0.7;
+}
+.chart-entry-badge-price {
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    opacity: 0.8;
+}
+
+/* ===== 10. 차트 내 ◉ BUY/SELL 오버레이 (이지패널 동일) ===== */
+.chart-entry-overlay {
+    position: absolute;
+    right: 65px;
+    pointer-events: none;
+    z-index: 6;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    background: rgba(10, 10, 15, 0.7);
+    padding: 1px 5px;
+    border-radius: 3px;
+    white-space: nowrap;
+    transform: translateY(-50%);
+}

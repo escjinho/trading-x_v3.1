@@ -123,6 +123,11 @@ const ChartOrderPanel = {
         if (this._isOpen) {
             this._refreshPrices();
         }
+
+        // ★ 차트 오버레이 Y좌표 실시간 업데이트
+        if (this._priceLines.length > 0) {
+            this._updateEntryOverlays();
+        }
     },
 
     _refreshPrices() {
@@ -402,6 +407,9 @@ const ChartOrderPanel = {
 
         // P/L 오버레이 업데이트
         this._updatePLOverlay();
+
+        // 종목명 아래 고정 뱃지 업데이트
+        this._updateEntryBadges();
     },
 
     // 종목 변경 시 호출
@@ -422,6 +430,9 @@ const ChartOrderPanel = {
 
         // P/L 오버레이 업데이트
         this._updatePLOverlay();
+
+        // 종목명 아래 고정 뱃지 업데이트
+        this._updateEntryBadges();
     },
 
 
@@ -524,42 +535,85 @@ const ChartOrderPanel = {
         // candleSeries 확인
         if (!window.candleSeries) return;
 
-        // 기존 라인 제거
+        // 기존 라인 + 오버레이 제거
         this._clearAllPriceLines();
 
-        // 현재 종목 포지션에 대해 라인 추가
+        // 현재 종목 포지션에 대해 라인 + 오버레이 추가
         this._positions.forEach(pos => {
             const isBuy = pos.type === 'BUY' || pos.type === 0 || pos.type === 'POSITION_TYPE_BUY';
             const entryPrice = pos.entry || pos.openPrice || 0;
             if (entryPrice <= 0) return;
 
+            const sideColor = isBuy ? '#00d4a4' : '#ff4d5a';
+
             try {
+                // 점선 라인만 (라벨 없음 — 이지패널 방식)
                 const line = window.candleSeries.createPriceLine({
                     price: entryPrice,
-                    color: isBuy ? '#00b450' : '#dc3246',
+                    color: sideColor,
                     lineWidth: 1,
                     lineStyle: 2, // Dashed
                     axisLabelVisible: false,
-                    title: (isBuy ? '▲ ' : '▼ ') + (pos.volume || '') + ' lot  ─  ' + entryPrice.toFixed(this._getDecimals(pos.symbol)),
+                    title: '',
                 });
-                this._priceLines.push(line);
+                this._priceLines.push({ line: line, price: entryPrice, isBuy: isBuy });
+
+                // ★ 커스텀 ◉ BUY/SELL 오버레이 (이지패널 qeTickChart.js Line 568~583 동일 방식)
+                const wrapper = document.getElementById('chart-wrapper');
+                if (wrapper) {
+                    const ov = document.createElement('div');
+                    ov.className = 'chart-entry-overlay';
+                    ov.innerHTML = '<span style="color:' + sideColor + '">◉</span> <span>' + (isBuy ? 'BUY' : 'SELL') + '</span>';
+                    ov.style.cssText = 'position:absolute;right:65px;pointer-events:none;z-index:6;' +
+                        'font-size:9px;font-weight:700;letter-spacing:0.5px;' +
+                        'color:' + sideColor + ';' +
+                        'background:rgba(10,10,15,0.7);padding:1px 5px;border-radius:3px;' +
+                        'white-space:nowrap;transform:translateY(-50%);display:none;';
+                    wrapper.appendChild(ov);
+                    this._priceLines[this._priceLines.length - 1].overlay = ov;
+                }
             } catch (e) {
                 console.warn('[ChartOrder] createPriceLine error:', e);
             }
         });
+
+        // 오버레이 Y좌표 즉시 업데이트
+        this._updateEntryOverlays();
     },
 
     _clearAllPriceLines() {
         if (!window.candleSeries) return;
 
-        this._priceLines.forEach(line => {
+        this._priceLines.forEach(item => {
             try {
-                window.candleSeries.removePriceLine(line);
-            } catch (e) {
-                // 이미 제거된 라인 무시
+                window.candleSeries.removePriceLine(item.line);
+            } catch (e) { /* 이미 제거된 라인 무시 */ }
+            // 오버레이 DOM 제거
+            if (item.overlay) {
+                try { item.overlay.remove(); } catch (e) {}
             }
         });
         this._priceLines = [];
+    },
+
+    // ★ 오버레이 Y좌표 업데이트 (이지패널 updateEntryOverlay 패턴)
+    _updateEntryOverlays() {
+        if (!window.candleSeries) return;
+
+        this._priceLines.forEach(item => {
+            if (!item.overlay) return;
+            try {
+                const y = window.candleSeries.priceToCoordinate(item.price);
+                if (y !== null && y > 0) {
+                    item.overlay.style.top = y + 'px';
+                    item.overlay.style.display = 'block';
+                } else {
+                    item.overlay.style.display = 'none';
+                }
+            } catch (e) {
+                item.overlay.style.display = 'none';
+            }
+        });
     },
 
 
@@ -586,6 +640,42 @@ const ChartOrderPanel = {
     },
 
 
+    // ========== 종목명 아래 고정 뱃지 (포지션 정보) ==========
+
+    _updateEntryBadges() {
+        const container = document.getElementById('chartEntryBadges');
+        if (!container) return;
+
+        if (!this._positions || this._positions.length === 0) {
+            container.style.display = 'none';
+            container.innerHTML = '';
+            return;
+        }
+
+        container.style.display = 'block';
+        let html = '';
+
+        this._positions.forEach(pos => {
+            const isBuy = pos.type === 'BUY' || pos.type === 0 || pos.type === 'POSITION_TYPE_BUY';
+            const typeStr = isBuy ? 'BUY' : 'SELL';
+            const arrow = isBuy ? '▲' : '▼';
+            const color = isBuy ? '#00d4a4' : '#ff4d5a';
+            const decimals = this._getDecimals(pos.symbol);
+            const entryPrice = (pos.entry || pos.openPrice || 0).toFixed(decimals);
+            const volume = pos.volume || '0.00';
+
+            html += '<div class="chart-entry-badge" style="color:' + color + ';">'
+                + '<span class="chart-entry-badge-arrow">' + arrow + '</span> '
+                + '<span class="chart-entry-badge-type">' + typeStr + '</span> '
+                + '<span class="chart-entry-badge-vol">' + volume + '</span> '
+                + '<span class="chart-entry-badge-price">' + entryPrice + '</span>'
+                + '</div>';
+        });
+
+        container.innerHTML = html;
+    },
+
+
     // ========== 청산 후 동기화 (openPositions.js에서 호출) ==========
 
     onPositionClosed(symbol, posId) {
@@ -603,6 +693,7 @@ const ChartOrderPanel = {
             this._renderPositions();
             this._updatePriceLines();
             this._updatePLOverlay();
+            this._updateEntryBadges();
         }
     },
 
@@ -644,25 +735,31 @@ const ChartOrderPanel = {
         if (this._chartShrunk) return;
         this._chartShrunk = true;
 
-        const container = document.getElementById('chart-container');
-        if (!container) return;
+        const wrapper = document.getElementById('chart-wrapper');
+        if (!wrapper) return;
 
         // 현재 높이 저장
-        const currentHeight = container.offsetHeight || container.clientHeight;
+        const currentHeight = wrapper.offsetHeight || wrapper.clientHeight;
         if (!this._originalChartHeight) {
             this._originalChartHeight = currentHeight;
         }
 
         // 100px 줄이기 (Open Positions 헤더 40px + 카드 1개 ~60px)
-        const newHeight = Math.max(200, currentHeight - 100);
-        container.style.height = newHeight + 'px';
+        const shrinkAmount = 100;
+        const newHeight = Math.max(200, currentHeight - shrinkAmount);
+        wrapper.style.height = newHeight + 'px';
 
         // lightweight-charts 리사이즈
-        if (window.chart && typeof window.chart.resize === 'function') {
+        const container = document.getElementById('chart-container');
+        if (window.chart && container) {
             const width = container.offsetWidth || container.clientWidth;
+            // indicator-panels 높이 계산
+            const indPanels = document.getElementById('indicator-panels');
+            const indH = indPanels ? indPanels.offsetHeight : 0;
+            const chartH = Math.max(150, newHeight - indH);
             setTimeout(() => {
                 try {
-                    window.chart.resize(width, newHeight);
+                    window.chart.resize(width, chartH);
                     window.chart.timeScale().scrollToRealTime();
                 } catch (e) {
                     console.warn('[ChartOrder] chart resize error:', e);
@@ -675,19 +772,26 @@ const ChartOrderPanel = {
         if (!this._chartShrunk) return;
         this._chartShrunk = false;
 
-        const container = document.getElementById('chart-container');
-        if (!container) return;
+        const wrapper = document.getElementById('chart-wrapper');
+        if (!wrapper) return;
 
         // 원래 높이 복원
-        container.style.height = '';
+        if (this._originalChartHeight) {
+            wrapper.style.height = this._originalChartHeight + 'px';
+        } else {
+            wrapper.style.height = '';
+        }
 
         // lightweight-charts 리사이즈
-        if (window.chart && typeof window.chart.resize === 'function') {
+        const container = document.getElementById('chart-container');
+        if (window.chart && container) {
             const width = container.offsetWidth || container.clientWidth;
             setTimeout(() => {
                 try {
-                    const restoredHeight = container.offsetHeight || container.clientHeight;
-                    window.chart.resize(width, restoredHeight);
+                    const indPanels = document.getElementById('indicator-panels');
+                    const indH = indPanels ? indPanels.offsetHeight : 0;
+                    const restoredH = (wrapper.offsetHeight || wrapper.clientHeight) - indH;
+                    window.chart.resize(width, Math.max(200, restoredH));
                     window.chart.timeScale().scrollToRealTime();
                 } catch (e) {
                     console.warn('[ChartOrder] chart restore error:', e);

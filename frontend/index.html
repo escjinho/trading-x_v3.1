@@ -64,7 +64,7 @@
     <link rel="stylesheet" href="css/account.css?v=20260303b">
     <link rel="stylesheet" href="css/my.css?v=20260302a">
     <link rel="stylesheet" href="css/tradingReport.css?v=20260302b">
-    <link rel="stylesheet" href="css/chartorder.css?v=20260303b">
+    <link rel="stylesheet" href="css/chartorder.css?v=20260303c">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
@@ -382,6 +382,10 @@
                             <span id="overlayCategory">Crypto Currency</span>
                             <span id="overlayMarketStatus" class="market-status-dot"></span>
                             <span id="overlayMarketStatusText" style="font-size: 11px; color: #dc3545; font-weight: 600; display: none;">Market Closed</span>
+                        </div>
+                        <!-- ★ 차트 주문 진입가 뱃지 (항상 고정) -->
+                        <div class="chart-entry-badges" id="chartEntryBadges" style="display:none; margin-top:4px;">
+                            <!-- 동적으로 포지션 뱃지 생성 -->
                         </div>
                     </div>
                     <!-- 메인 차트 -->
@@ -6023,7 +6027,7 @@
     <script src="js/account.js?v=20260302a"></script>
     <script src="js/trading.js?v=20260301a"></script>
     <script src="js/openPositions.js?v=20260302a"></script>
-    <script src="js/panels/chartOrderPanel.js?v=20260303b"></script>
+    <script src="js/panels/chartOrderPanel.js?v=20260303c"></script>
     <script src="js/connection.js?v=20260303c"></script>
     <script src="js/init.js?v=1771992777"></script>
 <div id="txDialogContainer"></div>
