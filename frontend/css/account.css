@@ -895,7 +895,7 @@
     transform: translateX(-30px);
     transition: opacity 0.5s ease, transform 0.5s ease;
 }
-.demo-slide-card.show {
+.demo-slide-card.slide-in {
     opacity: 1;
     transform: translateX(0);
 }
