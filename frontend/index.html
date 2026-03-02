@@ -61,7 +61,7 @@
     <link rel="stylesheet" href="css/styles.css?v=20260302n">
         <link rel="stylesheet" href="css/quickeasy.css?v=20260226b">
     <link rel="stylesheet" href="css/chart.css?v=1771777952">
-    <link rel="stylesheet" href="css/account.css?v=20260303a">
+    <link rel="stylesheet" href="css/account.css?v=20260303b">
     <link rel="stylesheet" href="css/my.css?v=20260302a">
     <link rel="stylesheet" href="css/tradingReport.css?v=20260302b">
     <link rel="stylesheet" href="css/chartorder.css?v=20260303b">
@@ -201,27 +201,51 @@
                 </div>
 
                 <!-- 데모 계좌 생성 유도 (미개설 시 표시) -->
-                <div class="home-action-card" id="demoCreateCard" style="display: none;" onclick="openDemoCreateModal()">
-                    <div class="home-action-icon" style="background: rgba(0, 212, 255, 0.12);">
-                        <span class="material-icons-round" style="color: #00d4ff; font-size: 22px;">add_circle</span>
+                <div class="card trading-mode-card demo-slide-card" id="demoCreateCard" style="display: none;">
+                    <div class="card-title" style="font-size: 16px; font-weight: 700;">
+                        <span class="material-icons-round" style="color: #00d4ff; margin-right: 8px; font-size: 18px;">link</span>
+                        <span style="position: relative; top: -3px;">Demo Account</span>
                     </div>
-                    <div class="home-action-text">
-                        <div class="home-action-title">Demo 계좌 생성</div>
-                        <div class="home-action-desc">가상 $10,000로 안전하게 연습하세요</div>
+                    <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 16px;">
+                        <div style="width: 48px; height: 48px; min-width: 48px; background: rgba(0, 212, 255, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                            <span class="material-icons-round" style="font-size: 26px; color: #00d4ff;">note_add</span>
+                        </div>
+                        <div>
+                            <div style="font-size: 15px; font-weight: 600; color: var(--text-primary);">데모 계좌가 아직 없습니다</div>
+                            <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">가상 $10,000로 안전하게 연습하세요</div>
+                        </div>
                     </div>
-                    <span class="material-icons-round home-action-arrow">chevron_right</span>
+                    <button onclick="openDemoCreateModal()" style="width: 100%; padding: 14px; background: linear-gradient(135deg, #5a9ee0 0%, #4080c0 100%); border: none; border-radius: 10px; color: white; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 20px rgba(74,144,217,0.3);">
+                        <span class="material-icons-round" style="font-size: 18px;">add_circle</span>
+                        Demo 계좌 생성
+                    </button>
                 </div>
 
                 <!-- MT5 계좌 연결 유도 (미연결 시 표시) -->
-                <div class="home-action-card" id="mt5ConnectCard" style="display: none;" onclick="openMT5GuideSheet()">
-                    <div class="home-action-icon" style="background: rgba(0, 255, 136, 0.12);">
-                        <span class="material-icons-round" style="color: #00ff88; font-size: 22px;">link</span>
+                <div class="card trading-mode-card" id="mt5ConnectCard" style="display: none;">
+                    <div class="card-title" style="font-size: 16px; font-weight: 700;">
+                        <span class="material-icons-round" style="color: #00d4ff; margin-right: 8px; font-size: 18px;">link</span>
+                        <span style="position: relative; top: -3px;">MT5 Account</span>
                     </div>
-                    <div class="home-action-text">
-                        <div class="home-action-title">MT5 계좌 연결하기</div>
-                        <div class="home-action-desc">Live 거래를 위해 MT5 계좌를 연결하세요</div>
+                    <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 16px;">
+                        <div style="width: 48px; height: 48px; min-width: 48px; background: rgba(0, 255, 136, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                            <span class="material-icons-round" style="font-size: 26px; color: #00ff88;">link_off</span>
+                        </div>
+                        <div>
+                            <div style="font-size: 15px; font-weight: 600; color: var(--text-primary);">아직 연결된 MT5 계좌가 없습니다</div>
+                            <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Live 거래를 위해 MT5 계좌를 연결하세요</div>
+                        </div>
                     </div>
-                    <span class="material-icons-round home-action-arrow">chevron_right</span>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <button onclick="openMT5ConnectModal()" style="width: 100%; padding: 14px; background: linear-gradient(135deg, var(--accent-cyan) 0%, #0099cc 100%); border: none; border-radius: 10px; color: #000; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <span class="material-icons-round" style="font-size: 18px;">link</span>
+                            MT5 계좌 연결하기
+                        </button>
+                        <button onclick="openMT5GuideModal()" style="width: 100%; padding: 12px; background: transparent; border: 1px solid var(--border-color); border-radius: 10px; color: var(--text-muted); font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <span class="material-icons-round" style="font-size: 18px;">help_outline</span>
+                            신규 계좌 개설 안내
+                        </button>
+                    </div>
                 </div>
                 
                 <!-- Account Overview (통합) -->
@@ -234,20 +258,28 @@
                         <span class="account-status-badge active" id="homeAccountBadge">● Active</span>
                     </div>
                     
-                    <!-- 계정 정보 박스 -->
-                    <div style="background: var(--bg-tertiary); border-radius: 10px; padding: 12px 15px; margin-bottom: 10px;">
-                        <div class="info-row" style="border-bottom: 1px solid var(--border-color);"><span class="info-label">Broker</span><span class="info-value" id="homeBroker">-</span></div>
-                        <div class="info-row" style="border-bottom: 1px solid var(--border-color);"><span class="info-label">Account</span><span class="info-value" id="homeAccount">-</span></div>
-                        <div class="info-row" style="border-bottom: 1px solid var(--border-color);"><span class="info-label">Leverage</span><span class="info-value" id="homeLeverage">-</span></div>
-                        <div class="info-row" style="border-bottom: none;"><span class="info-label">Server</span><span class="info-value" id="homeServer">-</span></div>
+                    <!-- 빈 상태 (데모 미생성 시) -->
+                    <div id="homeAccountEmpty" style="display: none; text-align: center; padding: 24px 10px; color: var(--text-muted); font-size: 13px;">
+                        아직 생성된 계좌가 없습니다
                     </div>
-                    
-                    <!-- 자산 정보 박스 -->
-                    <div style="background: var(--bg-tertiary); border-radius: 10px; padding: 12px 15px;">
-                        <div class="info-row" style="border-bottom: 1px solid var(--border-color);"><span class="info-label">Balance</span><span class="info-value" id="homeBalance">$0.00</span></div>
-                        <div class="info-row" style="border-bottom: 1px solid var(--border-color);"><span class="info-label">Equity</span><span class="info-value" id="homeEquity">$0.00</span></div>
-                        <div class="info-row" style="border-bottom: 1px solid var(--border-color);"><span class="info-label">Free Margin</span><span class="info-value" id="homeFreeMargin">$0.00</span></div>
-                        <div class="info-row" style="border-bottom: none;"><span class="info-label">Open Positions</span><span class="info-value" id="homePositions">0</span></div>
+
+                    <!-- 계정 정보 (데모 생성 후 표시) -->
+                    <div id="homeAccountData">
+                        <!-- 계정 정보 박스 -->
+                        <div style="background: var(--bg-tertiary); border-radius: 10px; padding: 12px 15px; margin-bottom: 10px;">
+                            <div class="info-row" style="border-bottom: 1px solid var(--border-color);"><span class="info-label">Broker</span><span class="info-value" id="homeBroker">-</span></div>
+                            <div class="info-row" style="border-bottom: 1px solid var(--border-color);"><span class="info-label">Account</span><span class="info-value" id="homeAccount">-</span></div>
+                            <div class="info-row" style="border-bottom: 1px solid var(--border-color);"><span class="info-label">Leverage</span><span class="info-value" id="homeLeverage">-</span></div>
+                            <div class="info-row" style="border-bottom: none;"><span class="info-label">Server</span><span class="info-value" id="homeServer">-</span></div>
+                        </div>
+
+                        <!-- 자산 정보 박스 -->
+                        <div style="background: var(--bg-tertiary); border-radius: 10px; padding: 12px 15px;">
+                            <div class="info-row" style="border-bottom: 1px solid var(--border-color);"><span class="info-label">Balance</span><span class="info-value" id="homeBalance">$0.00</span></div>
+                            <div class="info-row" style="border-bottom: 1px solid var(--border-color);"><span class="info-label">Equity</span><span class="info-value" id="homeEquity">$0.00</span></div>
+                            <div class="info-row" style="border-bottom: 1px solid var(--border-color);"><span class="info-label">Free Margin</span><span class="info-value" id="homeFreeMargin">$0.00</span></div>
+                            <div class="info-row" style="border-bottom: none;"><span class="info-label">Open Positions</span><span class="info-value" id="homePositions">0</span></div>
+                        </div>
                     </div>
                 </div>
                 
@@ -255,7 +287,7 @@
                 <div class="card trading-mode-card" id="demoControlCard" style="display: none;">
                     <button onclick="navigateToDeposit()" style="width: 100%; padding: 14px 20px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 12px; color: var(--text-primary); font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.2s;">
                         <span class="material-icons-round" style="font-size: 20px; color: #00d4ff;">account_balance_wallet</span>
-                        입출금 관리
+                        잔액 충전하러 가기
                         <span class="material-icons-round" style="font-size: 18px; color: var(--text-muted); margin-left: auto;">chevron_right</span>
                     </button>
                 </div>
@@ -3922,78 +3954,25 @@
                     </div>
                 </div>
 
-                <!-- 안내 문구 -->
+                <!-- 동의 체크박스 -->
                 <div style="padding: 14px 20px;">
-                    <div style="display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; background: rgba(0, 212, 255, 0.06); border-radius: 10px;">
-                        <span class="material-icons-round" style="color: #00d4ff; font-size: 18px; margin-top: 1px;">verified</span>
-                        <span style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">데모 계좌는 가상 자금으로 운영되며, 실제 수익/손실이 발생하지 않습니다. 시세는 실시간 데이터를 기반으로 제공됩니다.</span>
-                    </div>
+                    <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+                        <input type="checkbox" id="demoAgreeCheck" onchange="toggleDemoCreateBtn()" style="width: 18px; height: 18px; margin-top: 2px; accent-color: #00d4ff; cursor: pointer;">
+                        <span style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+                            데모 계좌는 가상 자금($10,000)으로 운영되며 실제 수익/손실이 발생하지 않습니다.
+                            <span style="color: #00d4ff;">이용약관</span>에 동의합니다.
+                        </span>
+                    </label>
                 </div>
 
                 <!-- 버튼 -->
                 <div style="padding: 0 20px 20px;">
-                    <button class="demo-create-btn" id="demoCreateBtn" onclick="createDemoAccount()" style="width: 100%; padding: 14px 20px; background: linear-gradient(135deg, #00b4d8, #00d4ff); border: none; border-radius: 12px; color: #000; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <button class="demo-create-btn" id="demoCreateBtn" onclick="createDemoAccount()" disabled style="width: 100%; padding: 14px 20px; background: linear-gradient(135deg, #00b4d8, #00d4ff); border: none; border-radius: 12px; color: #000; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; opacity: 0.4; cursor: not-allowed;">
                         <span class="material-icons-round" style="font-size: 20px;">add_circle</span>
                         Demo 계좌 개설
                     </button>
                     <div style="text-align: center; margin-top: 12px;">
                         <span style="font-size: 13px; color: var(--text-muted); cursor: pointer;" onclick="closeDemoCreateModal()">닫기</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- MT5 계좌 연결 가이드 모달 -->
-        <div class="modal-overlay" id="mt5GuideSheet">
-            <div style="background: linear-gradient(180deg, #1e2127 0%, #15171c 100%); border: 1px solid rgba(0, 255, 136, 0.2); border-radius: 20px; padding: 0; margin: 15px; max-width: 400px; width: 100%; box-shadow: 0 0 60px rgba(0,0,0,0.5); overflow: hidden;">
-                <!-- 헤더 -->
-                <div style="text-align: center; padding: 28px 24px 16px;">
-                    <div style="width: 56px; height: 56px; background: rgba(0, 255, 136, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px;">
-                        <span class="material-icons-round" style="font-size: 28px; color: #00ff88;">link</span>
-                    </div>
-                    <div style="font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Live 계좌를 연결하세요</div>
-                    <div style="font-size: 13px; color: var(--text-muted); line-height: 1.5;">HedgeHood MT5 계좌를 연결하면<br>실시간 잔고 확인과 입출금이 가능합니다</div>
-                </div>
-
-                <!-- 스텝 가이드 -->
-                <div style="padding: 0 20px;">
-                    <div class="mt5-step-guide">
-                        <div class="mt5-step-item">
-                            <div class="mt5-step-number">1</div>
-                            <div class="mt5-step-content">
-                                <div class="mt5-step-title">HedgeHood 계좌 개설</div>
-                                <div class="mt5-step-desc">hedgehood.com에서 무료로 MT5 계좌를 개설하세요</div>
-                            </div>
-                        </div>
-                        <div class="mt5-step-item">
-                            <div class="mt5-step-number">2</div>
-                            <div class="mt5-step-content">
-                                <div class="mt5-step-title">계좌 정보 입력</div>
-                                <div class="mt5-step-desc">MT5 로그인 번호와 서버 정보를 Trading-X에 등록하세요</div>
-                            </div>
-                        </div>
-                        <div class="mt5-step-item" style="padding-bottom: 0;">
-                            <div class="mt5-step-number">3</div>
-                            <div class="mt5-step-content">
-                                <div class="mt5-step-title">트레이딩 시작</div>
-                                <div class="mt5-step-desc">실시간 잔고 확인, 입출금 내역 조회, Live 트레이딩을 시작하세요</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 버튼 -->
-                <div style="padding: 16px 20px 20px; display: flex; flex-direction: column; gap: 10px;">
-                    <button onclick="closeMT5GuideSheet(); openMT5ConnectModal();" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; background: var(--accent-cyan); border: none; border-radius: 10px; color: #000; font-size: 14px; font-weight: 700; cursor: pointer;">
-                        <span class="material-icons-round" style="font-size: 18px;">link</span>
-                        MT5 계좌 연결하기
-                    </button>
-                    <button onclick="closeMT5GuideSheet(); openMT5GuideModal();" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; background: transparent; border: 1px solid var(--border-color); border-radius: 10px; color: var(--text-muted); font-size: 13px; font-weight: 600; cursor: pointer;">
-                        <span class="material-icons-round" style="font-size: 18px;">help_outline</span>
-                        신규 계좌 개설 안내
-                    </button>
-                    <div style="text-align: center; margin-top: 4px;">
-                        <span style="font-size: 13px; color: var(--text-muted); cursor: pointer;" onclick="closeMT5GuideSheet()">닫기</span>
                     </div>
                 </div>
             </div>
@@ -6045,7 +6024,7 @@
     <script src="js/trading.js?v=20260301a"></script>
     <script src="js/openPositions.js?v=20260302a"></script>
     <script src="js/panels/chartOrderPanel.js?v=20260303b"></script>
-    <script src="js/connection.js?v=20260303a"></script>
+    <script src="js/connection.js?v=20260303b"></script>
     <script src="js/init.js?v=1771992777"></script>
 <div id="txDialogContainer"></div>
 </body>
