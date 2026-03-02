@@ -58,7 +58,7 @@
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css?v=20260302a">
+    <link rel="stylesheet" href="css/styles.css?v=20260302n">
         <link rel="stylesheet" href="css/quickeasy.css?v=20260226b">
     <link rel="stylesheet" href="css/chart.css?v=1771777952">
     <link rel="stylesheet" href="css/account.css?v=20260302m">
@@ -231,19 +231,44 @@
                 <div class="card trading-mode-card" id="mt5AccountSection">
                     <div class="card-title" style="font-size: 16px; font-weight: 700;">
                         <span class="material-icons-round" style="color: #00d4ff; margin-right: 8px; font-size: 18px;">link</span>
-                        <span style="position: relative; top: -3px;">MT5 Account</span>
+                        <span style="position: relative; top: -3px;">시작하기</span>
                     </div>
                     
                     <!-- 연결 안 됨 상태 -->
-                    <div class="mt5-not-connected" id="mt5NotConnected" style="padding: 15px 10px;">
-                        <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 15px;">
-                            <div style="font-size: 36px; opacity: 0.7;">🔗</div>
-                            <div style="text-align: left;">
-                                <div class="mt5-empty-text" style="font-size: 16px; font-weight: 600; margin-bottom: 2px;">아직 연결된 MT5 계좌가 없습니다</div>
-                                <div class="mt5-empty-sub" style="font-size: 12px; margin: 0;">Live 거래를 위해 MT5 계좌를 연결하세요</div>
+                    <div class="mt5-not-connected" id="mt5NotConnected">
+                        <div style="text-align: center; padding: 20px 0 16px;">
+                            <div style="width: 56px; height: 56px; background: rgba(0, 212, 255, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px;">
+                                <span class="material-icons-round" style="font-size: 28px; color: #00d4ff;">link</span>
+                            </div>
+                            <div style="font-size: 17px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Live 계좌를 연결하세요</div>
+                            <div style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">HedgeHood MT5 계좌를 연결하면<br>실시간 잔고 확인과 입출금이 가능합니다</div>
+                        </div>
+
+                        <div class="mt5-step-guide">
+                            <div class="mt5-step-item">
+                                <div class="mt5-step-number">1</div>
+                                <div class="mt5-step-content">
+                                    <div class="mt5-step-title">HedgeHood 계좌 개설</div>
+                                    <div class="mt5-step-desc">hedgehood.com에서 무료로 MT5 계좌를 개설하세요</div>
+                                </div>
+                            </div>
+                            <div class="mt5-step-item">
+                                <div class="mt5-step-number">2</div>
+                                <div class="mt5-step-content">
+                                    <div class="mt5-step-title">계좌 정보 입력</div>
+                                    <div class="mt5-step-desc">MT5 로그인 번호와 서버 정보를 Trading-X에 등록하세요</div>
+                                </div>
+                            </div>
+                            <div class="mt5-step-item" style="padding-bottom: 0;">
+                                <div class="mt5-step-number">3</div>
+                                <div class="mt5-step-content">
+                                    <div class="mt5-step-title">트레이딩 시작</div>
+                                    <div class="mt5-step-desc">실시간 잔고 확인, 입출금 내역 조회, Live 트레이딩을 시작하세요</div>
+                                </div>
                             </div>
                         </div>
-                        <div class="mt5-buttons">
+
+                        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 16px;">
                             <button class="mt5-connect-btn" onclick="openMT5ConnectModal()">
                                 <span class="material-icons-round" style="font-size: 18px;">link</span>
                                 MT5 계좌 연결하기
