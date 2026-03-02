@@ -343,20 +343,13 @@
                     </div>
                 </div>
                 
-                <!-- Demo 충전 버튼 (Demo 모드에서만 표시) -->
+                <!-- 입출금 관리 유도 (Demo/Live 공통) -->
                 <div class="card trading-mode-card" id="demoControlCard" style="display: none;">
-                    <div class="card-title" style="font-size: 16px; font-weight: 700;">
-                        <span class="material-icons-round" style="color: #00d4ff; margin-right: 8px; font-size: 18px;">monetization_on</span><span style="position: relative; top: -3px;">Demo Control</span>
-                    </div>
-                    <div style="display: flex; gap: 10px; margin-top: 12px;">
-                        <button onclick="topupDemo()" style="flex: 1; padding: 14px; background: linear-gradient(135deg, #00b450, #00d46a); border: none; border-radius: 10px; color: white; font-weight: 700; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                            <span class="material-icons-round" style="font-size: 18px;">add_card</span> $10,000 충전
-                        </button>
-                        <button onclick="resetDemo()" style="flex: 1; padding: 14px; background: linear-gradient(135deg, #ff6b35, #ff8c42); border: none; border-radius: 10px; color: white; font-weight: 700; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                            <span class="material-icons-round" style="font-size: 18px;">restart_alt</span> 잔고 리셋
-                        </button>
-                    </div>
-                    <p style="font-size: 12px; color: #ffffff; margin-top: 10px; text-align: center;">💎 최대 잔고: $100,000</p>
+                    <button onclick="navigateToDeposit()" style="width: 100%; padding: 14px 20px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 12px; color: var(--text-primary); font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.2s;">
+                        <span class="material-icons-round" style="font-size: 20px; color: #00d4ff;">account_balance_wallet</span>
+                        입출금 관리
+                        <span class="material-icons-round" style="font-size: 18px; color: var(--text-muted); margin-left: auto;">chevron_right</span>
+                    </button>
                 </div>
             </div>
             
@@ -5943,7 +5936,7 @@
     <script src="js/account.js?v=20260302a"></script>
     <script src="js/trading.js?v=20260301a"></script>
     <script src="js/openPositions.js?v=20260302a"></script>
-    <script src="js/connection.js?v=20260302m"></script>
+    <script src="js/connection.js?v=20260302p"></script>
     <script src="js/init.js?v=1771992777"></script>
 <div id="txDialogContainer"></div>
 </body>

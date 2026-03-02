@@ -2092,13 +2092,9 @@ async function checkUserMode() {
             }
             if (demoControl) demoControl.style.display = 'block';
 
-            // ★ MT5 Account 섹션은 유지 (LIVE 버튼 활성화용)
-            updateMT5AccountUI(true, {
-                broker: data.broker || 'HedgeHood Pty Ltd',
-                account: data.account || '-',
-                server: data.server || '-',
-                leverage: data.leverage || 500
-            });
+            // ★ MT5 Account 섹션 숨기기 (Account Overview에서 정보 표시)
+            var mt5Section = document.getElementById('mt5AccountSection');
+            if (mt5Section) mt5Section.style.display = 'none';
 
             updateHeroCTA('demo_with_live');
 
@@ -2135,6 +2131,9 @@ async function checkUserMode() {
             if (typeof updateCommissionNotice === 'function') updateCommissionNotice();
             window._checkUserModeRetries = 0;  // ★ 재시도 카운터 리셋
             updateHeaderStatus('connected_demo');
+            // ★ MT5 Account 섹션 표시 (연결 안내)
+            var mt5Section = document.getElementById('mt5AccountSection');
+            if (mt5Section) mt5Section.style.display = '';
 
             // ★ Trading Mode UI를 Demo로 설정
             const liveBtn = document.getElementById('modeLiveBtn');
@@ -2655,13 +2654,16 @@ function switchTradingMode(mode) {
                     modeBadge.style.display = 'inline';
                 }
                 
-                // Demo Control 숨기기
+                // 입출금 관리 버튼 표시 (Live에서도 유지)
                 const demoControl = document.getElementById('demoControlCard');
-                if (demoControl) demoControl.style.display = 'none';
+                if (demoControl) demoControl.style.display = 'block';
                 
                 isDemo = false; window.isDemo = false;
                 if (typeof updateAccountBadge === 'function') updateAccountBadge('preparing');
                 if (typeof updateAccountTitle === 'function') updateAccountTitle(false);
+                // ★ MT5 Account 섹션 숨기기
+                var mt5Sec = document.getElementById('mt5AccountSection');
+                if (mt5Sec) mt5Sec.style.display = 'none';
                 var _demoReportBtn2 = document.getElementById('accDemoReportBtn');
                 if (_demoReportBtn2) _demoReportBtn2.style.display = 'none';
                 if (typeof updateCommissionNotice === 'function') updateCommissionNotice();
@@ -2820,6 +2822,9 @@ async function disconnectMT5() {
         
         if (data.success) {
             updateMT5AccountUI(false);
+            // ★ MT5 Account 섹션 다시 표시
+            var mt5Sec = document.getElementById('mt5AccountSection');
+            if (mt5Sec) mt5Sec.style.display = '';
             switchTradingMode('demo');
             stopMetaAPIStatusPoll();
             showToast('MT5 계좌 연결이 해제되었습니다', 'success');
@@ -3241,6 +3246,20 @@ function updateAccountTitle(isDemo) {
                 }, 200);
             })(titles[i], newTitle);
         }
+    }
+}
+
+// ★★★ 입출금 관리 페이지 이동 ★★★
+function navigateToDeposit() {
+    // My 탭 → 입출금 메뉴로 이동
+    if (typeof switchTab === 'function') {
+        switchTab('my');
+        setTimeout(function() {
+            // My 탭에서 입출금 섹션으로 이동
+            if (typeof openMySubPage === 'function') {
+                openMySubPage('deposit');
+            }
+        }, 300);
     }
 }
 
