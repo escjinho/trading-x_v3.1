@@ -656,7 +656,10 @@ function connectWebSocket() {
         window.wsConnected = true;  // ★ WS 연결 플래그 (폴링 깜빡임 방지)
         window._wsDisconnectedAt = null;  // ★ 재연결 성공 시 타이머 리셋
         document.getElementById('statusDot').classList.remove('disconnected');
-        document.getElementById('headerStatus').textContent = 'Connected';
+        if (isDemo) {
+            updateHeaderStatus('connected_demo');
+        }
+        // ★ 라이브 모드에서는 MetaAPI 상태가 헤더를 관리하므로 여기서 덮어쓰지 않음
         wsRetryCount = 0;
 
         // ★★★ reconnectAttempt 저장 후 리셋 (순서 중요!) ★★★
@@ -740,14 +743,16 @@ function connectWebSocket() {
         }
 
         // MT5 연결 상태 확인 (가격 업데이트는 계속 진행)
-        if (data.mt5_connected === false) {
-            document.getElementById('statusDot').classList.add('disconnected');
-            document.getElementById('headerStatus').textContent = 'Disconnected';
-            // ★ return 제거 - 가격 데이터는 계속 업데이트
-        } else if (data.mt5_connected === true) {
-            document.getElementById('statusDot').classList.remove('disconnected');
-            document.getElementById('headerStatus').textContent = 'Connected';
+        if (data.mt5_connected === false && !isDemo) {
+            updateHeaderStatus('disconnected');
+            // ★ 라이브 모드에서만 MT5 연결 끊김 표시
+        } else if (data.mt5_connected === true && !isDemo) {
+            // ★ 라이브 모드: MetaAPI 상태 확인 후 복원
+            if (window._metaapiConnected) {
+                updateHeaderStatus('connected_live');
+            }
         }
+        // ★ 데모 모드에서는 mt5_connected 무시 (데모 서버는 항상 Connected)
 
         // 마지막 WebSocket 데이터 저장 (navigation.js에서 사용)
         if (typeof lastWebSocketData !== 'undefined') {
@@ -2032,7 +2037,7 @@ async function fetchAccountData() {
             }
 
             document.getElementById('statusDot').classList.remove('disconnected');
-            document.getElementById('headerStatus').textContent = 'Connected';
+            // ★ 헤더 상태는 각 분기에서 설정됨
         }
     } catch (error) {
         console.error("[checkUserMode] Error:", error);
@@ -2052,42 +2057,41 @@ async function checkUserMode() {
         const data = await response.json();
 
         if (data.has_mt5) {
-            // MT5 계정 연결됨 → Live 모드
-            isDemo = false;
-            { var _btn = document.getElementById("accDemoReportBtn"); if (_btn) _btn.style.display = "none"; }
+            // ★★★ MT5 연결되어 있어도 데모 모드부터 시작 ★★★
+            isDemo = true; window.isDemo = true;
+            { var _btn = document.getElementById("accDemoReportBtn"); if (_btn) _btn.style.display = "flex"; }
             if (typeof updateCommissionNotice === 'function') updateCommissionNotice();
-            window._checkUserModeRetries = 0;  // ★ 재시도 카운터 리셋
-            document.getElementById('headerStatus').textContent = 'Connected';
-            document.getElementById('statusDot').style.background = '#00ff88';
-            document.getElementById('statusDot').classList.remove('disconnected');
+            window._checkUserModeRetries = 0;
 
-            // Live 배지 표시
+            // ★ 헤더: 데모 Connected (시안)
+            updateHeaderStatus('connected_demo');
+
+            // Demo 배지 표시
             const badge = document.getElementById('modeBadge');
-            badge.textContent = 'LIVE';
-            badge.className = 'mode-badge-live';
+            badge.textContent = 'DEMO';
+            badge.className = 'mode-badge-demo';
             badge.style.display = 'inline';
-            
-            // ★ Trading Mode UI를 Live로 설정
+
+            // ★ Trading Mode UI를 Demo로 설정
             const liveBtn = document.getElementById('modeLiveBtn');
             const demoBtn = document.getElementById('modeDemoBtn');
             const liveCheck = document.getElementById('liveCheck');
             const demoCheck = document.getElementById('demoCheck');
             const modeStatus = document.getElementById('modeStatus');
             const demoControl = document.getElementById('demoControlCard');
-            
-            if (liveBtn && demoBtn) {
-                liveBtn.classList.add('active', 'live-active');
-                demoBtn.classList.remove('active');
-                liveCheck.style.display = 'flex';
-                demoCheck.style.display = 'none';
-                modeStatus.className = 'mode-status live';
-                modeStatus.innerHTML = '<span class="mode-status-dot live"></span><span>Currently in <strong>Live Mode</strong> - Real trading active</span>';
-            }
-            if (demoControl) demoControl.style.display = 'none';
-            
-            updateHeroCTA('live');
 
-            // ★★★ MT5 Account 섹션 업데이트 (연결된 계정 정보 표시) ★★★
+            if (liveBtn && demoBtn) {
+                demoBtn.classList.add('active');
+                demoBtn.classList.remove('live-active');
+                liveBtn.classList.remove('active', 'live-active');
+                demoCheck.style.display = 'flex';
+                liveCheck.style.display = 'none';
+                modeStatus.className = 'mode-status';
+                modeStatus.innerHTML = '<span class="mode-status-dot demo"></span><span>Currently in <strong>Demo Mode</strong> - Practice with virtual $10,000</span>';
+            }
+            if (demoControl) demoControl.style.display = 'block';
+
+            // ★ MT5 Account 섹션은 유지 (LIVE 버튼 활성화용)
             updateMT5AccountUI(true, {
                 broker: data.broker || 'HedgeHood Pty Ltd',
                 account: data.account || '-',
@@ -2095,34 +2099,32 @@ async function checkUserMode() {
                 leverage: data.leverage || 500
             });
 
-            // WebSocket 연결 (실패해도 폴링으로 대체)
-            try {
+            updateHeroCTA('demo_with_live');
+
+            // ★ Demo WebSocket 연결 + 데이터 로드
             connectWebSocket();
-            } catch (e) {
-                console.log('WebSocket connection failed, using polling');
-                // ★ WebSocket 실패 시에만 폴링 시작
-                if (!pollingInterval) {
-                    pollingInterval = setInterval(fetchAccountData, 2000);
+            if (token) {
+                await fetchDemoData();
+                if (typeof loadHistory === 'function') {
+                    loadHistory();
                 }
+                setInterval(fetchDemoData, 2000);
             }
 
-            fetchAccountData();  // 초기 데이터 1회 로드
+            // ★ Account Overview 뱃지: Active (데모는 항상 Active)
+            if (typeof updateAccountBadge === 'function') updateAccountBadge('active');
 
-            // ★ 히스토리 로드 (Today P/L 계산)
-            if (typeof loadHistory === 'function') {
-                loadHistory();
-            }
+            setTimeout(() => {
+                showToast('Demo 모드로 접속했습니다\n가상 $10,000로 연습하세요', 'demo');
+            }, 1000);
 
-            // ★ 폴링은 ws.onclose에서 자동 시작됨 (여기서는 시작하지 않음)
-            
         } else {
             // MT5 없음 → Demo 모드
             isDemo = true;
             { var _btn = document.getElementById("accDemoReportBtn"); if (_btn) _btn.style.display = "flex"; }
             if (typeof updateCommissionNotice === 'function') updateCommissionNotice();
             window._checkUserModeRetries = 0;  // ★ 재시도 카운터 리셋
-            document.getElementById('headerStatus').textContent = 'Connected';
-            document.getElementById('statusDot').style.background = '#00d4ff';
+            updateHeaderStatus('connected_demo');
 
             // ★ Trading Mode UI를 Demo로 설정
             const liveBtn = document.getElementById('modeLiveBtn');
@@ -2475,9 +2477,8 @@ if (!isGuest && token) {
     document.getElementById('homeFreeMargin').textContent = '$10,000.00';
     document.getElementById('homePositions').textContent = '0';
     document.getElementById('tradeBalance').textContent = '$10,000';
-    document.getElementById('headerStatus').textContent = 'Guest Mode';
-    document.getElementById('statusDot').style.background = '#ffa500';
-    
+    updateHeaderStatus('guest');
+
     // 게스트 모드 인디케이터 업데이트
     // ★★★ 게스트 모드 인디케이터 (1~3초 랜덤 간격 큐에 위임) ★★★
     async function fetchGuestIndicators() {
@@ -2568,6 +2569,9 @@ function switchTradingMode(mode) {
             QuickEasyPanel.hidePositionView();
             if (typeof QeTickChart !== 'undefined') QeTickChart._pendingEntryLine = null;
         }
+        // ★ 헤더: 데모 Connected (시안)
+        updateHeaderStatus('connected_demo');
+        if (typeof updateAccountBadge === 'function') updateAccountBadge('active');
         showToast('Demo 모드로 전환되었습니다', 'demo');
         stopPreDeployPoll(); hideRedeployOverlay(); enableLiveOrderButtons();  // ★ Pre-deploy 정리
         if (typeof updateMyModeDisplay === 'function') updateMyModeDisplay();
@@ -2649,7 +2653,10 @@ function switchTradingMode(mode) {
                     QuickEasyPanel.hidePositionView();
                     if (typeof QeTickChart !== 'undefined') QeTickChart._pendingEntryLine = null;
                 }
-                showToast('Live 모드로 전환되었습니다', 'success');
+                showToast('Live 모드를 활성화합니다...', 'info');
+                // ★ 헤더: Standby → Preparing → Connected 흐름 시작
+                updateHeaderStatus('standby');
+                if (typeof updateAccountBadge === 'function') updateAccountBadge('standby');
                 triggerPreDeploy();  // ★ 사전 Deploy 시작
                 if (typeof updateMyModeDisplay === 'function') updateMyModeDisplay();
                 updateHeroCTA('live');
@@ -3049,10 +3056,15 @@ async function triggerPreDeploy() {
             hideRedeployOverlay();
             enableLiveOrderButtons();
             window._metaapiConnected = true;
+            updateHeaderStatus('connected_live');
+            if (typeof updateAccountBadge === 'function') updateAccountBadge('active');
+            showToast('Live 모드 준비 완료!', 'success');
         } else if (data.status === 'deploying') {
             // 준비 중 — 오버레이 표시 + 폴링 시작
             showRedeployOverlay();
             startPreDeployPoll();
+            updateHeaderStatus('preparing');
+            if (typeof updateAccountBadge === 'function') updateAccountBadge('preparing');
         } else if (data.status === 'no_account') {
             // MT5 계정 미연결
             enableLiveOrderButtons();
@@ -3182,6 +3194,30 @@ function updateAccountBadge(status) {
     }
 }
 
+// ★★★ 헤더 상태 표시 통합 관리 ★★★
+function updateHeaderStatus(status) {
+    var headerEl = document.getElementById('headerStatus');
+    var dotEl = document.getElementById('statusDot');
+    if (!headerEl || !dotEl) return;
+
+    var configs = {
+        'connected_demo': { text: 'Connected', color: '#00d4ff', dot: false },
+        'connected_live': { text: 'Connected', color: '#00ff88', dot: false },
+        'standby':        { text: 'Standby',   color: '#888888', dot: true },
+        'preparing':      { text: 'Preparing', color: '#f0b90b', dot: false },
+        'disconnected':   { text: 'Disconnected', color: '#ff4444', dot: true },
+        'guest':          { text: 'Guest Mode', color: '#ffa500', dot: false }
+    };
+    var cfg = configs[status] || configs['connected_demo'];
+    headerEl.textContent = cfg.text;
+    dotEl.style.background = cfg.color;
+    if (cfg.dot) {
+        dotEl.classList.add('disconnected');
+    } else {
+        dotEl.classList.remove('disconnected');
+    }
+}
+
 async function checkMetaAPIStatus() {
     try {
         const response = await fetch(`${API_URL}/mt5/metaapi-status`, {
@@ -3214,6 +3250,7 @@ async function checkMetaAPIStatus() {
                 mt5StatusEl.innerHTML = '<span style="color: #00ff88;">Active</span>';
             }
             updateAccountBadge('active');
+            if (!isDemo) updateHeaderStatus('connected_live');
             stopMetaAPIStatusPoll();
 
         } else if (status === 'provisioning' || status === 'deploying') {
@@ -3229,6 +3266,7 @@ async function checkMetaAPIStatus() {
                 mt5StatusEl.innerHTML = '<span style="color: var(--accent-cyan);">Preparing...</span>';
             }
             updateAccountBadge('preparing');
+            if (!isDemo) updateHeaderStatus('preparing');
 
         } else if (status === 'error') {
             // ❌ 오류 (서버에서 에러 메시지 포함)
@@ -3246,6 +3284,7 @@ async function checkMetaAPIStatus() {
                 mt5StatusEl.innerHTML = '<span style="color: var(--accent-cyan);">Connecting...</span>';
             }
             updateAccountBadge('error');
+            if (!isDemo) updateHeaderStatus('preparing');
             stopMetaAPIStatusPoll();
 
         } else if (status === 'undeployed') {
@@ -3254,6 +3293,7 @@ async function checkMetaAPIStatus() {
                 mt5StatusEl.innerHTML = '<span style="color: var(--text-muted);">Standby</span>';
             }
             updateAccountBadge('standby');
+            if (!isDemo) updateHeaderStatus('standby');
 
         } else {
             // none 또는 기타 - MT5 연결된 경우 Waiting, 아니면 -
@@ -3270,6 +3310,7 @@ async function checkMetaAPIStatus() {
         if (status !== 'deployed' && window._metaapiConnected === true && mt5StatusEl) {
             mt5StatusEl.innerHTML = '<span style="color: #00ff88;">Active</span>';
             updateAccountBadge('active');
+            if (!isDemo) updateHeaderStatus('connected_live');
         }
 
     } catch (e) {
