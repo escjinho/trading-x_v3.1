@@ -1137,16 +1137,31 @@ function loadMT5AccountInfo() {
         })
         .then(function(res) { return res.json(); })
         .then(function(demoData) {
-            if (demoData.has_mt5) {
+            var demo = typeof isDemo !== 'undefined' ? isDemo : true;
+            var fmt = function(v) {
+                var n = parseFloat(v) || 0;
+                return '$' + n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+            };
+
+            if (demo) {
+                // ★ 데모 모드: 항상 데모 정보만 표시
+                updateMT5Display({
+                    broker: demoData.broker || 'Trading-X',
+                    account: demoData.account || '-',
+                    leverage: demoData.leverage ? ('1:' + demoData.leverage) : '1:500',
+                    server: demoData.server || 'Trading-X Demo Server',
+                    balance: fmt(demoData.balance || 10000),
+                    equity: fmt(demoData.equity || demoData.balance || 10000),
+                    freeMargin: fmt(demoData.free_margin || demoData.balance || 10000),
+                    positions: (demoData.positions_count || 0).toString()
+                });
+            } else if (demoData.has_mt5) {
+                // ★ 라이브 모드 + MT5 연결: MT5 정보 조회
                 fetch(apiUrl + '/mt5/account-info', {
                     headers: { 'Authorization': 'Bearer ' + tkn }
                 })
                 .then(function(r) { return r.json(); })
                 .then(function(mt5Data) {
-                    var fmt = function(v) {
-                        var n = parseFloat(v) || 0;
-                        return '$' + n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
-                    };
                     updateMT5Display({
                         broker: mt5Data.broker || demoData.broker || '-',
                         account: mt5Data.account || demoData.account || '-',
@@ -1159,10 +1174,6 @@ function loadMT5AccountInfo() {
                     });
                 })
                 .catch(function() {
-                    var fmt = function(v) {
-                        var n = parseFloat(v) || 0;
-                        return '$' + n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
-                    };
                     updateMT5Display({
                         broker: demoData.broker || '-',
                         account: demoData.account || '-',
@@ -1175,14 +1186,11 @@ function loadMT5AccountInfo() {
                     });
                 });
             } else {
-                var fmt = function(v) {
-                    var n = parseFloat(v) || 0;
-                    return '$' + n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
-                };
+                // ★ 라이브 모드 + MT5 미연결: 데모 정보 표시
                 updateMT5Display({
                     broker: demoData.broker || 'Trading-X',
                     account: demoData.account || '-',
-                    leverage: demoData.leverage ? ('1:' + demoData.leverage) : '1:100',
+                    leverage: demoData.leverage ? ('1:' + demoData.leverage) : '1:500',
                     server: demoData.server || 'Trading-X Demo Server',
                     balance: fmt(demoData.balance || 10000),
                     equity: fmt(demoData.equity || demoData.balance || 10000),
