@@ -1,0 +1,562 @@
+/* ========================================================
+   Chart Order Panel Styles
+   Trading-X v3.1 — 차트 주문 시스템
+   ======================================================== */
+
+/* ===== 1. 주문 패널 바텀시트 ===== */
+.chart-order-sheet {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 1100;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+}
+.chart-order-sheet.active {
+    display: flex;
+}
+
+.chart-order-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+}
+
+.chart-order-panel {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 480px;
+    background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+    border-radius: 20px 20px 0 0;
+    padding: 14px 20px 28px;
+    box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.5);
+    animation: chartOrderSlideUp 0.28s ease-out;
+}
+
+@keyframes chartOrderSlideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+
+/* 핸들바 */
+.chart-order-handle {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 14px;
+}
+.chart-order-handle-bar {
+    width: 40px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.12);
+}
+
+/* 헤더 (종목 + 시장가 + 닫기) */
+.chart-order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+.chart-order-symbol-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.chart-order-symbol {
+    color: var(--text-primary);
+    font-weight: 700;
+    font-size: 17px;
+}
+.chart-order-tag {
+    color: var(--text-dim);
+    font-size: 11px;
+    background: rgba(255, 255, 255, 0.06);
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+.chart-order-close-btn {
+    background: rgba(255, 255, 255, 0.06);
+    border: none;
+    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.chart-order-close-btn .material-icons-round {
+    font-size: 18px;
+}
+
+
+/* ===== 2. Bid/Ask 선택 카드 ===== */
+.chart-order-price-cards {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+.chart-order-price-card {
+    flex: 1;
+    padding: 12px 14px;
+    border-radius: 12px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s ease;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+/* SELL 카드 선택 */
+.chart-order-price-card.sell.selected {
+    border: 2px solid var(--sell-color);
+    background: rgba(220, 50, 70, 0.12);
+    box-shadow: 0 0 20px rgba(220, 50, 70, 0.12);
+}
+.chart-order-price-card.sell.selected .chart-order-price-label {
+    color: var(--sell-color);
+}
+.chart-order-price-card.sell.selected .chart-order-price-value {
+    color: var(--text-primary);
+}
+
+/* BUY 카드 선택 */
+.chart-order-price-card.buy.selected {
+    border: 2px solid var(--buy-color);
+    background: rgba(0, 180, 80, 0.12);
+    box-shadow: 0 0 20px rgba(0, 180, 80, 0.12);
+}
+.chart-order-price-card.buy.selected .chart-order-price-label {
+    color: var(--buy-color);
+}
+.chart-order-price-card.buy.selected .chart-order-price-value {
+    color: var(--text-primary);
+}
+
+/* 미선택 카드 */
+.chart-order-price-card:not(.selected) .chart-order-price-label {
+    color: var(--text-dim);
+}
+.chart-order-price-card:not(.selected) .chart-order-price-value {
+    color: var(--text-muted);
+}
+
+.chart-order-price-label {
+    font-size: 10px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+}
+.chart-order-price-value {
+    font-size: 20px;
+    font-weight: 700;
+    font-family: 'Courier New', monospace;
+}
+
+
+/* ===== 3. 거래량 (Lot) 조절 ===== */
+.chart-order-lot-section {
+    margin-bottom: 16px;
+}
+.chart-order-lot-label {
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+.chart-order-lot-control {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+}
+.chart-order-lot-btn {
+    width: 56px;
+    height: 50px;
+    border: none;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.1s;
+}
+.chart-order-lot-btn:active {
+    background: rgba(255, 255, 255, 0.1);
+}
+.chart-order-lot-btn .material-icons-round {
+    font-size: 20px;
+}
+.chart-order-lot-btn.minus {
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+.chart-order-lot-btn.plus {
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+.chart-order-lot-value {
+    flex: 1;
+    height: 50px;
+    border: none;
+    cursor: pointer;
+    background: transparent;
+    color: #00d4a4;
+    font-size: 22px;
+    font-weight: 700;
+    font-family: 'Courier New', monospace;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: 1px;
+    transition: color 0.15s;
+}
+.chart-order-lot-value:active {
+    color: #00e8b4;
+}
+
+
+/* ===== 4. 스프레드 + 마진 정보 ===== */
+.chart-order-info-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.025);
+    border-radius: 10px;
+    margin-bottom: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.chart-order-info-item {
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.chart-order-info-divider {
+    width: 1px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.08);
+    margin: 0 14px;
+}
+.chart-order-info-label {
+    color: var(--text-dim);
+    font-size: 12px;
+}
+.chart-order-info-value {
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Courier New', monospace;
+    color: var(--text-muted);
+}
+/* 스프레드 색상: 낮으면 초록, 높으면 노랑 */
+.chart-order-info-value.spread-low {
+    color: #00d4a4;
+}
+.chart-order-info-value.spread-mid {
+    color: #f0c040;
+}
+.chart-order-info-value.spread-high {
+    color: #ff8c42;
+}
+
+
+/* ===== 5. 주문 확인 버튼 ===== */
+.chart-order-confirm-btn {
+    width: 100%;
+    padding: 15px 0;
+    border-radius: 14px;
+    border: none;
+    color: white;
+    font-weight: 800;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.15s;
+    font-family: inherit;
+    letter-spacing: 0.5px;
+}
+.chart-order-confirm-btn.buy {
+    background: linear-gradient(135deg, var(--buy-color), #00c45a);
+    box-shadow: 0 6px 24px rgba(0, 180, 80, 0.3);
+}
+.chart-order-confirm-btn.sell {
+    background: linear-gradient(135deg, var(--sell-color), #e0384a);
+    box-shadow: 0 6px 24px rgba(220, 50, 70, 0.3);
+}
+.chart-order-confirm-btn:active {
+    transform: scale(0.98);
+}
+.chart-order-confirm-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+.chart-order-confirm-text {
+    font-size: 16px;
+    font-weight: 800;
+}
+.chart-order-confirm-price {
+    opacity: 0.8;
+    font-size: 13px;
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+}
+
+
+/* ===== 6. Lot Picker 바텀시트 ===== */
+.chart-lot-picker-sheet {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 1200;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+}
+.chart-lot-picker-sheet.active {
+    display: flex;
+}
+.chart-lot-picker-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+}
+.chart-lot-picker-panel {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 480px;
+    background: var(--bg-secondary);
+    border-radius: 20px 20px 0 0;
+    padding: 16px 20px 32px;
+    animation: chartOrderSlideUp 0.25s ease-out;
+}
+.chart-lot-picker-title {
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-align: center;
+    margin-bottom: 14px;
+}
+.chart-lot-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.chart-lot-picker-card {
+    padding: 14px 0;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.02);
+    color: var(--text-primary);
+    font-size: 15px;
+    font-family: 'Courier New', monospace;
+    font-weight: 500;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.chart-lot-picker-card:active {
+    background: rgba(255, 255, 255, 0.08);
+}
+.chart-lot-picker-card.selected {
+    border: 1.5px solid #00d4a4;
+    background: rgba(0, 212, 164, 0.1);
+    color: #00d4a4;
+    font-weight: 700;
+}
+.chart-lot-picker-card.custom-card {
+    font-family: inherit;
+    font-size: 12px;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+/* 직접입력 영역 */
+.chart-lot-picker-custom {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    animation: chartOrderFadeIn 0.2s ease;
+}
+@keyframes chartOrderFadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.chart-lot-picker-input {
+    flex: 1;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    font-size: 16px;
+    font-family: 'Courier New', monospace;
+    outline: none;
+    -webkit-appearance: none;
+}
+.chart-lot-picker-input:focus {
+    border-color: #00d4a4;
+}
+.chart-lot-picker-confirm {
+    padding: 12px 20px;
+    border-radius: 10px;
+    background: #00d4a4;
+    border: none;
+    color: #000;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.chart-lot-picker-confirm:active {
+    background: #00e8b4;
+}
+
+
+/* ===== 7. 차트 포지션 섹션 (차트↔하단바 사이) ===== */
+.chart-positions-section {
+    position: relative;
+    background: #000000;
+    padding-bottom: 116px;
+}
+
+/* 위쪽 그라데이션 구분선 */
+.chart-positions-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.25) 50%, transparent 100%);
+    pointer-events: none;
+}
+
+/* 아래쪽 그라데이션 구분선 */
+.chart-positions-section::after {
+    content: '';
+    position: absolute;
+    bottom: 116px;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%);
+    pointer-events: none;
+}
+
+/* 헤더 */
+.chart-pos-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    background: transparent;
+}
+.chart-pos-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.chart-pos-title {
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+}
+.chart-pos-count {
+    background: #00d4a4;
+    color: #000;
+    border-radius: 10px;
+    padding: 1px 7px;
+    font-size: 10px;
+    font-weight: 800;
+    min-width: 18px;
+    text-align: center;
+}
+.chart-pos-total-pl {
+    font-weight: 700;
+    font-size: 15px;
+    font-family: 'Courier New', monospace;
+}
+.chart-pos-total-pl.positive {
+    color: var(--buy-color);
+}
+.chart-pos-total-pl.negative {
+    color: var(--sell-color);
+}
+.chart-pos-total-pl.neutral {
+    color: var(--text-primary);
+}
+
+/* 포지션 카드 리스트 */
+.chart-pos-list {
+    /* open-pos-card 클래스를 재사용하므로 별도 스타일 최소화 */
+    max-height: 300px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* 차트 포지션에서의 open-pos-card 터치 동작 (탭=청산, 롱프레스 아님) */
+.chart-pos-list .open-pos-card {
+    touch-action: pan-y;
+    -webkit-touch-callout: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+.chart-pos-list .open-pos-card:active {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+
+/* ===== 8. 차트 P/L 오버레이 ===== */
+.chart-pl-overlay {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    z-index: 20;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 7px 12px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    pointer-events: none;
+    transition: all 0.3s ease;
+}
+.chart-pl-overlay.positive {
+    background: rgba(0, 180, 80, 0.08);
+    border-color: rgba(0, 180, 80, 0.2);
+}
+.chart-pl-overlay.negative {
+    background: rgba(220, 50, 70, 0.08);
+    border-color: rgba(220, 50, 70, 0.2);
+}
+.chart-pl-label {
+    color: var(--text-dim);
+    font-size: 9px;
+    margin-bottom: 1px;
+}
+.chart-pl-value {
+    font-size: 16px;
+    font-weight: 700;
+    font-family: 'Orbitron', 'Courier New', monospace;
+    letter-spacing: 0.5px;
+}
+.chart-pl-overlay.positive .chart-pl-value {
+    color: var(--buy-color);
+}
+.chart-pl-overlay.negative .chart-pl-value {
+    color: var(--sell-color);
+}
