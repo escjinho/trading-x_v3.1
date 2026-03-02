@@ -58,11 +58,11 @@
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css?v=1771777952">
+    <link rel="stylesheet" href="css/styles.css?v=20260302a">
         <link rel="stylesheet" href="css/quickeasy.css?v=20260226b">
     <link rel="stylesheet" href="css/chart.css?v=1771777952">
-    <link rel="stylesheet" href="css/account.css?v=20260302i">
-    <link rel="stylesheet" href="css/my.css?v=20260227g">
+    <link rel="stylesheet" href="css/account.css?v=20260302m">
+    <link rel="stylesheet" href="css/my.css?v=20260302a">
     <link rel="stylesheet" href="css/tradingReport.css?v=20260302b">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
@@ -195,10 +195,38 @@
                     </div>
                     <div class="mode-status" id="modeStatus">
                         <span class="mode-status-dot demo"></span>
-                        <span>Currently in <strong>Demo Mode</strong> - Practice with virtual $10,000</span>
+                        <span><strong>데모 모드</strong> - 가상자금으로 자유롭게 연습하세요</span>
                     </div>
                 </div>
-                
+
+                <!-- 데모 계좌 개설 카드 (미개설 시 표시) -->
+                <div class="card trading-mode-card demo-create-card" id="demoCreateCard" style="display: none;">
+                    <div style="text-align: center; padding: 20px 10px;">
+                        <div style="font-size: 48px; margin-bottom: 12px;">📋</div>
+                        <div style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Demo 계좌 개설</div>
+                        <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">가상 자금으로 안전하게 트레이딩을 연습하세요</div>
+
+                        <div style="background: var(--bg-tertiary); border-radius: 10px; padding: 2px 15px; margin-bottom: 16px; text-align: left;">
+                            <div class="info-row" style="border-bottom: 1px solid var(--border-color);"><span class="info-label">Broker</span><span class="info-value">Trading-X Markets</span></div>
+                            <div class="info-row" style="border-bottom: 1px solid var(--border-color);"><span class="info-label">Initial Balance</span><span class="info-value" style="color: #00ff88; font-weight: 700;">$10,000.00</span></div>
+                            <div class="info-row" style="border-bottom: 1px solid var(--border-color);"><span class="info-label">Leverage</span><span class="info-value">1:500</span></div>
+                            <div class="info-row" style="border-bottom: 1px solid var(--border-color);"><span class="info-label">Server</span><span class="info-value">Demo Server</span></div>
+                            <div class="info-row" style="border-bottom: none;"><span class="info-label">Currency</span><span class="info-value">USD</span></div>
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: rgba(0, 212, 255, 0.08); border-radius: 8px; margin-bottom: 16px; text-align: left;">
+                            <span class="material-icons-round" style="color: #00d4ff; font-size: 20px;">verified</span>
+                            <span style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">데모 계좌는 가상 자금으로 운영되며, 실제 수익/손실이 발생하지 않습니다. 시세는 실시간 데이터를 기반으로 제공됩니다.</span>
+                        </div>
+
+                        <button class="demo-create-btn" id="demoCreateBtn" onclick="createDemoAccount()">
+                            <span class="material-icons-round" style="font-size: 20px;">add_circle</span>
+                            Demo 계좌 개설
+                        </button>
+                        <div style="margin-top: 10px; font-size: 12px; color: var(--text-dim); cursor: pointer;" onclick="document.getElementById('demoCreateCard').style.display='none';">닫기</div>
+                    </div>
+                </div>
+
                 <!-- MT5 Account 연결 -->
                 <div class="card trading-mode-card" id="mt5AccountSection">
                     <div class="card-title" style="font-size: 16px; font-weight: 700;">
@@ -268,7 +296,7 @@
                     <div class="card-title" style="font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: space-between;">
                         <div style="display: flex; align-items: center;">
                             <span class="material-icons-round" style="color: #00d4ff; margin-right: 8px; font-size: 18px;">account_balance</span>
-                            <span style="position: relative; top: -3px;">Account Overview</span>
+                            <span id="homeAccountTitle" style="position: relative; top: -3px;">Account Overview</span>
                         </div>
                         <span class="account-status-badge active" id="homeAccountBadge">● Active</span>
                     </div>
@@ -1887,7 +1915,7 @@
                             </div>
                             <div class="my-mt5-mode-status" id="myMt5ModeStatus">
                                 <span class="my-mt5-status-dot demo"></span>
-                                <span>Currently in <strong>Demo Mode</strong> - Practice with virtual $10,000</span>
+                                <span><strong>데모 모드</strong> - 가상자금으로 자유롭게 연습하세요</span>
                             </div>
                         </div>
 
@@ -1896,7 +1924,7 @@
                             <div class="my-mt5-card-title" style="display: flex; align-items: center; justify-content: space-between;">
                                 <div style="display: flex; align-items: center; gap: 8px;">
                                     <span class="material-icons-round" style="color: #00d4ff; font-size: 18px;">account_balance</span>
-                                    <span>Account Overview</span>
+                                    <span id="myAccountTitle">Account Overview</span>
                                 </div>
                                 <span class="account-status-badge active" id="myAccountBadge">● Active</span>
                             </div>
@@ -4387,7 +4415,7 @@
     <script src="js/utils.js?v=1771777952"></script>
     <script src="js/watchlist.js?v=1771777952"></script>
     <script src="js/navigation.js?v=20260302a"></script>
-    <script src="js/my.js?v=20260302h"></script>
+    <script src="js/my.js?v=20260302i"></script>
     <script src="js/tradingReport.js?v=20260302c"></script>
     <script src="js/tradingReportDemo.js?v=20260302h"></script>
 
@@ -5890,7 +5918,7 @@
     <script src="js/account.js?v=20260302a"></script>
     <script src="js/trading.js?v=20260301a"></script>
     <script src="js/openPositions.js?v=20260302a"></script>
-    <script src="js/connection.js?v=20260302j"></script>
+    <script src="js/connection.js?v=20260302m"></script>
     <script src="js/init.js?v=1771992777"></script>
 <div id="txDialogContainer"></div>
 </body>

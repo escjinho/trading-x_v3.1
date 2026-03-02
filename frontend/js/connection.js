@@ -2059,6 +2059,7 @@ async function checkUserMode() {
         if (data.has_mt5) {
             // ★★★ MT5 연결되어 있어도 데모 모드부터 시작 ★★★
             isDemo = true; window.isDemo = true;
+            window._hasDemoAccount = data.has_demo_account !== false;
             { var _btn = document.getElementById("accDemoReportBtn"); if (_btn) _btn.style.display = "flex"; }
             if (typeof updateCommissionNotice === 'function') updateCommissionNotice();
             window._checkUserModeRetries = 0;
@@ -2087,7 +2088,7 @@ async function checkUserMode() {
                 demoCheck.style.display = 'flex';
                 liveCheck.style.display = 'none';
                 modeStatus.className = 'mode-status';
-                modeStatus.innerHTML = '<span class="mode-status-dot demo"></span><span>Currently in <strong>Demo Mode</strong> - Practice with virtual $10,000</span>';
+                modeStatus.innerHTML = '<span class="mode-status-dot demo"></span><span><strong>데모 모드</strong> - 가상자금으로 자유롭게 연습하세요</span>';
             }
             if (demoControl) demoControl.style.display = 'block';
 
@@ -2111,8 +2112,16 @@ async function checkUserMode() {
                 setInterval(fetchDemoData, 2000);
             }
 
-            // ★ Account Overview 뱃지: Active (데모는 항상 Active)
-            if (typeof updateAccountBadge === 'function') updateAccountBadge('active');
+            // ★ 데모 계좌 개설 여부에 따라 뱃지/카드 처리
+            if (data.has_demo_account === false) {
+                // 데모 계좌 미개설 → 뱃지 숨기기 + 개설 카드 표시
+                if (typeof updateAccountBadge === 'function') updateAccountBadge('hidden');
+                if (typeof updateAccountTitle === 'function') updateAccountTitle(true);
+                setTimeout(function() { showDemoCreateCard(); }, 1500);
+            } else {
+                if (typeof updateAccountBadge === 'function') updateAccountBadge('active');
+                if (typeof updateAccountTitle === 'function') updateAccountTitle(true);
+            }
 
             setTimeout(() => {
                 showToast('Demo 모드로 접속했습니다\n가상 $10,000로 연습하세요', 'demo');
@@ -2121,6 +2130,7 @@ async function checkUserMode() {
         } else {
             // MT5 없음 → Demo 모드
             isDemo = true;
+            window._hasDemoAccount = data.has_demo_account !== false;
             { var _btn = document.getElementById("accDemoReportBtn"); if (_btn) _btn.style.display = "flex"; }
             if (typeof updateCommissionNotice === 'function') updateCommissionNotice();
             window._checkUserModeRetries = 0;  // ★ 재시도 카운터 리셋
@@ -2141,7 +2151,7 @@ async function checkUserMode() {
                 demoCheck.style.display = 'flex';
                 liveCheck.style.display = 'none';
                 modeStatus.className = 'mode-status';
-                modeStatus.innerHTML = '<span class="mode-status-dot demo"></span><span>Currently in <strong>Demo Mode</strong> - Practice with virtual $10,000</span>';
+                modeStatus.innerHTML = '<span class="mode-status-dot demo"></span><span><strong>데모 모드</strong> - 가상자금으로 자유롭게 연습하세요</span>';
             }
             if (demoControl) demoControl.style.display = 'block';
             
@@ -2166,6 +2176,15 @@ async function checkUserMode() {
                 
                 setInterval(fetchDemoData, 2000);
             }
+
+            // ★ 데모 계좌 개설 여부에 따라 뱃지/카드 처리
+            if (data.has_demo_account === false) {
+                if (typeof updateAccountBadge === 'function') updateAccountBadge('hidden');
+                setTimeout(function() { showDemoCreateCard(); }, 1500);
+            } else {
+                if (typeof updateAccountBadge === 'function') updateAccountBadge('active');
+            }
+            if (typeof updateAccountTitle === 'function') updateAccountTitle(true);
 
             setTimeout(() => {
                 showToast('Demo 모드로 접속했습니다\n가상 $10,000로 연습하세요', 'demo');
@@ -2473,6 +2492,7 @@ if (!isGuest && token) {
     document.getElementById('homeLeverage').textContent = '1:500';
     document.getElementById('homeServer').textContent = 'Demo Server';
     if (typeof updateAccountBadge === 'function') updateAccountBadge('active');
+    if (typeof updateAccountTitle === 'function') updateAccountTitle(true);
     document.getElementById('homeEquity').textContent = '$10,000.00';
     document.getElementById('homeFreeMargin').textContent = '$10,000.00';
     document.getElementById('homePositions').textContent = '0';
@@ -2527,6 +2547,13 @@ function switchTradingMode(mode) {
     const modeBadge = document.getElementById('modeBadge');
     
     if (mode === 'demo') {
+        // ★ 데모 계좌 미개설 시 차단
+        if (window._hasDemoAccount === false) {
+            showToast('데모 계좌를 먼저 개설해주세요', 'info');
+            var demoCard = document.getElementById('demoCreateCard');
+            if (demoCard) demoCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
         // Demo 모드로 전환
         demoBtn.classList.add('active');
         demoBtn.classList.remove('live-active');
@@ -2535,7 +2562,7 @@ function switchTradingMode(mode) {
         liveCheck.style.display = 'none';
         
         modeStatus.className = 'mode-status';
-        modeStatus.innerHTML = '<span class="mode-status-dot demo"></span><span>Currently in <strong>Demo Mode</strong> - Practice with virtual $10,000</span>';
+        modeStatus.innerHTML = '<span class="mode-status-dot demo"></span><span><strong>데모 모드</strong> - 가상자금으로 자유롭게 연습하세요</span>';
         
         // 배지 업데이트
         if (modeBadge) {
@@ -2572,6 +2599,7 @@ function switchTradingMode(mode) {
         // ★ 헤더: 데모 Connected (시안)
         updateHeaderStatus('connected_demo');
         if (typeof updateAccountBadge === 'function') updateAccountBadge('active');
+        if (typeof updateAccountTitle === 'function') updateAccountTitle(true);
         showToast('Demo 모드로 전환되었습니다', 'demo');
         stopPreDeployPoll(); hideRedeployOverlay(); enableLiveOrderButtons();  // ★ Pre-deploy 정리
         if (typeof updateMyModeDisplay === 'function') updateMyModeDisplay();
@@ -2618,7 +2646,7 @@ function switchTradingMode(mode) {
                 demoCheck.style.display = 'none';
                 
                 modeStatus.className = 'mode-status live';
-                modeStatus.innerHTML = '<span class="mode-status-dot live"></span><span>Currently in <strong>Live Mode</strong> - Real trading active</span>';
+                modeStatus.innerHTML = '<span class="mode-status-dot live"></span><span><strong>라이브 모드</strong> - 실거래 활성화됨</span>';
                 
                 // 배지 업데이트
                 if (modeBadge) {
@@ -2633,6 +2661,7 @@ function switchTradingMode(mode) {
                 
                 isDemo = false; window.isDemo = false;
                 if (typeof updateAccountBadge === 'function') updateAccountBadge('preparing');
+                if (typeof updateAccountTitle === 'function') updateAccountTitle(false);
                 var _demoReportBtn2 = document.getElementById('accDemoReportBtn');
                 if (_demoReportBtn2) _demoReportBtn2.style.display = 'none';
                 if (typeof updateCommissionNotice === 'function') updateCommissionNotice();
@@ -2753,7 +2782,7 @@ function initTradingModeUI() {
             demoCheck.style.display = 'none';
             
             modeStatus.className = 'mode-status live';
-            modeStatus.innerHTML = '<span class="mode-status-dot live"></span><span>Currently in <strong>Live Mode</strong> - Real trading active</span>';
+            modeStatus.innerHTML = '<span class="mode-status-dot live"></span><span><strong>라이브 모드</strong> - 실거래 활성화됨</span>';
         }
     }
 }
@@ -2946,7 +2975,7 @@ async function connectMT5Account() {
                 liveCheck.style.display = 'flex';
                 demoCheck.style.display = 'none';
                 modeStatus.className = 'mode-status live';
-                modeStatus.innerHTML = '<span class="mode-status-dot live"></span><span>Currently in <strong>Live Mode</strong> - Real trading active</span>';
+                modeStatus.innerHTML = '<span class="mode-status-dot live"></span><span><strong>라이브 모드</strong> - 실거래 활성화됨</span>';
             }
             if (demoControl) demoControl.style.display = 'none';
             
@@ -3184,14 +3213,98 @@ function updateAccountBadge(status) {
         document.getElementById('homeAccountBadge'),
         document.getElementById('myAccountBadge')
     ];
-    var labels = { active: '● Active', standby: '● Standby', preparing: '● Preparing', error: '● Error' };
+    var labels = { active: '● Active', standby: '● Standby', preparing: '● Preparing', error: '● Error', hidden: '' };
     var label = labels[status] || '● Active';
     for (var i = 0; i < badges.length; i++) {
         if (badges[i]) {
             badges[i].textContent = label;
             badges[i].className = 'account-status-badge ' + status;
+            badges[i].style.display = (status === 'hidden') ? 'none' : '';
         }
     }
+}
+
+// ★★★ Account Overview 타이틀 동적 변경 ★★★
+function updateAccountTitle(isDemo) {
+    var titles = [
+        document.getElementById('homeAccountTitle'),
+        document.getElementById('myAccountTitle')
+    ];
+    var newTitle = isDemo ? 'MT5 Demo Account' : 'MT5 Live Account';
+    for (var i = 0; i < titles.length; i++) {
+        if (titles[i]) {
+            titles[i].style.opacity = '0';
+            (function(el, title) {
+                setTimeout(function() {
+                    el.textContent = title;
+                    el.style.opacity = '1';
+                }, 200);
+            })(titles[i], newTitle);
+        }
+    }
+}
+
+// ★★★ 데모 계좌 개설 ★★★
+async function createDemoAccount() {
+    var btn = document.getElementById('demoCreateBtn');
+    if (!btn || !token) return;
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-icons-round" style="font-size:20px;">hourglass_top</span> 계좌 개설 중...';
+
+    try {
+        var response = await fetch(API_URL + '/demo/create-account', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/json'
+            }
+        });
+        var data = await response.json();
+
+        if (data.success || data.account_number) {
+            // ★ 성공: 카드 슬라이드 아웃
+            var card = document.getElementById('demoCreateCard');
+            if (card) {
+                card.classList.remove('slide-in');
+                card.classList.add('slide-out');
+                setTimeout(function() { card.style.display = 'none'; }, 700);
+            }
+
+            // ★ 플래그 업데이트 + Account Overview 뱃지 표시 + 데이터 갱신
+            window._hasDemoAccount = true;
+            if (typeof updateAccountBadge === 'function') updateAccountBadge('active');
+
+            showToast('Demo 계좌가 개설되었습니다!\n계좌번호: ' + (data.account_number || ''), 'success');
+
+            // ★ 데모 데이터 즉시 로드
+            if (typeof fetchDemoData === 'function') {
+                await fetchDemoData();
+            }
+        } else {
+            showToast(data.message || '계좌 개설에 실패했습니다', 'error');
+            btn.disabled = false;
+            btn.innerHTML = '<span class="material-icons-round" style="font-size:20px;">add_circle</span> Demo 계좌 개설';
+        }
+    } catch (e) {
+        console.error('[DemoCreate] Error:', e);
+        showToast('서버 연결 실패. 잠시 후 다시 시도해주세요.', 'error');
+        btn.disabled = false;
+        btn.innerHTML = '<span class="material-icons-round" style="font-size:20px;">add_circle</span> Demo 계좌 개설';
+    }
+}
+
+// ★★★ 데모 개설 카드 슬라이드 표시 ★★★
+function showDemoCreateCard() {
+    var card = document.getElementById('demoCreateCard');
+    if (!card) return;
+    card.style.display = 'block';
+    // 다음 프레임에서 클래스 추가 (transition 트리거)
+    requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
+            card.classList.add('slide-in');
+        });
+    });
 }
 
 // ★★★ 헤더 상태 표시 통합 관리 ★★★

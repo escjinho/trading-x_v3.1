@@ -1227,6 +1227,9 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance
 .mode-status.live {
     background: rgba(0, 255, 136, 0.1);
 }
+.mode-status.live strong {
+    color: #ffffff;
+}
 .mode-status-dot {
     width: 8px;
     height: 8px;

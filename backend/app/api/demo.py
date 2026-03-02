@@ -514,6 +514,7 @@ async def get_demo_account(
                         "position": None,
                         "positions_count": 0,
                         "has_mt5": True,
+                        "has_demo_account": bool(current_user.demo_account_number),
                         "auto_closed": True,
                         "closed_profit": profit,
                         "is_win": is_win,
@@ -533,6 +534,7 @@ async def get_demo_account(
                         "position": None,
                         "positions_count": 0,
                         "has_mt5": False,
+                        "has_demo_account": bool(current_user.demo_account_number),
                         "auto_closed": True,
                         "closed_profit": profit,
                         "is_win": is_win,
@@ -681,6 +683,7 @@ async def get_demo_account(
                             "position": None,
                             "positions_count": 0,
                             "has_mt5": True,
+                            "has_demo_account": bool(current_user.demo_account_number),
                             "auto_closed": True,
                             "closed_profit": profit,
                             "is_win": is_win,
@@ -700,6 +703,7 @@ async def get_demo_account(
                             "position": None,
                             "positions_count": 0,
                             "has_mt5": False,
+                            "has_demo_account": bool(current_user.demo_account_number),
                             "auto_closed": True,
                             "closed_profit": profit,
                             "is_win": is_win,
@@ -828,6 +832,7 @@ async def get_demo_account(
             "positions_count": mt5_open_count,
             "buysell_count": len(positions),
             "has_mt5": True,
+            "has_demo_account": bool(current_user.demo_account_number),
             "total_margin": round(total_margin, 2)
         }
 
@@ -847,6 +852,7 @@ async def get_demo_account(
         "positions_count": len(all_positions),
         "buysell_count": len(positions),
         "has_mt5": False,
+        "has_demo_account": bool(current_user.demo_account_number),
         "margin": round(total_margin, 2),
         "free_margin": round(demo_balance - total_margin, 2),
         "total_margin": round(total_margin, 2)

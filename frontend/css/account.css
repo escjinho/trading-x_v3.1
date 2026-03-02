@@ -858,3 +858,61 @@
     background: rgba(255, 68, 68, 0.1);
     border: 1px solid rgba(255, 68, 68, 0.3);
 }
+
+/* ===== 데모 계좌 개설 카드 ===== */
+.demo-create-card {
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.6s ease, opacity 0.5s ease, margin 0.4s ease, padding 0.4s ease;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+    border: none !important;
+}
+.demo-create-card.slide-in {
+    max-height: 600px;
+    opacity: 1;
+    padding-top: 15px !important;
+    padding-bottom: 15px !important;
+    margin-bottom: 15px !important;
+    border: 1px solid var(--border-color) !important;
+}
+.demo-create-btn {
+    width: 100%;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, #00b4d8, #00d4ff);
+    border: none;
+    border-radius: 12px;
+    color: #000;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+.demo-create-btn:hover {
+    background: linear-gradient(135deg, #00d4ff, #00e5ff);
+    transform: translateY(-1px);
+}
+.demo-create-btn:active {
+    transform: translateY(0);
+}
+.demo-create-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* 카드 닫힘 애니메이션 */
+.demo-create-card.slide-out {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+    border: none !important;
+}
