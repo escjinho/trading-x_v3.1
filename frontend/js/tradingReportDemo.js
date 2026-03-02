@@ -174,7 +174,7 @@ async function loadDemoReportSummary(period, startDate, endDate) {
             if (el) { el.textContent = text; if (cls) el.className = 'tr-summary-value ' + cls; }
         };
 
-        set('trdSumBroker', d.broker || 'Trading-X');
+        set('trdSumBroker', d.broker || 'Trading-X Markets');
         set('trdSumAccount', d.account || '-');
         set('trdSumInitial', fmtUSD(d.initial_balance));
         set('trdSumTotalPL', fmtPL(d.total_pl), plClass(d.total_pl));

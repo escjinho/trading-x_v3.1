@@ -1146,10 +1146,10 @@ function loadMT5AccountInfo() {
             if (demo) {
                 // ★ 데모 모드: 항상 데모 정보만 표시
                 updateMT5Display({
-                    broker: demoData.broker || 'Trading-X',
+                    broker: demoData.broker || 'Trading-X Markets',
                     account: demoData.account || '-',
                     leverage: demoData.leverage ? ('1:' + demoData.leverage) : '1:500',
-                    server: demoData.server || 'Trading-X Demo Server',
+                    server: demoData.server || 'Demo Server',
                     balance: fmt(demoData.balance || 10000),
                     equity: fmt(demoData.equity || demoData.balance || 10000),
                     freeMargin: fmt(demoData.free_margin || demoData.balance || 10000),
@@ -1188,10 +1188,10 @@ function loadMT5AccountInfo() {
             } else {
                 // ★ 라이브 모드 + MT5 미연결: 데모 정보 표시
                 updateMT5Display({
-                    broker: demoData.broker || 'Trading-X',
+                    broker: demoData.broker || 'Trading-X Markets',
                     account: demoData.account || '-',
                     leverage: demoData.leverage ? ('1:' + demoData.leverage) : '1:500',
-                    server: demoData.server || 'Trading-X Demo Server',
+                    server: demoData.server || 'Demo Server',
                     balance: fmt(demoData.balance || 10000),
                     equity: fmt(demoData.equity || demoData.balance || 10000),
                     freeMargin: fmt(demoData.free_margin || demoData.balance || 10000),

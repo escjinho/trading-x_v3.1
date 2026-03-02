@@ -537,7 +537,7 @@ async def get_account_info(
             # ★★★ 유저 DB 값 사용 (브릿지 계좌 노출 방지) ★★★
             if current_user.has_mt5_account and current_user.mt5_account_number:
                 return {
-                    "broker": "Live Account",
+                    "broker": "HedgeHood Pty Ltd",
                     "account": current_user.mt5_account_number,
                     "server": current_user.mt5_server or "HedgeHood-MT5",
                     "balance": current_user.mt5_balance or 0,

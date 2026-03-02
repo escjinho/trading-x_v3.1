@@ -2089,7 +2089,7 @@ async function checkUserMode() {
 
             // ★★★ MT5 Account 섹션 업데이트 (연결된 계정 정보 표시) ★★★
             updateMT5AccountUI(true, {
-                broker: data.broker || 'Live Account',
+                broker: data.broker || 'HedgeHood Pty Ltd',
                 account: data.account || '-',
                 server: data.server || '-',
                 leverage: data.leverage || 500
@@ -2326,10 +2326,10 @@ async function fetchDemoData() {
             const tradeBalance = document.getElementById('tradeBalance');
 
             if (homeBalance) homeBalance.textContent = '$' + (data.balance || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
-            if (homeBroker) homeBroker.textContent = data.broker || 'Trading-X';
+            if (homeBroker) homeBroker.textContent = data.broker || 'Trading-X Markets';
             if (homeAccount) homeAccount.textContent = data.account || '-';
             if (homeLeverage) homeLeverage.textContent = '1:' + (data.leverage || 500);
-            if (homeServer) homeServer.textContent = data.server || 'Trading-X Demo Server';
+            if (homeServer) homeServer.textContent = data.server || 'Demo Server';
             if (homeEquity) homeEquity.textContent = '$' + (data.equity || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
             if (homeFreeMargin) homeFreeMargin.textContent = '$' + (data.balance || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
             if (homePositions) homePositions.textContent = data.positions_count || 0;
@@ -2711,7 +2711,7 @@ async function checkMT5Connection() {
                 });
             } catch (e2) {
                 updateMT5AccountUI(true, {
-                    broker: data.broker || 'Live Account',
+                    broker: data.broker || 'HedgeHood Pty Ltd',
                     account: data.account || '-',
                     server: data.server || '-',
                     leverage: data.leverage || 500
