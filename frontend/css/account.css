@@ -828,3 +828,33 @@
     border-top: 1px solid rgba(255,255,255,0.04);
 }
 .acc-detail-btn:active { color: var(--accent-cyan); }
+
+/* ===== Account Overview 상태 뱃지 ===== */
+.account-status-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 12px;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+.account-status-badge.active {
+    color: #00ff88;
+    background: rgba(0, 255, 136, 0.1);
+    border: 1px solid rgba(0, 255, 136, 0.3);
+}
+.account-status-badge.standby {
+    color: #00d4ff;
+    background: rgba(0, 212, 255, 0.1);
+    border: 1px solid rgba(0, 212, 255, 0.3);
+}
+.account-status-badge.preparing {
+    color: #f0b90b;
+    background: rgba(240, 185, 11, 0.1);
+    border: 1px solid rgba(240, 185, 11, 0.3);
+}
+.account-status-badge.error {
+    color: #ff4444;
+    background: rgba(255, 68, 68, 0.1);
+    border: 1px solid rgba(255, 68, 68, 0.3);
+}

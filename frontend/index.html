@@ -61,7 +61,7 @@
     <link rel="stylesheet" href="css/styles.css?v=1771777952">
         <link rel="stylesheet" href="css/quickeasy.css?v=20260226b">
     <link rel="stylesheet" href="css/chart.css?v=1771777952">
-    <link rel="stylesheet" href="css/account.css?v=20260302a">
+    <link rel="stylesheet" href="css/account.css?v=20260302i">
     <link rel="stylesheet" href="css/my.css?v=20260227g">
     <link rel="stylesheet" href="css/tradingReport.css?v=20260302b">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -265,9 +265,12 @@
                 
                 <!-- Account Overview (통합) -->
                 <div class="card trading-mode-card" id="accountOverview">
-                    <div class="card-title" style="font-size: 16px; font-weight: 700;">
-                        <span class="material-icons-round" style="color: #00d4ff; margin-right: 8px; font-size: 18px;">account_balance</span>
-                        <span style="position: relative; top: -3px;">Account Overview</span>
+                    <div class="card-title" style="font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center;">
+                            <span class="material-icons-round" style="color: #00d4ff; margin-right: 8px; font-size: 18px;">account_balance</span>
+                            <span style="position: relative; top: -3px;">Account Overview</span>
+                        </div>
+                        <span class="account-status-badge active" id="homeAccountBadge">● Active</span>
                     </div>
                     
                     <!-- 계정 정보 박스 -->
@@ -1890,9 +1893,12 @@
 
                         <!-- Account Overview 카드 -->
                         <div class="my-mt5-card">
-                            <div class="my-mt5-card-title">
-                                <span class="material-icons-round" style="color: #00d4ff; font-size: 18px;">account_balance</span>
-                                <span>Account Overview</span>
+                            <div class="my-mt5-card-title" style="display: flex; align-items: center; justify-content: space-between;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span class="material-icons-round" style="color: #00d4ff; font-size: 18px;">account_balance</span>
+                                    <span>Account Overview</span>
+                                </div>
+                                <span class="account-status-badge active" id="myAccountBadge">● Active</span>
                             </div>
                             <div class="my-mt5-info-box">
                                 <div class="my-mt5-info-row"><span class="my-mt5-info-label">Broker</span><span class="my-mt5-info-value" id="myMt5Broker">-</span></div>
@@ -5884,7 +5890,7 @@
     <script src="js/account.js?v=20260302a"></script>
     <script src="js/trading.js?v=20260301a"></script>
     <script src="js/openPositions.js?v=20260302a"></script>
-    <script src="js/connection.js?v=20260302h"></script>
+    <script src="js/connection.js?v=20260302i"></script>
     <script src="js/init.js?v=1771992777"></script>
 <div id="txDialogContainer"></div>
 </body>

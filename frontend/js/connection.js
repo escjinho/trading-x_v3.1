@@ -2334,6 +2334,7 @@ async function fetchDemoData() {
             if (homeFreeMargin) homeFreeMargin.textContent = '$' + (data.balance || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
             if (homePositions) homePositions.textContent = data.positions_count || 0;
             if (tradeBalance) tradeBalance.textContent = '$' + Math.round(data.balance || 0).toLocaleString();
+            if (typeof updateAccountBadge === 'function') { if (isDemo) updateAccountBadge('active'); }
             } // ★ end wsActive guard (Home/Trade balance)
 
             // Account 탭 + 포지션 업데이트 - ★ WS 연결 중이면 건너뛰기
@@ -2469,6 +2470,7 @@ if (!isGuest && token) {
     document.getElementById('homeAccount').textContent = 'GUEST';
     document.getElementById('homeLeverage').textContent = '1:500';
     document.getElementById('homeServer').textContent = 'Demo Server';
+    if (typeof updateAccountBadge === 'function') updateAccountBadge('active');
     document.getElementById('homeEquity').textContent = '$10,000.00';
     document.getElementById('homeFreeMargin').textContent = '$10,000.00';
     document.getElementById('homePositions').textContent = '0';
@@ -2626,6 +2628,7 @@ function switchTradingMode(mode) {
                 if (demoControl) demoControl.style.display = 'none';
                 
                 isDemo = false; window.isDemo = false;
+                if (typeof updateAccountBadge === 'function') updateAccountBadge('preparing');
                 var _demoReportBtn2 = document.getElementById('accDemoReportBtn');
                 if (_demoReportBtn2) _demoReportBtn2.style.display = 'none';
                 if (typeof updateCommissionNotice === 'function') updateCommissionNotice();
@@ -3164,6 +3167,21 @@ function enableLiveOrderButtons() {
     if (qeSell) { qeSell.style.opacity = '1'; qeSell.style.pointerEvents = 'auto'; }
 }
 
+function updateAccountBadge(status) {
+    var badges = [
+        document.getElementById('homeAccountBadge'),
+        document.getElementById('myAccountBadge')
+    ];
+    var labels = { active: '● Active', standby: '● Standby', preparing: '● Preparing', error: '● Error' };
+    var label = labels[status] || '● Active';
+    for (var i = 0; i < badges.length; i++) {
+        if (badges[i]) {
+            badges[i].textContent = label;
+            badges[i].className = 'account-status-badge ' + status;
+        }
+    }
+}
+
 async function checkMetaAPIStatus() {
     try {
         const response = await fetch(`${API_URL}/mt5/metaapi-status`, {
@@ -3193,8 +3211,9 @@ async function checkMetaAPIStatus() {
                 successMsg.style.color = '#00ff88';
             }
             if (mt5StatusEl) {
-                mt5StatusEl.innerHTML = '<span style="color: #00ff88;">Ready</span>';
+                mt5StatusEl.innerHTML = '<span style="color: #00ff88;">Active</span>';
             }
+            updateAccountBadge('active');
             stopMetaAPIStatusPoll();
 
         } else if (status === 'provisioning' || status === 'deploying') {
@@ -3209,6 +3228,7 @@ async function checkMetaAPIStatus() {
             if (mt5StatusEl) {
                 mt5StatusEl.innerHTML = '<span style="color: var(--accent-cyan);">Preparing...</span>';
             }
+            updateAccountBadge('preparing');
 
         } else if (status === 'error') {
             // ❌ 오류 (서버에서 에러 메시지 포함)
@@ -3225,6 +3245,7 @@ async function checkMetaAPIStatus() {
             if (mt5StatusEl) {
                 mt5StatusEl.innerHTML = '<span style="color: var(--accent-cyan);">Connecting...</span>';
             }
+            updateAccountBadge('error');
             stopMetaAPIStatusPoll();
 
         } else if (status === 'undeployed') {
@@ -3232,6 +3253,7 @@ async function checkMetaAPIStatus() {
             if (mt5StatusEl) {
                 mt5StatusEl.innerHTML = '<span style="color: var(--text-muted);">Standby</span>';
             }
+            updateAccountBadge('standby');
 
         } else {
             // none 또는 기타 - MT5 연결된 경우 Waiting, 아니면 -
@@ -3244,9 +3266,10 @@ async function checkMetaAPIStatus() {
             }
         }
 
-        // ★★★ 개인 MetaAPI가 없어도 공유 MetaAPI로 연결되면 Ready 표시 ★★★
+        // ★★★ 개인 MetaAPI가 없어도 공유 MetaAPI로 연결되면 Active 표시 ★★★
         if (status !== 'deployed' && window._metaapiConnected === true && mt5StatusEl) {
-            mt5StatusEl.innerHTML = '<span style="color: #00ff88;">Ready</span>';
+            mt5StatusEl.innerHTML = '<span style="color: #00ff88;">Active</span>';
+            updateAccountBadge('active');
         }
 
     } catch (e) {
