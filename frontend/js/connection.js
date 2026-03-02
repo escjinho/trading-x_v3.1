@@ -2326,10 +2326,10 @@ async function fetchDemoData() {
             const tradeBalance = document.getElementById('tradeBalance');
 
             if (homeBalance) homeBalance.textContent = '$' + (data.balance || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
-            if (homeBroker) homeBroker.textContent = data.broker || 'Demo';
-            if (homeAccount) homeAccount.textContent = data.account || 'DEMO';
+            if (homeBroker) homeBroker.textContent = data.broker || 'Trading-X';
+            if (homeAccount) homeAccount.textContent = data.account || '-';
             if (homeLeverage) homeLeverage.textContent = '1:' + (data.leverage || 500);
-            if (homeServer) homeServer.textContent = data.server || 'Demo';
+            if (homeServer) homeServer.textContent = data.server || 'Trading-X Demo Server';
             if (homeEquity) homeEquity.textContent = '$' + (data.equity || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
             if (homeFreeMargin) homeFreeMargin.textContent = '$' + (data.balance || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
             if (homePositions) homePositions.textContent = data.positions_count || 0;

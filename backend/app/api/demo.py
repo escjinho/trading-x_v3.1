@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, WebSocket, Query,
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
+from sqlalchemy import Integer
 from datetime import datetime, timedelta
 import pytz as _demo_pytz
 _DEMO_KST = _demo_pytz.timezone('Asia/Seoul')
@@ -325,6 +326,51 @@ async def get_current_user(
     return user
 
 
+# ========== 데모 계좌 개설 ==========
+@router.post("/create-account")
+async def create_demo_account(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """데모 계좌 개설 — D-500XXXXX 형식으로 자동 발번"""
+    # 이미 계좌가 있으면 기존 계좌번호 반환
+    if current_user.demo_account_number:
+        return {
+            "success": True,
+            "account_number": current_user.demo_account_number,
+            "message": "이미 데모 계좌가 개설되어 있습니다",
+            "already_exists": True
+        }
+
+    # 현재 최대 번호 조회
+    from sqlalchemy import func as sa_func
+    max_result = db.query(
+        sa_func.max(
+            sa_func.cast(
+                sa_func.replace(User.demo_account_number, 'D-500', ''),
+                Integer
+            )
+        )
+    ).filter(User.demo_account_number.isnot(None)).scalar()
+
+    next_num = (max_result or 10000) + 1
+    new_account_number = f"D-500{next_num}"
+
+    # 유저에게 할당
+    current_user.demo_account_number = new_account_number
+    db.commit()
+    db.refresh(current_user)
+
+    print(f"[DEMO] ✅ 계좌 개설: User {current_user.id} → {new_account_number}")
+
+    return {
+        "success": True,
+        "account_number": new_account_number,
+        "message": "데모 계좌가 개설되었습니다",
+        "already_exists": False
+    }
+
+
 # ========== 데모 계정 정보 ==========
 @router.get("/account-info")
 async def get_demo_account(
@@ -480,9 +526,9 @@ async def get_demo_account(
                         "balance": current_user.demo_balance,
                         "equity": current_user.demo_equity,
                         "today_profit": current_user.demo_today_profit,
-                        "broker": "Trading-X Demo",
-                        "account": f"DEMO-{current_user.id}",
-                        "server": "Demo Server",
+                        "broker": "Trading-X",
+                        "account": current_user.demo_account_number or f"D-500{10000 + current_user.id}",
+                        "server": "Trading-X Demo Server",
                         "leverage": 500,
                         "position": None,
                         "positions_count": 0,
@@ -647,9 +693,9 @@ async def get_demo_account(
                             "balance": current_user.demo_balance,
                             "equity": current_user.demo_equity,
                             "today_profit": current_user.demo_today_profit,
-                            "broker": "Trading-X Demo",
-                            "account": f"DEMO-{current_user.id}",
-                            "server": "Demo Server",
+                            "broker": "Trading-X",
+                            "account": current_user.demo_account_number or f"D-500{10000 + current_user.id}",
+                            "server": "Trading-X Demo Server",
                             "leverage": 500,
                             "position": None,
                             "positions_count": 0,
@@ -792,9 +838,9 @@ async def get_demo_account(
         "equity": current_user.demo_equity or 10000.0,
         "today_profit": current_user.demo_today_profit or 0.0,
         "current_pl": round(current_pl, 2),
-        "broker": "Trading-X Demo",
-        "account": f"DEMO-{current_user.id}",
-        "server": "Demo Server",
+        "broker": "Trading-X",
+        "account": current_user.demo_account_number or f"D-500{10000 + current_user.id}",
+        "server": "Trading-X Demo Server",
         "leverage": 500,
         "position": position_data,
         "positions": positions_data,
@@ -2345,8 +2391,8 @@ async def demo_websocket_endpoint(websocket: WebSocket):
                     traceback.print_exc()
 
             data = {
-                "broker": "Trading-X Demo",
-                "account": "DEMO",
+                "broker": "Trading-X",
+                "account": user.demo_account_number if user else "DEMO",
                 "balance": demo_balance,
                 "equity": demo_equity,
                 "free_margin": round(demo_balance - total_margin, 2),
@@ -2469,8 +2515,8 @@ async def get_demo_trading_report_summary(
         end_time = now
 
     # ★ 계정 정보
-    broker = "Trading-X Demo"
-    account = f"DEMO-{user_id}"
+    broker = "Trading-X"
+    account = current_user.demo_account_number or f"D-500{10000 + user_id}"
     current_balance = current_user.demo_balance or 10000.0
 
     # ★ 앵커 포인트 조회 (마지막 리셋 시점)

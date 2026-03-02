@@ -23,6 +23,7 @@ class User(Base):
     phone_verified = Column(Boolean, default=False)        # 전화번호 인증 여부
 
     # ========== Demo 모드 필드 ==========
+    demo_account_number = Column(String(20), unique=True, nullable=True, index=True)  # 데모 계좌번호 (D-50010001~)
     demo_balance = Column(Float, default=10000.0)      # 데모 잔고
     demo_equity = Column(Float, default=10000.0)       # 데모 자산
     demo_today_profit = Column(Float, default=0.0)     # 오늘 수익

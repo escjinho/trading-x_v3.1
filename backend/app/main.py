@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from .config import settings
-from .api import auth, account, mt5, demo
+from .api import auth, account, mt5, demo, admin
 
 app = FastAPI(
     title="Trading-X API",
@@ -29,6 +29,7 @@ app.include_router(auth.router, prefix="/api")
 app.include_router(account.router, prefix="/api")
 app.include_router(mt5.router, prefix="/api")
 app.include_router(demo.router, prefix="/api")
+app.include_router(admin.router, prefix="/api")
 
 @app.get("/")
 def root():

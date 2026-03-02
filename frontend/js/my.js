@@ -1180,10 +1180,10 @@ function loadMT5AccountInfo() {
                     return '$' + n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
                 };
                 updateMT5Display({
-                    broker: demoData.broker || 'Trading-X Demo',
+                    broker: demoData.broker || 'Trading-X',
                     account: demoData.account || '-',
                     leverage: demoData.leverage ? ('1:' + demoData.leverage) : '1:100',
-                    server: demoData.server || 'TradingX-Demo',
+                    server: demoData.server || 'Trading-X Demo Server',
                     balance: fmt(demoData.balance || 10000),
                     equity: fmt(demoData.equity || demoData.balance || 10000),
                     freeMargin: fmt(demoData.free_margin || demoData.balance || 10000),
