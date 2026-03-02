@@ -859,25 +859,7 @@
     border: 1px solid rgba(255, 68, 68, 0.3);
 }
 
-/* ===== 데모 계좌 개설 카드 ===== */
-.demo-create-card {
-    overflow: hidden;
-    max-height: 0;
-    opacity: 0;
-    transition: max-height 0.6s ease, opacity 0.5s ease, margin 0.4s ease, padding 0.4s ease;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-    margin-bottom: 0 !important;
-    border: none !important;
-}
-.demo-create-card.slide-in {
-    max-height: 600px;
-    opacity: 1;
-    padding-top: 15px !important;
-    padding-bottom: 15px !important;
-    margin-bottom: 15px !important;
-    border: 1px solid var(--border-color) !important;
-}
+/* ===== 데모 계좌 개설 버튼 (모달용) ===== */
 .demo-create-btn {
     width: 100%;
     padding: 14px 20px;
@@ -907,12 +889,56 @@
     transform: none;
 }
 
-/* 카드 닫힘 애니메이션 */
-.demo-create-card.slide-out {
-    max-height: 0;
+/* ===== 홈 액션 카드 (짧은 유도 버튼) ===== */
+.home-action-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 18px;
+    background: var(--card-bg, #1a1d23);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 12px;
     opacity: 0;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-    margin-bottom: 0 !important;
-    border: none !important;
+    transform: translateY(15px);
+}
+.home-action-card.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+.home-action-card:active {
+    transform: scale(0.98);
+    background: rgba(255, 255, 255, 0.03);
+}
+.home-action-icon {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.home-action-text {
+    flex: 1;
+}
+.home-action-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+.home-action-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+.home-action-arrow {
+    color: var(--text-dim);
+    font-size: 20px;
+    transition: transform 0.2s;
+}
+.home-action-card:active .home-action-arrow {
+    transform: translateX(3px);
 }
