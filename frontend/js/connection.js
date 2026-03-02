@@ -3248,21 +3248,19 @@ function updateAccountBadge(status) {
 
 // ★★★ Account Overview 타이틀 동적 변경 ★★★
 function updateAccountTitle(isDemo) {
-    var titles = [
-        document.getElementById('homeAccountTitle'),
-        document.getElementById('myAccountTitle')
-    ];
+    // 홈: 항상 "Account Overview"
+    var homeTitle = document.getElementById('homeAccountTitle');
+    if (homeTitle) homeTitle.textContent = 'Account Overview';
+
+    // My탭: 모드별 변경
+    var myTitle = document.getElementById('myAccountTitle');
     var newTitle = isDemo ? 'MT5 Demo Account' : 'MT5 Live Account';
-    for (var i = 0; i < titles.length; i++) {
-        if (titles[i]) {
-            titles[i].style.opacity = '0';
-            (function(el, title) {
-                setTimeout(function() {
-                    el.textContent = title;
-                    el.style.opacity = '1';
-                }, 200);
-            })(titles[i], newTitle);
-        }
+    if (myTitle) {
+        myTitle.style.opacity = '0';
+        setTimeout(function() {
+            myTitle.textContent = newTitle;
+            myTitle.style.opacity = '1';
+        }, 200);
     }
 }
 
@@ -3311,12 +3309,6 @@ async function createDemoAccount() {
             window._hasDemoAccount = true;
             if (typeof updateAccountBadge === 'function') updateAccountBadge('active');
 
-            // ★ Account Overview 전환 (빈 상태 → 데이터)
-            var emptyDiv = document.getElementById('homeAccountEmpty');
-            var dataDiv = document.getElementById('homeAccountData');
-            if (emptyDiv) emptyDiv.style.display = 'none';
-            if (dataDiv) dataDiv.style.display = 'block';
-
             // ★ 잔액 충전 카드 표시
             var demoControl = document.getElementById('demoControlCard');
             if (demoControl) demoControl.style.display = 'block';
@@ -3347,19 +3339,6 @@ function showHomeActionCards() {
     if (demoCard && window._hasDemoAccount === false) {
         demoCard.style.display = 'block';
         setTimeout(function() { demoCard.classList.add('slide-in'); }, 50);
-    }
-
-    // Account Overview 빈 상태 처리
-    var emptyDiv = document.getElementById('homeAccountEmpty');
-    var dataDiv = document.getElementById('homeAccountData');
-    if (emptyDiv && dataDiv) {
-        if (window._hasDemoAccount === false) {
-            emptyDiv.style.display = 'block';
-            dataDiv.style.display = 'none';
-        } else {
-            emptyDiv.style.display = 'none';
-            dataDiv.style.display = 'block';
-        }
     }
 }
 
