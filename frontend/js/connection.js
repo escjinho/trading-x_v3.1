@@ -2101,7 +2101,7 @@ async function checkUserMode() {
                 modeStatus.className = 'mode-status';
                 modeStatus.innerHTML = '<span class="mode-status-dot demo"></span><span><strong>데모 모드</strong> - 가상자금으로 자유롭게 연습하세요</span>';
             }
-            if (demoControl) demoControl.style.display = 'block';
+            if (demoControl) demoControl.style.display = (window._hasDemoAccount !== false) ? 'block' : 'none';
 
             // ★ MT5 연결 카드 숨기기
             var mt5Card = document.getElementById('mt5ConnectCard');
@@ -2163,8 +2163,12 @@ async function checkUserMode() {
                 modeStatus.className = 'mode-status';
                 modeStatus.innerHTML = '<span class="mode-status-dot demo"></span><span><strong>데모 모드</strong> - 가상자금으로 자유롭게 연습하세요</span>';
             }
-            if (demoControl) demoControl.style.display = 'block';
-            
+            if (demoControl) demoControl.style.display = (window._hasDemoAccount !== false) ? 'block' : 'none';
+
+            // ★ MT5 연결 카드 표시 (항상)
+            var mt5Card = document.getElementById('mt5ConnectCard');
+            if (mt5Card) mt5Card.style.display = 'block';
+
             updateHeroCTA('demo');
 
             // Demo 배지 표시
@@ -2581,9 +2585,9 @@ function switchTradingMode(mode) {
             modeBadge.style.display = 'inline';
         }
         
-        // Demo Control 표시
+        // 잔액 충전 카드 (데모 생성 후에만)
         const demoControl = document.getElementById('demoControlCard');
-        if (demoControl) demoControl.style.display = 'block';
+        if (demoControl) demoControl.style.display = (window._hasDemoAccount !== false) ? 'block' : 'none';
         
         isDemo = true; window.isDemo = true;
         var _demoReportBtn = document.getElementById('accDemoReportBtn');
@@ -2665,9 +2669,9 @@ function switchTradingMode(mode) {
                     modeBadge.style.display = 'inline';
                 }
                 
-                // 입출금 관리 버튼 표시 (Live에서도 유지)
+                // 잔액 충전 카드 숨기기 (Live 모드)
                 const demoControl = document.getElementById('demoControlCard');
-                if (demoControl) demoControl.style.display = 'block';
+                if (demoControl) demoControl.style.display = 'none';
                 
                 isDemo = false; window.isDemo = false;
                 if (typeof updateAccountBadge === 'function') updateAccountBadge('preparing');
@@ -3299,13 +3303,23 @@ async function createDemoAccount() {
             closeDemoCreateModal();
             var card = document.getElementById('demoCreateCard');
             if (card) {
-                card.classList.remove('show');
-                setTimeout(function() { card.style.display = 'none'; }, 400);
+                card.classList.remove('slide-in');
+                setTimeout(function() { card.style.display = 'none'; }, 500);
             }
 
-            // ★ 플래그 업데이트 + Account Overview 뱃지 표시 + 데이터 갱신
+            // ★ 플래그 업데이트
             window._hasDemoAccount = true;
             if (typeof updateAccountBadge === 'function') updateAccountBadge('active');
+
+            // ★ Account Overview 전환 (빈 상태 → 데이터)
+            var emptyDiv = document.getElementById('homeAccountEmpty');
+            var dataDiv = document.getElementById('homeAccountData');
+            if (emptyDiv) emptyDiv.style.display = 'none';
+            if (dataDiv) dataDiv.style.display = 'block';
+
+            // ★ 잔액 충전 카드 표시
+            var demoControl = document.getElementById('demoControlCard');
+            if (demoControl) demoControl.style.display = 'block';
 
             showToast('Demo 계좌가 개설되었습니다!\n계좌번호: ' + (data.account_number || ''), 'success');
 
@@ -3328,19 +3342,24 @@ async function createDemoAccount() {
 
 // ★★★ 홈 액션 카드 표시 (슬라이드 인) ★★★
 function showHomeActionCards() {
+    // 데모 카드 (미개설 시) - 왼→오른 슬라이드
     var demoCard = document.getElementById('demoCreateCard');
-    var mt5Card = document.getElementById('mt5ConnectCard');
-
-    // 데모 카드 (미개설 시)
     if (demoCard && window._hasDemoAccount === false) {
-        demoCard.style.display = 'flex';
-        setTimeout(function() { demoCard.classList.add('show'); }, 50);
+        demoCard.style.display = 'block';
+        setTimeout(function() { demoCard.classList.add('slide-in'); }, 50);
     }
 
-    // MT5 카드 (미연결 시) - 데모보다 0.2초 뒤
-    if (mt5Card && !window._hasMT5) {
-        mt5Card.style.display = 'flex';
-        setTimeout(function() { mt5Card.classList.add('show'); }, 250);
+    // Account Overview 빈 상태 처리
+    var emptyDiv = document.getElementById('homeAccountEmpty');
+    var dataDiv = document.getElementById('homeAccountData');
+    if (emptyDiv && dataDiv) {
+        if (window._hasDemoAccount === false) {
+            emptyDiv.style.display = 'block';
+            dataDiv.style.display = 'none';
+        } else {
+            emptyDiv.style.display = 'none';
+            dataDiv.style.display = 'block';
+        }
     }
 }
 
@@ -3357,16 +3376,37 @@ function openDemoCreateModal() {
 function closeDemoCreateModal() {
     var modal = document.getElementById('demoCreateModal');
     if (modal) modal.classList.remove('show');
+    // 체크박스 + 버튼 리셋
+    var check = document.getElementById('demoAgreeCheck');
+    var btn = document.getElementById('demoCreateBtn');
+    if (check) check.checked = false;
+    if (btn) {
+        btn.disabled = true;
+        btn.style.background = '#3a3f4a';
+        btn.style.color = '#6b7280';
+        btn.style.cursor = 'not-allowed';
+        btn.style.boxShadow = 'none';
+    }
 }
 
-// ★★★ MT5 계좌 연결 가이드 시트 ★★★
-function openMT5GuideSheet() {
-    var modal = document.getElementById('mt5GuideSheet');
-    if (modal) modal.classList.add('show');
-}
-function closeMT5GuideSheet() {
-    var modal = document.getElementById('mt5GuideSheet');
-    if (modal) modal.classList.remove('show');
+// ★★★ 데모 개설 모달 체크박스 토글 ★★★
+function toggleDemoCreateBtn() {
+    var check = document.getElementById('demoAgreeCheck');
+    var btn = document.getElementById('demoCreateBtn');
+    if (!check || !btn) return;
+    if (check.checked) {
+        btn.disabled = false;
+        btn.style.background = 'linear-gradient(135deg, #5a9ee0 0%, #4080c0 100%)';
+        btn.style.color = 'white';
+        btn.style.cursor = 'pointer';
+        btn.style.boxShadow = '0 4px 20px rgba(74,144,217,0.5)';
+    } else {
+        btn.disabled = true;
+        btn.style.background = '#3a3f4a';
+        btn.style.color = '#6b7280';
+        btn.style.cursor = 'not-allowed';
+        btn.style.boxShadow = 'none';
+    }
 }
 
 // ★★★ 헤더 상태 표시 통합 관리 ★★★
