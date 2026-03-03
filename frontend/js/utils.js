@@ -248,11 +248,11 @@ function playSound(type) {
         else if (type === 'close') { oscillator.frequency.value = 440; oscillator.type = 'triangle'; }
         else { oscillator.frequency.value = 220; oscillator.type = 'sawtooth'; }
 
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+        gainNode.gain.setValueAtTime(0.6, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
 
         oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.3);
+        oscillator.stop(audioContext.currentTime + 0.4);
     } catch (e) {
         console.error('[Sound] Error:', e.message);
     }
