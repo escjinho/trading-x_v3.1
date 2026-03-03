@@ -542,7 +542,7 @@
     border-color: rgba(220, 50, 70, 0.2);
 }
 .chart-pl-label {
-    color: var(--text-dim);
+    color: rgba(255, 255, 255, 0.9);
     font-size: 9px;
     margin-bottom: 1px;
 }
