@@ -677,7 +677,7 @@ const ChartOrderPanel = {
             html += '<div class="chart-entry-badge" style="color:' + color + ';">'
                 + '<span class="chart-entry-badge-arrow">' + arrow + '</span> '
                 + '<span class="chart-entry-badge-type">' + typeStr + '</span> '
-                + '<span class="chart-entry-badge-vol">' + volume + '</span> '
+                + '<span class="chart-entry-badge-vol">' + volume + 'lot</span> '
                 + '<span class="chart-entry-badge-price">' + entryPrice + '</span>'
                 + '</div>';
         });
