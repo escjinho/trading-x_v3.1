@@ -356,8 +356,11 @@ async def create_demo_account(
     next_num = (max_result or 10000) + 1
     new_account_number = f"D-500{next_num}"
 
-    # 유저에게 할당
+    # 유저에게 할당 + 초기 잔고 세팅
     current_user.demo_account_number = new_account_number
+    current_user.demo_balance = 10000.0
+    current_user.demo_equity = 10000.0
+    current_user.demo_today_profit = 0.0
     db.commit()
     db.refresh(current_user)
 
