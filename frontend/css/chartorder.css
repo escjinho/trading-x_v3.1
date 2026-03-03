@@ -503,7 +503,7 @@
 /* 포지션 카드 리스트 */
 .chart-pos-list {
     /* 스크롤바 없이 자연스럽게 쌓임 (어카운트탭 Trade History 방식) */
-    padding-bottom: 130px;
+    padding-bottom: 60px;
 }
 
 /* 차트 포지션에서의 open-pos-card 터치 동작 (탭=청산, 롱프레스 아님) */
