@@ -838,7 +838,7 @@ function connectWebSocket() {
             }
             
             // ★ Demo 잔고/자산 업데이트 (WS가 단일 소스)
-            if (data.balance !== undefined) {
+            if (data.balance !== undefined && window._hasDemoAccount !== false) {
                 balance = data.balance;
                 const tradeBalance = document.getElementById('tradeBalance');
                 if (tradeBalance) tradeBalance.textContent = '$' + Math.round(data.balance).toLocaleString();
@@ -1156,8 +1156,14 @@ function connectWebSocket() {
             return;
         }
         
+        // ★ 데모 계좌 미생성이면 Home UI에 '-'/$0.00 유지
+        if (data.has_demo_account === false) {
+            // balance 변수만 갱신 (패널용), Home UI는 건드리지 않음
+            return;
+        }
+
         balance = data.balance;
-        
+
         // Home (null 체크 추가)
         const homeBalance = document.getElementById('homeBalance');
         const homeBroker = document.getElementById('homeBroker');

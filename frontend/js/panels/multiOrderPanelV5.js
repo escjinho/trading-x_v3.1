@@ -475,8 +475,14 @@ async function v5BuyFor(panelId) {
     const panel = v5Panels.find(p => p.id === panelId);
     if (!panel) return;
     
+    // ★ 데모 계좌 미생성 시 주문 차단
+    if (isDemo && window._hasDemoAccount === false) {
+        showToast('데모 계좌를 먼저 개설해주세요.', 'error');
+        return;
+    }
+
     showToast(`⚡ ${panel.symbol} BUY 실행!`, 'success');
-    
+
     try {
         if (isDemo) {
             const response = await fetch(`${API_URL}/demo/order?symbol=${panel.symbol}&order_type=BUY&volume=${panel.lot}&target=0&magic=${V5_MAGIC_NUMBER}`, {
@@ -517,8 +523,14 @@ async function v5SellFor(panelId) {
     const panel = v5Panels.find(p => p.id === panelId);
     if (!panel) return;
     
+    // ★ 데모 계좌 미생성 시 주문 차단
+    if (isDemo && window._hasDemoAccount === false) {
+        showToast('데모 계좌를 먼저 개설해주세요.', 'error');
+        return;
+    }
+
     showToast(`⚡ ${panel.symbol} SELL 실행!`, 'success');
-    
+
     try {
         if (isDemo) {
             const response = await fetch(`${API_URL}/demo/order?symbol=${panel.symbol}&order_type=SELL&volume=${panel.lot}&target=0&magic=${V5_MAGIC_NUMBER}`, {

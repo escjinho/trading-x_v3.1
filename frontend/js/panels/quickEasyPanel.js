@@ -583,6 +583,12 @@ const QuickEasyPanel = {
         const target = this.target;
         const token = localStorage.getItem('access_token');
 
+        // ★ 데모 계좌 미생성 시 주문 차단
+        if (window._hasDemoAccount === false) {
+            if (typeof showToast === 'function') showToast('데모 계좌를 먼저 개설해주세요.', 'error');
+            return;
+        }
+
         // 게스트 체크
         if (typeof checkGuestAction === 'function' && !checkGuestAction('trade')) {
             return;
