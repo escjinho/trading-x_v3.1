@@ -64,7 +64,7 @@
     <link rel="stylesheet" href="css/account.css?v=20260303c">
     <link rel="stylesheet" href="css/my.css?v=20260302a">
     <link rel="stylesheet" href="css/tradingReport.css?v=20260302b">
-    <link rel="stylesheet" href="css/chartorder.css?v=20260303d">
+    <link rel="stylesheet" href="css/chartorder.css?v=20260303f">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
@@ -203,17 +203,15 @@
                 <!-- 데모 계좌 생성 유도 (미개설 시 표시) -->
                 <div class="card trading-mode-card demo-slide-card" id="demoCreateCard" style="display: none;">
                     <div class="card-title" style="font-size: 16px; font-weight: 700;">
-                        <span class="material-icons-round" style="color: #00d4ff; margin-right: 8px; font-size: 18px;">link</span>
+                        <span class="material-icons-round" style="color: #5a9ee0; margin-right: 8px; font-size: 18px;">link</span>
                         <span style="position: relative; top: -3px;">Demo Account</span>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 16px;">
-                        <div style="width: 48px; height: 48px; min-width: 48px; background: rgba(0, 212, 255, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
-                            <span class="material-icons-round" style="font-size: 26px; color: #00d4ff;">note_add</span>
+                    <div style="text-align: center; padding: 12px 0 18px;">
+                        <div style="width: 56px; height: 56px; background: rgba(90, 158, 224, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px;">
+                            <span class="material-icons-round" style="font-size: 28px; color: #5a9ee0;">note_add</span>
                         </div>
-                        <div>
-                            <div style="font-size: 15px; font-weight: 600; color: var(--text-primary);">데모 계좌가 아직 없습니다</div>
-                            <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">가상 $10,000로 안전하게 연습하세요</div>
-                        </div>
+                        <div style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">데모 계좌가 아직 없습니다</div>
+                        <div style="font-size: 12px; color: var(--text-muted);">가상 $10,000로 안전하게 연습하세요</div>
                     </div>
                     <button onclick="openDemoCreateModal()" style="width: 100%; padding: 14px; background: linear-gradient(135deg, #5a9ee0 0%, #4080c0 100%); border: none; border-radius: 10px; color: white; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 20px rgba(74,144,217,0.3);">
                         <span class="material-icons-round" style="font-size: 18px;">add_circle</span>
@@ -227,12 +225,14 @@
                         <span class="material-icons-round" style="color: #00b450; margin-right: 8px; font-size: 18px;">link</span>
                         <span style="position: relative; top: -3px;">MT5 Account</span>
                     </div>
-                    <div style="text-align: center; padding: 12px 0 18px;">
-                        <div style="width: 56px; height: 56px; background: rgba(0, 180, 80, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px;">
+                    <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 16px;">
+                        <div style="width: 56px; height: 56px; min-width: 56px; background: rgba(0, 180, 80, 0.1); border-radius: 16px; display: flex; align-items: center; justify-content: center;">
                             <span class="material-icons-round" style="font-size: 28px; color: #00b450;">link_off</span>
                         </div>
-                        <div style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">아직 연결된 MT5 계좌가 없습니다</div>
-                        <div style="font-size: 12px; color: var(--text-muted);">Live 거래를 위해 MT5 계좌를 연결하세요</div>
+                        <div>
+                            <div style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">아직 연결된 MT5 계좌가 없습니다</div>
+                            <div style="font-size: 12px; color: var(--text-muted);">Live 거래를 위해 MT5 계좌를 연결하세요</div>
+                        </div>
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 10px;">
                         <button onclick="openMT5ConnectModal()" style="width: 100%; padding: 14px; background: linear-gradient(135deg, #00b450 0%, #008040 100%); border: none; border-radius: 10px; color: white; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 20px rgba(0,180,80,0.3);">
@@ -414,7 +414,21 @@
                 </div>
                 
                 </div><!-- chart-glow-box 닫기 -->
-                
+
+                <!-- ★ 차트 주문 - 포지션 섹션 (차트 바로 아래, Signal Section 앞) -->
+                <div class="chart-positions-section" id="chartPositionsSection" style="display:none;">
+                    <div class="chart-pos-header">
+                        <div class="chart-pos-header-left">
+                            <span class="chart-pos-title">Open Positions</span>
+                            <span class="chart-pos-count" id="chartPosCount">0</span>
+                        </div>
+                        <span class="chart-pos-total-pl" id="chartPosTotalPL">$0.00</span>
+                    </div>
+                    <div class="chart-pos-list" id="chartPosList">
+                        <!-- 포지션 카드가 동적으로 렌더됨 -->
+                    </div>
+                </div>
+
                 <!-- Signal Section -->
                 <div class="chart-signal-section">
                     <div class="chart-signal-title">Technical Analysis</div>
@@ -567,20 +581,6 @@
                             </div>
                         </div>
 
-                    </div>
-                </div>
-
-                <!-- ★ 차트 주문 - 포지션 섹션 (차트↔하단바 사이) -->
-                <div class="chart-positions-section" id="chartPositionsSection" style="display:none;">
-                    <div class="chart-pos-header">
-                        <div class="chart-pos-header-left">
-                            <span class="chart-pos-title">Open Positions</span>
-                            <span class="chart-pos-count" id="chartPosCount">0</span>
-                        </div>
-                        <span class="chart-pos-total-pl" id="chartPosTotalPL">$0.00</span>
-                    </div>
-                    <div class="chart-pos-list" id="chartPosList">
-                        <!-- 포지션 카드가 동적으로 렌더됨 (open-pos-card 클래스 재사용) -->
                     </div>
                 </div>
 
@@ -3929,7 +3929,7 @@
         
         <!-- 데모 계좌 개설 모달 -->
         <div class="modal-overlay" id="demoCreateModal">
-            <div style="background: linear-gradient(180deg, #1e2127 0%, #15171c 100%); border: 1px solid rgba(0, 212, 255, 0.3); border-radius: 20px; padding: 0; margin: 15px; max-width: 400px; width: 100%; box-shadow: 0 0 60px rgba(0,0,0,0.5); overflow: hidden;">
+            <div style="background: #0d0e12; border: 1px solid rgba(100, 116, 139, 0.3); border-radius: 20px; padding: 0; margin: 15px; max-width: 400px; width: 100%; box-shadow: 0 0 60px rgba(0,0,0,0.7); overflow: hidden;">
                 <!-- 헤더 -->
                 <div style="text-align: center; padding: 28px 24px 16px;">
                     <div style="font-size: 48px; margin-bottom: 10px;">📋</div>
@@ -3939,11 +3939,11 @@
 
                 <!-- 계좌 정보 -->
                 <div style="padding: 0 20px;">
-                    <div style="background: var(--bg-tertiary); border-radius: 12px; padding: 4px 16px;">
-                        <div class="info-row" style="border-bottom: 1px solid var(--border-color);"><span class="info-label">Broker</span><span class="info-value">Trading-X Markets</span></div>
-                        <div class="info-row" style="border-bottom: 1px solid var(--border-color);"><span class="info-label">Initial Balance</span><span class="info-value" style="color: #00ff88; font-weight: 700;">$10,000.00</span></div>
-                        <div class="info-row" style="border-bottom: 1px solid var(--border-color);"><span class="info-label">Leverage</span><span class="info-value">1:500</span></div>
-                        <div class="info-row" style="border-bottom: 1px solid var(--border-color);"><span class="info-label">Server</span><span class="info-value">Demo Server</span></div>
+                    <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 4px 16px;">
+                        <div class="info-row" style="border-bottom: 1px solid rgba(255,255,255,0.06);"><span class="info-label">Broker</span><span class="info-value">Trading-X Demo</span></div>
+                        <div class="info-row" style="border-bottom: 1px solid rgba(255,255,255,0.06);"><span class="info-label">Initial Balance</span><span class="info-value" style="color: #00ff88; font-weight: 700;">$10,000.00</span></div>
+                        <div class="info-row" style="border-bottom: 1px solid rgba(255,255,255,0.06);"><span class="info-label">Leverage</span><span class="info-value">1:500</span></div>
+                        <div class="info-row" style="border-bottom: 1px solid rgba(255,255,255,0.06);"><span class="info-label">Server</span><span class="info-value">Demo Server</span></div>
                         <div class="info-row" style="border-bottom: none;"><span class="info-label">Currency</span><span class="info-value">USD</span></div>
                     </div>
                 </div>
@@ -3951,17 +3951,14 @@
                 <!-- 동의 체크박스 -->
                 <div style="padding: 14px 20px;">
                     <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
-                        <input type="checkbox" id="demoAgreeCheck" onchange="toggleDemoCreateBtn()" style="width: 18px; height: 18px; margin-top: 2px; accent-color: #00d4ff; cursor: pointer;">
-                        <span style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
-                            데모 계좌는 가상 자금($10,000)으로 운영되며 실제 수익/손실이 발생하지 않습니다.
-                            <span style="color: #00d4ff;">이용약관</span>에 동의합니다.
-                        </span>
+                        <input type="checkbox" id="demoAgreeCheck" onchange="toggleDemoCreateBtn()" style="width: 18px; height: 18px; min-width: 18px; margin-top: 2px; accent-color: #00d4ff; cursor: pointer;">
+                        <span style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">데모 계좌는 가상 자금으로 운영되며, 실제 수익/손실이 발생하지 않습니다. 시세는 실시간 데이터를 기반으로 제공됩니다.</span>
                     </label>
                 </div>
 
-                <!-- 버튼 -->
+                <!-- 버튼 (비활성 상태로 시작) -->
                 <div style="padding: 0 20px 20px;">
-                    <button class="demo-create-btn" id="demoCreateBtn" onclick="createDemoAccount()" disabled style="width: 100%; padding: 14px 20px; background: linear-gradient(135deg, #00b4d8, #00d4ff); border: none; border-radius: 12px; color: #000; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; opacity: 0.4; cursor: not-allowed;">
+                    <button id="demoCreateBtn" onclick="createDemoAccount()" disabled style="width: 100%; padding: 14px 20px; background: #3a3f4a; border: none; border-radius: 12px; color: #6b7280; font-size: 15px; font-weight: 700; cursor: not-allowed; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s;">
                         <span class="material-icons-round" style="font-size: 20px;">add_circle</span>
                         Demo 계좌 개설
                     </button>
@@ -6017,7 +6014,7 @@
     <script src="js/account.js?v=20260302a"></script>
     <script src="js/trading.js?v=20260301a"></script>
     <script src="js/openPositions.js?v=20260302a"></script>
-    <script src="js/panels/chartOrderPanel.js?v=20260303d"></script>
+    <script src="js/panels/chartOrderPanel.js?v=20260303f"></script>
     <script src="js/connection.js?v=20260303d"></script>
     <script src="js/init.js?v=1771992777"></script>
 <div id="txDialogContainer"></div>
