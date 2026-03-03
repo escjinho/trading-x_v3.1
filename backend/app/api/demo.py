@@ -873,6 +873,13 @@ async def place_demo_order(
     """데모 주문 실행 (다중 포지션 지원)"""
     print(f"\n[DEMO ORDER] 🔵 START - User: {current_user.id}, Symbol: {symbol}, Type: {order_type}, Volume: {volume}, Target: {target}")
 
+    # ★ 데모 계좌 미생성 시 주문 거부
+    if not current_user.demo_account_number:
+        return JSONResponse(status_code=403, content={
+            "success": False,
+            "message": "데모 계좌를 먼저 개설해주세요."
+        })
+
     # 중복 주문 허용 - 체크 로직 제거됨
 
     # 현재가 조회
@@ -1494,6 +1501,13 @@ async def place_demo_martin_order(
     db: Session = Depends(get_db)
 ):
     """데모 마틴 주문 (magic별 독립 관리)"""
+    # ★ 데모 계좌 미생성 시 주문 거부
+    if not current_user.demo_account_number:
+        return JSONResponse(status_code=403, content={
+            "success": False,
+            "message": "데모 계좌를 먼저 개설해주세요."
+        })
+
     # 이미 열린 포지션 확인 (같은 magic)
     existing = db.query(DemoPosition).filter(
         DemoPosition.user_id == current_user.id,
