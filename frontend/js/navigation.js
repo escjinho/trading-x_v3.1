@@ -137,6 +137,19 @@ function selectSubmenuItem(view) {
         }
         initChart();
         loadCandles();
+
+        // ★ Chart Order: 포지션 있으면 높이 축소 상태 복원
+        if (typeof ChartOrderPanel !== 'undefined') {
+            setTimeout(function() {
+                if (ChartOrderPanel._allChartPositions && ChartOrderPanel._allChartPositions.length > 0) {
+                    ChartOrderPanel._shrinkChartHeight();
+                    ChartOrderPanel._renderPositions();
+                    ChartOrderPanel._updatePriceLines();
+                    ChartOrderPanel._updatePLOverlay();
+                    ChartOrderPanel._updateEntryBadges();
+                }
+            }, 300);
+        }
     }
 
     // Chart 탭으로 전환 시 게이지 arc 재초기화 + 인디케이터 강제 업데이트

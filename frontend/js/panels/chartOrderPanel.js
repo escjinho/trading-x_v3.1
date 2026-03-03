@@ -53,7 +53,7 @@ const ChartOrderPanel = {
         this._side = side || 'BUY';
         this._isOpen = true;
 
-        const symbol = window.currentSymbol || 'BTCUSD';
+        const symbol = this._getSymbol();
         const symEl = document.getElementById('chartOrderSymbol');
         if (symEl) symEl.textContent = symbol;
 
@@ -131,7 +131,7 @@ const ChartOrderPanel = {
     },
 
     _refreshPrices() {
-        const symbol = window.currentSymbol || 'BTCUSD';
+        const symbol = this._getSymbol();
         const decimals = this._getDecimals(symbol);
 
         const bidEl = document.getElementById('chartOrderBidPrice');
@@ -151,7 +151,7 @@ const ChartOrderPanel = {
     _updateConfirmPrice() {
         const priceEl = document.getElementById('chartOrderConfirmPrice');
         if (!priceEl) return;
-        const symbol = window.currentSymbol || 'BTCUSD';
+        const symbol = this._getSymbol();
         const decimals = this._getDecimals(symbol);
         const price = this._side === 'BUY' ? this._currentAsk : this._currentBid;
         priceEl.textContent = price > 0 ? '(' + price.toFixed(decimals) + ')' : '';
@@ -250,7 +250,7 @@ const ChartOrderPanel = {
     // ========== 스프레드 + 마진 표시 ==========
 
     _updateSpreadMargin() {
-        const symbol = window.currentSymbol || 'BTCUSD';
+        const symbol = this._getSymbol();
         const spreadEl = document.getElementById('chartOrderSpread');
         const marginEl = document.getElementById('chartOrderMargin');
 
@@ -301,7 +301,7 @@ const ChartOrderPanel = {
             return;
         }
 
-        const symbol = window.currentSymbol || 'BTCUSD';
+        const symbol = this._getSymbol();
         const side = this._side;
         const volume = this.lotSize;
         const token = localStorage.getItem('access_token');
@@ -396,7 +396,7 @@ const ChartOrderPanel = {
         this._allChartPositions = allPositions.filter(p => p.magic == CHART_MAGIC_NUMBER);
 
         // 현재 종목 필터
-        const symbol = window.currentSymbol || 'BTCUSD';
+        const symbol = this._getSymbol();
         this._positions = this._allChartPositions.filter(p => p.symbol === symbol);
 
         // 렌더링
@@ -433,6 +433,13 @@ const ChartOrderPanel = {
 
         // 종목명 아래 고정 뱃지 업데이트
         this._updateEntryBadges();
+
+        // ★ 차트 높이: Chart 포지션이 있으면 줄인 상태 유지
+        if (this._allChartPositions.length > 0) {
+            this._shrinkChartHeight();
+        } else {
+            this._restoreChartHeight();
+        }
     },
 
 
@@ -446,7 +453,8 @@ const ChartOrderPanel = {
 
         if (!section || !container) return;
 
-        const positions = this._positions;
+        // ★ 하단 오픈포지션은 모든 Chart 포지션 표시 (종목 무관)
+        const positions = this._allChartPositions;
 
         if (!positions || positions.length === 0) {
             section.style.display = 'none';
@@ -687,7 +695,7 @@ const ChartOrderPanel = {
         );
 
         // 현재 종목이면 즉시 렌더 갱신
-        const currentSymbol = window.currentSymbol || 'BTCUSD';
+        const currentSymbol = this._getSymbol();
         if (symbol === currentSymbol) {
             this._positions = this._allChartPositions.filter(p => p.symbol === currentSymbol);
             this._renderPositions();
@@ -695,6 +703,16 @@ const ChartOrderPanel = {
             this._updatePLOverlay();
             this._updateEntryBadges();
         }
+    },
+
+
+    // ========== 현재 차트 종목 조회 ==========
+    _getSymbol() {
+        // 우선순위: chartSymbol (전역) > DOM 표시값 > 폴백
+        if (typeof chartSymbol !== 'undefined' && chartSymbol) return chartSymbol;
+        const el = document.getElementById('chartSymbolId');
+        if (el && el.textContent) return el.textContent;
+        return 'BTCUSD';
     },
 
 
@@ -732,7 +750,6 @@ const ChartOrderPanel = {
     _chartShrunk: false,
 
     _shrinkChartHeight() {
-        if (this._chartShrunk) return;
         this._chartShrunk = true;
 
         const wrapper = document.getElementById('chart-wrapper');
