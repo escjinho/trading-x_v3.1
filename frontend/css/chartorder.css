@@ -430,7 +430,7 @@
 .chart-positions-section {
     position: relative;
     background: #000000;
-    padding-bottom: 116px;
+    padding-bottom: 8px;
 }
 
 /* 위쪽 그라데이션 구분선 */
@@ -449,7 +449,7 @@
 .chart-positions-section::after {
     content: '';
     position: absolute;
-    bottom: 116px;
+    bottom: 8px;
     left: 10%;
     right: 10%;
     height: 1px;
@@ -502,10 +502,11 @@
 
 /* 포지션 카드 리스트 */
 .chart-pos-list {
-    /* open-pos-card 클래스를 재사용하므로 별도 스타일 최소화 */
     max-height: 300px;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    /* zm-bottom-bar(50px) + 네비바(58px) + 여유(12px) = 하단 고정 영역 보호 */
+    padding-bottom: 120px;
 }
 
 /* 차트 포지션에서의 open-pos-card 터치 동작 (탭=청산, 롱프레스 아님) */

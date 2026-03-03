@@ -350,7 +350,9 @@ const ChartOrderPanel = {
             if (result && result.success) {
                 // 성공 사운드
                 if (typeof playSound === 'function') {
-                    playSound(side.toLowerCase());
+                    const soundType = (side === 'SELL' || side === 'sell') ? 'sell' : 'buy';
+                    console.log('[ChartOrder] playSound:', soundType, 'side:', side);
+                    playSound(soundType);
                 }
 
                 // 성공 토스트
@@ -750,27 +752,29 @@ const ChartOrderPanel = {
     _chartShrunk: false,
 
     _shrinkChartHeight() {
-        this._chartShrunk = true;
-
         const wrapper = document.getElementById('chart-wrapper');
         if (!wrapper) return;
 
-        // 현재 높이 저장
-        const currentHeight = wrapper.offsetHeight || wrapper.clientHeight;
+        // 원래 높이 최초 1회만 저장
         if (!this._originalChartHeight) {
-            this._originalChartHeight = currentHeight;
+            this._originalChartHeight = wrapper.offsetHeight || wrapper.clientHeight;
         }
 
-        // 100px 줄이기 (Open Positions 헤더 40px + 카드 1개 ~60px)
+        // 원래 높이 기준으로 100px 줄이기 (절대값 — 누적 축소 방지)
         const shrinkAmount = 100;
-        const newHeight = Math.max(200, currentHeight - shrinkAmount);
+        const newHeight = Math.max(200, this._originalChartHeight - shrinkAmount);
+
+        // 이미 같은 높이면 스킵
+        const currentH = parseInt(wrapper.style.height) || wrapper.offsetHeight;
+        if (Math.abs(currentH - newHeight) < 5) return;
+
         wrapper.style.height = newHeight + 'px';
+        this._chartShrunk = true;
 
         // lightweight-charts 리사이즈
         const container = document.getElementById('chart-container');
         if (window.chart && container) {
             const width = container.offsetWidth || container.clientWidth;
-            // indicator-panels 높이 계산
             const indPanels = document.getElementById('indicator-panels');
             const indH = indPanels ? indPanels.offsetHeight : 0;
             const chartH = Math.max(150, newHeight - indH);
