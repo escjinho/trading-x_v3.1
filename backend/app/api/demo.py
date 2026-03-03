@@ -511,7 +511,7 @@ async def get_demo_account(
                         "equity": current_user.mt5_equity or current_user.mt5_balance or 0,
                         "today_profit": current_user.demo_today_profit,
                         "broker": "Trading-X Markets",
-                        "account": current_user.demo_account_number or f"D-500{10000 + current_user.id}",
+                        "account": current_user.demo_account_number or "-",
                         "server": "Demo Server",
                         "leverage": current_user.mt5_leverage or 500,
                         "position": None,
@@ -531,7 +531,7 @@ async def get_demo_account(
                         "equity": current_user.demo_equity,
                         "today_profit": current_user.demo_today_profit,
                         "broker": "Trading-X Markets",
-                        "account": current_user.demo_account_number or f"D-500{10000 + current_user.id}",
+                        "account": current_user.demo_account_number or "-",
                         "server": "Demo Server",
                         "leverage": 500,
                         "position": None,
@@ -680,7 +680,7 @@ async def get_demo_account(
                             "equity": current_user.mt5_equity or current_user.mt5_balance or 0,
                             "today_profit": current_user.demo_today_profit,
                             "broker": "Trading-X Markets",
-                            "account": current_user.demo_account_number or f"D-500{10000 + current_user.id}",
+                            "account": current_user.demo_account_number or "-",
                             "server": "Demo Server",
                             "leverage": current_user.mt5_leverage or 500,
                             "position": None,
@@ -700,7 +700,7 @@ async def get_demo_account(
                             "equity": current_user.demo_equity,
                             "today_profit": current_user.demo_today_profit,
                             "broker": "Trading-X Markets",
-                            "account": current_user.demo_account_number or f"D-500{10000 + current_user.id}",
+                            "account": current_user.demo_account_number or "-",
                             "server": "Demo Server",
                             "leverage": 500,
                             "position": None,
@@ -826,7 +826,7 @@ async def get_demo_account(
             "today_profit": current_user.demo_today_profit or 0.0,
             "current_pl": mt5_profit_val,  # ★ equity - balance (profit과 동일)
             "broker": "Trading-X Markets",
-            "account": current_user.demo_account_number or f"D-500{10000 + current_user.id}",
+            "account": current_user.demo_account_number or "-",
             "server": "Demo Server",
             "leverage": current_user.mt5_leverage or 500,
             "currency": current_user.mt5_currency or "USD",
@@ -847,7 +847,7 @@ async def get_demo_account(
         "today_profit": current_user.demo_today_profit or 0.0,
         "current_pl": round(current_pl, 2),
         "broker": "Trading-X Markets",
-        "account": current_user.demo_account_number or f"D-500{10000 + current_user.id}",
+        "account": current_user.demo_account_number or "-",
         "server": "Demo Server",
         "leverage": 500,
         "position": position_data,
@@ -2539,7 +2539,7 @@ async def get_demo_trading_report_summary(
 
     # ★ 계정 정보
     broker = "Trading-X Markets"
-    account = current_user.demo_account_number or f"D-500{10000 + user_id}"
+    account = current_user.demo_account_number or "-"
     current_balance = current_user.demo_balance or 10000.0
 
     # ★ 앵커 포인트 조회 (마지막 리셋 시점)
