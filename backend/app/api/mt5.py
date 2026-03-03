@@ -1383,9 +1383,12 @@ async def place_order(
     else:
         _user_positions = user_live_cache.get(current_user.id, {}).get("positions", [])
     existing = [p for p in _user_positions if p.get('magic') == magic and p.get('symbol') == symbol]
-    if existing:
+    # ★ Chart 주문(magic=100004)은 동일 종목 중복 진입 허용
+    if existing and magic != 100004:
         print(f"[MetaAPI Order] 중복 주문 차단: user={current_user.id}, magic={magic}, symbol={symbol}, 기존 포지션={len(existing)}개")
         return JSONResponse({"success": False, "message": f"{symbol} 포지션이 이미 있습니다"})
+    elif existing and magic == 100004:
+        print(f"[MetaAPI Order] Chart 중복 허용: user={current_user.id}, magic=100004, symbol={symbol}, 기존={len(existing)}개, 추가 진입")
 
     # ★★★ MetaAPI를 통한 주문 실행 ★★★
     try:

@@ -1396,6 +1396,11 @@ function connectWebSocket() {
             OpenPositions.updatePositions(data.positions);
         }
 
+        // ★ Chart Order Panel 포지션 동기화
+        if (typeof ChartOrderPanel !== 'undefined' && data.positions) {
+            ChartOrderPanel.updatePositions(data.positions);
+        }
+
         // ★★★ Quick&Easy 포지션 동기화 (완전 교체 방식 — MT5 실제 데이터로) ★★★
         if (typeof QuickEasyPanel !== 'undefined' && data.positions && Array.isArray(data.positions)) {
             const currentSym = window.currentSymbol || 'BTCUSD';
@@ -1970,6 +1975,11 @@ async function fetchAccountData() {
                 OpenPositions.updatePositions(data.positions);
             }
 
+            // ★ Chart Order Panel 포지션 동기화
+            if (typeof ChartOrderPanel !== 'undefined' && data.positions) {
+                ChartOrderPanel.updatePositions(data.positions);
+            }
+
             // Current P&L 업데이트 (전체 포지션 손익 합계 — BuySell + V5 + QE)
             if (accCurrentPL) {
                 let currentProfit = 0;
@@ -2006,6 +2016,10 @@ async function fetchAccountData() {
                 const decimals = getDecimalsForSymbol(chartSymbol);
                 document.getElementById('chartBid').textContent = price.bid.toFixed(decimals);
                 document.getElementById('chartAsk').textContent = price.ask.toFixed(decimals);
+                // ★ Chart Order Panel 가격 동기화
+                if (typeof ChartOrderPanel !== 'undefined') {
+                    ChartOrderPanel.updatePrices(price.bid, price.ask);
+                }
             }
             
             // 포지션 상태 변화 감지 (청산 감지)
@@ -2412,6 +2426,11 @@ async function fetchDemoData() {
             // ★ Open Positions 탭 업데이트
             if (typeof OpenPositions !== 'undefined' && data.positions) {
                 OpenPositions.updatePositions(data.positions);
+            }
+
+            // ★ Chart Order Panel 포지션 동기화
+            if (typeof ChartOrderPanel !== 'undefined' && data.positions) {
+                ChartOrderPanel.updatePositions(data.positions);
             }
 
             // Current P&L 업데이트 (전체 포지션 손익 — positions 배열 전체 합산)
