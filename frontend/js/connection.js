@@ -2135,12 +2135,15 @@ async function checkUserMode() {
             }
             if (demoControl) demoControl.style.display = (window._hasDemoAccount !== false) ? 'block' : 'none';
 
-            // ★ Account Overview: 데모 미생성만 즉시 처리 (생성된 경우는 fetchDemoData에서)
+            // ★ Account Overview 토글
+            var _emptyDiv = document.getElementById('homeAccountEmpty');
+            var _dataDiv = document.getElementById('homeAccountData');
             if (window._hasDemoAccount === false) {
-                var _emptyDiv = document.getElementById('homeAccountEmpty');
-                var _dataDiv = document.getElementById('homeAccountData');
                 if (_emptyDiv) _emptyDiv.style.display = 'block';
                 if (_dataDiv) _dataDiv.style.display = 'none';
+            } else {
+                if (_emptyDiv) _emptyDiv.style.display = 'none';
+                if (_dataDiv) _dataDiv.style.display = 'block';
             }
 
             // ★ MT5 연결 카드 숨기기
@@ -2205,12 +2208,15 @@ async function checkUserMode() {
             }
             if (demoControl) demoControl.style.display = (window._hasDemoAccount !== false) ? 'block' : 'none';
 
-            // ★ Account Overview: 데모 미생성만 즉시 처리 (생성된 경우는 fetchDemoData에서)
+            // ★ Account Overview 토글
+            var _emptyDiv = document.getElementById('homeAccountEmpty');
+            var _dataDiv = document.getElementById('homeAccountData');
             if (window._hasDemoAccount === false) {
-                var _emptyDiv = document.getElementById('homeAccountEmpty');
-                var _dataDiv = document.getElementById('homeAccountData');
                 if (_emptyDiv) _emptyDiv.style.display = 'block';
                 if (_dataDiv) _dataDiv.style.display = 'none';
+            } else {
+                if (_emptyDiv) _emptyDiv.style.display = 'none';
+                if (_dataDiv) _dataDiv.style.display = 'block';
             }
 
             // ★ MT5 연결 카드 표시 (항상)
