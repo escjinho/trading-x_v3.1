@@ -384,6 +384,23 @@ async def get_demo_account(
     """데모 계정 정보 조회"""
     print(f"\n[ACCOUNT-INFO] 🔵 START - User: {current_user.id}")
 
+    # ★ 기존 유저 자동 마이그레이션: balance > 0인데 계좌번호 없으면 자동 발번
+    if not current_user.demo_account_number and (current_user.demo_balance or 0) > 0:
+        from sqlalchemy import func as sa_func
+        max_result = db.query(
+            sa_func.max(
+                sa_func.cast(
+                    sa_func.replace(User.demo_account_number, 'D-500', ''),
+                    Integer
+                )
+            )
+        ).filter(User.demo_account_number.isnot(None)).scalar()
+        next_num = (max_result or 10000) + 1
+        current_user.demo_account_number = f"D-500{next_num}"
+        db.commit()
+        db.refresh(current_user)
+        print(f"[ACCOUNT-INFO] ✅ 기존 유저 자동 마이그레이션: User {current_user.id} → {current_user.demo_account_number}")
+
     # 모든 열린 포지션 조회 (Account 탭용)
     all_positions = db.query(DemoPosition).filter(
         DemoPosition.user_id == current_user.id

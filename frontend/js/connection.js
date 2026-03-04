@@ -2131,6 +2131,17 @@ async function checkUserMode() {
             }
             if (demoControl) demoControl.style.display = (window._hasDemoAccount !== false) ? 'block' : 'none';
 
+            // ★ Account Overview 토글
+            var _emptyDiv = document.getElementById('homeAccountEmpty');
+            var _dataDiv = document.getElementById('homeAccountData');
+            if (window._hasDemoAccount !== false) {
+                if (_emptyDiv) _emptyDiv.style.display = 'none';
+                if (_dataDiv) _dataDiv.style.display = 'block';
+            } else {
+                if (_emptyDiv) _emptyDiv.style.display = 'block';
+                if (_dataDiv) _dataDiv.style.display = 'none';
+            }
+
             // ★ MT5 연결 카드 숨기기
             var mt5Card = document.getElementById('mt5ConnectCard');
             if (mt5Card) mt5Card.style.display = 'none';
@@ -2192,6 +2203,17 @@ async function checkUserMode() {
                 modeStatus.innerHTML = '<span class="mode-status-dot demo"></span><span><strong>데모 모드</strong> - 가상자금으로 자유롭게 연습하세요</span>';
             }
             if (demoControl) demoControl.style.display = (window._hasDemoAccount !== false) ? 'block' : 'none';
+
+            // ★ Account Overview 토글
+            var _emptyDiv = document.getElementById('homeAccountEmpty');
+            var _dataDiv = document.getElementById('homeAccountData');
+            if (window._hasDemoAccount !== false) {
+                if (_emptyDiv) _emptyDiv.style.display = 'none';
+                if (_dataDiv) _dataDiv.style.display = 'block';
+            } else {
+                if (_emptyDiv) _emptyDiv.style.display = 'block';
+                if (_dataDiv) _dataDiv.style.display = 'none';
+            }
 
             // ★ MT5 연결 카드 표시 (항상)
             var mt5Card = document.getElementById('mt5ConnectCard');
