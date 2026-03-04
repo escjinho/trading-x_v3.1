@@ -1167,7 +1167,7 @@ function connectWebSocket() {
             var emptyDiv = document.getElementById('homeAccountEmpty');
             var dataDiv = document.getElementById('homeAccountData');
             if (emptyDiv) emptyDiv.style.display = 'none';
-            if (dataDiv) dataDiv.style.display = 'block';
+            // ★ 데이터 채운 후 표시하기 위해 여기서는 아직 숨김 유지
         }
 
         balance = data.balance;
@@ -1196,6 +1196,10 @@ function connectWebSocket() {
         }
         if (homeFreeMargin) homeFreeMargin.textContent = '$' + data.free_margin.toLocaleString(undefined, {minimumFractionDigits: 2});
         if (homePositions) homePositions.textContent = data.positions_count;
+
+        // ★ 데이터 채운 후 Account Overview 표시
+        var _accDataDiv = document.getElementById('homeAccountData');
+        if (_accDataDiv) _accDataDiv.style.display = 'block';
 
         // ★ MT5 Account 섹션 업데이트
         const mt5Broker = document.getElementById('mt5Broker');
@@ -2131,13 +2135,10 @@ async function checkUserMode() {
             }
             if (demoControl) demoControl.style.display = (window._hasDemoAccount !== false) ? 'block' : 'none';
 
-            // ★ Account Overview 토글
-            var _emptyDiv = document.getElementById('homeAccountEmpty');
-            var _dataDiv = document.getElementById('homeAccountData');
-            if (window._hasDemoAccount !== false) {
-                if (_emptyDiv) _emptyDiv.style.display = 'none';
-                if (_dataDiv) _dataDiv.style.display = 'block';
-            } else {
+            // ★ Account Overview: 데모 미생성만 즉시 처리 (생성된 경우는 fetchDemoData에서)
+            if (window._hasDemoAccount === false) {
+                var _emptyDiv = document.getElementById('homeAccountEmpty');
+                var _dataDiv = document.getElementById('homeAccountData');
                 if (_emptyDiv) _emptyDiv.style.display = 'block';
                 if (_dataDiv) _dataDiv.style.display = 'none';
             }
@@ -2204,13 +2205,10 @@ async function checkUserMode() {
             }
             if (demoControl) demoControl.style.display = (window._hasDemoAccount !== false) ? 'block' : 'none';
 
-            // ★ Account Overview 토글
-            var _emptyDiv = document.getElementById('homeAccountEmpty');
-            var _dataDiv = document.getElementById('homeAccountData');
-            if (window._hasDemoAccount !== false) {
-                if (_emptyDiv) _emptyDiv.style.display = 'none';
-                if (_dataDiv) _dataDiv.style.display = 'block';
-            } else {
+            // ★ Account Overview: 데모 미생성만 즉시 처리 (생성된 경우는 fetchDemoData에서)
+            if (window._hasDemoAccount === false) {
+                var _emptyDiv = document.getElementById('homeAccountEmpty');
+                var _dataDiv = document.getElementById('homeAccountData');
                 if (_emptyDiv) _emptyDiv.style.display = 'block';
                 if (_dataDiv) _dataDiv.style.display = 'none';
             }
