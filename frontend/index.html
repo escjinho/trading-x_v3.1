@@ -253,8 +253,14 @@
                         </div>
                         <span class="account-status-badge active" id="homeAccountBadge">● Active</span>
                     </div>
-                    
-                    <!-- 계정 정보 박스 -->
+
+                    <!-- 빈 상태 (데모 미생성 시) -->
+                    <div id="homeAccountEmpty" style="text-align: center; padding: 30px 10px; color: var(--text-muted); font-size: 14px;">
+                        생성된 데모 계좌가 없습니다
+                    </div>
+
+                    <!-- 계정 정보 박스 (데모 생성 후 표시) -->
+                    <div id="homeAccountData" style="display: none;">
                         <div style="background: var(--bg-tertiary); border-radius: 10px; padding: 12px 15px; margin-bottom: 10px;">
                             <div class="info-row" style="border-bottom: 1px solid var(--border-color);"><span class="info-label">Broker</span><span class="info-value" id="homeBroker">-</span></div>
                             <div class="info-row" style="border-bottom: 1px solid var(--border-color);"><span class="info-label">Account</span><span class="info-value" id="homeAccount">-</span></div>
@@ -269,6 +275,7 @@
                             <div class="info-row" style="border-bottom: 1px solid var(--border-color);"><span class="info-label">Free Margin</span><span class="info-value" id="homeFreeMargin">$0.00</span></div>
                             <div class="info-row" style="border-bottom: none;"><span class="info-label">Open Positions</span><span class="info-value" id="homePositions">0</span></div>
                         </div>
+                    </div>
                 </div>
 
                 <!-- 입출금 관리 유도 (Demo/Live 공통) -->
@@ -6010,7 +6017,7 @@
     <script src="js/trading.js?v=20260301a"></script>
     <script src="js/openPositions.js?v=20260302a"></script>
     <script src="js/panels/chartOrderPanel.js?v=20260303m"></script>
-    <script src="js/connection.js?v=20260303m"></script>
+    <script src="js/connection.js?v=20260304a"></script>
     <script src="js/init.js?v=1771992777"></script>
 <div id="txDialogContainer"></div>
 </body>

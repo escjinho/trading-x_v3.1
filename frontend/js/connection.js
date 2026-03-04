@@ -1156,10 +1156,18 @@ function connectWebSocket() {
             return;
         }
         
-        // ★ 데모 계좌 미생성이면 Home UI에 '-'/$0.00 유지
+        // ★ 데모 계좌 미생성이면 빈 상태 표시
         if (data.has_demo_account === false) {
-            // balance 변수만 갱신 (패널용), Home UI는 건드리지 않음
+            var emptyDiv = document.getElementById('homeAccountEmpty');
+            var dataDiv = document.getElementById('homeAccountData');
+            if (emptyDiv) emptyDiv.style.display = 'block';
+            if (dataDiv) dataDiv.style.display = 'none';
             return;
+        } else {
+            var emptyDiv = document.getElementById('homeAccountEmpty');
+            var dataDiv = document.getElementById('homeAccountData');
+            if (emptyDiv) emptyDiv.style.display = 'none';
+            if (dataDiv) dataDiv.style.display = 'block';
         }
 
         balance = data.balance;
@@ -3333,6 +3341,12 @@ async function createDemoAccount() {
             // ★ 플래그 업데이트
             window._hasDemoAccount = true;
             if (typeof updateAccountBadge === 'function') updateAccountBadge('active');
+
+            // ★ Account Overview 전환 (빈 상태 → 데이터)
+            var emptyDiv = document.getElementById('homeAccountEmpty');
+            var dataDiv = document.getElementById('homeAccountData');
+            if (emptyDiv) emptyDiv.style.display = 'none';
+            if (dataDiv) dataDiv.style.display = 'block';
 
             // ★ 잔액 충전 카드 표시
             var demoControl = document.getElementById('demoControlCard');
