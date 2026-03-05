@@ -899,3 +899,27 @@
     opacity: 1;
     transform: translateX(0);
 }
+
+/* ===== Quick Menu ===== */
+.quick-menu-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.quick-menu-item:active {
+    border-color: rgba(0, 212, 255, 0.3);
+    background: rgba(0, 212, 255, 0.05);
+    transform: scale(0.96);
+}
+.quick-menu-label {
+    font-size: 11px;
+    color: #9aa0b0;
+    font-weight: 500;
+}

@@ -58,10 +58,11 @@
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css?v=1772670900">
         <link rel="stylesheet" href="css/quickeasy.css?v=20260226b">
     <link rel="stylesheet" href="css/chart.css?v=1771777952">
-    <link rel="stylesheet" href="css/account.css?v=20260303c">
+    <link rel="stylesheet" href="css/account.css?v=20260304b">
     <link rel="stylesheet" href="css/my.css?v=20260302a">
     <link rel="stylesheet" href="css/tradingReport.css?v=20260302b">
     <link rel="stylesheet" href="css/chartorder.css?v=20260305a">
@@ -197,6 +198,32 @@
                     <div class="mode-status" id="modeStatus">
                         <span class="mode-status-dot demo"></span>
                         <span><strong style="color: #ffffff;">데모 모드</strong> - 가상 자금으로 자유롭게 연습하세요</span>
+                    </div>
+                </div>
+
+                <!-- Quick Menu -->
+                <div class="card trading-mode-card" id="quickMenuCard">
+                    <div class="card-title" style="font-size: 14px; font-weight: 700; margin-bottom: 10px;">
+                        <span class="material-icons-round" style="color: #00d4ff; margin-right: 6px; font-size: 16px;">grid_view</span>
+                        <span style="position: relative; top: -2px;">Quick Menu</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+                        <div class="quick-menu-item" onclick="openQuickMenu('notice')">
+                            <span class="material-icons-outlined" style="font-size: 24px; color: #00d4ff;">campaign</span>
+                            <span class="quick-menu-label">공지사항</span>
+                        </div>
+                        <div class="quick-menu-item" onclick="openQuickMenu('guide')">
+                            <span class="material-icons-outlined" style="font-size: 24px; color: #00d4ff;">menu_book</span>
+                            <span class="quick-menu-label">이용가이드</span>
+                        </div>
+                        <div class="quick-menu-item" onclick="openQuickMenu('deposit')">
+                            <span class="material-icons-outlined" style="font-size: 24px; color: #00d4ff;">account_balance_wallet</span>
+                            <span class="quick-menu-label">입출금</span>
+                        </div>
+                        <div class="quick-menu-item" onclick="openQuickMenu('report')">
+                            <span class="material-icons-outlined" style="font-size: 24px; color: #00d4ff;">assessment</span>
+                            <span class="quick-menu-label">리포트</span>
+                        </div>
                     </div>
                 </div>
 
@@ -6022,7 +6049,7 @@
     <script src="js/trading.js?v=20260301a"></script>
     <script src="js/openPositions.js?v=20260302a"></script>
     <script src="js/panels/chartOrderPanel.js?v=20260303m"></script>
-    <script src="js/connection.js?v=1772672700"></script>
+    <script src="js/connection.js?v=20260304f"></script>
     <script src="js/init.js?v=1771992777"></script>
 <div id="txDialogContainer"></div>
 </body>
