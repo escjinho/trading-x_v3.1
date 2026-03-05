@@ -257,14 +257,16 @@
     margin: 0 14px;
 }
 .chart-order-info-label {
-    color: var(--text-dim);
+    color: rgba(255, 255, 255, 0.3);
     font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
 }
 .chart-order-info-value {
-    font-size: 13px;
-    font-weight: 600;
-    font-family: 'Courier New', monospace;
-    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 700;
+    font-family: 'Rajdhani', sans-serif;
+    color: rgba(255, 255, 255, 0.7);
 }
 /* 스프레드 색상: 낮으면 초록, 높으면 노랑 */
 .chart-order-info-value.spread-low {
@@ -281,8 +283,8 @@
 /* ===== 5. 주문 확인 버튼 ===== */
 .chart-order-confirm-btn {
     width: 100%;
-    padding: 15px 0;
-    border-radius: 14px;
+    padding: 16px 0;
+    border-radius: 16px;
     border: none;
     color: white;
     font-weight: 800;
@@ -291,18 +293,24 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 10px;
     transition: all 0.15s;
-    font-family: inherit;
-    letter-spacing: 0.5px;
+    font-family: 'Rajdhani', sans-serif;
+    letter-spacing: 0.8px;
+    position: relative;
+    overflow: hidden;
 }
 .chart-order-confirm-btn.buy {
-    background: linear-gradient(135deg, var(--buy-color), #00c45a);
-    box-shadow: 0 6px 24px rgba(0, 180, 80, 0.3);
+    background: linear-gradient(135deg, #00a04a 0%, #00c45a 50%, #00a04a 100%);
+    box-shadow:
+        0 4px 16px rgba(0, 180, 80, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 .chart-order-confirm-btn.sell {
-    background: linear-gradient(135deg, var(--sell-color), #e0384a);
-    box-shadow: 0 6px 24px rgba(220, 50, 70, 0.3);
+    background: linear-gradient(135deg, #c0283a 0%, #e0384a 50%, #c0283a 100%);
+    box-shadow:
+        0 4px 16px rgba(220, 50, 70, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 .chart-order-confirm-btn:active {
     transform: scale(0.98);
@@ -317,10 +325,10 @@
     font-weight: 800;
 }
 .chart-order-confirm-price {
-    opacity: 0.8;
-    font-size: 13px;
-    font-family: 'Courier New', monospace;
-    font-weight: 600;
+    opacity: 0.75;
+    font-size: 14px;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
 }
 
 
