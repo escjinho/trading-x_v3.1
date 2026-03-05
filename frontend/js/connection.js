@@ -3628,7 +3628,7 @@ function updateHeroCTA(mode) {
         ctaDesc.innerHTML = '라이브 계좌를 연결하고<br>실거래를 시작하세요!';
         ctaBtn.innerHTML = '<span class="material-icons-round">link</span>라이브 계좌 연결';
         ctaBtn.className = 'live-cta-btn';
-        ctaBtn.onclick = function() { scrollToMT5Section(); };
+        ctaBtn.onclick = function() { openMT5ConnectModal(); };
     } else if (mode === 'demo_with_live') {
         // 로그인 + 라이브 연결 O + 데모 모드 (랜덤 멘트)
         const messages = [
