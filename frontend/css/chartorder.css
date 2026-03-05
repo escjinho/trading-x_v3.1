@@ -182,22 +182,22 @@
 .chart-order-lot-control {
     display: flex;
     align-items: center;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.025);
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
     overflow: hidden;
 }
 .chart-order-lot-btn {
-    width: 56px;
-    height: 50px;
+    width: 58px;
+    height: 54px;
     border: none;
     cursor: pointer;
-    background: rgba(255, 255, 255, 0.04);
-    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.03);
+    color: rgba(255, 255, 255, 0.7);
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.1s;
+    transition: all 0.12s;
 }
 .chart-order-lot-btn:active {
     background: rgba(255, 255, 255, 0.1);
@@ -213,22 +213,24 @@
 }
 .chart-order-lot-value {
     flex: 1;
-    height: 50px;
+    height: 54px;
     border: none;
     cursor: pointer;
     background: transparent;
     color: #00d4a4;
-    font-size: 22px;
+    font-size: 24px;
     font-weight: 700;
-    font-family: 'Courier New', monospace;
+    font-family: 'Orbitron', 'Rajdhani', sans-serif;
     display: flex;
     align-items: center;
     justify-content: center;
-    letter-spacing: 1px;
-    transition: color 0.15s;
+    letter-spacing: 2px;
+    transition: all 0.15s;
+    text-shadow: 0 0 12px rgba(0, 212, 164, 0.25);
 }
 .chart-order-lot-value:active {
     color: #00e8b4;
+    text-shadow: 0 0 20px rgba(0, 232, 180, 0.4);
 }
 
 
