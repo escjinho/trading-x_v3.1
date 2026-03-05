@@ -3629,14 +3629,14 @@ function openQuickMenu(type) {
 
     if (type === 'notice') {
         goToMyTab();
-        setTimeout(function() { openMyDetail('noticeFaq'); }, 300);
+        openMyDetail('noticeFaq');
     } else if (type === 'guide') {
         showToast('이용가이드 준비 중입니다', 'info');
     } else if (type === 'deposit') {
         goToMyTab();
-        setTimeout(function() { openMySubPage('deposit'); }, 300);
+        openMySubPage('deposit');
     } else if (type === 'report') {
         goToMyTab();
-        setTimeout(function() { openMyDetail('tradingReport'); }, 300);
+        openMyDetail('tradingReport');
     }
 }
