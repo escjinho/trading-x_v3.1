@@ -1474,36 +1474,14 @@ function connectWebSocket() {
             }
         }
 
-        // Current P&L 업데이트 (전체 포지션 손익 합계 — BuySell + V5 + QE)
+        // Current P&L 업데이트 (★ 전체 positions 배열 합산 — 모든 매직넘버 포함)
         if (accCurrentPL) {
             let currentProfit = 0;
-            let hasAnyPosition = false;
-
-            // Buy/Sell 포지션 손익 (magic=100001)
-            if (data.position) {
-                currentProfit += data.position.profit || 0;
-                hasAnyPosition = true;
+            if (data.positions && Array.isArray(data.positions) && data.positions.length > 0) {
+                currentProfit = data.positions.reduce((sum, pos) => sum + (pos.profit || 0), 0);
+            } else if (data.position) {
+                currentProfit = data.position.profit || 0;
             }
-
-            // V5 포지션 손익 (magic=100002)
-            if (typeof v5Positions !== 'undefined' && v5Positions && v5Positions.length > 0) {
-                v5Positions.forEach(pos => {
-                    currentProfit += pos.profit || 0;
-                });
-                hasAnyPosition = true;
-            }
-
-            // ★ QE 포지션 손익 (magic=100003) — positions 배열에서 합산
-            if (data.positions && Array.isArray(data.positions)) {
-                const qePositions = data.positions.filter(p => p.magic == 100003);
-                if (qePositions.length > 0) {
-                    qePositions.forEach(pos => {
-                        currentProfit += pos.profit || 0;
-                    });
-                    hasAnyPosition = true;
-                }
-            }
-
             safeUpdateCurrentPL(accCurrentPL, currentProfit);
         }
 
@@ -1992,29 +1970,14 @@ async function fetchAccountData() {
                 ChartOrderPanel.updatePositions(data.positions);
             }
 
-            // Current P&L 업데이트 (전체 포지션 손익 합계 — BuySell + V5 + QE)
+            // Current P&L 업데이트 (★ 전체 positions 배열 합산 — 모든 매직넘버 포함)
             if (accCurrentPL) {
                 let currentProfit = 0;
-                
-                // Buy/Sell 포지션 손익 (magic=100001)
-                if (data.position) {
-                    currentProfit += data.position.profit || 0;
+                if (data.positions && Array.isArray(data.positions) && data.positions.length > 0) {
+                    currentProfit = data.positions.reduce((sum, pos) => sum + (pos.profit || 0), 0);
+                } else if (data.position) {
+                    currentProfit = data.position.profit || 0;
                 }
-                
-                // V5 포지션 손익 (magic=100002)
-                if (typeof v5Positions !== 'undefined' && v5Positions && v5Positions.length > 0) {
-                    v5Positions.forEach(pos => {
-                        currentProfit += pos.profit || 0;
-                    });
-                }
-                
-                // ★ QE 포지션 손익 (magic=100003)
-                if (data.positions && Array.isArray(data.positions)) {
-                    data.positions.filter(p => p.magic == 100003).forEach(pos => {
-                        currentProfit += pos.profit || 0;
-                    });
-                }
-                
                 safeUpdateCurrentPL(accCurrentPL, currentProfit);
             }
             
