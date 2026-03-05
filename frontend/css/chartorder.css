@@ -467,6 +467,8 @@
     position: relative;
     background: #000000;
     padding-bottom: 8px;
+    margin-top: 6px;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 /* 위쪽 그라데이션 구분선 */
