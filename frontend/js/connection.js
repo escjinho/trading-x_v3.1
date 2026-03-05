@@ -2164,20 +2164,6 @@ async function checkUserMode() {
                 if (_dataDiv) _dataDiv.style.display = 'block';
             }
 
-            // ★ My 메뉴: 데모 미생성 시 숨김
-            var _myDeposit = document.getElementById('myMenuDeposit');
-            var _myTrading = document.getElementById('myMenuTrading');
-            var _mySocial = document.getElementById('myMenuSocial');
-            if (window._hasDemoAccount === false) {
-                if (_myDeposit) _myDeposit.style.display = 'none';
-                if (_myTrading) _myTrading.style.display = 'none';
-                if (_mySocial) _mySocial.style.display = 'none';
-            } else {
-                if (_myDeposit) _myDeposit.style.display = '';
-                if (_myTrading) _myTrading.style.display = '';
-                if (_mySocial) _mySocial.style.display = '';
-            }
-
             // ★ MT5 연결 카드 숨기기
             var mt5Card = document.getElementById('mt5ConnectCard');
             if (mt5Card) mt5Card.style.display = 'none';
@@ -2265,20 +2251,6 @@ async function checkUserMode() {
                 if (_hPositions) _hPositions.textContent = data.positions_count || 0;
                 if (_emptyDiv) _emptyDiv.style.display = 'none';
                 if (_dataDiv) _dataDiv.style.display = 'block';
-            }
-
-            // ★ My 메뉴: 데모 미생성 시 숨김
-            var _myDeposit = document.getElementById('myMenuDeposit');
-            var _myTrading = document.getElementById('myMenuTrading');
-            var _mySocial = document.getElementById('myMenuSocial');
-            if (window._hasDemoAccount === false) {
-                if (_myDeposit) _myDeposit.style.display = 'none';
-                if (_myTrading) _myTrading.style.display = 'none';
-                if (_mySocial) _mySocial.style.display = 'none';
-            } else {
-                if (_myDeposit) _myDeposit.style.display = '';
-                if (_myTrading) _myTrading.style.display = '';
-                if (_mySocial) _mySocial.style.display = '';
             }
 
             // ★ MT5 연결 카드 표시 (항상)
@@ -3439,14 +3411,6 @@ async function createDemoAccount() {
             // ★ 잔액 충전 카드 표시
             var demoControl = document.getElementById('demoControlCard');
             if (demoControl) demoControl.style.display = 'block';
-
-            // ★ My 메뉴 복원
-            var _myDeposit = document.getElementById('myMenuDeposit');
-            var _myTrading = document.getElementById('myMenuTrading');
-            var _mySocial = document.getElementById('myMenuSocial');
-            if (_myDeposit) _myDeposit.style.display = '';
-            if (_myTrading) _myTrading.style.display = '';
-            if (_mySocial) _mySocial.style.display = '';
 
             showToast('Demo 계좌가 개설되었습니다!\n계좌번호: ' + (data.account_number || ''), 'success');
 
