@@ -2131,7 +2131,7 @@ async function checkUserMode() {
                 demoCheck.style.display = 'flex';
                 liveCheck.style.display = 'none';
                 modeStatus.className = 'mode-status';
-                modeStatus.innerHTML = '<span class="mode-status-dot demo"></span><span><strong>데모 모드</strong> - 가상자금으로 자유롭게 연습하세요</span>';
+                modeStatus.innerHTML = '<span class="mode-status-dot demo"></span><span><strong style="color:#ffffff;">데모 모드</strong> - 가상 자금으로 자유롭게 연습하세요</span>';
             }
             if (demoControl) demoControl.style.display = (window._hasDemoAccount !== false) ? 'block' : 'none';
 
@@ -2222,7 +2222,7 @@ async function checkUserMode() {
                 demoCheck.style.display = 'flex';
                 liveCheck.style.display = 'none';
                 modeStatus.className = 'mode-status';
-                modeStatus.innerHTML = '<span class="mode-status-dot demo"></span><span><strong>데모 모드</strong> - 가상자금으로 자유롭게 연습하세요</span>';
+                modeStatus.innerHTML = '<span class="mode-status-dot demo"></span><span><strong style="color:#ffffff;">데모 모드</strong> - 가상 자금으로 자유롭게 연습하세요</span>';
             }
             if (demoControl) demoControl.style.display = (window._hasDemoAccount !== false) ? 'block' : 'none';
 
@@ -2669,7 +2669,7 @@ function switchTradingMode(mode) {
         liveCheck.style.display = 'none';
         
         modeStatus.className = 'mode-status';
-        modeStatus.innerHTML = '<span class="mode-status-dot demo"></span><span><strong>데모 모드</strong> - 가상자금으로 자유롭게 연습하세요</span>';
+        modeStatus.innerHTML = '<span class="mode-status-dot demo"></span><span><strong style="color:#ffffff;">데모 모드</strong> - 가상 자금으로 자유롭게 연습하세요</span>';
         
         // 배지 업데이트
         if (modeBadge) {
