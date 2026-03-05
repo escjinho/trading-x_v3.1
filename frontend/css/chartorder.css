@@ -379,32 +379,38 @@
     margin-bottom: 12px;
 }
 .chart-lot-picker-card {
-    padding: 14px 0;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(255, 255, 255, 0.02);
-    color: var(--text-primary);
-    font-size: 15px;
-    font-family: 'Courier New', monospace;
-    font-weight: 500;
+    padding: 16px 0;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: rgba(255, 255, 255, 0.025);
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 17px;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
     text-align: center;
     cursor: pointer;
-    transition: all 0.15s;
+    transition: all 0.18s ease;
+    letter-spacing: 0.5px;
 }
 .chart-lot-picker-card:active {
     background: rgba(255, 255, 255, 0.08);
 }
 .chart-lot-picker-card.selected {
-    border: 1.5px solid #00d4a4;
-    background: rgba(0, 212, 164, 0.1);
+    border: 1.5px solid rgba(0, 212, 164, 0.5);
+    background: linear-gradient(165deg, rgba(0, 212, 164, 0.12) 0%, rgba(0, 212, 164, 0.04) 100%);
     color: #00d4a4;
     font-weight: 700;
+    box-shadow:
+        0 0 16px rgba(0, 212, 164, 0.08),
+        inset 0 1px 0 rgba(0, 212, 164, 0.12);
 }
 .chart-lot-picker-card.custom-card {
-    font-family: inherit;
-    font-size: 12px;
-    color: var(--text-muted);
-    background: rgba(255, 255, 255, 0.04);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.03);
+    letter-spacing: 0.5px;
 }
 
 /* 직접입력 영역 */
@@ -420,29 +426,36 @@
 }
 .chart-lot-picker-input {
     flex: 1;
-    padding: 12px 14px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--text-primary);
-    font-size: 16px;
-    font-family: 'Courier New', monospace;
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+    color: #ffffff;
+    font-size: 18px;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
     outline: none;
     -webkit-appearance: none;
+    transition: border-color 0.2s;
 }
 .chart-lot-picker-input:focus {
-    border-color: #00d4a4;
+    border-color: rgba(0, 212, 164, 0.5);
+    box-shadow: 0 0 12px rgba(0, 212, 164, 0.08);
 }
 .chart-lot-picker-confirm {
-    padding: 12px 20px;
-    border-radius: 10px;
-    background: #00d4a4;
+    padding: 14px 24px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #00b46e 0%, #00d4a4 100%);
     border: none;
-    color: #000;
-    font-weight: 700;
-    font-size: 14px;
+    color: #000000;
+    font-weight: 800;
+    font-size: 15px;
+    font-family: 'Rajdhani', sans-serif;
     cursor: pointer;
     white-space: nowrap;
+    letter-spacing: 0.5px;
+    transition: all 0.12s;
+    box-shadow: 0 2px 10px rgba(0, 212, 164, 0.2);
 }
 .chart-lot-picker-confirm:active {
     background: #00e8b4;
