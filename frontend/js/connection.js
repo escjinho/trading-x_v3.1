@@ -3618,16 +3618,25 @@ function updateHeroCTA(mode) {
     }
 }
 function openQuickMenu(type) {
+    function goToMyTab() {
+        document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+        var myNav = document.querySelector('.nav-item[data-page="my"]');
+        if (myNav) myNav.classList.add('active');
+        document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+        var myPage = document.getElementById('page-my');
+        if (myPage) myPage.classList.add('active');
+    }
+
     if (type === 'notice') {
-        switchTab('my');
+        goToMyTab();
         setTimeout(function() { openMyDetail('noticeFaq'); }, 300);
     } else if (type === 'guide') {
         showToast('이용가이드 준비 중입니다', 'info');
     } else if (type === 'deposit') {
-        switchTab('my');
+        goToMyTab();
         setTimeout(function() { openMySubPage('deposit'); }, 300);
     } else if (type === 'report') {
-        switchTab('my');
+        goToMyTab();
         setTimeout(function() { openMyDetail('tradingReport'); }, 300);
     }
 }
