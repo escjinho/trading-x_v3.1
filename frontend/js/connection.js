@@ -3619,7 +3619,8 @@ function updateHeroCTA(mode) {
 }
 function openQuickMenu(type) {
     if (type === 'notice') {
-        showToast('공지사항 준비 중입니다', 'info');
+        switchTab('my');
+        setTimeout(function() { openMyDetail('noticeFaq'); }, 300);
     } else if (type === 'guide') {
         showToast('이용가이드 준비 중입니다', 'info');
     } else if (type === 'deposit') {
@@ -3627,6 +3628,6 @@ function openQuickMenu(type) {
         setTimeout(function() { openMySubPage('deposit'); }, 300);
     } else if (type === 'report') {
         switchTab('my');
-        setTimeout(function() { openMySubPage('trading'); }, 300);
+        setTimeout(function() { openMyDetail('tradingReport'); }, 300);
     }
 }
