@@ -1449,15 +1449,15 @@
                             <div class="my-menu-left"><span class="material-icons-round">person</span><span class="my-menu-label">내 계정</span></div>
                             <span class="material-icons-round my-menu-arrow">chevron_right</span>
                         </div>
-                        <div class="my-menu-card" onclick="openMySubPage('deposit')">
+                        <div class="my-menu-card" id="myMenuDeposit" onclick="openMySubPage('deposit')">
                             <div class="my-menu-left"><span class="material-icons-round">account_balance_wallet</span><span class="my-menu-label">입금 / 출금</span></div>
                             <span class="material-icons-round my-menu-arrow">chevron_right</span>
                         </div>
-                        <div class="my-menu-card" onclick="openMySubPage('trading')">
+                        <div class="my-menu-card" id="myMenuTrading" onclick="openMySubPage('trading')">
                             <div class="my-menu-left"><span class="material-icons-round">assessment</span><span class="my-menu-label">트레이딩</span></div>
                             <span class="material-icons-round my-menu-arrow">chevron_right</span>
                         </div>
-                        <div class="my-menu-card" onclick="openMySubPage('social')">
+                        <div class="my-menu-card" id="myMenuSocial" onclick="openMySubPage('social')">
                             <div class="my-menu-left"><span class="material-icons-round">card_giftcard</span><span class="my-menu-label">소셜 & 멤버쉽</span></div>
                             <span class="material-icons-round my-menu-arrow">chevron_right</span>
                         </div>
@@ -1519,7 +1519,7 @@
                     </div>
                     <div class="my-sub-body">
                         <div class="my-sub-card">
-                            <div class="my-sub-item" onclick="openMyDetail('depositDemo')">
+                            <div class="my-sub-item" onclick="if(window._hasDemoAccount===false){openDemoCreateModal();return;}openMyDetail('depositDemo')">
                                 <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">school</span></div><span class="my-sub-item-label">Demo 입출금</span></div>
                                 <div class="my-sub-item-right"><span class="my-sub-item-hint">$10,000</span><span class="material-icons-round my-sub-item-arrow">chevron_right</span></div>
                             </div>
@@ -1539,11 +1539,11 @@
                     </div>
                     <div class="my-sub-body">
                         <div class="my-sub-card">
-                            <div class="my-sub-item" onclick="openMyDetail('mt5')">
+                            <div class="my-sub-item" onclick="if(window._hasDemoAccount===false){openDemoCreateModal();return;}openMyDetail('mt5')">
                                 <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">cable</span></div><span class="my-sub-item-label">MT5 계정 관리</span></div>
                                 <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
                             </div>
-                            <div class="my-sub-item" onclick="openMyDetail('tradingReport')">
+                            <div class="my-sub-item" onclick="if(window._hasDemoAccount===false){openDemoCreateModal();return;}openMyDetail('tradingReport')">
                                 <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">bar_chart</span></div><span class="my-sub-item-label">트레이딩 리포트</span></div>
                                 <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
                             </div>
@@ -1563,11 +1563,11 @@
                     </div>
                     <div class="my-sub-body">
                         <div class="my-sub-card">
-                            <div class="my-sub-item" onclick="openMyDetail('invite')">
+                            <div class="my-sub-item" onclick="if(window._hasDemoAccount===false){openDemoCreateModal();return;}openMyDetail('invite')">
                                 <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">person_add</span></div><span class="my-sub-item-label">친구 초대</span></div>
                                 <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
                             </div>
-                            <div class="my-sub-item last" onclick="openMyDetail('vip')">
+                            <div class="my-sub-item last" onclick="if(window._hasDemoAccount===false){openDemoCreateModal();return;}openMyDetail('vip')">
                                 <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">workspace_premium</span></div><span class="my-sub-item-label">VIP 프로그램</span></div>
                                 <div class="my-sub-item-right"><span class="my-sub-item-hint">Standard</span><span class="material-icons-round my-sub-item-arrow">chevron_right</span></div>
                             </div>
@@ -6017,7 +6017,7 @@
     <script src="js/trading.js?v=20260301a"></script>
     <script src="js/openPositions.js?v=20260302a"></script>
     <script src="js/panels/chartOrderPanel.js?v=20260303m"></script>
-    <script src="js/connection.js?v=1772670900"></script>
+    <script src="js/connection.js?v=1772671800"></script>
     <script src="js/init.js?v=1771992777"></script>
 <div id="txDialogContainer"></div>
 </body>
