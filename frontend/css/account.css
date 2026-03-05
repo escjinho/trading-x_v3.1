@@ -931,8 +931,7 @@
     height: 8px;
     border-radius: 50%;
     margin-right: 5px;
-    position: relative;
-    top: -0.5px;
+    vertical-align: middle;
     animation: pulse 2s infinite;
 }
 .account-status-badge.active .badge-dot {
