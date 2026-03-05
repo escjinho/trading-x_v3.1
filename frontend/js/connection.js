@@ -2096,7 +2096,7 @@ async function checkUserMode() {
                 modeStatus.className = 'mode-status';
                 modeStatus.innerHTML = '<span class="mode-status-dot demo"></span><span><strong style="color:#ffffff;">데모 모드</strong> - 가상 자금으로 자유롭게 연습하세요</span>';
             }
-            if (demoControl) demoControl.style.display = (window._hasDemoAccount !== false) ? 'block' : 'none';
+            // demoControlCard는 항상 표시 (HedgeHood 포털 링크)
 
             // ★ Account Overview: 즉시 데이터 채우기 (checkUserMode의 data 활용)
             var _emptyDiv = document.getElementById('homeAccountEmpty');
@@ -2187,7 +2187,7 @@ async function checkUserMode() {
                 modeStatus.className = 'mode-status';
                 modeStatus.innerHTML = '<span class="mode-status-dot demo"></span><span><strong style="color:#ffffff;">데모 모드</strong> - 가상 자금으로 자유롭게 연습하세요</span>';
             }
-            if (demoControl) demoControl.style.display = (window._hasDemoAccount !== false) ? 'block' : 'none';
+            // demoControlCard는 항상 표시 (HedgeHood 포털 링크)
 
             // ★ Account Overview: 즉시 데이터 채우기 (checkUserMode의 data 활용)
             var _emptyDiv = document.getElementById('homeAccountEmpty');
@@ -2643,7 +2643,7 @@ function switchTradingMode(mode) {
         
         // 잔액 충전 카드 (데모 생성 후에만)
         const demoControl = document.getElementById('demoControlCard');
-        if (demoControl) demoControl.style.display = (window._hasDemoAccount !== false) ? 'block' : 'none';
+        // demoControlCard는 항상 표시 (HedgeHood 포털 링크)
         
         isDemo = true; window.isDemo = true;
         var _demoReportBtn = document.getElementById('accDemoReportBtn');
@@ -2727,7 +2727,7 @@ function switchTradingMode(mode) {
                 
                 // 잔액 충전 카드 숨기기 (Live 모드)
                 const demoControl = document.getElementById('demoControlCard');
-                if (demoControl) demoControl.style.display = 'none';
+                // demoControlCard는 항상 표시 (HedgeHood 포털 링크)
                 
                 isDemo = false; window.isDemo = false;
                 if (typeof updateAccountBadge === 'function') updateAccountBadge('preparing');
@@ -3055,7 +3055,7 @@ async function connectMT5Account() {
                 modeStatus.className = 'mode-status live';
                 modeStatus.innerHTML = '<span class="mode-status-dot live"></span><span><strong>라이브 모드</strong> - 실거래 활성화됨</span>';
             }
-            if (demoControl) demoControl.style.display = 'none';
+            // demoControlCard는 항상 표시 (HedgeHood 포털 링크)
             
             // WebSocket 재연결 (Demo → Live URL로 변경)
             if (ws) {
@@ -3373,7 +3373,7 @@ async function createDemoAccount() {
 
             // ★ 잔액 충전 카드 표시
             var demoControl = document.getElementById('demoControlCard');
-            if (demoControl) demoControl.style.display = 'block';
+            // demoControlCard는 항상 표시 (HedgeHood 포털 링크)
 
             showToast('Demo 계좌가 개설되었습니다!\n계좌번호: ' + (data.account_number || ''), 'success');
 
