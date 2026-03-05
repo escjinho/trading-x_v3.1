@@ -2135,13 +2135,31 @@ async function checkUserMode() {
             }
             if (demoControl) demoControl.style.display = (window._hasDemoAccount !== false) ? 'block' : 'none';
 
-            // ★ Account Overview 토글
+            // ★ Account Overview: 즉시 데이터 채우기 (checkUserMode의 data 활용)
             var _emptyDiv = document.getElementById('homeAccountEmpty');
             var _dataDiv = document.getElementById('homeAccountData');
             if (window._hasDemoAccount === false) {
                 if (_emptyDiv) _emptyDiv.style.display = 'block';
                 if (_dataDiv) _dataDiv.style.display = 'none';
             } else {
+                // 데이터 먼저 채우고
+                var _hBroker = document.getElementById('homeBroker');
+                var _hAccount = document.getElementById('homeAccount');
+                var _hLeverage = document.getElementById('homeLeverage');
+                var _hServer = document.getElementById('homeServer');
+                var _hBalance = document.getElementById('homeBalance');
+                var _hEquity = document.getElementById('homeEquity');
+                var _hFreeMargin = document.getElementById('homeFreeMargin');
+                var _hPositions = document.getElementById('homePositions');
+                if (_hBroker) _hBroker.textContent = data.broker || '-';
+                if (_hAccount) _hAccount.textContent = data.account || '-';
+                if (_hLeverage) _hLeverage.textContent = '1:' + (data.leverage || 500);
+                if (_hServer) _hServer.textContent = data.server || '-';
+                if (_hBalance) _hBalance.textContent = '$' + (data.balance || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+                if (_hEquity) _hEquity.textContent = '$' + (data.equity || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+                if (_hFreeMargin) _hFreeMargin.textContent = '$' + (data.free_margin || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+                if (_hPositions) _hPositions.textContent = data.positions_count || 0;
+                // 그 다음 표시
                 if (_emptyDiv) _emptyDiv.style.display = 'none';
                 if (_dataDiv) _dataDiv.style.display = 'block';
             }
@@ -2208,13 +2226,29 @@ async function checkUserMode() {
             }
             if (demoControl) demoControl.style.display = (window._hasDemoAccount !== false) ? 'block' : 'none';
 
-            // ★ Account Overview 토글
+            // ★ Account Overview: 즉시 데이터 채우기 (checkUserMode의 data 활용)
             var _emptyDiv = document.getElementById('homeAccountEmpty');
             var _dataDiv = document.getElementById('homeAccountData');
             if (window._hasDemoAccount === false) {
                 if (_emptyDiv) _emptyDiv.style.display = 'block';
                 if (_dataDiv) _dataDiv.style.display = 'none';
             } else {
+                var _hBroker = document.getElementById('homeBroker');
+                var _hAccount = document.getElementById('homeAccount');
+                var _hLeverage = document.getElementById('homeLeverage');
+                var _hServer = document.getElementById('homeServer');
+                var _hBalance = document.getElementById('homeBalance');
+                var _hEquity = document.getElementById('homeEquity');
+                var _hFreeMargin = document.getElementById('homeFreeMargin');
+                var _hPositions = document.getElementById('homePositions');
+                if (_hBroker) _hBroker.textContent = data.broker || '-';
+                if (_hAccount) _hAccount.textContent = data.account || '-';
+                if (_hLeverage) _hLeverage.textContent = '1:' + (data.leverage || 500);
+                if (_hServer) _hServer.textContent = data.server || '-';
+                if (_hBalance) _hBalance.textContent = '$' + (data.balance || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+                if (_hEquity) _hEquity.textContent = '$' + (data.equity || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+                if (_hFreeMargin) _hFreeMargin.textContent = '$' + (data.free_margin || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+                if (_hPositions) _hPositions.textContent = data.positions_count || 0;
                 if (_emptyDiv) _emptyDiv.style.display = 'none';
                 if (_dataDiv) _dataDiv.style.display = 'block';
             }
