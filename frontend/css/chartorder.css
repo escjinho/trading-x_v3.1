@@ -19,9 +19,9 @@
 .chart-order-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.55);
-    backdrop-filter: blur(2px);
-    -webkit-backdrop-filter: blur(2px);
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
 }
 
 .chart-order-panel {
@@ -29,11 +29,13 @@
     z-index: 1;
     width: 100%;
     max-width: 480px;
-    background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
-    border-radius: 20px 20px 0 0;
-    padding: 14px 20px 28px;
-    box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.5);
-    animation: chartOrderSlideUp 0.28s ease-out;
+    background: linear-gradient(180deg, #1e2128 0%, #13151a 100%);
+    border-radius: 24px 24px 0 0;
+    padding: 12px 22px 30px;
+    box-shadow:
+        0 -8px 40px rgba(0, 0, 0, 0.6),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    animation: chartOrderSlideUp 0.28s cubic-bezier(0.22, 0.68, 0, 1);
 }
 
 @keyframes chartOrderSlideUp {
@@ -336,10 +338,13 @@
     z-index: 1;
     width: 100%;
     max-width: 480px;
-    background: var(--bg-secondary);
-    border-radius: 20px 20px 0 0;
-    padding: 16px 20px 32px;
-    animation: chartOrderSlideUp 0.25s ease-out;
+    background: linear-gradient(180deg, #1e2128 0%, #13151a 100%);
+    border-radius: 24px 24px 0 0;
+    padding: 12px 22px 36px;
+    box-shadow:
+        0 -8px 40px rgba(0, 0, 0, 0.6),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    animation: chartOrderSlideUp 0.25s cubic-bezier(0.22, 0.68, 0, 1);
 }
 .chart-lot-picker-title {
     color: var(--text-muted);
