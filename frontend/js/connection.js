@@ -3291,11 +3291,11 @@ function updateAccountBadge(status) {
         document.getElementById('homeAccountBadge'),
         document.getElementById('myAccountBadge')
     ];
-    var labels = { active: '● Active', standby: '● Standby', preparing: '● Preparing', error: '● Error', hidden: '' };
-    var label = labels[status] || '● Active';
+    var labels = { active: 'Active', standby: 'Standby', preparing: 'Preparing', error: 'Error', hidden: '' };
+    var label = labels[status] || 'Active';
     for (var i = 0; i < badges.length; i++) {
         if (badges[i]) {
-            badges[i].textContent = label;
+            badges[i].innerHTML = '<span class="badge-dot"></span>' + label;
             badges[i].className = 'account-status-badge ' + status;
             badges[i].style.display = (status === 'hidden') ? 'none' : '';
         }
