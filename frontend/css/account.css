@@ -923,3 +923,28 @@
     color: #9aa0b0;
     font-weight: 500;
 }
+
+/* ===== Account Badge Dot ===== */
+.account-status-badge .badge-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 5px;
+    position: relative;
+    top: -0.5px;
+    animation: pulse 2s infinite;
+}
+.account-status-badge.active .badge-dot {
+    background: #00ff88;
+    box-shadow: 0 0 8px #00ff88;
+}
+.account-status-badge.standby .badge-dot {
+    background: #00d4ff;
+    box-shadow: 0 0 8px #00d4ff;
+}
+.account-status-badge.error .badge-dot {
+    background: #ff4444;
+    box-shadow: 0 0 8px #ff4444;
+    animation: none;
+}
