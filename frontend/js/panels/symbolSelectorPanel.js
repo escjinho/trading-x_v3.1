@@ -3,79 +3,40 @@
    차트 심볼 선택 드롭다운
    ======================================== */
 
-// 종목 정보 데이터 (MT5 실제 데이터 기준)
-const symbolInfoDatabase = {
-    'BTCUSD': {
-        icon: '₿', iconColor: '#f7931a', name: 'Bitcoin', desc: 'Bitcoin vs US Dollar',
-        lotSize: '1 Contract', tickSize: '0.01', minLot: '0.01 lot', maxLot: '10.00 lot',
-        pipSize: '0.01 (2 digits)', stopLevel: '0',
-        spread: '유동 스프레드', spreadPips: '~15 pips',
-        swapLong: '-17.76%', swapLongClass: 'negative',
-        swapShort: '-11.84%', swapShortClass: 'negative',
-        swap3Day: 'Wednesday',
-        hours: { sun: '00:02 - 23:57', mon: '00:02 - 23:57', tue: '00:02 - 23:57', wed: '00:02 - 23:57', thu: '00:02 - 23:57', fri: '00:02 - 23:57', sat: '00:02 - 09:30, 12:30 - 14:00, 15:00 - 23:57' }
-    },
-    'EURUSD.r': {
-        icon: '€', iconColor: '#0052cc', name: 'Euro/Dollar', desc: 'Euro vs US Dollar',
-        lotSize: '100,000 EUR', tickSize: '0.00001', minLot: '0.01 lot', maxLot: '50.00 lot',
-        pipSize: '0.00001 (5 digits)', stopLevel: '0',
-        spread: '유동 스프레드', spreadPips: '~1.0 pips',
-        swapLong: '-8.9 points', swapLongClass: 'negative',
-        swapShort: '+3.3 points', swapShortClass: 'positive',
-        swap3Day: 'Wednesday',
-        hours: { sun: '—', mon: '00:02 - 23:58', tue: '00:02 - 23:58', wed: '00:02 - 23:58', thu: '00:02 - 23:58', fri: '00:02 - 23:58', sat: '—' }
-    },
-    'USDJPY.r': {
-        icon: '¥', iconColor: '#dc143c', name: 'Dollar/Yen', desc: 'US Dollar vs Japanese Yen',
-        lotSize: '100,000 USD', tickSize: '0.001', minLot: '0.01 lot', maxLot: '50.00 lot',
-        pipSize: '0.001 (3 digits)', stopLevel: '0',
-        spread: '유동 스프레드', spreadPips: '~1.0 pips',
-        swapLong: '+9.0 points', swapLongClass: 'positive',
-        swapShort: '-19.5 points', swapShortClass: 'negative',
-        swap3Day: 'Wednesday',
-        hours: { sun: '—', mon: '00:02 - 23:58', tue: '00:02 - 23:58', wed: '00:02 - 23:58', thu: '00:02 - 23:58', fri: '00:02 - 23:58', sat: '—' }
-    },
-    'XAUUSD.r': {
-        icon: '✦', iconColor: '#ffd700', name: 'Gold', desc: 'Gold vs US Dollar',
-        lotSize: '100 oz', tickSize: '0.01', minLot: '0.01 lot', maxLot: '20.00 lot',
-        pipSize: '0.01 (2 digits)', stopLevel: '0',
-        spread: '유동 스프레드', spreadPips: '~16 pips',
-        swapLong: '-53.5 points', swapLongClass: 'negative',
-        swapShort: '+27.6 points', swapShortClass: 'positive',
-        swap3Day: 'Wednesday',
-        hours: { sun: '—', mon: '01:02 - 23:58', tue: '01:02 - 23:58', wed: '01:02 - 23:58', thu: '01:02 - 23:58', fri: '01:02 - 23:58', sat: '—' }
-    },
-    'US100.': {
-        icon: '⬡', iconColor: '#00b450', name: 'NASDAQ', desc: 'US Tech 100 Index Cash',
-        lotSize: '20 Contract', tickSize: '0.01', minLot: '0.01 lot', maxLot: '200.00 lot',
-        pipSize: '0.01 (2 digits)', stopLevel: '0',
-        spread: '유동 스프레드', spreadPips: '~100 pips',
-        swapLong: '-165 USD', swapLongClass: 'negative',
-        swapShort: '+43.4 USD', swapShortClass: 'positive',
-        swap3Day: 'Friday',
-        hours: { sun: '—', mon: '01:02 - 23:58', tue: '01:02 - 23:58', wed: '01:02 - 23:58', thu: '01:02 - 23:58', fri: '01:02 - 23:55', sat: '—' }
-    },
-    'GBPUSD.r': {
-        icon: '£', iconColor: '#9c27b0', name: 'Pound/Dollar', desc: 'British Pound vs US Dollar',
-        lotSize: '100,000 GBP', tickSize: '0.00001', minLot: '0.01 lot', maxLot: '50.00 lot',
-        pipSize: '0.00001 (5 digits)', stopLevel: '0',
-        spread: '유동 스프레드', spreadPips: '~1.2 pips',
-        swapLong: '-4.2 points', swapLongClass: 'negative',
-        swapShort: '+0.8 points', swapShortClass: 'positive',
-        swap3Day: 'Wednesday',
-        hours: { sun: '—', mon: '00:02 - 23:58', tue: '00:02 - 23:58', wed: '00:02 - 23:58', thu: '00:02 - 23:58', fri: '00:02 - 23:58', sat: '—' }
-    },
-    'ETHUSD': {
-        icon: 'Ξ', iconColor: '#627eea', name: 'Ethereum', desc: 'Ethereum vs US Dollar',
-        lotSize: '1 Contract', tickSize: '0.01', minLot: '0.01 lot', maxLot: '10.00 lot',
-        pipSize: '0.01 (2 digits)', stopLevel: '0',
-        spread: '유동 스프레드', spreadPips: '~150 pips',
-        swapLong: '-12.16%', swapLongClass: 'negative',
-        swapShort: '-8.11%', swapShortClass: 'negative',
-        swap3Day: 'Wednesday',
-        hours: { sun: '00:02 - 23:57', mon: '00:02 - 23:57', tue: '00:02 - 23:57', wed: '00:02 - 23:57', thu: '00:02 - 23:57', fri: '00:02 - 23:57', sat: '00:02 - 09:30, 12:30 - 14:00, 15:00 - 23:57' }
+// ★ 종목 정보 데이터 — window.SYMBOL_CONFIG 사용 (symbol-config.js)
+function getSymbolInfoData(symbol) {
+    if (typeof window.SYMBOL_CONFIG !== 'undefined' && window.SYMBOL_CONFIG[symbol]) {
+        const cfg = window.SYMBOL_CONFIG[symbol];
+        return {
+            icon: cfg.icon,
+            iconColor: cfg.iconColor,
+            name: cfg.name,
+            desc: cfg.fullName,
+            lotSize: cfg.lotSize,
+            tickSize: cfg.tickSizeStr,
+            minLot: cfg.minLot,
+            maxLot: cfg.maxLot,
+            pipSize: cfg.pipSize,
+            stopLevel: cfg.stopLevel,
+            spread: cfg.spread,
+            spreadPips: cfg.spreadPips,
+            swapLong: cfg.swapLong,
+            swapLongClass: cfg.swapLongClass,
+            swapShort: cfg.swapShort,
+            swapShortClass: cfg.swapShortClass,
+            swap3Day: cfg.swap3Day,
+            hours: cfg.schedule
+        };
     }
-};
+    return null;
+}
+
+// 하위 호환용 (기존 코드에서 symbolInfoDatabase[symbol] 접근 시)
+const symbolInfoDatabase = new Proxy({}, {
+    get: function(target, symbol) {
+        return getSymbolInfoData(symbol);
+    }
+});
 
 const SymbolSelectorPanel = {
     /**
