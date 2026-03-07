@@ -15,6 +15,17 @@ from dotenv import load_dotenv
 import json
 from pathlib import Path
 
+# ★ Redis 캐시 (병행 저장용)
+try:
+    from ..redis_client import set_price as redis_set_price, get_price as redis_get_price, get_all_prices as redis_get_all_prices, is_redis_available
+    print("[MetaAPI] ✅ Redis client imported")
+except ImportError:
+    redis_set_price = None
+    redis_get_price = None
+    redis_get_all_prices = None
+    is_redis_available = lambda: False
+    print("[MetaAPI] ⚠️ Redis client not available — dict fallback only")
+
 # ★ 캔들 캐시 파일 경로
 CANDLE_CACHE_FILE = Path("/var/www/trading-x/backend/candle_cache.json")
 
@@ -100,7 +111,7 @@ QUOTE_ACCOUNT_ID = '265f13fb-26ae-4505-b13c-13339616c2a2'
 TRADE_ACCOUNT_ID = 'ab8b3c02-5390-4d9a-b879-8b8c86f1ebf5'
 
 # ★★★ 스마트 슬롯 관리 설정 ★★★
-MAX_DEPLOYED_SLOTS = 100
+MAX_DEPLOYED_SLOTS = 300
 SYSTEM_ACCOUNTS = [QUOTE_ACCOUNT_ID, TRADE_ACCOUNT_ID]
 SLOT_WARN_RATIO = 0.70
 SLOT_BUSY_RATIO = 0.85
@@ -304,12 +315,12 @@ async def initialize_candles_from_api(account, symbol: str, timeframe: str = "M1
     # 타임프레임 매핑
     tf_map = {
         "M1": "1m", "M5": "5m", "M15": "15m", "M30": "30m",
-        "H1": "1h", "H4": "4h", "D1": "1d", "W1": "1w"
+        "H1": "1h", "H4": "4h", "D1": "1d", "W1": "1w", "MN1": "1mn"
     }
     api_timeframe = tf_map.get(timeframe, "1m")
 
     try:
-        # 현재 시간으로부터 과거 캔들 요청
+        # ★★★ 원래 방식 유지: 현재 시간 기준으로 과거 캔들 요청 ★★★
         end_time = datetime.now()
 
         print(f"[MetaAPI] {symbol}/{timeframe} 히스토리 캔들 요청 중... (limit={count})")
@@ -318,7 +329,7 @@ async def initialize_candles_from_api(account, symbol: str, timeframe: str = "M1
         candles_data = await account.get_historical_candles(
             symbol=symbol,
             timeframe=api_timeframe,
-            start_time=end_time,  # 이 시간 이전의 캔들을 가져옴
+            start_time=end_time,
             limit=count
         )
 
@@ -351,8 +362,22 @@ async def initialize_candles_from_api(account, symbol: str, timeframe: str = "M1
         if symbol not in quote_candle_cache:
             quote_candle_cache[symbol] = {}
 
+        # ★★★ 기존 캐시와 병합 (갭 방지) ★★★
+        existing = quote_candle_cache[symbol].get(timeframe, [])
+        if existing:
+            # 기존 캔들 + 새 캔들 합치고 time 기준 정렬 + 중복 제거
+            merged = {c['time']: c for c in existing}
+            for c in candles:
+                merged[c['time']] = c  # 새 데이터가 우선
+            candles = sorted(merged.values(), key=lambda x: x['time'])
+            # 최대 개수 제한
+            max_candles = _TF_CONFIG.get(timeframe, (1, 1500))[1]
+            if len(candles) > max_candles:
+                candles = candles[-max_candles:]
+            print(f"[MetaAPI] ✅ {symbol}/{timeframe} 병합 완료: 기존 {len(existing)}개 + 신규 → {len(candles)}개")
+        else:
+            print(f"[MetaAPI] ✅ {symbol}/{timeframe} 히스토리 캔들 {len(candles)}개 로딩 완료")
         quote_candle_cache[symbol][timeframe] = candles
-        print(f"[MetaAPI] ✅ {symbol}/{timeframe} 히스토리 캔들 {len(candles)}개 로딩 완료")
 
         # 첫 5개 캔들 출력 (검증용)
         if symbol == "BTCUSD" and len(candles) >= 5:
@@ -453,15 +478,108 @@ _TF_CONFIG = {
     "H4":  (240,   1500),
     "D1":  (1440,  1000),
     "W1":  (10080, 500),
+    "MN1": (43200, 200),
 }
+
+# ★★★ 종목별 거래시간 스케줄 (MT5 서버시간 UTC+2/+3 기준) ★★★
+_MARKET_SCHEDULE = {
+    # 크립토: 일~금 00:02-23:57, 토 일부 세션
+    "BTCUSD": {
+        "sun": "00:02-23:57", "mon": "00:02-23:57", "tue": "00:02-23:57",
+        "wed": "00:02-23:57", "thu": "00:02-23:57", "fri": "00:02-23:57",
+        "sat": "00:02-09:30,12:30-14:00,15:00-23:57"
+    },
+    "ETHUSD": {
+        "sun": "00:02-23:57", "mon": "00:02-23:57", "tue": "00:02-23:57",
+        "wed": "00:02-23:57", "thu": "00:02-23:57", "fri": "00:02-23:57",
+        "sat": "00:02-09:30,12:30-14:00,15:00-23:57"
+    },
+    # FX: 월~금 00:02-23:58
+    "EURUSD.r": {"mon": "00:02-23:58", "tue": "00:02-23:58", "wed": "00:02-23:58", "thu": "00:02-23:58", "fri": "00:02-23:58"},
+    "USDJPY.r": {"mon": "00:02-23:58", "tue": "00:02-23:58", "wed": "00:02-23:58", "thu": "00:02-23:58", "fri": "00:02-23:58"},
+    "GBPUSD.r": {"mon": "00:02-23:58", "tue": "00:02-23:58", "wed": "00:02-23:58", "thu": "00:02-23:58", "fri": "00:02-23:58"},
+    "GBPJPY.r": {"mon": "00:02-23:58", "tue": "00:02-23:58", "wed": "00:02-23:58", "thu": "00:02-23:58", "fri": "00:02-23:58"},
+    "AUDUSD.r": {"mon": "00:02-23:58", "tue": "00:02-23:58", "wed": "00:02-23:58", "thu": "00:02-23:58", "fri": "00:02-23:58"},
+    "USDCAD.r": {"mon": "00:02-23:58", "tue": "00:02-23:58", "wed": "00:02-23:58", "thu": "00:02-23:58", "fri": "00:02-23:58"},
+    # 골드: 월~금 01:02-23:58 (금 23:55)
+    "XAUUSD.r": {"mon": "01:02-23:58", "tue": "01:02-23:58", "wed": "01:02-23:58", "thu": "01:02-23:58", "fri": "01:02-23:55"},
+    # 지수: 월~금 01:02-23:58 (금 23:55)
+    "US100.": {"mon": "01:02-23:58", "tue": "01:02-23:58", "wed": "01:02-23:58", "thu": "01:02-23:58", "fri": "01:02-23:55"},
+}
+
+def _get_mt5_offset():
+    """MT5 서버 시간 오프셋 (UTC+2 겨울, UTC+3 여름)"""
+    now = datetime.now()
+    year = now.year
+    # 유럽 DST: 3월 마지막 일요일 ~ 10월 마지막 일요일
+    import calendar
+    mar_last = max(d for d in range(25, 32) if calendar.weekday(year, 3, d) == 6)
+    oct_last = max(d for d in range(25, 32) if calendar.weekday(year, 10, d) == 6)
+    dst_start = datetime(year, 3, mar_last, 1, 0, 0)  # UTC 기준
+    dst_end = datetime(year, 10, oct_last, 1, 0, 0)
+    return 3 if dst_start <= now.replace(tzinfo=None) < dst_end else 2
+
+def _is_market_open(symbol: str) -> bool:
+    """★ 종목별 거래시간 체크 (MT5 서버시간 기준)"""
+    schedule = _MARKET_SCHEDULE.get(symbol)
+    if not schedule:
+        return True  # 스케줄 없으면 열린 것으로 간주
+
+    # 현재 MT5 서버시간 계산
+    offset = _get_mt5_offset()
+    now_utc = datetime.utcnow()
+    server_time = now_utc + timedelta(hours=offset)
+    day_names = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+    day_key = day_names[server_time.weekday()]
+
+    day_hours = schedule.get(day_key)
+    if not day_hours:
+        return False  # 해당 요일에 스케줄 없음 = 휴장
+
+    current_min = server_time.hour * 60 + server_time.minute
+
+    # 복수 세션 지원: "00:02-23:57,12:30-14:00"
+    for session in day_hours.split(","):
+        session = session.strip()
+        parts = session.split("-")
+        if len(parts) == 2:
+            open_parts = parts[0].strip().split(":")
+            close_parts = parts[1].strip().split(":")
+            if len(open_parts) == 2 and len(close_parts) == 2:
+                open_min = int(open_parts[0]) * 60 + int(open_parts[1])
+                close_min = int(close_parts[0]) * 60 + int(close_parts[1])
+                if open_min <= current_min <= close_min:
+                    return True
+
+    return False
+
+# 동일가 감지용 카운터 (장 마감 보조 체크)
+_same_price_counter = {}
+_last_prices = {}
 
 
 def update_candle_realtime(symbol: str, current_price: float):
     """실시간 캔들 업데이트 - 모든 타임프레임 동시 업데이트"""
-    global quote_candle_cache
+    global quote_candle_cache, _same_price_counter, _last_prices
 
     if current_price <= 0:
         return
+
+    # ★★★ 체크 1: 거래시간 스케줄 체크 (종목별 정확한 운영시간) ★★★
+    if not _is_market_open(symbol):
+        return  # 장 마감 → 캔들 생성 중단
+
+    # ★★★ 체크 2: 동일가 연속 감지 (보조 안전장치) ★★★
+    _now_price = round(current_price, 5)
+    _prev_price = _last_prices.get(symbol)
+    _last_prices[symbol] = _now_price
+
+    if _prev_price is not None and _prev_price == _now_price:
+        _same_price_counter[symbol] = _same_price_counter.get(symbol, 0) + 1
+        if _same_price_counter[symbol] >= 60:  # 60회 연속 동일가 → 장 마감 추정
+            return
+    else:
+        _same_price_counter[symbol] = 0
 
     current_ts = int(time.time())
 
@@ -476,8 +594,8 @@ def update_candle_realtime(symbol: str, current_price: float):
 
         candles = quote_candle_cache[symbol][tf]
 
-        # ★ D1/W1: 히스토리 캔들의 시간 기준 유지 (MetaAPI=16:00/22:00 vs UTC=00:00 충돌 방지)
-        if tf in ("D1", "W1") and candles:
+        # ★ D1/W1/MN1: 히스토리 캔들의 시간 기준 유지 (MetaAPI=16:00/22:00 vs UTC=00:00 충돌 방지)
+        if tf in ("D1", "W1", "MN1") and candles:
             last_time = candles[-1]['time']
             if current_ts < last_time + seconds:
                 # 현재 캔들 기간 내 — OHLC 업데이트
@@ -550,6 +668,13 @@ class QuotePriceListener:
             'time': price_time
         }
         quote_last_update = time.time()
+
+        # ★ Redis 병행 저장
+        try:
+            if redis_set_price and bid and ask:
+                redis_set_price(symbol, bid, ask)
+        except Exception:
+            pass
 
         # 2. 캔들 실시간 업데이트 (모든 심볼)
         if bid and bid > 0:
@@ -1101,6 +1226,15 @@ class MetaAPIService:
         # 전역 캐시 업데이트
         quote_price_cache = prices
         quote_last_update = self.last_price_update
+
+        # ★ Redis 병행 저장 (전체 시세)
+        try:
+            if redis_set_price:
+                for _sym, _pd in prices.items():
+                    if _pd.get('bid') and _pd.get('ask'):
+                        redis_set_price(_sym, _pd['bid'], _pd['ask'])
+        except Exception:
+            pass
 
         # ★★★ 모든 심볼 캔들 실시간 업데이트 ★★★
         for symbol, price_data in prices.items():
@@ -2299,6 +2433,13 @@ class UserStreamingListener:
             "login": account_information.get("login", 0)
         }
         user_metaapi_cache[self.user_id]["last_sync"] = time.time()
+        # ★ Redis 병행 저장 (유저 캐시)
+        try:
+            if redis_set_price:  # redis 사용 가능 확인
+                from ..redis_client import set_user_cache
+                set_user_cache(self.user_id, user_metaapi_cache[self.user_id], ttl=30)
+        except Exception:
+            pass
 
     async def on_positions_replaced(self, instance_index, positions):
         """전체 포지션 교체 (초기 동기화)"""
@@ -2321,6 +2462,13 @@ class UserStreamingListener:
             })
         user_metaapi_cache[self.user_id]["positions"] = pos_list
         user_metaapi_cache[self.user_id]["last_sync"] = time.time()
+        # ★ Redis 병행 저장
+        try:
+            if redis_set_price:
+                from ..redis_client import set_user_cache
+                set_user_cache(self.user_id, user_metaapi_cache[self.user_id], ttl=30)
+        except Exception:
+            pass
         print(f"[UserStreaming] User {self.user_id} 포지션 동기화: {len(pos_list)}개")
 
     async def on_position_updated(self, instance_index, position):
@@ -2355,6 +2503,13 @@ class UserStreamingListener:
 
         user_metaapi_cache[self.user_id]["positions"] = positions
         user_metaapi_cache[self.user_id]["last_sync"] = time.time()
+        # ★ Redis 병행 저장
+        try:
+            if redis_set_price:
+                from ..redis_client import set_user_cache
+                set_user_cache(self.user_id, user_metaapi_cache[self.user_id], ttl=30)
+        except Exception:
+            pass
 
     async def on_position_removed(self, instance_index, position_id):
         """포지션 청산 (실시간 감지!)"""
@@ -2374,6 +2529,13 @@ class UserStreamingListener:
 
         user_metaapi_cache[self.user_id]["positions"] = positions
         user_metaapi_cache[self.user_id]["last_sync"] = time.time()
+        # ★ Redis 병행 저장
+        try:
+            if redis_set_price:
+                from ..redis_client import set_user_cache
+                set_user_cache(self.user_id, user_metaapi_cache[self.user_id], ttl=30)
+        except Exception:
+            pass
 
         if removed_pos:
             profit = removed_pos.get('profit', 0)
@@ -2579,6 +2741,13 @@ async def get_user_account_info(user_id: int, metaapi_account_id: str) -> Option
             user_metaapi_cache[user_id] = {}
         user_metaapi_cache[user_id]["account_info"] = result
         user_metaapi_cache[user_id]["last_sync"] = time.time()
+        # ★ Redis 병행 저장
+        try:
+            if redis_set_price:
+                from ..redis_client import set_user_cache
+                set_user_cache(user_id, user_metaapi_cache[user_id], ttl=30)
+        except Exception:
+            pass
 
         return result
     except Exception as e:
@@ -2601,6 +2770,13 @@ async def get_user_positions(user_id: int, metaapi_account_id: str) -> List[Dict
             user_metaapi_cache[user_id] = {}
         user_metaapi_cache[user_id]["positions"] = result
         user_metaapi_cache[user_id]["last_sync"] = time.time()
+        # ★ Redis 병행 저장
+        try:
+            if redis_set_price:
+                from ..redis_client import set_user_cache
+                set_user_cache(user_id, user_metaapi_cache[user_id], ttl=30)
+        except Exception:
+            pass
 
         return result
     except Exception as e:
@@ -2769,10 +2945,31 @@ async def get_user_history(user_id: int, metaapi_account_id: str, start_time=Non
 
         history = []
         for deal in deals:
+            deal_type_raw = str(deal.get('type', '')).upper()
+            entry_type = str(deal.get('entryType', '')).upper()
+
+            # ★★★ 입출금/크레딧/보정 딜 제외 (거래 내역에 포함 금지) ★★★
+            if 'BALANCE' in deal_type_raw or 'CREDIT' in deal_type_raw or 'CORRECTION' in deal_type_raw:
+                print(f"[MetaAPI UserHistory] 입출금 딜 제외: type={deal_type_raw}, profit={deal.get('profit')}")
+                continue
+
+            # ★★★ symbol이 없는 딜도 제외 (입출금은 symbol이 빈 문자열) ★★★
+            if not deal.get('symbol'):
+                continue
+
+            # ★★★ BUY/SELL 표기 수정 — 청산 딜은 원래 포지션 방향으로 반전 ★★★
+            # MT5 규칙: SELL 포지션 청산 → DEAL_TYPE_BUY + DEAL_ENTRY_OUT
+            #           BUY 포지션 청산 → DEAL_TYPE_SELL + DEAL_ENTRY_OUT
+            # 따라서 청산(OUT) 시 타입을 반전해야 원래 포지션 방향이 됨
+            if 'OUT' in entry_type:
+                display_type = 'SELL' if 'BUY' in deal_type_raw else 'BUY'
+            else:
+                display_type = 'BUY' if 'BUY' in deal_type_raw else 'SELL'
+
             history.append({
                 'id': deal.get('id'),
                 'symbol': deal.get('symbol'),
-                'type': 'BUY' if 'BUY' in deal.get('type', '') else 'SELL',
+                'type': display_type,
                 'volume': deal.get('volume'),
                 'price': deal.get('price'),
                 'profit': deal.get('profit'),

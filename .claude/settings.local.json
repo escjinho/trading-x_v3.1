@@ -190,7 +190,32 @@
       "Bash(./backend/venv/bin/python3:*)",
       "Bash(../backend/venv/bin/python3:*)",
       "Bash(./venv/bin/python3:*)",
-      "Bash(timedatectl:*)"
+      "Bash(timedatectl:*)",
+      "Bash(git restore:*)",
+      "Bash(__NEW_LINE_30d6a916dc667210__ echo \"\")",
+      "Bash(sudo apt update:*)",
+      "Bash(sudo apt install:*)",
+      "Bash(redis-cli ping:*)",
+      "Bash(redis-cli SET:*)",
+      "Bash(redis-cli:*)",
+      "Bash(pstree:*)",
+      "Bash(__NEW_LINE_e5daf1ac9ef9d551__ echo \"\")",
+      "Bash(sudo certbot certificates:*)",
+      "Bash(sudo crontab:*)",
+      "Bash(sudo certbot renew:*)",
+      "Bash(sudo mkdir:*)",
+      "Bash(sudo bash -c 'cat > /etc/systemd/system/redis-server.service.d/override.conf << EOF\n[Service]\nRestart=always\nRestartSec=5\nEOF')",
+      "Bash(MONITOR_PATH=\"/var/www/trading-x/deploy/trading-x-resource-monitor.sh\")",
+      "Bash(sudo bash -c \"echo ''*/5 * * * * root $MONITOR_PATH >> /var/log/trading-x-monitor.log 2>&1'' > /etc/cron.d/trading-x-monitor\")",
+      "Bash(sudo chmod:*)",
+      "Bash(sudo bash -c 'cat > /var/www/trading-x/deploy/daily-backup.sh << \"\"SCRIPT\"\"\n#!/bin/bash\n# Trading-X 일간 백업 \\(DB + 설정파일, 7일 보관\\)\nBACKUP_DIR=\"\"/var/www/trading-x/backups\"\"\nDATE=$\\(date +%Y%m%d_%H%M%S\\)\n\necho \"\"[Backup] 시작: $DATE\"\"\n\n# DB 파일 백업\nfor db in $\\(find /var/www/trading-x -maxdepth 3 -name \"\"*.db\"\" 2>/dev/null\\); do\n    BASENAME=$\\(basename \"\"$db\"\"\\)\n    cp \"\"$db\"\" \"\"${BACKUP_DIR}/${BASENAME}.${DATE}.bak\"\"\n    echo \"\"[Backup] DB: $db\"\"\ndone\n\n# 중요 설정 파일 백업\ncp /var/www/trading-x/backend/.env \"\"${BACKUP_DIR}/dotenv.${DATE}.bak\"\" 2>/dev/null\ncp /etc/systemd/system/trading-x.service \"\"${BACKUP_DIR}/service.${DATE}.bak\"\" 2>/dev/null\ncp /etc/redis/redis.conf \"\"${BACKUP_DIR}/redis-conf.${DATE}.bak\"\" 2>/dev/null\n\n# 7일 이상 된 백업 자동 삭제\nfind \"\"$BACKUP_DIR\"\" -name \"\"*.bak\"\" -mtime +7 -delete 2>/dev/null\n\nCOUNT=$\\(ls -1 \"\"$BACKUP_DIR\"\"/*.bak 2>/dev/null | wc -l\\)\necho \"\"[Backup] 완료: ${COUNT}개 파일 보관 중\"\"\nSCRIPT')",
+      "Bash(sudo bash -c 'echo \"\"0 4 * * * root /var/www/trading-x/deploy/daily-backup.sh >> /var/log/trading-x-backup.log 2>&1\"\" > /etc/cron.d/trading-x-backup')",
+      "Bash(sudo bash:*)",
+      "Bash(__NEW_LINE_8a0c57a194da7326__ echo \"\")",
+      "Bash(__NEW_LINE_1eea0034e617d6b1__ echo \"\")",
+      "Bash(for commit in 827803e 2f190c9 9b308a2)",
+      "Bash(do)",
+      "Bash(git show:*)"
     ]
   }
 }

@@ -2066,7 +2066,7 @@ async function checkUserMode() {
             isDemo = true; window.isDemo = true;
             window._hasDemoAccount = data.has_demo_account !== false;
             window._hasMT5 = true;
-            { var _btn = document.getElementById("accDemoReportBtn"); if (_btn) _btn.style.display = "flex"; }
+            if (typeof updateDemoReportBtn === 'function') updateDemoReportBtn();
             if (typeof updateCommissionNotice === 'function') updateCommissionNotice();
             window._checkUserModeRetries = 0;
 
@@ -2163,7 +2163,7 @@ async function checkUserMode() {
             isDemo = true;
             window._hasDemoAccount = data.has_demo_account !== false;
             window._hasMT5 = false;
-            { var _btn = document.getElementById("accDemoReportBtn"); if (_btn) _btn.style.display = "flex"; }
+            if (typeof updateDemoReportBtn === 'function') updateDemoReportBtn();
             if (typeof updateCommissionNotice === 'function') updateCommissionNotice();
             window._checkUserModeRetries = 0;  // ★ 재시도 카운터 리셋
             updateHeaderStatus('connected_demo');
@@ -2274,7 +2274,7 @@ async function checkUserMode() {
         console.warn('[checkUserMode] 3회 재시도 실패 → 데모 모드 전환');
         window._serverWasDown = true;
         isDemo = true;
-        { var _btn = document.getElementById("accDemoReportBtn"); if (_btn) _btn.style.display = "flex"; }
+        if (typeof updateDemoReportBtn === 'function') updateDemoReportBtn();
         if (typeof updateCommissionNotice === 'function') updateCommissionNotice();
         fetchDemoData();
     }
@@ -2646,8 +2646,7 @@ function switchTradingMode(mode) {
         // demoControlCard는 항상 표시 (HedgeHood 포털 링크)
         
         isDemo = true; window.isDemo = true;
-        var _demoReportBtn = document.getElementById('accDemoReportBtn');
-        if (_demoReportBtn) _demoReportBtn.style.display = 'flex';
+        if (typeof updateDemoReportBtn === 'function') updateDemoReportBtn();
         if (typeof updateCommissionNotice === 'function') updateCommissionNotice();
         // ★★★ 모드 전환 시 히스토리 캐시 + 패널 리셋 ★★★
         window._weekHistoryData = null;
@@ -2716,7 +2715,7 @@ function switchTradingMode(mode) {
                 demoCheck.style.display = 'none';
                 
                 modeStatus.className = 'mode-status live';
-                modeStatus.innerHTML = '<span class="mode-status-dot live"></span><span><strong>라이브 모드</strong> - 실거래 활성화됨</span>';
+                modeStatus.innerHTML = '<span class="mode-status-dot live"></span><span><strong>라이브 모드</strong> - 실거래 활성화 됨</span>';
                 
                 // 배지 업데이트
                 if (modeBadge) {
@@ -2735,8 +2734,7 @@ function switchTradingMode(mode) {
                 // ★ MT5 연결 카드 숨기기
                 var mt5Card = document.getElementById('mt5ConnectCard');
                 if (mt5Card) mt5Card.style.display = 'none';
-                var _demoReportBtn2 = document.getElementById('accDemoReportBtn');
-                if (_demoReportBtn2) _demoReportBtn2.style.display = 'none';
+                if (typeof updateDemoReportBtn === 'function') updateDemoReportBtn();
                 if (typeof updateCommissionNotice === 'function') updateCommissionNotice();
                 // ★★★ 모드 전환 시 히스토리 캐시 + 패널 리셋 ★★★
                 window._weekHistoryData = null;
@@ -2855,7 +2853,7 @@ function initTradingModeUI() {
             demoCheck.style.display = 'none';
             
             modeStatus.className = 'mode-status live';
-            modeStatus.innerHTML = '<span class="mode-status-dot live"></span><span><strong>라이브 모드</strong> - 실거래 활성화됨</span>';
+            modeStatus.innerHTML = '<span class="mode-status-dot live"></span><span><strong>라이브 모드</strong> - 실거래 활성화 됨</span>';
         }
     }
 }
@@ -3028,7 +3026,7 @@ async function connectMT5Account() {
             
             // Live 모드로 전환
             isDemo = false;
-            { var _btn = document.getElementById("accDemoReportBtn"); if (_btn) _btn.style.display = "none"; }
+            if (typeof updateDemoReportBtn === 'function') updateDemoReportBtn();
             if (typeof updateCommissionNotice === 'function') updateCommissionNotice();
             if (typeof resetTradingPanel === 'function') resetTradingPanel();
 
@@ -3053,7 +3051,7 @@ async function connectMT5Account() {
                 liveCheck.style.display = 'flex';
                 demoCheck.style.display = 'none';
                 modeStatus.className = 'mode-status live';
-                modeStatus.innerHTML = '<span class="mode-status-dot live"></span><span><strong>라이브 모드</strong> - 실거래 활성화됨</span>';
+                modeStatus.innerHTML = '<span class="mode-status-dot live"></span><span><strong>라이브 모드</strong> - 실거래 활성화 됨</span>';
             }
             // demoControlCard는 항상 표시 (HedgeHood 포털 링크)
             

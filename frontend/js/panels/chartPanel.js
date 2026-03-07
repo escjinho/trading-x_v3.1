@@ -64,7 +64,7 @@ const ChartPanel = {
 
         // ★ 타임프레임별 새 캔들 감지 (all_candles의 time으로 판단)
         if (candleData.time && this.lastCandleTime > 0) {
-            const _tfSec = {M1:60,M5:300,M15:900,M30:1800,H1:3600,H4:14400};
+            const _tfSec = {M1:60,M5:300,M15:900,M30:1800,H1:3600,H4:14400,D1:86400,W1:604800,MN1:2592000};
             const _sec = _tfSec[typeof currentTimeframe !== 'undefined' ? currentTimeframe : 'M1'];
             if (_sec) {
                 const _expected = Math.floor(candleData.time / _sec) * _sec;
@@ -161,14 +161,29 @@ const ChartPanel = {
                 close: this._animCurrent
             };
 
-            try {
-                if (typeof ChartTypeManager !== 'undefined') {
-                    ChartTypeManager.updateLastCandle(updatedCandle);
-                } else {
-                    candleSeries.update(updatedCandle);
+            // ★ 장 마감 시 캔들 update 중단 (dash 캔들 방지), 가격 오버레이는 유지
+            if (typeof isCurrentMarketClosed === 'function' && isCurrentMarketClosed(chartSymbol)) {
+                // 캔들 차트 업데이트 안 함 + 우측 빈 공간 완전 제거
+                if (chart && !this._marketClosedLocked) {
+                    chart.timeScale().applyOptions({ rightOffset: 0 });
+                    chart.timeScale().scrollToPosition(0, false);
+                    this._marketClosedLocked = true;
                 }
-            } catch (e) {
-                // lightweight-charts "Value is null" 무시
+            } else {
+                if (this._marketClosedLocked) {
+                    this._marketClosedLocked = false;
+                    // 장 개장 시 원래 여백 복원
+                    if (chart) chart.timeScale().applyOptions({ rightOffset: 12 });
+                }
+                try {
+                    if (typeof ChartTypeManager !== 'undefined') {
+                        ChartTypeManager.updateLastCandle(updatedCandle);
+                    } else {
+                        candleSeries.update(updatedCandle);
+                    }
+                } catch (e) {
+                    // lightweight-charts "Value is null" 무시
+                }
             }
         }
 
@@ -309,6 +324,8 @@ const ChartPanel = {
                 borderDownColor: '#dc3545',
                 wickUpColor: '#00b894',
                 wickDownColor: '#dc3545',
+                priceLineVisible: false,
+                lastValueVisible: false,
                 priceFormat: {
                     type: 'price',
                     precision: decimals,
@@ -411,6 +428,16 @@ const ChartPanel = {
                 if (typeof ChartTypeManager !== 'undefined' && (!ChartTypeManager.chart || !ChartTypeManager.series)) {
                     console.warn('[ChartPanel] Chart/series null — reinitializing');
                     this.initChart();
+                }
+
+                // ★★★ trailing flat 캔들(dash) 제거 — OHLC 전부 동일한 캔들 ★★★
+                while (data.candles.length > 1) {
+                    const last = data.candles[data.candles.length - 1];
+                    if (last.open === last.high && last.high === last.low && last.low === last.close) {
+                        data.candles.pop();
+                    } else {
+                        break;
+                    }
                 }
 
                 // ★ KST 변환 (+9시간) — 차트 표시용
@@ -694,8 +721,10 @@ const ChartPanel = {
 
         // 변동폭/변동률 계산 (천 단위 콤마)
         if (overlayChange && this.referencePrice) {
-            const change = price - this.referencePrice;
-            const changePercent = (change / this.referencePrice) * 100;
+            // ★ 장 마감 시 변동률 0.00 표시
+            const marketClosed = typeof isCurrentMarketClosed === 'function' && isCurrentMarketClosed(chartSymbol);
+            const change = marketClosed ? 0 : price - this.referencePrice;
+            const changePercent = marketClosed ? 0 : (change / this.referencePrice) * 100;
             const isPositive = change >= 0;
             const color = isPositive ? '#00b894' : '#dc3545';
             const sign = isPositive ? '+' : '';

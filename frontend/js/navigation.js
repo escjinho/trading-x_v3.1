@@ -56,9 +56,8 @@ document.querySelectorAll('.nav-item').forEach(item => {
                 if (typeof softRefresh === 'function') {
                     softRefresh('nav_account');
                 }
-                // ★ 데모 리포트 버튼 표시/숨김
-                var _btn = document.getElementById('accDemoReportBtn');
-                if (_btn) _btn.style.display = (typeof isDemo !== 'undefined' && isDemo) ? 'flex' : 'none';
+                // ★ 데모 리포트 버튼 표시/숨김 (현재 서브탭 기준)
+                if (typeof updateDemoReportBtn === 'function') updateDemoReportBtn();
             } else if (page === 'home') {
                 // ★★★ Home 탭 진입 시 softRefresh ★★★
                 if (typeof softRefresh === 'function') {

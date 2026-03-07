@@ -2042,6 +2042,12 @@ async def close_demo_by_profit(
 async def demo_websocket_endpoint(websocket: WebSocket):
     """Demo 모드 실시간 데이터 WebSocket"""
     await websocket.accept()
+    # ★ 모니터링: 데모 WS 접속 카운트
+    try:
+        from app.monitor_counters import ws_connect
+        ws_connect("demo")
+    except Exception:
+        pass
 
     # Query parameter에서 토큰 + magic 가져오기
     token = websocket.query_params.get("token")
@@ -2500,6 +2506,12 @@ async def demo_websocket_endpoint(websocket: WebSocket):
             traceback.print_exc()
             break
 
+    # ★ 모니터링: 데모 WS 해제 카운트
+    try:
+        from app.monitor_counters import ws_disconnect
+        ws_disconnect("demo")
+    except Exception:
+        pass
     await websocket.close()
 @router.get("/deposit-history")
 async def get_deposit_history(

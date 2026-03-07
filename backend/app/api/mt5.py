@@ -120,6 +120,16 @@ bridge_cache = {
 import uuid
 import fcntl
 
+# ★ Redis 캐시 (병행 저장용)
+try:
+    from ..redis_client import set_user_cache as redis_set_user, get_user_cache as redis_get_user, is_redis_available as redis_available
+    print("[MT5] ✅ Redis client imported")
+except ImportError:
+    redis_set_user = None
+    redis_get_user = None
+    redis_available = lambda: False
+    print("[MT5] ⚠️ Redis client not available")
+
 ORDER_QUEUE_FILE = "/tmp/mt5_orders.json"
 ORDER_RESULTS_FILE = "/tmp/mt5_order_results.json"
 BRIDGE_HEARTBEAT_FILE = "/tmp/mt5_bridge_heartbeat"
@@ -751,6 +761,23 @@ async def get_candles(
             seen_times[c['time']] = c  # 같은 time이면 마지막 것 유지
         candles = sorted(seen_times.values(), key=lambda x: x['time'])
 
+    # ★★★ 장 마감 후 동일가(flat) 캔들 제거 (trailing) ★★★
+    # OHLC가 전부 같은 캔들 = dash 표시 → 뒤에서부터 연속된 것만 제거
+    if candles and len(candles) > 1:
+        _trim = 0
+        while len(candles) > 1:
+            _last = candles[-1]
+            if (_last.get('open') == _last.get('high') == _last.get('low') == _last.get('close')):
+                candles.pop()
+                _trim += 1
+            else:
+                break
+        if _trim > 0:
+            print(f"[Candles] {symbol}/{timeframe} trailing flat 캔들 {_trim}개 제거")
+            closes = [c['close'] for c in candles]
+            highs = [c['high'] for c in candles]
+            lows = [c['low'] for c in candles]
+
     if candles:
         closes = [c['close'] for c in candles]
         highs = [c['high'] for c in candles]
@@ -768,6 +795,40 @@ async def get_candles(
     #                 print(f"[Candles] {symbol}/{timeframe} - Binance fallback {len(candles)}개")
     #         except Exception as e:
     #             print(f"[Candles] Binance fallback error: {e}")
+
+    # ★★★ MN1 캔들이 부족하면 D1에서 조합 ★★★
+    if timeframe == "MN1" and len(candles) < 10:
+        print(f"[Candles] {symbol}/MN1 부족({len(candles)}개) — D1에서 월봉 조합 시도")
+        try:
+            from .metaapi_service import quote_candle_cache, metaapi_service, initialize_candles_from_api
+            d1_candles = quote_candle_cache.get(symbol, {}).get("D1", [])
+            if len(d1_candles) < 30 and metaapi_service and metaapi_service.quote_account:
+                await initialize_candles_from_api(metaapi_service.quote_account, symbol, "D1", 1000)
+                d1_candles = quote_candle_cache.get(symbol, {}).get("D1", [])
+
+            if d1_candles and len(d1_candles) >= 30:
+                from datetime import datetime as _dt
+                monthly = {}
+                for c in d1_candles:
+                    dt = _dt.utcfromtimestamp(c['time'])
+                    month_key = dt.strftime("%Y-%m")
+                    month_ts = int(_dt(dt.year, dt.month, 1).timestamp())
+                    if month_key not in monthly:
+                        monthly[month_key] = {'time': month_ts, 'open': c['open'], 'high': c['high'], 'low': c['low'], 'close': c['close'], 'volume': c.get('volume', 0)}
+                    else:
+                        m = monthly[month_key]
+                        m['high'] = max(m['high'], c['high'])
+                        m['low'] = min(m['low'], c['low'])
+                        m['close'] = c['close']
+                        m['volume'] = m.get('volume', 0) + c.get('volume', 0)
+
+                candles = sorted(monthly.values(), key=lambda x: x['time'])
+                closes = [c['close'] for c in candles]
+                highs = [c['high'] for c in candles]
+                lows = [c['low'] for c in candles]
+                print(f"[Candles] {symbol}/MN1 — D1에서 {len(candles)}개 월봉 조합 완료")
+        except Exception as e:
+            print(f"[Candles] MN1 조합 실패: {e}")
 
     if not candles:
         return {"candles": [], "indicators": {}, "source": "no_data", "timeframe": timeframe}
@@ -1001,6 +1062,12 @@ async def sync_positions(data: dict = Body(...)):
     if account_info:
         user_live_cache[user_id]["account_info"] = account_info
         user_live_cache[user_id]["updated_at"] = time_module.time()
+        # ★ Redis 병행 저장
+        try:
+            if redis_set_user:
+                redis_set_user(user_id, user_live_cache[user_id], ttl=30)
+        except Exception:
+            pass
 
     return {"status": "ok"}
 
@@ -1270,6 +1337,12 @@ async def place_order(
         # 유저별 MetaAPI: DB status가 deployed가 아니면 거부
         if current_user.metaapi_status != 'deployed':
             print(f"[MetaAPI Order] ❌ 유저 MetaAPI 준비 안 됨 (status={current_user.metaapi_status})")
+            # ★ 모니터링: 주문 실패 카운트
+            try:
+                from app.monitor_counters import order_fail
+                order_fail("MetaAPI 미연결")
+            except Exception:
+                pass
             return JSONResponse({
                 "success": False,
                 "message": "Trading API가 아직 준비 중입니다. 잠시 후 다시 시도해주세요.",
@@ -1340,6 +1413,12 @@ async def place_order(
 
         if required_margin > free_margin:
             print(f"[MetaAPI Order] ❌ 증거금 부족: 필요 ${required_margin:.2f} > 가용 ${free_margin:.2f}")
+            # ★ 모니터링: 주문 실패 카운트
+            try:
+                from app.monitor_counters import order_fail
+                order_fail("증거금 부족")
+            except Exception:
+                pass
             return JSONResponse({
                 "success": False,
                 "message": f"증거금 부족! 가용마진: ${free_margin:.0f}, 필요마진: ${required_margin:.0f} (Step {martin_step}, {volume:.2f} lot)",
@@ -1368,6 +1447,12 @@ async def place_order(
 
         if free_margin > 0 and required_margin > free_margin:
             print(f"[MetaAPI Order] ❌ 증거금 부족 (일반): 필요 ${required_margin:.2f} > 가용 ${free_margin:.2f}")
+            # ★ 모니터링: 주문 실패 카운트
+            try:
+                from app.monitor_counters import order_fail
+                order_fail("증거금 부족")
+            except Exception:
+                pass
             return JSONResponse({
                 "success": False,
                 "message": f"증거금 부족! 가용: ${free_margin:.0f} / 필요: ${required_margin:.0f}",
@@ -1386,6 +1471,12 @@ async def place_order(
     # ★ Chart 주문(magic=100004)은 동일 종목 중복 진입 허용
     if existing and magic != 100004:
         print(f"[MetaAPI Order] 중복 주문 차단: user={current_user.id}, magic={magic}, symbol={symbol}, 기존 포지션={len(existing)}개")
+        # ★ 모니터링: 주문 실패 카운트
+        try:
+            from app.monitor_counters import order_fail
+            order_fail("중복 주문")
+        except Exception:
+            pass
         return JSONResponse({"success": False, "message": f"{symbol} 포지션이 이미 있습니다"})
     elif existing and magic == 100004:
         print(f"[MetaAPI Order] Chart 중복 허용: user={current_user.id}, magic=100004, symbol={symbol}, 기존={len(existing)}개, 추가 진입")
@@ -1422,6 +1513,12 @@ async def place_order(
                 spread_limit = 0.40 if is_martin else 0.35
                 if spread_ratio > spread_limit:
                     print(f"[MetaAPI Order] ❌ 스프레드 거부: {spread_ratio:.1%} > {spread_limit:.0%}")
+                    # ★ 모니터링: 주문 실패 카운트
+                    try:
+                        from app.monitor_counters import order_fail
+                        order_fail("스프레드 과다")
+                    except Exception:
+                        pass
                     return JSONResponse({
                         "success": False,
                         "message": f"스프레드 비용(${spread_cost:.1f})이 타겟(${target})의 {spread_ratio:.0%}입니다. 잠시 후 다시 시도해주세요.",
@@ -1496,6 +1593,12 @@ async def place_order(
             }
             user_live_cache[current_user.id]["positions"].append(new_position)
             user_live_cache[current_user.id]["updated_at"] = time_module.time()
+            # ★ Redis 병행 저장
+            try:
+                if redis_set_user:
+                    redis_set_user(current_user.id, user_live_cache[current_user.id], ttl=30)
+            except Exception:
+                pass
 
             # ★★★ LiveTrade DB 기록 (등급 시스템용) ★★★
             try:
@@ -1529,6 +1632,12 @@ async def place_order(
                 print(f"[MetaAPI Order] ⏰ User {current_user.id} 빠른 동기화 예약: 3초+6초 후")
 
             print(f"[MetaAPI Order] ✅ 주문 성공: {order_type} {symbol} {volume} lot, positionId={position_id}")
+            # ★ 모니터링: 주문 성공 카운트
+            try:
+                from app.monitor_counters import order_success
+                order_success()
+            except Exception:
+                pass
 
             response_data = {
                 "success": True,
@@ -1549,6 +1658,12 @@ async def place_order(
         else:
             error_msg = result.get('error', 'Unknown error')
             print(f"[MetaAPI Order] ❌ 주문 실패: {error_msg}")
+            # ★ 모니터링: 주문 실패 카운트
+            try:
+                from app.monitor_counters import order_fail
+                order_fail("주문 실행 오류")
+            except Exception:
+                pass
             return JSONResponse({
                 "success": False,
                 "message": f"주문 실패: {error_msg}"
@@ -1556,6 +1671,12 @@ async def place_order(
 
     except Exception as e:
         print(f"[MetaAPI Order] ❌ 예외 발생: {e}")
+        # ★ 모니터링: 주문 실패 카운트
+        try:
+            from app.monitor_counters import order_fail
+            order_fail("예외 발생")
+        except Exception:
+            pass
         return JSONResponse({
             "success": False,
             "message": f"주문 오류: {str(e)}"
@@ -2873,6 +2994,13 @@ async def get_history(
                     if entry_type == "DEAL_ENTRY_IN":
                         continue
 
+                    # ★★★ 입출금/크레딧 딜 제외 (symbol이 없으면 거래가 아님) ★★★
+                    h_type_raw = str(h.get("type", "")).upper()
+                    if 'BALANCE' in h_type_raw or 'CREDIT' in h_type_raw or 'CORRECTION' in h_type_raw:
+                        continue
+                    if not h.get("symbol"):
+                        continue
+
                     trade_time = h.get("time", "")
                     try:
                         if isinstance(trade_time, datetime):
@@ -3814,6 +3942,12 @@ async def admin_get_users(
 async def websocket_endpoint(websocket: WebSocket):
     """실시간 데이터 WebSocket (Live 모드) - MetaAPI 버전"""
     await websocket.accept()
+    # ★ 모니터링: 라이브 WS 접속 카운트
+    try:
+        from app.monitor_counters import ws_connect
+        ws_connect("live")
+    except Exception:
+        pass
 
     # ★★★ MetaAPI 실시간 데이터 import ★★★
     from .metaapi_service import (
@@ -4448,6 +4582,12 @@ async def websocket_endpoint(websocket: WebSocket):
                         if p.get("id") != _streaming_closed_id
                     ]
                     user_live_cache[user_id]["updated_at"] = time_module.time()
+                    # ★ Redis 병행 저장
+                    try:
+                        if redis_set_user:
+                            redis_set_user(user_id, user_live_cache[user_id], ttl=30)
+                    except Exception:
+                        pass
                     print(f"[WS] 🧹 Streaming 청산 - 포지션 {_streaming_closed_id} 제거")
                 if user_id in user_target_cache:
                     del user_target_cache[user_id]
@@ -4493,6 +4633,12 @@ async def websocket_endpoint(websocket: WebSocket):
                         if p.get("id") != _rpc_closed_id
                     ]
                     user_live_cache[user_id]["updated_at"] = time_module.time()
+                    # ★ Redis 병행 저장
+                    try:
+                        if redis_set_user:
+                            redis_set_user(user_id, user_live_cache[user_id], ttl=30)
+                    except Exception:
+                        pass
                     print(f"[WS] 🧹 RPC 청산 - 포지션 {_rpc_closed_id} 제거")
 
                 # user_target_cache 정리
@@ -4536,6 +4682,12 @@ async def websocket_endpoint(websocket: WebSocket):
                         if p.get("id") not in _closed_event_ids
                     ]
                     user_live_cache[user_id]["updated_at"] = time_module.time()
+                    # ★ Redis 병행 저장
+                    try:
+                        if redis_set_user:
+                            redis_set_user(user_id, user_live_cache[user_id], ttl=30)
+                    except Exception:
+                        pass
                     print(f"[WS] 🧹 MT5 TP/SL 청산 - 포지션 {len(_closed_event_ids)}개 제거: {_closed_event_ids}")
 
                 # ★★★ user_target_cache 정리 (Option A: MT5 TP/SL 청산 후 모니터링 중단) ★★★
@@ -4672,6 +4824,12 @@ async def websocket_endpoint(websocket: WebSocket):
 
         except WebSocketDisconnect:
             print(f"[LIVE WS] User {user_id} WebSocket disconnected")
+            # ★ 모니터링: 라이브 WS 해제 카운트
+            try:
+                from app.monitor_counters import ws_disconnect
+                ws_disconnect("live")
+            except Exception:
+                pass
             break
         except Exception as e:
             # ★ 에러 발생해도 WS 연결 유지, 해당 루프만 스킵

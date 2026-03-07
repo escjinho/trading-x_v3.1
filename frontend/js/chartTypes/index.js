@@ -143,6 +143,13 @@ const ChartTypeManager = {
                 series = this.chart.addCandlestickSeries(this.styles.candlestick);
         }
 
+        // ★★★ 가격 연장선 + 우측 라벨 완전 제거 ★★★
+        if (series) {
+            series.applyOptions({
+                priceLineVisible: true,
+                lastValueVisible: true
+            });
+        }
         this.series = series;
         // ★★★ 전역 candleSeries 동기화 (let + window 둘 다) ★★★
         candleSeries = series;

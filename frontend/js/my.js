@@ -1094,13 +1094,13 @@ function initMt5View() {
         if (liveBtn) { liveBtn.classList.remove('active', 'live-active'); }
         if (demoCheck) demoCheck.style.display = 'flex';
         if (liveCheck) liveCheck.style.display = 'none';
-        if (modeStatus) { modeStatus.classList.remove('live'); modeStatus.innerHTML = '<span class="my-mt5-status-dot demo"></span><span><strong>데모 모드</strong> - 가상자금으로 자유롭게 연습하세요</span>'; }
+        if (modeStatus) { modeStatus.classList.remove('live'); modeStatus.innerHTML = '<span class="my-mt5-status-dot demo"></span><span><strong style="color:#ffffff;">데모 모드</strong> - 가상 자금으로 자유롭게 연습하세요</span>'; }
     } else {
         if (liveBtn) { liveBtn.classList.remove('active'); liveBtn.classList.add('live-active'); }
         if (demoBtn) { demoBtn.classList.remove('active', 'live-active'); }
         if (liveCheck) liveCheck.style.display = 'flex';
         if (demoCheck) demoCheck.style.display = 'none';
-        if (modeStatus) { modeStatus.classList.add('live'); modeStatus.innerHTML = '<span class="my-mt5-status-dot live"></span><span><strong>라이브 모드</strong> - 실거래 활성화됨</span>'; }
+        if (modeStatus) { modeStatus.classList.add('live'); modeStatus.innerHTML = '<span class="my-mt5-status-dot live"></span><span><strong>라이브 모드</strong> - 실거래 활성화 됨</span>'; }
     }
 
     loadMT5AccountInfo();
@@ -1255,13 +1255,13 @@ function switchMyMt5Mode(mode) {
         if (liveBtn) { liveBtn.classList.remove('active', 'live-active'); }
         if (demoCheck) demoCheck.style.display = 'flex';
         if (liveCheck) liveCheck.style.display = 'none';
-        if (modeStatus) { modeStatus.classList.remove('live'); modeStatus.innerHTML = '<span class="my-mt5-status-dot demo"></span><span><strong>데모 모드</strong> - 가상자금으로 자유롭게 연습하세요</span>'; }
+        if (modeStatus) { modeStatus.classList.remove('live'); modeStatus.innerHTML = '<span class="my-mt5-status-dot demo"></span><span><strong style="color:#ffffff;">데모 모드</strong> - 가상 자금으로 자유롭게 연습하세요</span>'; }
     } else {
         if (liveBtn) { liveBtn.classList.remove('active'); liveBtn.classList.add('live-active'); }
         if (demoBtn) { demoBtn.classList.remove('active', 'live-active'); }
         if (liveCheck) liveCheck.style.display = 'flex';
         if (demoCheck) demoCheck.style.display = 'none';
-        if (modeStatus) { modeStatus.classList.add('live'); modeStatus.innerHTML = '<span class="my-mt5-status-dot live"></span><span><strong>라이브 모드</strong> - 실거래 활성화됨</span>'; }
+        if (modeStatus) { modeStatus.classList.add('live'); modeStatus.innerHTML = '<span class="my-mt5-status-dot live"></span><span><strong>라이브 모드</strong> - 실거래 활성화 됨</span>'; }
     }
 
     // 모드 전환 후 홈 DOM 데이터가 갱신될 시간을 주고 다시 읽기

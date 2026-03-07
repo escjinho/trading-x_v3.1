@@ -209,6 +209,11 @@ const QuickEasyPanel = {
         this.updatePayout();
         this.closeSymbolDropdown();
 
+        // ★ 심볼 변경 즉시 마켓상태 + 카테고리 업데이트 (장 종료 시에도 표시)
+        if (typeof QeTickChart !== 'undefined' && QeTickChart.refreshMarketStatus) {
+            QeTickChart.refreshMarketStatus(symbol);
+        }
+
         // 틱차트 리셋 + 새 종목 히스토리 로딩
         if (typeof QeTickChart !== 'undefined') {
             QeTickChart.reset();
@@ -534,9 +539,17 @@ const QuickEasyPanel = {
         }, 300);
         this.updatePayout();
         this.updateAccount();
+        // ★ 패널 표시 시 즉시 마켓상태 업데이트 (장 종료 시에도 표시)
+        if (typeof QeTickChart !== 'undefined' && QeTickChart.refreshMarketStatus) {
+            QeTickChart.refreshMarketStatus(window.currentSymbol || 'BTCUSD');
+        }
         this._payoutInterval = setInterval(() => {
             this.updatePayout();
             this.updateAccount();
+            // ★ 1초마다 마켓상태 갱신 (payout 실시간성 유지 + 장 개장/종료 반영)
+            if (typeof QeTickChart !== 'undefined' && QeTickChart.refreshMarketStatus) {
+                QeTickChart.refreshMarketStatus(window.currentSymbol || 'BTCUSD');
+            }
         }, 1000);
     },
 

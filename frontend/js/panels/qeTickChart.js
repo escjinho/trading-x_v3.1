@@ -41,7 +41,7 @@ const QeTickChart = {
         'GBPUSD.r': 'Forex',
         'AUDUSD.r': 'Forex',
         'USDCAD.r': 'Forex',
-        'XAUUSD.r': 'Commodities',
+        'XAUUSD.r': 'Metals',
         'US100.': 'Indices'
     },
 
@@ -335,6 +335,10 @@ const QeTickChart = {
                 clearTimeout(this._loadingTimeout);
                 this._loadingTimeout = null;
             }
+            // ★ 장 종료 시에도 마지막 가격 즉시 표시 (틱 없이도 유지)
+            if (this.lastPrice > 0) {
+                this.updateQuote(this.lastPrice);
+            }
         }
     },
 
@@ -527,12 +531,54 @@ const QeTickChart = {
             } else {
                 statusEl.style.display = 'inline-flex';
                 statusEl.style.alignItems = 'center';
+                statusEl.style.lineHeight = '1';
+                statusEl.style.verticalAlign = 'middle';
                 statusEl.style.background = '#ff4d5a';
                 statusEl.style.width = 'auto';
                 statusEl.style.height = 'auto';
                 statusEl.style.borderRadius = '3px';
-                statusEl.style.padding = '0 4px';
-                statusEl.style.fontSize = '7px';
+                statusEl.style.padding = '0px 5px';
+                statusEl.style.paddingTop = '1px';
+                statusEl.style.fontSize = '9px';
+                statusEl.style.color = '#fff';
+                statusEl.style.fontWeight = '700';
+                statusEl.style.letterSpacing = '0.3px';
+                statusEl.style.boxShadow = '0 0 4px rgba(255,77,90,0.5)';
+                statusEl.textContent = 'CLOSED';
+            }
+        }
+    },
+
+    // ========== 마켓 상태 + 심볼 정보 독립 업데이트 ==========
+    // addTick 차단(장 종료)과 무관하게 항상 호출 가능
+    refreshMarketStatus(symbol) {
+        const sym = symbol || window.currentSymbol || 'BTCUSD';
+        // 심볼 텍스트
+        const symbolEl = document.getElementById('qeInfoSymbol');
+        if (symbolEl) symbolEl.textContent = sym.replace('.r', '').replace('.', '');
+        // 카테고리
+        const catEl = document.getElementById('qeInfoCategory');
+        if (catEl) catEl.textContent = this.CATEGORIES[sym] || 'Market';
+        // 장 운영 상태
+        const statusEl = document.getElementById('qeInfoStatus');
+        if (statusEl) {
+            const isOpen = typeof isCurrentMarketClosed === 'function'
+                ? !isCurrentMarketClosed(sym) : true;
+            if (isOpen) {
+                statusEl.style.display = 'none';
+                statusEl.textContent = '';
+            } else {
+                statusEl.style.display = 'inline-flex';
+                statusEl.style.alignItems = 'center';
+                statusEl.style.lineHeight = '1';
+                statusEl.style.verticalAlign = 'middle';
+                statusEl.style.background = '#ff4d5a';
+                statusEl.style.width = 'auto';
+                statusEl.style.height = 'auto';
+                statusEl.style.borderRadius = '3px';
+                statusEl.style.padding = '0px 5px';
+                statusEl.style.paddingTop = '1px';
+                statusEl.style.fontSize = '9px';
                 statusEl.style.color = '#fff';
                 statusEl.style.fontWeight = '700';
                 statusEl.style.letterSpacing = '0.3px';

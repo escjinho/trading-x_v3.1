@@ -60,7 +60,7 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css?v=1772670900">
-        <link rel="stylesheet" href="css/quickeasy.css?v=20260226b">
+        <link rel="stylesheet" href="css/quickeasy.css?v=20260307c">
     <link rel="stylesheet" href="css/chart.css?v=1771777952">
     <link rel="stylesheet" href="css/account.css?v=20260304d">
     <link rel="stylesheet" href="css/my.css?v=20260302a">
@@ -307,12 +307,10 @@
                 </div>
 
                 <!-- HedgeHood 포털 연결 (Demo/Live 공통) -->
-                <div class="card trading-mode-card" id="demoControlCard">
-                    <button onclick="window.open('https://hedgehood.com','_blank')" style="width: 100%; padding: 14px 20px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 12px; color: var(--text-primary); font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: all 0.2s;">
-                        <span class="material-icons-round" style="font-size: 20px; color: #00d4ff;">open_in_new</span>
-                        HedgeHood 클라이언트 포털 연결
-                        <span class="material-icons-round" style="margin-left: auto; font-size: 18px; opacity: 0.5;">chevron_right</span>
-                    </button>
+                <div class="card trading-mode-card" id="demoControlCard" onclick="window.open('https://hedgehood.com','_blank')" style="cursor:pointer; display:flex; align-items:center; padding:16px 18px;">
+                    <span class="material-icons-round" style="color:#00d4ff; font-size:18px; margin-right:10px;">open_in_new</span>
+                    <span style="font-size:15px; font-weight:600; color:rgba(255,255,255,0.85);">HedgeHood 클라이언트 포털 연결</span>
+                    <span class="material-icons-round" style="margin-left:auto; font-size:18px; opacity:0.4;">chevron_right</span>
                 </div>
             </div>
             
@@ -4462,7 +4460,7 @@
     <script src="js/api.js?v=20260227a"></script>
     <script src="js/utils.js?v=1771777952"></script>
     <script src="js/watchlist.js?v=1771777952"></script>
-    <script src="js/navigation.js?v=20260303d"></script>
+    <script src="js/navigation.js?v=20260307a"></script>
     <script src="js/my.js?v=20260302i"></script>
     <script src="js/tradingReport.js?v=20260302c"></script>
     <script src="js/tradingReportDemo.js?v=20260302h"></script>
@@ -4477,14 +4475,14 @@
     <script src="js/indicators/index.js?v=20260227f"></script>
 
     <!-- Chart Type System -->
-    <script src="js/chartTypes/index.js?v=20260227c"></script>
+    <script src="js/chartTypes/index.js?v=20260307g"></script>
 
-    <script src="js/panels/chartPanel.js?v=20260301a"></script>
+    <script src="js/panels/chartPanel.js?v=20260307f"></script>
     <script src="js/panels/symbolSelectorPanel.js?v=1771777952"></script>
     <script src="js/panels/randomWalkPanel.js?v=1771777952"></script>
     <script src="js/panels/multiOrderPanelV5.js?v=1771777952"></script>
-        <script src="js/panels/quickEasyPanel.js?v=20260301a"></script>
-        <script src="js/panels/qeTickChart.js?v=20260301a"></script>
+        <script src="js/panels/quickEasyPanel.js?v=20260307b"></script>
+        <script src="js/panels/qeTickChart.js?v=20260307h"></script>
 
     <script src="js/chart.js?v=1771777952"></script>
     <script src="js/settings.js?v=20260226f"></script>
@@ -5763,6 +5761,7 @@
 <button class="tf-modal-item" data-tf="H4" onclick="selectTimeframe('H4','4H')" style="padding:14px 20px; background:#2a3444; border:none; border-radius:14px; color:#ffffff; font-size:15px; font-weight:500; cursor:pointer; transition:all 0.2s;">4H</button>
 <button class="tf-modal-item" data-tf="D1" onclick="selectTimeframe('D1','1D')" style="padding:14px 20px; background:#2a3444; border:none; border-radius:14px; color:#ffffff; font-size:15px; font-weight:500; cursor:pointer; transition:all 0.2s;">1D</button>
 <button class="tf-modal-item" data-tf="W1" onclick="selectTimeframe('W1','1W')" style="padding:14px 20px; background:#2a3444; border:none; border-radius:14px; color:#ffffff; font-size:15px; font-weight:500; cursor:pointer; transition:all 0.2s;">1W</button>
+<button class="tf-modal-item" data-tf="MN1" onclick="selectTimeframe('MN1','MN')" style="padding:14px 20px; background:#2a3444; border:none; border-radius:14px; color:#ffffff; font-size:15px; font-weight:500; cursor:pointer; transition:all 0.2s;">MN</button>
             </div>
         </div>
     </div>
@@ -6047,9 +6046,9 @@
     <script src="js/market-schedule.js?v=1771777952"></script>
     <script src="js/account.js?v=20260302a"></script>
     <script src="js/trading.js?v=20260301a"></script>
-    <script src="js/openPositions.js?v=20260302a"></script>
+    <script src="js/openPositions.js?v=20260307a"></script>
     <script src="js/panels/chartOrderPanel.js?v=20260303m"></script>
-    <script src="js/connection.js?v=20260305c"></script>
+    <script src="js/connection.js?v=20260307a"></script>
     <script src="js/init.js?v=1771992777"></script>
 <div id="txDialogContainer"></div>
 </body>

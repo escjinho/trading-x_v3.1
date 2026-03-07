@@ -76,9 +76,8 @@ const OpenPositions = {
     // ========== 탭 전환 ==========
     switchTab(tab) {
         this._currentTab = tab;
-        // ★ 데모 리포트 버튼: 데모 모드 + Trade History 탭에서만 표시
-        var _btn = document.getElementById('accDemoReportBtn');
-        if (_btn) _btn.style.display = (tab === 'history' && typeof isDemo !== 'undefined' && isDemo) ? 'flex' : 'none';
+        // ★ 데모 리포트 버튼: 중앙 함수로 처리
+        if (typeof updateDemoReportBtn === 'function') updateDemoReportBtn();
         // 탭 헤더
         document.querySelectorAll('.acc-tab').forEach(t => {
             t.classList.toggle('active', t.dataset.tab === tab);
@@ -109,7 +108,6 @@ const OpenPositions = {
             }
         }
 
-        // ★ 데모 리포트 버튼: 데모 모드 + Trade History 탭에서만 표시
         if (typeof updateDemoReportBtn === 'function') updateDemoReportBtn();
     },
 
@@ -501,6 +499,12 @@ const OpenPositions = {
                 updateMultiOrderPanelV5();
             }
         }
+
+        // ★ Chart Order (magic=100004)
+        if (magic == 100004 && typeof ChartOrderPanel !== 'undefined') {
+            console.log('[OpenPositions] Chart 패널 상태 동기화:', symbol, posId);
+            ChartOrderPanel.onPositionClosed(symbol, posId);
+        }
     },
 
     // ========== 청산 모드 (체크박스) ==========
@@ -625,6 +629,16 @@ function toggleCloseMode() { OpenPositions.toggleCloseMode(); }
 function cancelCloseMode() { OpenPositions.cancelCloseMode(); }
 function selectAllPositions() { OpenPositions.selectAllPositions(); }
 function executeClosePositions() { OpenPositions.executeClosePositions(); }
+
+// ========== 데모 리포트 버튼 중앙 제어 ==========
+// isDemo=true AND 현재탭=history 일 때만 표시
+function updateDemoReportBtn() {
+    var _btn = document.getElementById('accDemoReportBtn');
+    if (!_btn) return;
+    var currentTab = (typeof OpenPositions !== 'undefined') ? OpenPositions._currentTab : 'history';
+    var shouldShow = (typeof isDemo !== 'undefined' && isDemo) && (currentTab === 'history');
+    _btn.style.display = shouldShow ? 'flex' : 'none';
+}
 
 // 초기화
 OpenPositions.init();

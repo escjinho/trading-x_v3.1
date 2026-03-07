@@ -239,6 +239,11 @@ function openChartFromWatchlist(symbol, name, icon, color) {
     setTimeout(() => {
         updateZmFavoriteIcon();
     }, 100);
+
+    // ★ Chart Order Panel 종목 변경 동기화
+    if (typeof ChartOrderPanel !== 'undefined') {
+        ChartOrderPanel.onSymbolChange(symbol);
+    }
 }
 
 function backToWatchlist() {
@@ -483,15 +488,19 @@ function selectZmTimeframe(tf) {
 
 // 매도/매수 버튼
 function openSellOrder() {
-    // Trading 탭으로 이동하거나 주문 모달 열기
-    console.log('매도 주문');
-    // TODO: 실제 매도 로직 연결
+    if (typeof ChartOrderPanel !== 'undefined') {
+        ChartOrderPanel.open('SELL');
+    } else {
+        console.warn('[Chart] ChartOrderPanel not loaded');
+    }
 }
 
 function openBuyOrder() {
-    // Trading 탭으로 이동하거나 주문 모달 열기
-    console.log('매수 주문');
-    // TODO: 실제 매수 로직 연결
+    if (typeof ChartOrderPanel !== 'undefined') {
+        ChartOrderPanel.open('BUY');
+    } else {
+        console.warn('[Chart] ChartOrderPanel not loaded');
+    }
 }
 
 // 더보기 메뉴 항목들

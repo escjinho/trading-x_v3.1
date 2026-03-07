@@ -40,9 +40,72 @@ def health_check():
     return {"status": "healthy"}
 
 @app.get("/api/health")
-def api_health_check():
+async def api_health_check():
+    """Trading-X 종합 헬스체크 — Redis + DB + MetaAPI"""
     from datetime import datetime
-    return {"status": "ok", "timestamp": datetime.utcnow().isoformat()}
+    import os
+
+    checks = {}
+    overall = "healthy"
+
+    # 1. Redis 상태
+    try:
+        from app.redis_client import is_redis_available, get_redis
+        if is_redis_available():
+            r = get_redis()
+            redis_mem = r.info("memory").get("used_memory_human", "?")
+            redis_keys = r.dbsize()
+            checks["redis"] = {"status": "ok", "memory": redis_mem, "keys": redis_keys}
+        else:
+            checks["redis"] = {"status": "down"}
+            overall = "degraded"
+    except Exception as e:
+        checks["redis"] = {"status": "error", "detail": str(e)[:100]}
+        overall = "degraded"
+
+    # 2. DB 상태
+    try:
+        from app.database import SessionLocal
+        from sqlalchemy import text
+        db = SessionLocal()
+        db.execute(text("SELECT 1"))
+        db.close()
+        checks["database"] = {"status": "ok"}
+    except Exception as e:
+        checks["database"] = {"status": "error", "detail": str(e)[:100]}
+        overall = "unhealthy"
+
+    # 3. MetaAPI 시세 상태
+    try:
+        from app.api.metaapi_service import quote_price_cache, quote_connected
+        checks["metaapi"] = {
+            "status": "ok" if len(quote_price_cache) > 0 else "warning",
+            "symbols": len(quote_price_cache),
+            "streaming": bool(quote_connected)
+        }
+    except Exception as e:
+        checks["metaapi"] = {"status": "error", "detail": str(e)[:100]}
+
+    # 4. MetaAPI 슬롯
+    try:
+        from app.database import SessionLocal
+        from app.models.user import User
+        db2 = SessionLocal()
+        deployed = db2.query(User).filter(User.metaapi_status == 'deployed', User.metaapi_account_id.isnot(None)).count()
+        total_users = db2.query(User).count()
+        db2.close()
+        checks["slots"] = {"deployed": deployed, "max": 300, "total_users": total_users}
+    except Exception as e:
+        checks["slots"] = {"status": "error", "detail": str(e)[:80]}
+
+    # 5. 서버 정보
+    checks["worker_pid"] = os.getpid()
+
+    return {
+        "status": overall,
+        "timestamp": datetime.utcnow().isoformat(),
+        "checks": checks
+    }
 
 @app.on_event("startup")
 async def startup_event():
