@@ -414,6 +414,30 @@ async def get_current_user(
 
 
     # ========== 계정 정보 ==========
+@router.get("/symbol-specs")
+async def get_symbol_specs(
+    force_refresh: bool = False,
+    current_user: dict = Depends(get_current_user)
+):
+    """14개 심볼 스펙 조회 (MetaAPI → Redis 캐시 24h)"""
+    from .metaapi_service import get_metaapi_service
+    import json, redis as redis_lib
+    r = redis_lib.Redis(host='127.0.0.1', port=6379, db=0)
+
+    # force_refresh=true 이면 캐시 삭제
+    if force_refresh:
+        r.delete('symbol_specs_cache')
+        print("[SymbolSpecs] 캐시 강제 삭제")
+
+    service = await get_metaapi_service()
+    specs = await service.get_all_symbol_specs()
+
+    if not specs:
+        raise HTTPException(status_code=503, detail="심볼 스펙 조회 실패")
+
+    return {"success": True, "specs": specs}
+
+
 @router.get("/account-info")
 async def get_account_info(
     magic: int = 100001,

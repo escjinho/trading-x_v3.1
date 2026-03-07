@@ -61,7 +61,7 @@ async function fetchSymbolSpecs(forceRefresh = false) {
         const token = localStorage.getItem('token');
         if (!token) return;
 
-        const url = `${API_URL}/symbol-specs${forceRefresh ? '?force_refresh=true' : ''}`;
+        const url = `${API_URL}/mt5/symbol-specs${forceRefresh ? '?force_refresh=true' : ''}`;
         const res = await fetch(url, {
             headers: { 'Authorization': `Bearer ${token}` }
         });

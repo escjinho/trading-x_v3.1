@@ -216,7 +216,13 @@
       "Bash(for commit in 827803e 2f190c9 9b308a2)",
       "Bash(do)",
       "Bash(git show:*)",
-      "Bash(sort:*)"
+      "Bash(sort:*)",
+      "Bash(__NEW_LINE_c260297f83b5a5f8__ echo \"\")",
+      "Bash(__NEW_LINE_80a5a9069bb5c5d3__ echo \"\")",
+      "Bash(__NEW_LINE_0043b9d6c0127474__ echo \"\")",
+      "Bash(do echo \"\" echo \">>> $SYM\" grep -A 5 \"''''$SYM'''':\" /var/www/trading-x/frontend/js/symbol-config.js)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzcyOTI2ODU3LCJ0eXBlIjoiYWNjZXNzIn0.2NTtkLQK27S865ksGVechRoOW8svWKcyy1DbuyDD2NI\" __NEW_LINE_173cdf5232b3432b__ echo \"===== API 직접 호출 테스트 =====\" curl -s \"http://127.0.0.1:8000/api/mt5/symbol-specs\" -H \"Authorization: Bearer $TOKEN\")",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzcyOTI2ODU3LCJ0eXBlIjoiYWNjZXNzIn0.2NTtkLQK27S865ksGVechRoOW8svWKcyy1DbuyDD2NI\" __NEW_LINE_36c20971991e2e73__ curl -sv \"http://127.0.0.1:8000/api/mt5/symbol-specs\" -H \"Authorization: Bearer $TOKEN\")"
     ]
   }
 }

@@ -1189,6 +1189,61 @@ class MetaAPIService:
 
         return prices
 
+    async def get_symbol_spec(self, symbol: str) -> dict:
+        """단일 심볼 스펙 조회 (MetaAPI)"""
+        if not self.trade_connection:
+            if not await self.connect_trade_account():
+                return {}
+        try:
+            spec = await self.trade_connection.get_symbol_specification(symbol)
+            return spec or {}
+        except Exception as e:
+            print(f"[MetaAPI] 심볼 스펙 조회 실패 ({symbol}): {e}")
+            return {}
+
+    async def get_all_symbol_specs(self) -> dict:
+        """14개 심볼 스펙 일괄 조회 → Redis 캐시 (TTL 24h)"""
+        from ..symbol_config import SYMBOLS
+        import json, redis as redis_lib
+        r = redis_lib.Redis(host='127.0.0.1', port=6379, db=0)
+
+        # Redis 캐시 확인
+        cached = r.get('symbol_specs_cache')
+        if cached:
+            print("[SymbolSpecs] Redis 캐시 사용")
+            return json.loads(cached)
+
+        # MetaAPI 조회
+        if not self.trade_connection:
+            if not await self.connect_trade_account():
+                return {}
+
+        result = {}
+        for symbol in SYMBOLS:
+            try:
+                spec = await self.trade_connection.get_symbol_specification(symbol)
+                if spec:
+                    result[symbol] = {
+                        'swapLong':      getattr(spec, 'swap_long', None) or spec.get('swapLong'),
+                        'swapShort':     getattr(spec, 'swap_short', None) or spec.get('swapShort'),
+                        'swapRollover3Days': getattr(spec, 'swap_rollover3_days', None) or spec.get('swapRollover3Days'),
+                        'spread':        getattr(spec, 'spread', None) or spec.get('spread'),
+                        'minVolume':     getattr(spec, 'min_volume', None) or spec.get('minVolume'),
+                        'maxVolume':     getattr(spec, 'max_volume', None) or spec.get('maxVolume'),
+                        'volumeStep':    getattr(spec, 'volume_step', None) or spec.get('volumeStep'),
+                        'contractSize':  getattr(spec, 'contract_size', None) or spec.get('contractSize'),
+                        'digits':        getattr(spec, 'digits', None) or spec.get('digits'),
+                    }
+                    print(f"[SymbolSpecs] ✅ {symbol} 조회 완료")
+            except Exception as e:
+                print(f"[SymbolSpecs] ❌ {symbol} 실패: {e}")
+                result[symbol] = {}
+
+        # Redis 캐시 저장 (TTL 24시간)
+        r.setex('symbol_specs_cache', 86400, json.dumps(result, default=str))
+        print(f"[SymbolSpecs] Redis 캐시 저장 완료 ({len(result)}개 심볼)")
+        return result
+
     async def get_candles(self, symbol: str, timeframe: str = "M1", count: int = 100) -> List[Dict]:
         """캔들 데이터 조회 - 캐시에서 직접 반환 (모든 TF가 실시간 업데이트됨)"""
         global quote_candle_cache

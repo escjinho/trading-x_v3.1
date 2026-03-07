@@ -14,7 +14,7 @@ window.SYMBOL_CONFIG = {
         spread:'유동 스프레드', spreadPips:'~15 pips', swapLong:'-17.76%', swapLongClass:'negative', swapShort:'-11.84%', swapShortClass:'negative', swap3Day:'Wednesday',
     },
     'ETHUSD': {
-        icon: 'Ξ', iconColor: '#627eea', name: 'Ethereum', fullName: 'Ethereum vs US Dollar',
+        icon: '⟠', iconColor: '#627eea', name: 'Ethereum', fullName: 'Ethereum vs US Dollar',
         digits: 2, tick_size: 0.01, tick_value: 0.01, contract_size: 1, marginPerLot: 600,
         watchlistTab: 'crypto', inPopular: false, inTradePanel: false,
         schedule: { sun:'00:02 - 23:57', mon:'00:02 - 23:57', tue:'00:02 - 23:57', wed:'00:02 - 23:57', thu:'00:02 - 23:57', fri:'00:02 - 23:57', sat:'00:02 - 09:30, 12:30 - 14:00, 15:00 - 23:57' },
@@ -106,7 +106,7 @@ window.SYMBOL_CONFIG = {
     },
     // ===== 에너지 =====
     'XBRUSD': {
-        icon: '🛢', iconColor: '#795548', name: 'Brent Oil', fullName: 'Brent Crude Oil',
+        icon: '✺', iconColor: '#8d6e63', name: 'Brent Oil', fullName: 'Brent Crude Oil',
         digits: 2, tick_size: 0.01, tick_value: 10.0, contract_size: 1000, marginPerLot: 800,
         watchlistTab: 'energy', inPopular: false, inTradePanel: false,
         schedule: { sun:'—', mon:'01:02 - 23:55', tue:'01:02 - 23:55', wed:'01:02 - 23:55', thu:'01:02 - 23:55', fri:'01:02 - 23:55', sat:'—' },
@@ -114,7 +114,7 @@ window.SYMBOL_CONFIG = {
         spread:'유동 스프레드', spreadPips:'~4 pips', swapLong:'-30 USD', swapLongClass:'negative', swapShort:'+10 USD', swapShortClass:'positive', swap3Day:'Wednesday',
     },
     'XTIUSD': {
-        icon: '⛽', iconColor: '#5d4037', name: 'WTI Oil', fullName: 'WTI Crude Oil',
+        icon: '✺', iconColor: '#e8a045', name: 'WTI Oil', fullName: 'WTI Crude Oil',
         digits: 2, tick_size: 0.01, tick_value: 10.0, contract_size: 1000, marginPerLot: 800,
         watchlistTab: 'energy', inPopular: false, inTradePanel: false,
         schedule: { sun:'—', mon:'01:02 - 23:55', tue:'01:02 - 23:55', wed:'01:02 - 23:55', thu:'01:02 - 23:55', fri:'01:02 - 23:55', sat:'—' },

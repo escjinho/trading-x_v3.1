@@ -293,3 +293,38 @@
             color: var(--sell-color);
         }
         
+/* ========== 그라디언트 테두리 모달 ========== */
+.modal-gradient-border {
+    position: relative;
+    border: 1px solid rgba(0, 212, 255, 0.2) !important;
+    box-shadow: 0 0 60px rgba(0, 0, 0, 0.8),
+                0 0 20px rgba(0, 212, 255, 0.08) !important;
+}
+.modal-gradient-border::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(0, 212, 255, 0.3) 20%,
+        rgba(0, 212, 255, 0.9) 50%,
+        rgba(0, 212, 255, 0.3) 80%,
+        transparent 100%);
+    border-radius: 20px 20px 0 0;
+    z-index: 1;
+}
+.modal-gradient-border::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(0, 212, 255, 0.3) 20%,
+        rgba(0, 212, 255, 0.9) 50%,
+        rgba(0, 212, 255, 0.3) 80%,
+        transparent 100%);
+    border-radius: 0 0 20px 20px;
+    z-index: 1;
+}
