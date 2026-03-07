@@ -7,17 +7,17 @@ window.SYMBOL_CONFIG = {
     // ===== 크립토 =====
     'BTCUSD': {
         icon: '₿', iconColor: '#f7931a', name: 'Bitcoin', fullName: 'Bitcoin vs US Dollar',
-        digits: 2, tick_size: 0.01, tick_value: 0.01, contract_size: 1, marginPerLot: 1400,
+        digits: 2, tick_size: 0.01, tick_value: 0.01, contract_size: 1, marginPerLot: 673,
         watchlistTab: 'crypto', inPopular: true, inTradePanel: true,
-        schedule: { sun:'00:02 - 23:57', mon:'00:02 - 23:57', tue:'00:02 - 23:57', wed:'00:02 - 23:57', thu:'00:02 - 23:57', fri:'00:02 - 23:57', sat:'00:02 - 09:30, 12:30 - 14:00, 15:00 - 23:57' },
+        schedule: { sun:'00:02 - 23:57', mon:'00:02 - 23:57', tue:'00:02 - 23:57', wed:'00:02 - 23:57', thu:'00:02 - 23:57', fri:'00:02 - 23:57', sat:'00:02 - 14:00, 15:00 - 23:57' },
         lotSize:'1 Contract', tickSizeStr:'0.01', minLot:'0.01 lot', maxLot:'10.00 lot', pipSize:'0.01 (2 digits)', stopLevel:'0',
         spread:'유동 스프레드', spreadPips:'~15 pips', swapLong:'-17.76%', swapLongClass:'negative', swapShort:'-11.84%', swapShortClass:'negative', swap3Day:'Wednesday',
     },
     'ETHUSD': {
         icon: '⟠', iconColor: '#627eea', name: 'Ethereum', fullName: 'Ethereum vs US Dollar',
-        digits: 2, tick_size: 0.01, tick_value: 0.01, contract_size: 1, marginPerLot: 600,
+        digits: 2, tick_size: 0.01, tick_value: 0.01, contract_size: 1, marginPerLot: 39,
         watchlistTab: 'crypto', inPopular: false, inTradePanel: false,
-        schedule: { sun:'00:02 - 23:57', mon:'00:02 - 23:57', tue:'00:02 - 23:57', wed:'00:02 - 23:57', thu:'00:02 - 23:57', fri:'00:02 - 23:57', sat:'00:02 - 09:30, 12:30 - 14:00, 15:00 - 23:57' },
+        schedule: { sun:'00:02 - 23:57', mon:'00:02 - 23:57', tue:'00:02 - 23:57', wed:'00:02 - 23:57', thu:'00:02 - 23:57', fri:'00:02 - 23:57', sat:'00:02 - 14:00, 15:00 - 23:57' },
         lotSize:'1 Contract', tickSizeStr:'0.01', minLot:'0.01 lot', maxLot:'10.00 lot', pipSize:'0.01 (2 digits)', stopLevel:'0',
         spread:'유동 스프레드', spreadPips:'~150 pips', swapLong:'-12.16%', swapLongClass:'negative', swapShort:'-8.11%', swapShortClass:'negative', swap3Day:'Wednesday',
     },
@@ -82,11 +82,11 @@ window.SYMBOL_CONFIG = {
     // ===== 지수 =====
     'US100.': {
         icon: '⬡', iconColor: '#00b450', name: 'NASDAQ', fullName: 'Nasdaq 100 Index',
-        digits: 2, tick_size: 0.01, tick_value: 0.2, contract_size: 20, marginPerLot: 400,
+        digits: 2, tick_size: 0.01, tick_value: 0.2, contract_size: 20, marginPerLot: 2466,
         watchlistTab: 'indices', inPopular: true, inTradePanel: true,
         schedule: { sun:'—', mon:'01:02 - 23:58', tue:'01:02 - 23:58', wed:'01:02 - 23:58', thu:'01:02 - 23:58', fri:'01:02 - 23:55', sat:'—' },
         lotSize:'20 Contract', tickSizeStr:'0.01', minLot:'0.01 lot', maxLot:'200.00 lot', pipSize:'0.01 (2 digits)', stopLevel:'0',
-        spread:'유동 스프레드', spreadPips:'~100 pips', swapLong:'-165 USD', swapLongClass:'negative', swapShort:'+43.4 USD', swapShortClass:'positive', swap3Day:'Friday',
+        spread:'유동 스프레드', spreadPips:'~100 pips', swapLong:'-164.55 USD', swapLongClass:'negative', swapShort:'+42.95 USD', swapShortClass:'positive', swap3Day:'Friday',
     },
     'US500.': {
         icon: '◆', iconColor: '#1976d2', name: 'S&P 500', fullName: 'S&P 500 Index',
@@ -107,18 +107,18 @@ window.SYMBOL_CONFIG = {
     // ===== 에너지 =====
     'XBRUSD': {
         icon: '✺', iconColor: '#8d6e63', name: 'Brent Oil', fullName: 'Brent Crude Oil',
-        digits: 2, tick_size: 0.01, tick_value: 10.0, contract_size: 1000, marginPerLot: 800,
+        digits: 2, tick_size: 0.01, tick_value: 10.0, contract_size: 1000, marginPerLot: 906,
         watchlistTab: 'energy', inPopular: false, inTradePanel: false,
-        schedule: { sun:'—', mon:'01:02 - 23:55', tue:'01:02 - 23:55', wed:'01:02 - 23:55', thu:'01:02 - 23:55', fri:'01:02 - 23:55', sat:'—' },
-        lotSize:'1,000 barrels', tickSizeStr:'0.01', minLot:'0.01 lot', maxLot:'50.00 lot', pipSize:'0.01 (2 digits)', stopLevel:'0',
+        schedule: { sun:'—', mon:'03:02 - 23:53', tue:'03:02 - 23:53', wed:'03:02 - 23:53', thu:'03:02 - 23:53', fri:'03:02 - 23:53', sat:'—' },
+        lotSize:'1,000 barrels', tickSizeStr:'0.01', minLot:'0.01 lot', maxLot:'20.00 lot', pipSize:'0.01 (2 digits)', stopLevel:'0',
         spread:'유동 스프레드', spreadPips:'~4 pips', swapLong:'-30 USD', swapLongClass:'negative', swapShort:'+10 USD', swapShortClass:'positive', swap3Day:'Wednesday',
     },
     'XTIUSD': {
         icon: '✺', iconColor: '#e8a045', name: 'WTI Oil', fullName: 'WTI Crude Oil',
-        digits: 2, tick_size: 0.01, tick_value: 10.0, contract_size: 1000, marginPerLot: 800,
+        digits: 2, tick_size: 0.01, tick_value: 10.0, contract_size: 1000, marginPerLot: 909,
         watchlistTab: 'energy', inPopular: false, inTradePanel: false,
-        schedule: { sun:'—', mon:'01:02 - 23:55', tue:'01:02 - 23:55', wed:'01:02 - 23:55', thu:'01:02 - 23:55', fri:'01:02 - 23:55', sat:'—' },
-        lotSize:'1,000 barrels', tickSizeStr:'0.01', minLot:'0.01 lot', maxLot:'50.00 lot', pipSize:'0.01 (2 digits)', stopLevel:'0',
+        schedule: { sun:'—', mon:'01:02 - 23:53', tue:'01:02 - 23:53', wed:'01:02 - 23:53', thu:'01:02 - 23:53', fri:'01:02 - 23:45', sat:'—' },
+        lotSize:'1,000 barrels', tickSizeStr:'0.01', minLot:'0.01 lot', maxLot:'20.00 lot', pipSize:'0.01 (2 digits)', stopLevel:'0',
         spread:'유동 스프레드', spreadPips:'~4 pips', swapLong:'-28 USD', swapLongClass:'negative', swapShort:'+8 USD', swapShortClass:'positive', swap3Day:'Wednesday',
     },
 };
