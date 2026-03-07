@@ -53,8 +53,8 @@ function safeUpdateCurrentPL(element, profit) {
     }
 }
 
-// ★★★ 프론트엔드 실시간 P/L 계산 (MetaAPI 캐시 지연 해소) ★★★
-const SYMBOL_SPECS = {
+// ★★★ 프론트엔드 실시간 P/L 계산 — symbol-config.js(window.SYMBOL_SPECS) 사용 ★★★
+const SYMBOL_SPECS = window.SYMBOL_SPECS || {
     'BTCUSD':   { tick_size: 0.01,    tick_value: 0.01, contract_size: 1 },
     'ETHUSD':   { tick_size: 0.01,    tick_value: 0.01, contract_size: 1 },
     'XAUUSD.r': { tick_size: 0.01,    tick_value: 1.0,  contract_size: 100 },

@@ -26,39 +26,29 @@ function isFavorite(symbol) {
     return favoriteSymbols.some(item => item.symbol === symbol);
 }
 
-const watchlistSymbols = {
-    popular: [
-        { symbol: 'BTCUSD', name: 'BTCUSD', fullName: 'Bitcoin vs US Dollar', icon: '₿', color: '#f7931a' },
-        { symbol: 'EURUSD.r', name: 'EURUSD.r', fullName: 'Euro vs US Dollar', icon: '€', color: '#0052cc' },
-        { symbol: 'USDJPY.r', name: 'USDJPY.r', fullName: 'Dollar vs Japanese Yen', icon: '¥', color: '#dc143c' },
-        { symbol: 'XAUUSD.r', name: 'XAUUSD.r', fullName: 'Gold vs US Dollar', icon: '✦', color: '#ffd700' },
-        { symbol: 'US100.', name: 'US100.', fullName: 'Nasdaq 100 Index', icon: '⬡', color: '#00b450' }
-    ],
-    forex: [
-        { symbol: 'EURUSD.r', name: 'EURUSD.r', fullName: 'Euro vs US Dollar', icon: '€', color: '#0052cc' },
-        { symbol: 'USDJPY.r', name: 'USDJPY.r', fullName: 'Dollar vs Japanese Yen', icon: '¥', color: '#dc143c' },
-        { symbol: 'GBPUSD.r', name: 'GBPUSD.r', fullName: 'Pound vs US Dollar', icon: '£', color: '#9c27b0' },
-        { symbol: 'AUDUSD.r', name: 'AUDUSD.r', fullName: 'Australian vs US Dollar', icon: 'A$', color: '#00875a' },
-        { symbol: 'USDCAD.r', name: 'USDCAD.r', fullName: 'US Dollar vs Canadian', icon: 'C$', color: '#ff5722' }
-    ],
-    crypto: [
-        { symbol: 'BTCUSD', name: 'BTCUSD', fullName: 'Bitcoin vs US Dollar', icon: '₿', color: '#f7931a' },
-        { symbol: 'ETHUSD', name: 'ETHUSD', fullName: 'Ethereum vs US Dollar', icon: 'Ξ', color: '#627eea' }
-    ],
-    indices: [
-        { symbol: 'US100.', name: 'US100.', fullName: 'Nasdaq 100 Index', icon: '⬡', color: '#00b450' },
-        { symbol: 'US500.', name: 'US500.', fullName: 'S&P 500 Index', icon: '◆', color: '#1976d2' },
-        { symbol: 'US30.', name: 'US30.', fullName: 'Dow Jones Index', icon: '◈', color: '#ff9800' }
-    ],
-    metals: [
-        { symbol: 'XAUUSD.r', name: 'XAUUSD.r', fullName: 'Gold vs US Dollar', icon: '✦', color: '#ffd700' },
-        { symbol: 'XAGUSD.r', name: 'XAGUSD.r', fullName: 'Silver vs US Dollar', icon: '✦', color: '#c0c0c0' }
-    ],
-    energy: [
-        { symbol: 'XBRUSD', name: 'XBRUSD', fullName: 'Brent Crude Oil', icon: '🛢', color: '#795548' },
-        { symbol: 'XTIUSD', name: 'XTIUSD', fullName: 'WTI Crude Oil', icon: '🛢', color: '#5d4037' }
-    ]
-};
+// ★★★ watchlistSymbols — symbol-config.js(window.SYMBOL_CONFIG)에서 자동 생성 ★★★
+// 새 심볼 추가는 frontend/js/symbol-config.js 의 SYMBOL_CONFIG만 수정하면 됩니다.
+const POPULAR_ORDER = ['BTCUSD', 'EURUSD.r', 'USDJPY.r', 'XAUUSD.r', 'US100.'];
+
+function _buildWatchlistSymbols() {
+    const cfg = window.SYMBOL_CONFIG || {};
+    const result = { popular: [], forex: [], crypto: [], indices: [], metals: [], energy: [] };
+    Object.keys(cfg).forEach(function(sym) {
+        const c = cfg[sym];
+        const item = { symbol: sym, name: sym, fullName: c.fullName, icon: c.icon, color: c.iconColor };
+        const tab = c.watchlistTab;
+        if (result[tab]) result[tab].push(item);
+        if (c.inPopular) result.popular.push(item);
+    });
+    result.popular.sort(function(a, b) {
+        const ai = POPULAR_ORDER.indexOf(a.symbol);
+        const bi = POPULAR_ORDER.indexOf(b.symbol);
+        return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+    });
+    return result;
+}
+
+const watchlistSymbols = _buildWatchlistSymbols();
 
 // 즐겨찾기 목록 - 저장된 전체 정보 반환
 function getFavoritesWatchlist() {

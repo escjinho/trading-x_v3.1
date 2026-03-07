@@ -26,6 +26,9 @@ except ImportError:
     is_redis_available = lambda: False
     print("[MetaAPI] ⚠️ Redis client not available — dict fallback only")
 
+# ★ 심볼 설정 단일 관리 (symbol_config.py에서 import)
+from app.symbol_config import SYMBOLS, SYMBOL_SPECS, _MARKET_SCHEDULE, SYMBOL_VOLATILITY
+
 # ★ 캔들 캐시 파일 경로
 CANDLE_CACHE_FILE = Path("/var/www/trading-x/backend/candle_cache.json")
 
@@ -117,31 +120,8 @@ SLOT_WARN_RATIO = 0.70
 SLOT_BUSY_RATIO = 0.85
 SLOT_CRITICAL_RATIO = 0.90
 
-# 지원 심볼
-SYMBOLS = [
-    'BTCUSD',
-    'ETHUSD',
-    'EURUSD.r',
-    'USDJPY.r',
-    'GBPUSD.r',
-    'AUDUSD.r',
-    'USDCAD.r',
-    'XAUUSD.r',
-    'US100.'
-]
-
-# 심볼 스펙 (P/L 계산용)
-SYMBOL_SPECS = {
-    "BTCUSD":   {"contract_size": 1,      "tick_size": 0.01,    "tick_value": 0.01,  "digits": 2},
-    "ETHUSD":   {"contract_size": 1,      "tick_size": 0.01,    "tick_value": 0.01,  "digits": 2},
-    "XAUUSD.r": {"contract_size": 100,    "tick_size": 0.01,    "tick_value": 1.0,   "digits": 2},
-    "EURUSD.r": {"contract_size": 100000, "tick_size": 0.00001, "tick_value": 1.0,   "digits": 5},
-    "USDJPY.r": {"contract_size": 100000, "tick_size": 0.001,   "tick_value": 0.67,  "digits": 3},
-    "GBPUSD.r": {"contract_size": 100000, "tick_size": 0.00001, "tick_value": 1.0,   "digits": 5},
-    "AUDUSD.r": {"contract_size": 100000, "tick_size": 0.00001, "tick_value": 1.0,   "digits": 5},
-    "USDCAD.r": {"contract_size": 100000, "tick_size": 0.00001, "tick_value": 0.74,  "digits": 5},
-    "US100.":   {"contract_size": 20,     "tick_size": 0.01,    "tick_value": 0.2,   "digits": 2},
-}
+# ★ SYMBOLS, SYMBOL_SPECS → symbol_config.py에서 자동 import됨
+# (추가/수정은 backend/app/symbol_config.py 의 SYMBOL_CONFIG만 변경)
 
 
 # ============================================================
@@ -414,19 +394,8 @@ def initialize_candles_synthetic(symbol: str, current_price: float, count: int =
     if quote_candle_cache[symbol].get("M1") and len(quote_candle_cache[symbol]["M1"]) >= count:
         return
 
-    # 심볼별 변동폭 설정 (대략적인 1분 변동폭)
-    volatility = {
-        "BTCUSD": 50.0,      # $50
-        "ETHUSD": 5.0,       # $5
-        "XAUUSD.r": 0.5,     # $0.5
-        "EURUSD.r": 0.0003,  # 3 pips
-        "USDJPY.r": 0.03,    # 3 pips
-        "GBPUSD.r": 0.0003,  # 3 pips
-        "AUDUSD.r": 0.0002,  # 2 pips
-        "USDCAD.r": 0.0002,  # 2 pips
-        "US100.": 5.0,       # 5 points
-    }
-    vol = volatility.get(symbol, current_price * 0.0005)  # 기본 0.05%
+    # 심볼별 변동폭 (symbol_config.py SYMBOL_VOLATILITY에서 가져옴)
+    vol = SYMBOL_VOLATILITY.get(symbol, current_price * 0.0005)  # 기본 0.05%
 
     candles = []
     price = current_price
@@ -481,31 +450,7 @@ _TF_CONFIG = {
     "MN1": (43200, 200),
 }
 
-# ★★★ 종목별 거래시간 스케줄 (MT5 서버시간 UTC+2/+3 기준) ★★★
-_MARKET_SCHEDULE = {
-    # 크립토: 일~금 00:02-23:57, 토 일부 세션
-    "BTCUSD": {
-        "sun": "00:02-23:57", "mon": "00:02-23:57", "tue": "00:02-23:57",
-        "wed": "00:02-23:57", "thu": "00:02-23:57", "fri": "00:02-23:57",
-        "sat": "00:02-09:30,12:30-14:00,15:00-23:57"
-    },
-    "ETHUSD": {
-        "sun": "00:02-23:57", "mon": "00:02-23:57", "tue": "00:02-23:57",
-        "wed": "00:02-23:57", "thu": "00:02-23:57", "fri": "00:02-23:57",
-        "sat": "00:02-09:30,12:30-14:00,15:00-23:57"
-    },
-    # FX: 월~금 00:02-23:58
-    "EURUSD.r": {"mon": "00:02-23:58", "tue": "00:02-23:58", "wed": "00:02-23:58", "thu": "00:02-23:58", "fri": "00:02-23:58"},
-    "USDJPY.r": {"mon": "00:02-23:58", "tue": "00:02-23:58", "wed": "00:02-23:58", "thu": "00:02-23:58", "fri": "00:02-23:58"},
-    "GBPUSD.r": {"mon": "00:02-23:58", "tue": "00:02-23:58", "wed": "00:02-23:58", "thu": "00:02-23:58", "fri": "00:02-23:58"},
-    "GBPJPY.r": {"mon": "00:02-23:58", "tue": "00:02-23:58", "wed": "00:02-23:58", "thu": "00:02-23:58", "fri": "00:02-23:58"},
-    "AUDUSD.r": {"mon": "00:02-23:58", "tue": "00:02-23:58", "wed": "00:02-23:58", "thu": "00:02-23:58", "fri": "00:02-23:58"},
-    "USDCAD.r": {"mon": "00:02-23:58", "tue": "00:02-23:58", "wed": "00:02-23:58", "thu": "00:02-23:58", "fri": "00:02-23:58"},
-    # 골드: 월~금 01:02-23:58 (금 23:55)
-    "XAUUSD.r": {"mon": "01:02-23:58", "tue": "01:02-23:58", "wed": "01:02-23:58", "thu": "01:02-23:58", "fri": "01:02-23:55"},
-    # 지수: 월~금 01:02-23:58 (금 23:55)
-    "US100.": {"mon": "01:02-23:58", "tue": "01:02-23:58", "wed": "01:02-23:58", "thu": "01:02-23:58", "fri": "01:02-23:55"},
-}
+# ★★★ _MARKET_SCHEDULE → symbol_config.py에서 자동 import됨 ★★★
 
 def _get_mt5_offset():
     """MT5 서버 시간 오프셋 (UTC+2 겨울, UTC+3 여름)"""
@@ -1459,18 +1404,7 @@ class MetaAPIService:
                 return {'success': False, 'error': 'Trade 계정 연결 실패'}
 
         try:
-            # ★★★ 심볼별 스펙 (tick_size = point) ★★★
-            SYMBOL_SPECS = {
-                "BTCUSD":   {"tick_size": 0.01},
-                "ETHUSD":   {"tick_size": 0.01},
-                "XAUUSD.r": {"tick_size": 0.01},
-                "EURUSD.r": {"tick_size": 0.00001},
-                "USDJPY.r": {"tick_size": 0.001},
-                "GBPUSD.r": {"tick_size": 0.00001},
-                "AUDUSD.r": {"tick_size": 0.00001},
-                "USDCAD.r": {"tick_size": 0.00001},
-                "US100.":   {"tick_size": 0.01},
-            }
+            # ★ 심볼별 스펙 (symbol_config.py에서 import된 SYMBOL_SPECS 사용)
             specs = SYMBOL_SPECS.get(symbol, {"tick_size": 0.01})
             tick_size = specs["tick_size"]
 
@@ -2791,18 +2725,7 @@ async def place_order_for_user(user_id: int, metaapi_account_id: str, symbol: st
         return {"success": False, "error": "MetaAPI 연결 실패"}
 
     try:
-        # 심볼별 스펙
-        SYMBOL_SPECS = {
-            "BTCUSD":   {"tick_size": 0.01},
-            "ETHUSD":   {"tick_size": 0.01},
-            "XAUUSD.r": {"tick_size": 0.01},
-            "EURUSD.r": {"tick_size": 0.00001},
-            "USDJPY.r": {"tick_size": 0.001},
-            "GBPUSD.r": {"tick_size": 0.00001},
-            "AUDUSD.r": {"tick_size": 0.00001},
-            "USDCAD.r": {"tick_size": 0.00001},
-            "US100.":   {"tick_size": 0.01},
-        }
+        # ★ 심볼별 스펙 (symbol_config.py에서 import된 SYMBOL_SPECS 사용)
         tick_size = SYMBOL_SPECS.get(symbol, {"tick_size": 0.01})["tick_size"]
 
         options = {'comment': comment, 'magic': magic}

@@ -33,6 +33,11 @@ const MarketSchedule = (() => {
     }
 
     function getSchedule(symbol) {
+        // ★ SYMBOL_CONFIG(symbol-config.js) 우선 사용
+        if (typeof window.SYMBOL_CONFIG !== 'undefined' && window.SYMBOL_CONFIG[symbol]) {
+            return window.SYMBOL_CONFIG[symbol].schedule;
+        }
+        // fallback: index.html 인라인 symbolInfoData
         if (typeof symbolInfoData !== 'undefined' && symbolInfoData[symbol]) {
             return symbolInfoData[symbol].hours;
         }

@@ -4013,25 +4013,25 @@
                         <div style="font-size: 13px; color: var(--text-muted);">MT5 계좌를 연결하여 실시간 거래를 시작하세요</div>
                     </div>
                     <div style="padding: 0 20px 20px; display: flex; flex-direction: column; gap: 10px;">
-                        <button onclick="showMT5Step2('existing')" style="display: flex; align-items: center; gap: 14px; padding: 16px; background: rgba(0,212,255,0.05); border: 1px solid rgba(0,212,255,0.2); border-radius: 12px; cursor: pointer; transition: all 0.2s; text-align: left; width: 100%;">
-                            <div style="width: 46px; height: 46px; min-width: 46px; background: rgba(0,212,255,0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
-                                <span class="material-icons-round" style="font-size: 26px; color: var(--accent-cyan);">account_circle</span>
+                        <button onclick="showMT5Step2('existing')" style="display: flex; align-items: center; gap: 14px; padding: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; cursor: pointer; transition: all 0.2s; text-align: left;">
+                            <div style="width: 44px; height: 44px; min-width: 44px; background: rgba(0,212,255,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                <span class="material-icons-round" style="font-size: 24px; color: var(--accent-cyan);">account_circle</span>
                             </div>
                             <div style="flex: 1;">
-                                <div style="font-size: 15px; font-weight: 700; color: white; margin-bottom: 4px;">기존 계좌 연결</div>
-                                <div style="font-size: 12px; color: rgba(255,255,255,0.5);">이미 HedgeHood 계좌가 있습니다</div>
+                                <div style="font-size: 14px; font-weight: 600; color: white; margin-bottom: 2px;">기존 계좌 연결</div>
+                                <div style="font-size: 12px; color: #6b7280;">이미 HedgeHood 계좌가 있습니다</div>
                             </div>
-                            <span class="material-icons-round" style="color: rgba(0,212,255,0.7); font-size: 22px;">chevron_right</span>
+                            <span class="material-icons-round" style="color: #6b7280; font-size: 20px;">chevron_right</span>
                         </button>
-                        <button onclick="showMT5Step2('new')" style="display: flex; align-items: center; gap: 14px; padding: 16px; background: rgba(0,180,80,0.05); border: 1px solid rgba(0,180,80,0.2); border-radius: 12px; cursor: pointer; transition: all 0.2s; text-align: left; width: 100%;">
-                            <div style="width: 46px; height: 46px; min-width: 46px; background: rgba(0,180,80,0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
-                                <span class="material-icons-round" style="font-size: 26px; color: #00b450;">person_add</span>
+                        <button onclick="showMT5Step2('new')" style="display: flex; align-items: center; gap: 14px; padding: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; cursor: pointer; transition: all 0.2s; text-align: left;">
+                            <div style="width: 44px; height: 44px; min-width: 44px; background: rgba(0,180,80,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                <span class="material-icons-round" style="font-size: 24px; color: #00b450;">person_add</span>
                             </div>
                             <div style="flex: 1;">
-                                <div style="font-size: 15px; font-weight: 700; color: white; margin-bottom: 4px;">신규 계좌 개설</div>
-                                <div style="font-size: 12px; color: rgba(255,255,255,0.5);">HedgeHood에서 무료로 개설하기</div>
+                                <div style="font-size: 14px; font-weight: 600; color: white; margin-bottom: 2px;">신규 계좌 개설</div>
+                                <div style="font-size: 12px; color: #6b7280;">HedgeHood에서 무료로 개설하기</div>
                             </div>
-                            <span class="material-icons-round" style="color: rgba(0,180,80,0.7); font-size: 22px;">chevron_right</span>
+                            <span class="material-icons-round" style="color: #6b7280; font-size: 20px;">chevron_right</span>
                         </button>
                     </div>
                     <div style="text-align: center; padding: 4px 20px 18px;">
@@ -4454,12 +4454,13 @@
     </div>
 </div>
 
+    <script src="js/symbol-config.js?v=20260308a"></script>
     <script src="js/config.js?v=1771777952"></script>
     <script src="js/state.js?v=20260227a"></script>
     <script src="js/auth.js?v=1771777952"></script>
     <script src="js/api.js?v=20260227a"></script>
     <script src="js/utils.js?v=1771777952"></script>
-    <script src="js/watchlist.js?v=1771777952"></script>
+    <script src="js/watchlist.js?v=20260308b"></script>
     <script src="js/navigation.js?v=20260307a"></script>
     <script src="js/my.js?v=20260302i"></script>
     <script src="js/tradingReport.js?v=20260302c"></script>
@@ -5563,7 +5564,20 @@
 
     // 종목 정보 업데이트 함수
     function updateSymbolInfo(symbol) {
-        const data = symbolInfoData[symbol];
+        // ★ SYMBOL_CONFIG 우선 사용, fallback으로 symbolInfoData
+        let data = null;
+        if (typeof window.SYMBOL_CONFIG !== 'undefined' && window.SYMBOL_CONFIG[symbol]) {
+            const cfg = window.SYMBOL_CONFIG[symbol];
+            data = {
+                icon: cfg.icon, iconColor: cfg.iconColor, name: cfg.name, desc: cfg.fullName,
+                lotSize: cfg.lotSize, tickSize: cfg.tickSizeStr, minLot: cfg.minLot, maxLot: cfg.maxLot,
+                pipSize: cfg.pipSize, stopLevel: cfg.stopLevel, spread: cfg.spread, spreadPips: cfg.spreadPips,
+                swapLong: cfg.swapLong, swapLongClass: cfg.swapLongClass, swapShort: cfg.swapShort,
+                swapShortClass: cfg.swapShortClass, swap3Day: cfg.swap3Day, hours: cfg.schedule
+            };
+        } else {
+            data = symbolInfoData[symbol];
+        }
         if (!data) {
             console.warn('[updateSymbolInfo] 종목 정보 없음:', symbol);
             return;
@@ -6043,12 +6057,12 @@
         </div>
     </div>
 
-    <script src="js/market-schedule.js?v=1771777952"></script>
+    <script src="js/market-schedule.js?v=20260308b"></script>
     <script src="js/account.js?v=20260302a"></script>
     <script src="js/trading.js?v=20260301a"></script>
     <script src="js/openPositions.js?v=20260307a"></script>
-    <script src="js/panels/chartOrderPanel.js?v=20260303m"></script>
-    <script src="js/connection.js?v=20260307a"></script>
+    <script src="js/panels/chartOrderPanel.js?v=20260308b"></script>
+    <script src="js/connection.js?v=20260308b"></script>
     <script src="js/init.js?v=1771992777"></script>
 <div id="txDialogContainer"></div>
 </body>

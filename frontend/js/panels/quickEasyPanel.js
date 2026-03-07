@@ -29,17 +29,17 @@ function qeDeletePosition(symbol) {
     } catch(e) {}
 }
 
-const QE_SYMBOL_SPECS = {
-    "BTCUSD":   { contract_size: 1 },
-    "ETHUSD":   { contract_size: 1 },
-    "XAUUSD.r": { contract_size: 100 },
-    "EURUSD.r": { contract_size: 100000 },
-    "USDJPY.r": { contract_size: 100000 },
-    "GBPUSD.r": { contract_size: 100000 },
-    "AUDUSD.r": { contract_size: 100000 },
-    "USDCAD.r": { contract_size: 100000 },
-    "US100.":   { contract_size: 20 }
-};
+// ★ QE_SYMBOL_SPECS — symbol-config.js(window.SYMBOL_CONFIG)에서 자동 생성
+const QE_SYMBOL_SPECS = (function() {
+    if (typeof window.SYMBOL_CONFIG !== 'undefined') {
+        var result = {};
+        Object.keys(window.SYMBOL_CONFIG).forEach(function(sym) {
+            result[sym] = { contract_size: window.SYMBOL_CONFIG[sym].contract_size };
+        });
+        return result;
+    }
+    return { "BTCUSD":{ contract_size:1 }, "ETHUSD":{ contract_size:1 }, "XAUUSD.r":{ contract_size:100 }, "EURUSD.r":{ contract_size:100000 }, "USDJPY.r":{ contract_size:100000 }, "US100.":{ contract_size:20 } };
+})();
 
 const QE_SYMBOL_INFO = {
     "BTCUSD":   { icon: "₿", color: "#f7931a", name: "Bitcoin" },
@@ -743,17 +743,14 @@ const QuickEasyPanel = {
         return 86; // 기본값
     },
 
-    // 종목별 스펙 (백엔드 DEFAULT_SYMBOL_SPECS와 동일)
-    SYMBOL_SPECS: {
+    // 종목별 스펙 — symbol-config.js(window.SYMBOL_SPECS)에서 자동 로드됨
+    SYMBOL_SPECS: window.SYMBOL_SPECS || {
         'BTCUSD':   { tick_size: 0.01, tick_value: 0.01, contract_size: 1 },
         'ETHUSD':   { tick_size: 0.01, tick_value: 0.01, contract_size: 1 },
         'EURUSD.r': { tick_size: 0.00001, tick_value: 1.0, contract_size: 100000 },
         'USDJPY.r': { tick_size: 0.001, tick_value: 0.67, contract_size: 100000 },
-        'GBPUSD.r': { tick_size: 0.00001, tick_value: 1.0, contract_size: 100000 },
         'XAUUSD.r': { tick_size: 0.01, tick_value: 1.0, contract_size: 100 },
-        'US100.':   { tick_size: 0.01, tick_value: 0.2, contract_size: 20 },
-        'AUDUSD.r': { tick_size: 0.00001, tick_value: 1.0, contract_size: 100000 },
-        'USDCAD.r': { tick_size: 0.00001, tick_value: 0.74, contract_size: 100000 }
+        'US100.':   { tick_size: 0.01, tick_value: 0.2, contract_size: 20 }
     },
 
     // profit 계산 (백엔드 calculate_demo_profit 동일)

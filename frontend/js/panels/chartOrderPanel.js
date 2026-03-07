@@ -33,17 +33,8 @@ const ChartOrderPanel = {
     ],
 
     // 종목별 1 lot 마진 근사치 (프론트 표시용)
-    _marginPerLot: {
-        'BTCUSD': 1400, 'ETHUSD': 600,
-        'XAUUSD.r': 2400, 'XAUUSD': 2400,
-        'XAUUSD.p': 2400,
-        'US100.r': 400, 'US100': 400,
-        'EURUSD.r': 260, 'EURUSD': 260,
-        'USDJPY.r': 260, 'USDJPY': 260,
-        'GBPUSD.r': 320, 'GBPUSD': 320,
-        'GBPJPY.r': 320, 'GBPJPY': 320,
-        'AUDUSD.r': 200, 'AUDUSD': 200,
-    },
+    // 종목별 1 lot 마진 근사치 — symbol-config.js(window.SYMBOL_MARGIN_PER_LOT)에서 자동 로드됨
+    _marginPerLot: window.SYMBOL_MARGIN_PER_LOT || { 'BTCUSD': 1400, 'XAUUSD.r': 2400, 'US100.': 400, 'EURUSD.r': 260, 'USDJPY.r': 260 },
 
 
     // ========== 주문 패널 열기/닫기 ==========

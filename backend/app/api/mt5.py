@@ -41,6 +41,8 @@ def safe_json_value(val):
 
 from ..database import get_db
 from ..utils.crypto import encrypt, decrypt
+# ★ 심볼 스펙 (symbol_config.py에서 단일 관리)
+from ..symbol_config import SYMBOL_SPECS
 
 # ========== 외부 API 캔들 데이터 조회 ==========
 async def fetch_binance_candles(symbol: str, timeframe: str, count: int):
@@ -156,18 +158,7 @@ _provisioning_locks = {}  # { user_id: True }
 _auto_deploy_cooldown = {}  # {user_id: timestamp}
 AUTO_DEPLOY_COOLDOWN_SEC = 60  # 60초 쿨다운
 
-# ★★★ 심볼별 스펙 (실시간 P/L 계산용) ★★★
-SYMBOL_SPECS = {
-    "BTCUSD":   {"contract_size": 1,      "tick_size": 0.01,    "tick_value": 0.01},
-    "ETHUSD":   {"contract_size": 1,      "tick_size": 0.01,    "tick_value": 0.01},
-    "XAUUSD.r": {"contract_size": 100,    "tick_size": 0.01,    "tick_value": 1.0},
-    "EURUSD.r": {"contract_size": 100000, "tick_size": 0.00001, "tick_value": 1.0},
-    "USDJPY.r": {"contract_size": 100000, "tick_size": 0.001,   "tick_value": 0.67},
-    "GBPUSD.r": {"contract_size": 100000, "tick_size": 0.00001, "tick_value": 1.0},
-    "AUDUSD.r": {"contract_size": 100000, "tick_size": 0.00001, "tick_value": 1.0},
-    "USDCAD.r": {"contract_size": 100000, "tick_size": 0.00001, "tick_value": 0.74},
-    "US100.":   {"contract_size": 20,     "tick_size": 0.01,    "tick_value": 0.2},
-}
+# ★★★ 심볼별 스펙 (실시간 P/L 계산용) → symbol_config.py에서 import됨 ★★★
 
 def calculate_realtime_profit(pos_type: int, symbol: str, volume: float, open_price: float, current_bid: float, current_ask: float) -> float:
     """실시간 P/L 계산"""
