@@ -2,7 +2,7 @@
 
         .header {
             background: var(--bg-secondary);
-            padding: 6px 20px;
+            padding: 3px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
