@@ -233,7 +233,7 @@ async function softRefresh(reason = '') {
         // 1. 계정 데이터 새로고침
         if (isDemo) {
             if (typeof fetchDemoData === 'function') {
-                await fetchDemoData();
+                await fetchDemoData(true);
             }
         } else {
             if (typeof fetchAccountData === 'function') {
@@ -2136,7 +2136,7 @@ async function checkUserMode() {
             // ★ Demo WebSocket 연결 + 데이터 로드
             connectWebSocket();
             if (token) {
-                await fetchDemoData();
+                await fetchDemoData(true);
                 if (typeof loadHistory === 'function') {
                     loadHistory();
                 }
@@ -2232,7 +2232,7 @@ async function checkUserMode() {
 
             // ★ Demo 데이터 즉시 로드 (Account Overview 업데이트)
             if (token) {
-                await fetchDemoData();  // await 추가하여 즉시 실행
+                await fetchDemoData(true);  // await 추가하여 즉시 실행
                 
                 // ★ 히스토리 로드 (Today P/L 계산)
                 if (typeof loadHistory === 'function') {
@@ -2276,12 +2276,12 @@ async function checkUserMode() {
         isDemo = true;
         if (typeof updateDemoReportBtn === 'function') updateDemoReportBtn();
         if (typeof updateCommissionNotice === 'function') updateCommissionNotice();
-        fetchDemoData();
+        fetchDemoData(true);
     }
 }
 
 // ========== Demo 데이터 조회 ==========
-async function fetchDemoData() {
+async function fetchDemoData(forceUpdate = false) {
     // Demo 모드가 아니면 실행 안 함
     if (!isDemo) {
         console.log('[fetchDemoData] ⚠️ Not in Demo mode, skipping');
@@ -2300,7 +2300,7 @@ async function fetchDemoData() {
         if (data) {
             // ★ WS 연결 중이면 잔고/포지션 업데이트 건너뛰기 (깜빡임 방지)
             // auto_closed와 인디케이터만 항상 처리
-            const wsActive = window.wsConnected === true;
+            const wsActive = window.wsConnected === true && !forceUpdate;
             
             // ★★★ 백엔드에서 자동 청산된 경우 (중복 방지 적용) ★★★
             if (data.auto_closed) {
@@ -3377,7 +3377,7 @@ async function createDemoAccount() {
 
             // ★ 데모 데이터 즉시 로드
             if (typeof fetchDemoData === 'function') {
-                await fetchDemoData();
+                await fetchDemoData(true);
             }
         } else {
             showToast(data.message || '계좌 개설에 실패했습니다', 'error');
