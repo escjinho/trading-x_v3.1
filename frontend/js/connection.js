@@ -53,6 +53,58 @@ function safeUpdateCurrentPL(element, profit) {
     }
 }
 
+// ============================================================
+// ★ 심볼 스펙 자동 업데이트 (MetaAPI → Redis → Frontend)
+// ============================================================
+async function fetchSymbolSpecs(forceRefresh = false) {
+    try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const url = `${API_URL}/symbol-specs${forceRefresh ? '?force_refresh=true' : ''}`;
+        const res = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+
+        const result = await res.json();
+        if (!result.success || !result.specs) return;
+
+        const specs = result.specs;
+        let updated = 0;
+
+        // window.SYMBOL_CONFIG 업데이트 (swap/spread)
+        if (typeof window.SYMBOL_CONFIG !== 'undefined') {
+            Object.keys(specs).forEach(function(sym) {
+                if (!window.SYMBOL_CONFIG[sym]) return;
+                const s = specs[sym];
+
+                if (s.swapLong !== null && s.swapLong !== undefined) {
+                    const val = parseFloat(s.swapLong).toFixed(2);
+                    window.SYMBOL_CONFIG[sym].swapLong = val + ' points';
+                    window.SYMBOL_CONFIG[sym].swapLongClass = val >= 0 ? 'positive' : 'negative';
+                }
+                if (s.swapShort !== null && s.swapShort !== undefined) {
+                    const val = parseFloat(s.swapShort).toFixed(2);
+                    window.SYMBOL_CONFIG[sym].swapShort = val + ' points';
+                    window.SYMBOL_CONFIG[sym].swapShortClass = val >= 0 ? 'positive' : 'negative';
+                }
+                if (s.spread !== null && s.spread !== undefined) {
+                    window.SYMBOL_CONFIG[sym].spreadPips = '~' + parseFloat(s.spread).toFixed(1) + ' pips';
+                }
+                updated++;
+            });
+        }
+
+        console.log(`[SymbolSpecs] ✅ ${updated}개 심볼 스펙 업데이트 완료`);
+    } catch (e) {
+        console.warn('[SymbolSpecs] 스펙 로드 실패 (fallback 유지):', e);
+    }
+}
+
+// 외부 접근용 (강제 갱신 버튼 등에서 호출 가능)
+window.refreshSymbolSpecs = () => fetchSymbolSpecs(true);
+
 // ★★★ 프론트엔드 실시간 P/L 계산 — symbol-config.js(window.SYMBOL_SPECS) 사용 ★★★
 const SYMBOL_SPECS = window.SYMBOL_SPECS || {
     'BTCUSD':   { tick_size: 0.01,    tick_value: 0.01, contract_size: 1 },
@@ -2061,6 +2113,9 @@ async function checkUserMode() {
         });
         const data = await response.json();
 
+        // ★ 심볼 스펙 캐시 로드 (백그라운드)
+        fetchSymbolSpecs();
+
         if (data.has_mt5) {
             // ★★★ MT5 연결되어 있어도 데모 모드부터 시작 ★★★
             isDemo = true; window.isDemo = true;
@@ -2807,6 +2862,9 @@ async function checkMT5Connection() {
         });
         const data = await response.json();
 
+        // ★ 심볼 스펙 캐시 로드 (백그라운드)
+        fetchSymbolSpecs();
+
         if (data.has_mt5) {
             try {
                 const mt5Response = await fetch(`${API_URL}/mt5/account-info`, {
@@ -3457,7 +3515,7 @@ function updateHeaderStatus(status) {
     var configs = {
         'connected_demo': { text: 'Connected', color: '#00d4ff', dot: false },
         'connected_live': { text: 'Connected', color: '#00ff88', dot: false },
-        'standby':        { text: 'Standby',   color: '#888888', dot: true },
+        'standby':        { text: 'Standby',   color: '#ffa500', dot: false },
         'preparing':      { text: 'Preparing', color: '#f0b90b', dot: false },
         'disconnected':   { text: 'Disconnected', color: '#ff4444', dot: true },
         'guest':          { text: 'Guest Mode', color: '#ffa500', dot: false }
