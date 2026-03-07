@@ -17,3 +17,26 @@
         .page { display: none; padding: 15px; }
         .page.active { display: block; }
         
+/* ===== 헤더 3분할 레이아웃 ===== */
+.header {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+}
+.header-left {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+.header-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.header-status {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    font-size: 11px;
+}
