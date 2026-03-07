@@ -215,7 +215,8 @@
       "Bash(__NEW_LINE_1eea0034e617d6b1__ echo \"\")",
       "Bash(for commit in 827803e 2f190c9 9b308a2)",
       "Bash(do)",
-      "Bash(git show:*)"
+      "Bash(git show:*)",
+      "Bash(sort:*)"
     ]
   }
 }

@@ -60,7 +60,7 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css?v=1772670900">
-        <link rel="stylesheet" href="css/quickeasy.css?v=20260307c">
+        <link rel="stylesheet" href="css/quickeasy.css?v=20260308a">
     <link rel="stylesheet" href="css/chart.css?v=1771777952">
     <link rel="stylesheet" href="css/account.css?v=20260304d">
     <link rel="stylesheet" href="css/my.css?v=20260302a">
@@ -240,7 +240,7 @@
                             <div style="font-size: 12px; color: var(--text-muted);">가상 자산으로 안전하게 연습할 수 있습니다</div>
                         </div>
                     </div>
-                    <button onclick="openDemoCreateModal()" style="width: 50%; margin: 0 auto; padding: 11px; background: linear-gradient(135deg, #5a9ee0 0%, #4080c0 100%); border: none; border-radius: 10px; color: white; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 20px rgba(74,144,217,0.3);">
+                    <button onclick="openDemoCreateModal()" style="width: 50%; margin: 0 auto; padding: 8px 11px; background: linear-gradient(135deg, #5a9ee0 0%, #4080c0 100%); border: none; border-radius: 10px; color: white; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 20px rgba(74,144,217,0.3);">
                         <span class="material-icons-round" style="font-size: 20px;">add_circle</span>
                         Demo 계좌 생성
                     </button>
@@ -260,11 +260,11 @@
                         </div>
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
-                        <button onclick="openMT5ConnectModal()" style="width: 85%; padding: 11px; background: linear-gradient(135deg, #00b450 0%, #008040 100%); border: none; border-radius: 10px; color: white; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 20px rgba(0,180,80,0.3);">
+                        <button onclick="openMT5ConnectModal()" style="width: 80%; padding: 8px 11px; background: linear-gradient(135deg, #00b450 0%, #008040 100%); border: none; border-radius: 10px; color: white; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 20px rgba(0,180,80,0.3);">
                             <span class="material-icons-round" style="font-size: 20px;">link</span>
                             MT5 계좌 연결하기
                         </button>
-                        <button onclick="openMT5GuideModal()" style="width: 85%; padding: 9px; background: transparent; border: 1px solid var(--border-color); border-radius: 10px; color: var(--text-muted); font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <button onclick="openMT5GuideModal()" style="width: 80%; padding: 8px 11px; background: transparent; border: 1px solid var(--border-color); border-radius: 10px; color: var(--text-muted); font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
                             <span class="material-icons-round" style="font-size: 20px;">help_outline</span>
                             신규 계좌 개설 안내
                         </button>
@@ -282,7 +282,7 @@
                     </div>
 
                     <!-- 빈 상태 (데모 미생성 시) -->
-                    <div id="homeAccountEmpty" style="display: none; text-align: center; padding: 50px 10px; color: var(--text-muted); font-size: 14px;">
+                    <div id="homeAccountEmpty" style="display: none; text-align: center; padding: 20px 10px 50px; color: var(--text-muted); font-size: 14px;">
                         <span class="material-icons-round" style="font-size: 76px; color: rgba(0, 212, 255, 0.25); display: block; margin-bottom: 10px;">credit_card_off</span>
                         생성된 데모 계좌가 없습니다
                     </div>
@@ -4013,25 +4013,25 @@
                         <div style="font-size: 13px; color: var(--text-muted);">MT5 계좌를 연결하여 실시간 거래를 시작하세요</div>
                     </div>
                     <div style="padding: 0 20px 20px; display: flex; flex-direction: column; gap: 10px;">
-                        <button onclick="showMT5Step2('existing')" style="display: flex; align-items: center; gap: 14px; padding: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; cursor: pointer; transition: all 0.2s; text-align: left;">
-                            <div style="width: 44px; height: 44px; min-width: 44px; background: rgba(0,212,255,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
-                                <span class="material-icons-round" style="font-size: 24px; color: var(--accent-cyan);">account_circle</span>
+                        <button onclick="showMT5Step2('existing')" style="display: flex; align-items: center; gap: 14px; padding: 16px; background: rgba(0,212,255,0.05); border: 1px solid rgba(0,212,255,0.2); border-radius: 12px; cursor: pointer; transition: all 0.2s; text-align: left; width: 100%;">
+                            <div style="width: 46px; height: 46px; min-width: 46px; background: rgba(0,212,255,0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                <span class="material-icons-round" style="font-size: 26px; color: var(--accent-cyan);">account_circle</span>
                             </div>
                             <div style="flex: 1;">
-                                <div style="font-size: 14px; font-weight: 600; color: white; margin-bottom: 2px;">기존 계좌 연결</div>
-                                <div style="font-size: 12px; color: #6b7280;">이미 HedgeHood 계좌가 있습니다</div>
+                                <div style="font-size: 15px; font-weight: 700; color: white; margin-bottom: 4px;">기존 계좌 연결</div>
+                                <div style="font-size: 12px; color: rgba(255,255,255,0.5);">이미 HedgeHood 계좌가 있습니다</div>
                             </div>
-                            <span class="material-icons-round" style="color: #6b7280; font-size: 20px;">chevron_right</span>
+                            <span class="material-icons-round" style="color: rgba(0,212,255,0.7); font-size: 22px;">chevron_right</span>
                         </button>
-                        <button onclick="showMT5Step2('new')" style="display: flex; align-items: center; gap: 14px; padding: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; cursor: pointer; transition: all 0.2s; text-align: left;">
-                            <div style="width: 44px; height: 44px; min-width: 44px; background: rgba(0,180,80,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
-                                <span class="material-icons-round" style="font-size: 24px; color: #00b450;">person_add</span>
+                        <button onclick="showMT5Step2('new')" style="display: flex; align-items: center; gap: 14px; padding: 16px; background: rgba(0,180,80,0.05); border: 1px solid rgba(0,180,80,0.2); border-radius: 12px; cursor: pointer; transition: all 0.2s; text-align: left; width: 100%;">
+                            <div style="width: 46px; height: 46px; min-width: 46px; background: rgba(0,180,80,0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                <span class="material-icons-round" style="font-size: 26px; color: #00b450;">person_add</span>
                             </div>
                             <div style="flex: 1;">
-                                <div style="font-size: 14px; font-weight: 600; color: white; margin-bottom: 2px;">신규 계좌 개설</div>
-                                <div style="font-size: 12px; color: #6b7280;">HedgeHood에서 무료로 개설하기</div>
+                                <div style="font-size: 15px; font-weight: 700; color: white; margin-bottom: 4px;">신규 계좌 개설</div>
+                                <div style="font-size: 12px; color: rgba(255,255,255,0.5);">HedgeHood에서 무료로 개설하기</div>
                             </div>
-                            <span class="material-icons-round" style="color: #6b7280; font-size: 20px;">chevron_right</span>
+                            <span class="material-icons-round" style="color: rgba(0,180,80,0.7); font-size: 22px;">chevron_right</span>
                         </button>
                     </div>
                     <div style="text-align: center; padding: 4px 20px 18px;">
@@ -4481,8 +4481,8 @@
     <script src="js/panels/symbolSelectorPanel.js?v=1771777952"></script>
     <script src="js/panels/randomWalkPanel.js?v=1771777952"></script>
     <script src="js/panels/multiOrderPanelV5.js?v=1771777952"></script>
-        <script src="js/panels/quickEasyPanel.js?v=20260307b"></script>
-        <script src="js/panels/qeTickChart.js?v=20260307h"></script>
+        <script src="js/panels/quickEasyPanel.js?v=20260308a"></script>
+        <script src="js/panels/qeTickChart.js?v=20260308a"></script>
 
     <script src="js/chart.js?v=1771777952"></script>
     <script src="js/settings.js?v=20260226f"></script>
