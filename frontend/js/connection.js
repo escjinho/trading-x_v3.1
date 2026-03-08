@@ -1011,12 +1011,14 @@ function connectWebSocket() {
                         } else if (data.martin_step_up) {
                             // ★★★ 유저 청산 or 최근 주문만 팝업 ★★★
                             if (window._userClosing || (Date.now() - (window._lastOrderTime || 0) < 60000)) {
+                                window._martinStateUpdating = true;
                                 showMartinPopup(profit);
                             } else {
                                 console.log('[WS Demo] 마틴 팝업 무시 — 유저 청산 아님');
                             }
                         } else {
                             if (window._userClosing || (Date.now() - (window._lastOrderTime || 0) < 60000)) {
+                                window._martinStateUpdating = true;
                                 showMartinPopup(profit);
                             } else {
                                 console.log('[WS Demo] 마틴 팝업 무시 — 유저 청산 아님');
@@ -2397,12 +2399,14 @@ async function fetchDemoData(forceUpdate = false) {
                         } else if (data.martin_step_up) {
                             // ★★★ 유저 청산 or 최근 주문만 팝업 ★★★
                             if (window._userClosing || (Date.now() - (window._lastOrderTime || 0) < 60000)) {
+                                window._martinStateUpdating = true;
                                 showMartinPopup(profit);
                             } else {
                                 console.log('[WS Demo sync] 마틴 팝업 무시 — 유저 청산 아님');
                             }
                         } else {
                             if (window._userClosing || (Date.now() - (window._lastOrderTime || 0) < 60000)) {
+                                window._martinStateUpdating = true;
                                 showMartinPopup(profit);
                             } else {
                                 console.log('[WS Demo sync] 마틴 팝업 무시 — 유저 청산 아님');
