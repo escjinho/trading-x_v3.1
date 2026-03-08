@@ -222,7 +222,7 @@ function selectMode(el) {
     } else if (settingsMode === 'martin') {
         // Martin 모드 기본값
         settingsTarget = 50;
-        settingsLotSize = 0.01;
+        settingsLotSize = 0.10;
         settingsMartinLevel = 5;
         settingsMartinEnabled = false;
     }
@@ -465,7 +465,7 @@ function resetSettings() {
         settingsLeverage = 5;
     } else if (settingsMode === 'martin') {
         settingsTarget = 50;
-        settingsLotSize = 0.01;
+        settingsLotSize = 0.10;
         settingsMartinLevel = 5;
         settingsMartinEnabled = false;
     }
