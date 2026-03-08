@@ -161,6 +161,7 @@ function hideMartinPopup() {
 
 function martinPopupSettings() {
     hideMartinPopup();
+    window._plGaugeFrozen = false;
     // 마틴 리셋 후 설정으로
     if (isDemo) {
         apiCall(`/demo/martin/reset-full?magic=${BUYSELL_MAGIC_NUMBER}`, 'POST');
@@ -177,6 +178,7 @@ function martinPopupSettings() {
 async function martinPopupStay() {
     // ★★★ 단계 유지: step 그대로, accumulated_loss만 업데이트 ★★★
     hideMartinPopup();
+    window._plGaugeFrozen = false;
     martinAccumulatedLoss = _martinPendingAccLoss;
 
     if (isDemo) {
@@ -195,6 +197,7 @@ async function martinPopupStay() {
 async function martinPopupContinue() {
     // ★★★ 다음 단계로: step up + accumulated_loss 업데이트 ★★★
     hideMartinPopup();
+    window._plGaugeFrozen = false;
     martinHistory[martinStep - 1] = -1;
 
     const newStep = Math.min(martinStep + 1, martinLevel);
@@ -259,11 +262,13 @@ function showMartinSuccessPopup(profit) {
 
 function martinSuccessToSettings() {
     document.getElementById('martinSuccessPopup').style.display = 'none';
+    window._martinStateUpdating = false;
     openSettings();
 }
 
 function martinSuccessContinue() {
     document.getElementById('martinSuccessPopup').style.display = 'none';
+    window._martinStateUpdating = false;
     
     // 1단계로 리셋 (이미 백엔드에서 처리됨)
     martinStep = 1;
@@ -1011,10 +1016,14 @@ async function closePosition() {
                     window._plGaugeFrozen = false;
                 }, 20000);
             } else {
+                window._martinStateUpdating = false;
                 showToast(friendlyError(errMsg), 'error');
             }
         }
-    } catch (e) { showToast('Network error', 'error'); }
+    } catch (e) {
+        window._martinStateUpdating = false;
+        showToast('Network error', 'error');
+    }
 
     // ★★★ 15초 후 플래그 완전 해제 (MetaAPI 캐시 동기화 완료 대기) ★★★
     setTimeout(() => {
@@ -1092,6 +1101,7 @@ async function closeDemoPosition() {
     // ★★★ 마틴 모드: 청산 시작 즉시 주문 차단 (API 대기 중 gap 방지) ★★★
     if (currentMode === 'martin' && martinEnabled) {
         window._martinStateUpdating = true;
+        showToast('마틴 계산 중...', 'info');
     }
 
     // ★★★ 청산 전 포지션 정보 저장 (토스트용) ★★★
@@ -1142,6 +1152,7 @@ async function closeDemoPosition() {
                         updateMartinUI();
                         updateTodayPL(profit);
                         if (remainingLoss > 0) {
+                            window._martinStateUpdating = false;
                             showToast(`일부 회복! +$${profit.toFixed(2)}\n남은 손실: $${remainingLoss.toFixed(2)}`, 'success');
                         } else {
                             showMartinSuccessPopup(profit);
@@ -1153,6 +1164,7 @@ async function closeDemoPosition() {
                     window._martinStateUpdating = true;
                     showMartinPopup(rawProfit, _lastDemoTradeId);
                 } else {
+                    window._martinStateUpdating = false;
                     showToast('청산 완료 (손익 없음)', 'success');
                 }
             } else {
@@ -1171,12 +1183,15 @@ async function closeDemoPosition() {
                 if (typeof syncTradeTodayPL === 'function') syncTradeTodayPL();
             }, 3000);
         } else {
+            window._martinStateUpdating = false;
             showToast(friendlyError(result?.message), 'error');
         }
     } catch (e) {
+        window._martinStateUpdating = false;
         showToast('Network error', 'error');
     } finally {
         isClosing = false;
+        window._userClosing = false;
     }
 }
 
