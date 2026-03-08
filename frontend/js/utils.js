@@ -216,6 +216,7 @@ function getSymbolInfo(symbol) {
         'USDJPY.r': { name: 'Dollar/Yen', icon: '¥', color: '#dc143c', category: 'Forex' },
         'GBPUSD.r': { name: 'Pound/Dollar', icon: '£', color: '#9c27b0', category: 'Forex' },
         'XAUUSD.r': { name: 'Gold', icon: '✦', color: '#ffd700', category: 'Metals' },
+        'XAGUSD.r': { name: 'Silver', icon: '✦', color: '#c0c0c0', category: 'Metals' },
         'US100.': { name: 'NASDAQ', icon: '⬡', color: '#00b450', category: 'Indices' }
     };
 

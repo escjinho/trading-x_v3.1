@@ -61,7 +61,7 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css?v=1772670900">
         <link rel="stylesheet" href="css/quickeasy.css?v=20260308a">
-    <link rel="stylesheet" href="css/chart.css?v=1771777952">
+    <link rel="stylesheet" href="css/chart.css?v=20260308n">
     <link rel="stylesheet" href="css/account.css?v=20260304d">
     <link rel="stylesheet" href="css/my.css?v=20260302a">
     <link rel="stylesheet" href="css/tradingReport.css?v=20260302b">
@@ -337,7 +337,50 @@
                 
                 <!-- 차트 상세 페이지 -->
                 <div class="chart-detail-container" id="chartDetailContainer">
-                
+
+                <!-- ★ 가로모드 전용 상단바 -->
+                <div class="landscape-top-bar" id="landscapeTopBar">
+                    <div class="landscape-symbol-left">
+                        <span class="landscape-sym-icon" id="landscapeSymIcon" style="color:#f7931a">₿</span>
+                        <div class="landscape-sym-text">
+                            <span class="landscape-sym-id" id="landscapeSymId">BTCUSD</span>
+                            <span class="landscape-sym-name" id="landscapeSymName">Bitcoin</span>
+                        </div>
+                    </div>
+                    <div class="landscape-top-btns">
+                        <button class="landscape-icon-btn" onclick="zmLandscapeSearch()">
+                            <span class="material-icons-round">search</span>
+                        </button>
+                        <button class="landscape-icon-btn" onclick="zmLandscapeFavorite()">
+                            <span class="material-icons-round" id="landscapeFavoriteIcon">star_border</span>
+                        </button>
+                        <button class="landscape-icon-btn" onclick="zmLandscapeInfo()">
+                            <span class="material-icons-round">info_outline</span>
+                        </button>
+                        <button class="landscape-icon-btn landscape-close-btn" onclick="zmRotateScreen()">
+                            <span class="material-icons-round">screen_rotation</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ★ 가로모드 전용 하단바 -->
+                <div class="landscape-bottom-bar" id="landscapeBottomBar">
+                    <div class="landscape-tf-group">
+                        <button class="landscape-tf-btn" onclick="selectZmTimeframe('1m')">1m</button>
+                        <button class="landscape-tf-btn" onclick="selectZmTimeframe('5m')">5m</button>
+                        <button class="landscape-tf-btn" onclick="selectZmTimeframe('15m')">15m</button>
+                        <button class="landscape-tf-btn" onclick="selectZmTimeframe('30m')">30m</button>
+                        <button class="landscape-tf-btn" onclick="selectZmTimeframe('1H')">1H</button>
+                        <button class="landscape-tf-btn" onclick="selectZmTimeframe('4H')">4H</button>
+                        <button class="landscape-tf-btn" onclick="selectZmTimeframe('1D')">1D</button>
+                        <button class="landscape-tf-btn" onclick="selectZmTimeframe('1W')">1W</button>
+                        <button class="landscape-tf-btn" onclick="selectZmTimeframe('MN')">MN</button>
+                    </div>
+                    <button class="landscape-settings-btn" onclick="openZmMoreMenu()">
+                        <span class="material-icons-round">tune</span>
+                    </button>
+                </div>
+
                 <!-- 차트 글로우 박스 (헤더 + 차트 + 호가) -->
                 <div class="chart-glow-box">
 
@@ -4456,8 +4499,8 @@
     <script src="js/state.js?v=20260227a"></script>
     <script src="js/auth.js?v=1771777952"></script>
     <script src="js/api.js?v=20260227a"></script>
-    <script src="js/utils.js?v=1771777952"></script>
-    <script src="js/watchlist.js?v=20260308b"></script>
+    <script src="js/utils.js?v=20260308a"></script>
+    <script src="js/watchlist.js?v=20260308n"></script>
     <script src="js/navigation.js?v=20260307a"></script>
     <script src="js/my.js?v=20260302i"></script>
     <script src="js/tradingReport.js?v=20260302c"></script>
