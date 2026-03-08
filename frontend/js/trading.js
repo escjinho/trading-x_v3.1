@@ -680,7 +680,7 @@ async function placeBuy() {
         console.log('[placeBuy] result:', JSON.stringify(result));
         if (result?.success) {
             const _lot = calculateLot();
-            showToast(`[Pro]\n종목 : ${currentSymbol}\n타입 : BUY\n랏수 : ${_lot} lot\n\n진입 : 완료`, 'buy');
+            showToast(`✅ [Pro] ${currentSymbol} BUY ${_lot}lot 체결`, 'buy');
             playSound('buy');
             window._lastOrderTime = Date.now();  // ★ 마틴 팝업 유효성 체크용
             // ★★★ 포지션 확인 → 쿨다운 즉시 해제 ★★★
@@ -836,7 +836,7 @@ async function placeSell() {
         console.log('[placeSell] result:', JSON.stringify(result));
         if (result?.success) {
             const _lot = calculateLot();
-            showToast(`[Pro]\n종목 : ${currentSymbol}\n타입 : SELL\n랏수 : ${_lot} lot\n\n진입 : 완료`, 'sell');
+            showToast(`✅ [Pro] ${currentSymbol} SELL ${_lot}lot 체결`, 'sell');
             playSound('sell');
             window._lastOrderTime = Date.now();  // ★ 마틴 팝업 유효성 체크용
             // ★★★ 포지션 확인 → 쿨다운 즉시 해제 ★★★
@@ -871,10 +871,6 @@ async function closePosition() {
     // ★★★ 게이지 프리즈 + 이중 팝업 방지 ★★★
     window._userClosing = true;
     window._plGaugeFrozen = true;  // 손익 게이지 애니메이션 정지
-    // ★★★ 마틴 모드: 청산 시작 즉시 주문 차단 (API 대기 중 gap 방지) ★★★
-    if (currentMode === 'martin' && martinEnabled) {
-        window._martinStateUpdating = true;
-    }
 
     // ★★★ 청산 전 마지막 trade ID 저장 (이전 trade 필터용) ★★★
     let _lastTradeIdBeforeClose = '';
@@ -1089,10 +1085,6 @@ async function closeDemoPosition() {
     // ★★★ 유저 청산 플래그 설정 (마틴 팝업 가드용) ★★★
     window._userClosing = true;
     window._plGaugeFrozen = true;
-    // ★★★ 마틴 모드: 청산 시작 즉시 주문 차단 (API 대기 중 gap 방지) ★★★
-    if (currentMode === 'martin' && martinEnabled) {
-        window._martinStateUpdating = true;
-    }
 
     // ★★★ 청산 전 포지션 정보 저장 (토스트용) ★★★
     const _closingPos = window.demoPosition || {};
@@ -1150,7 +1142,6 @@ async function closeDemoPosition() {
                 } else if (profit < 0) {
                     // ★★★ 손실 → 팝업으로 유저 선택 (raw_profit: 수수료 미포함, 이전 trade 제외) ★★★
                     updateTodayPL(profit);
-                    window._martinStateUpdating = true;
                     showMartinPopup(rawProfit, _lastDemoTradeId);
                 } else {
                     showToast('청산 완료 (손익 없음)', 'success');
@@ -1160,7 +1151,7 @@ async function closeDemoPosition() {
                 updateTodayPL(profit);
                 const _plSign = profit >= 0 ? '+' : '-';
                 const _plAbs = Math.abs(profit).toFixed(2);
-                showToast(`✓[Pro]\n종목 : ${currentSymbol}\n타입 : ${_closingType}\n랏수 : ${_closingLot} lot\n\n청산 : ${_plSign}$${_plAbs}`, profit >= 0 ? 'success' : 'info');
+                showToast(`🔴 [Pro] ${currentSymbol} ${_closingType} ${_closingLot}lot 청산 (${_plSign}$${_plAbs})`, profit >= 0 ? 'success' : 'info');
             }
             
             updatePositionUI(false, null);
