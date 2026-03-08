@@ -580,6 +580,12 @@ async function placeBuy() {
     }
 
     // ★★★ 버튼 쿨다운 (이중 클릭 방지 - 5초) ★★★
+    // ★★★ 마틴 모드 — 청산 후 계산 중 주문 차단 ★★★
+    if (currentMode === 'martin' && window._martinStateUpdating) {
+        console.log('[placeBuy] ⛔ 마틴 단계 계산 중 차단');
+        showToast('마틴 단계 계산 중입니다. 잠시 후 다시 시도해주세요.', 'warning', 3000);
+        return;
+    }
     if (window._orderCooldown) {
         console.log('[placeBuy] ⛔ 쿨다운 중');
         showToast('주문 처리 중입니다. 잠시만 기다려주세요.', 'error');
@@ -724,6 +730,12 @@ async function placeSell() {
     }
 
     // ★★★ 버튼 쿨다운 (이중 클릭 방지 - 5초) ★★★
+    // ★★★ 마틴 모드 — 청산 후 계산 중 주문 차단 ★★★
+    if (currentMode === 'martin' && window._martinStateUpdating) {
+        console.log('[placeSell] ⛔ 마틴 단계 계산 중 차단');
+        showToast('마틴 단계 계산 중입니다. 잠시 후 다시 시도해주세요.', 'warning', 3000);
+        return;
+    }
     if (window._orderCooldown) {
         console.log('[placeSell] ⛔ 쿨다운 중');
         showToast('주문 처리 중입니다. 잠시만 기다려주세요.', 'error');
@@ -1000,6 +1012,12 @@ async function closePosition() {
 // ========== Demo 모드 주문 ==========
 async function placeDemoOrder(orderType) {
     console.log(`[placeDemoOrder] 🔵 START - Order: ${orderType}, Symbol: ${currentSymbol}, Target: ${targetAmount}`);
+    // ★★★ 마틴 모드 — 청산 후 계산 중 주문 차단 ★★★
+    if (currentMode === 'martin' && window._martinStateUpdating) {
+        console.log('[placeDemoOrder] ⛔ 마틴 단계 계산 중 차단');
+        showToast('마틴 단계 계산 중입니다. 잠시 후 다시 시도해주세요.', 'warning', 3000);
+        return;
+    }
     showToast('처리 중...', 'info');
     try {
         let response;
