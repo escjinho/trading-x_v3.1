@@ -1082,6 +1082,10 @@ async function placeDemoOrder(orderType) {
 
 // ========== Demo 모드 청산 ==========
 async function closeDemoPosition() {
+    // ★★★ 유저 청산 플래그 설정 (마틴 팝업 가드용) ★★★
+    window._userClosing = true;
+    window._plGaugeFrozen = true;
+
     // ★★★ 청산 전 포지션 정보 저장 (토스트용) ★★★
     const _closingPos = window.demoPosition || {};
     const _closingType = _closingPos.type || 'BUY';
