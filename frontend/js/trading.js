@@ -558,6 +558,12 @@ async function placeBuy() {
         return;
     }
 
+    // ★★★ 마틴 모드 — 청산 후 계산 중 주문 차단 (데모/라이브 공통) ★★★
+    if (currentMode === 'martin' && window._martinStateUpdating) {
+        console.log('[placeBuy] ⛔ 마틴 단계 계산 중 차단');
+        showToast('마틴 단계 계산 중입니다. 잠시 후 다시 시도해주세요.', 'warning', 3000);
+        return;
+    }
     // Demo 모드면 Demo API 사용
     if (isDemo) {
         console.log('[placeBuy] → Demo 모드');
@@ -708,6 +714,12 @@ async function placeSell() {
         return;
     }
 
+    // ★★★ 마틴 모드 — 청산 후 계산 중 주문 차단 (데모/라이브 공통) ★★★
+    if (currentMode === 'martin' && window._martinStateUpdating) {
+        console.log('[placeSell] ⛔ 마틴 단계 계산 중 차단');
+        showToast('마틴 단계 계산 중입니다. 잠시 후 다시 시도해주세요.', 'warning', 3000);
+        return;
+    }
     // Demo 모드면 Demo API 사용
     if (isDemo) {
         console.log('[placeSell] → Demo 모드');
