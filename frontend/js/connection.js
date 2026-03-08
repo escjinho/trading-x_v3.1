@@ -1673,6 +1673,7 @@ function connectWebSocket() {
                         } else if (actualProfit < 0) {
                             // ★★★ 유저 청산 or 최근 주문만 팝업 ★★★
                             if (window._userClosing || (Date.now() - (window._lastOrderTime || 0) < 60000)) {
+                                window._martinStateUpdating = true;
                                 showMartinPopup(actualProfit);
                             } else {
                                 console.log('[WS Live SL/TP] 마틴 팝업 무시 — 유저 청산 아님');
@@ -1784,6 +1785,7 @@ function connectWebSocket() {
                             } else if (actualProfit < 0) {
                                 // ★★★ 유저 청산 or 최근 주문만 팝업 ★★★
                                 if (window._userClosing || (Date.now() - (window._lastOrderTime || 0) < 60000)) {
+                                    window._martinStateUpdating = true;
                                     showMartinPopup(actualProfit);
                                 } else {
                                     console.log('[WS Live auto_closed] 마틴 팝업 무시 — 유저 청산 아님');
