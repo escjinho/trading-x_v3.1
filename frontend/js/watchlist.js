@@ -593,9 +593,142 @@ function closeZmInfoPanel() {
     }
 }
 
-// 차트 가로보기 (준비중)
+// ========== 가로보기 (Landscape Mode) ==========
+let _isLandscape = false;
+
 function zmRotateScreen() {
-    showToast('준비중입니다', '');
+    if (_isLandscape) {
+        _exitLandscape();
+    } else {
+        _enterLandscape();
+    }
+}
+
+async function _enterLandscape() {
+    _isLandscape = true;
+    document.body.classList.add('landscape-active');
+    _syncLandscapeSymbol();
+    _syncLandscapeTf();
+    _syncLandscapeFavorite();
+
+    try {
+        if (document.documentElement.requestFullscreen) {
+            await document.documentElement.requestFullscreen();
+        } else if (document.documentElement.webkitRequestFullscreen) {
+            await document.documentElement.webkitRequestFullscreen();
+        }
+    } catch(e) { console.warn('[Landscape] fullscreen 실패:', e); }
+    try {
+        if (screen.orientation && screen.orientation.lock) {
+            await screen.orientation.lock('landscape');
+            console.log('[Landscape] ✅ orientation locked');
+        }
+    } catch(e) { console.warn('[Landscape] orientation.lock 실패:', e); }
+
+    // orientation 완료 후 resize 1회만
+    const _doResize = () => {
+        if (typeof ChartPanel !== 'undefined' && ChartPanel._resizeHandler) {
+            ChartPanel._resizeHandler();
+        }
+    };
+    if (screen.orientation) {
+        const onOrChange = () => {
+            screen.orientation.removeEventListener('change', onOrChange);
+            setTimeout(_doResize, 200);
+        };
+        screen.orientation.addEventListener('change', onOrChange);
+        setTimeout(() => {
+            screen.orientation.removeEventListener('change', onOrChange);
+            _doResize();
+        }, 900);
+    } else {
+        setTimeout(_doResize, 600);
+    }
+}
+
+async function _exitLandscape() {
+    _isLandscape = false;
+    try {
+        if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
+    } catch(e) {}
+    try {
+        if (document.fullscreenElement) await document.exitFullscreen();
+        else if (document.webkitFullscreenElement) await document.webkitExitFullscreen();
+    } catch(e) {}
+    document.body.classList.remove('landscape-active');
+
+    // chart-wrapper 인라인 스타일 초기화 (landscape 중 JS가 직접 설정한 값 제거)
+    const wr = document.getElementById('chart-wrapper');
+    if (wr) {
+        wr.style.height = '';
+        wr.style.width = '';
+    }
+
+    // orientation 복귀 후 세로모드 resize
+    const _doExitResize = () => {
+        if (typeof ChartPanel !== 'undefined' && ChartPanel._resizeHandler) {
+            ChartPanel._resizeHandler();
+        }
+    };
+    if (screen.orientation) {
+        const onOrChange = () => {
+            screen.orientation.removeEventListener('change', onOrChange);
+            setTimeout(_doExitResize, 200);
+        };
+        screen.orientation.addEventListener('change', onOrChange);
+        setTimeout(() => {
+            screen.orientation.removeEventListener('change', onOrChange);
+            _doExitResize();
+        }, 900);
+    } else {
+        setTimeout(_doExitResize, 600);
+    }
+}
+
+function _syncLandscapeSymbol() {
+    const symId    = document.getElementById('chartSymbolId')?.textContent || 'BTCUSD';
+    const symName  = document.getElementById('chartSymbolName')?.textContent || '';
+    const symIcon  = document.getElementById('chartSymbolIcon')?.textContent || '₿';
+    const symColor = document.getElementById('chartSymbolIcon')?.style.color || '#f7931a';
+    const lId   = document.getElementById('landscapeSymId');
+    const lName = document.getElementById('landscapeSymName');
+    const lIcon = document.getElementById('landscapeSymIcon');
+    if (lId)   lId.textContent   = symId;
+    if (lName) lName.textContent = symName;
+    if (lIcon) { lIcon.textContent = symIcon; lIcon.style.color = symColor; }
+}
+
+function _syncLandscapeTf() {
+    const curTf = document.getElementById('zmTfText')?.textContent || '1m';
+    document.querySelectorAll('.landscape-tf-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent.trim() === curTf);
+    });
+}
+
+function _syncLandscapeFavorite() {
+    const zmIcon = document.getElementById('zmFavoriteIcon');
+    const lIcon  = document.getElementById('landscapeFavoriteIcon');
+    if (zmIcon && lIcon) {
+        lIcon.textContent = zmIcon.textContent;
+        lIcon.style.color = zmIcon.style.color || '';
+    }
+}
+
+function zmLandscapeSearch() {
+    _exitLandscape();
+    setTimeout(() => { zmOpenSearch(); }, 150);
+}
+
+function zmLandscapeInfo() {
+    _exitLandscape();
+    setTimeout(() => {
+        if (typeof openZmInfoPanel === 'function') openZmInfoPanel();
+    }, 150);
+}
+
+function zmLandscapeFavorite() {
+    if (typeof zmToggleFavorite === 'function') zmToggleFavorite();
+    _syncLandscapeFavorite();
 }
 
 // showToast는 utils.js에서 전역으로 정의됨

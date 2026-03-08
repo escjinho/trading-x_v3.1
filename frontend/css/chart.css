@@ -2116,96 +2116,190 @@
     font-weight: 500;
 }
 
-/* ========== 차트 가로보기 모드 ========== */
-#chartDetailContainer.landscape-mode {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 9998;
-    background: #0d0d1a;
+/* ========== 가로보기 (Landscape Mode) 전용 스타일 ========== */
+
+/* 기본: 가로 전용 바 숨김 */
+.landscape-top-bar,
+.landscape-bottom-bar {
+    display: none;
+}
+
+/* 가로모드 활성 — body */
+body.landscape-active {
     overflow: hidden;
 }
 
-/* 가로모드: 상단 헤더 숨기기 */
-#chartDetailContainer.landscape-mode .chart-symbol-row {
-    display: none;
-}
-
-/* 가로모드: 차트 글로우 박스 */
-#chartDetailContainer.landscape-mode .chart-glow-box {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-}
-
-/* 가로모드: 차트 컨테이너 전체 화면 */
-#chartDetailContainer.landscape-mode #chart-container {
-    height: calc(100vh - 60px) !important;
-    min-height: calc(100vh - 60px) !important;
-    max-height: calc(100vh - 60px) !important;
-}
-
-/* 가로모드: 종목정보 완전히 숨김 */
-#chartDetailContainer.landscape-mode .symbol-info-section,
-#chartDetailContainer.landscape-mode .chart-signal-section,
-#chartDetailContainer.landscape-mode .price-bar {
+/* 헤더 / 하단 네비 완전 숨김 */
+body.landscape-active .header,
+body.landscape-active .bottom-nav {
     display: none !important;
 }
 
-/* 가로모드: 하단 바 */
-#chartDetailContainer.landscape-mode .zm-bottom-bar {
+/* chartDetailContainer 전체화면 */
+body.landscape-active #chartDetailContainer {
+    position: fixed !important;
+    top: 0; left: 0;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 9990;
+    background: #000;
+    overflow: hidden;
+    display: block !important;
+}
+
+/* chart-glow-box — 상단바 아래부터 화면 끝까지 */
+body.landscape-active .chart-glow-box {
+    display: block !important;
+    position: fixed !important;
+    top: 44px !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: calc(100vh - 44px) !important;
+    overflow: hidden;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #000 !important;
+    padding: 0 !important;
+}
+
+/* chart-wrapper */
+body.landscape-active #chart-wrapper {
+    display: flex !important;
+    flex-direction: column;
+    width: 100% !important;
+    height: calc(100vh - 44px) !important;
+    min-height: calc(100vh - 44px) !important;
+    max-height: calc(100vh - 44px) !important;
+    overflow: hidden;
+}
+
+/* chart-container — 남은 공간 전부 */
+body.landscape-active #chart-container {
+    flex: 1 !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* 패널 지표 — 최대 33vh */
+body.landscape-active #indicator-panels {
+    max-height: 33vh !important;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+/* 숨길 UI 요소들 */
+body.landscape-active .chart-symbol-row,
+body.landscape-active .zm-bottom-bar,
+body.landscape-active .symbol-info-section,
+body.landscape-active .chart-signal-section,
+body.landscape-active .price-bar,
+body.landscape-active .zm-close-landscape,
+body.landscape-active .chart-positions-section,
+body.landscape-active .landscape-bottom-bar,
+body.landscape-active #chartLoadingOverlay {
+    display: none !important;
+}
+
+/* ── 가로모드 전용 상단바 ── */
+body.landscape-active .landscape-top-bar {
+    display: flex;
     position: fixed;
-    bottom: 16px;
-    right: 16px;
-    left: auto;
-    width: auto;
-    background: transparent;
-    border: none;
-    padding: 0;
+    top: 0; left: 0; right: 0;
+    height: 44px;
+    background: #000000;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    z-index: 9999;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    box-sizing: border-box;
+}
+
+/* 심볼 좌측 */
+.landscape-symbol-left {
+    display: flex;
+    align-items: center;
     gap: 8px;
 }
 
-/* 가로모드: 매도/매수 버튼 숨김 */
-#chartDetailContainer.landscape-mode .zm-trade-buttons {
+.landscape-sym-icon {
+    font-size: 27px;
+    line-height: 1;
+}
+
+.landscape-sym-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    line-height: 1.2;
+}
+
+.landscape-sym-id {
     display: none;
 }
 
-/* 가로모드: 더보기, 타임프레임 버튼 스타일 */
-#chartDetailContainer.landscape-mode .zm-more-btn,
-#chartDetailContainer.landscape-mode .zm-tf-btn {
-    background: rgba(42, 42, 62, 0.8);
+.landscape-sym-name {
+    font-size: 26px;
+    font-weight: 700;
+    color: #ffffff;
+    font-family: 'Rajdhani', sans-serif;
+    letter-spacing: 0.5px;
+}
+
+/* 우측 버튼 그룹 */
+.landscape-top-btns {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.landscape-icon-btn {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.65);
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
-    width: 48px;
-    height: 48px;
-    padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    -webkit-tap-highlight-color: transparent;
 }
 
-/* 가로모드: 닫기 버튼 추가 */
-#chartDetailContainer.landscape-mode .zm-close-landscape {
-    display: flex;
+.landscape-icon-btn:active {
+    background: rgba(255,255,255,0.1);
+    color: #fff;
 }
+
+.landscape-icon-btn .material-icons-round {
+    font-size: 28px;
+}
+
+.landscape-close-btn .material-icons-round {
+    color: rgba(0, 212, 255, 0.9);
+}
+
+/* ── 가로모드 전용 하단바 (현재 미사용, 구조 유지) ── */
+body.landscape-active .landscape-bottom-bar {
+    display: none !important;
+}
+
+.landscape-tf-group { display: flex; align-items: center; gap: 0; }
+.landscape-tf-btn { background: none; border: none; color: rgba(255,255,255,0.45); font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-family: 'Rajdhani', sans-serif; }
+.landscape-tf-btn.active { color: #00d4ff; background: rgba(0,212,255,0.1); }
+.landscape-settings-btn { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.65); width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.landscape-settings-btn .material-icons-round { font-size: 18px; }
 
 .zm-close-landscape {
     display: none;
-    position: fixed;
-    top: 16px;
-    right: 16px;
-    background: rgba(42, 42, 62, 0.8);
-    border: none;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    color: #fff;
-    font-size: 20px;
-    cursor: pointer;
-    z-index: 9999;
-    align-items: center;
-    justify-content: center;
 }
 
 /* ========== 차트 상단 화살표 위치 조정 ========== */
