@@ -375,6 +375,17 @@ const ChartPanel = {
         }
         this._resizeHandler = () => {
             if (!chart) return;
+            // ★ 가로모드 분기
+            if (document.body.classList.contains('landscape-active')) {
+                // chart-glow-box 실제 높이 기준 (window.innerHeight 타이밍 문제 방지)
+                const glowBox = document.querySelector('.chart-glow-box');
+                const h = glowBox ? glowBox.clientHeight : (window.innerHeight - 44);
+                const w = glowBox ? glowBox.clientWidth : window.innerWidth;
+                const wr = document.getElementById('chart-wrapper');
+                if (wr) { wr.style.height = h + 'px'; wr.style.width = w + 'px'; }
+                try { chart.resize(w, h); } catch(e) {}
+                return;
+            }
             // 가용 높이 재계산
             const _hdr = document.querySelector('.header');
             const _sym = document.querySelector('.chart-symbol-row');
