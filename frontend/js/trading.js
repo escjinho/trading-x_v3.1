@@ -871,6 +871,10 @@ async function closePosition() {
     // ★★★ 게이지 프리즈 + 이중 팝업 방지 ★★★
     window._userClosing = true;
     window._plGaugeFrozen = true;  // 손익 게이지 애니메이션 정지
+    // ★★★ 마틴 모드: 청산 시작 즉시 주문 차단 (API 대기 중 gap 방지) ★★★
+    if (currentMode === 'martin' && martinEnabled) {
+        window._martinStateUpdating = true;
+    }
 
     // ★★★ 청산 전 마지막 trade ID 저장 (이전 trade 필터용) ★★★
     let _lastTradeIdBeforeClose = '';
@@ -1085,6 +1089,10 @@ async function closeDemoPosition() {
     // ★★★ 유저 청산 플래그 설정 (마틴 팝업 가드용) ★★★
     window._userClosing = true;
     window._plGaugeFrozen = true;
+    // ★★★ 마틴 모드: 청산 시작 즉시 주문 차단 (API 대기 중 gap 방지) ★★★
+    if (currentMode === 'martin' && martinEnabled) {
+        window._martinStateUpdating = true;
+    }
 
     // ★★★ 청산 전 포지션 정보 저장 (토스트용) ★★★
     const _closingPos = window.demoPosition || {};
