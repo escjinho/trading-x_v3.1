@@ -680,7 +680,7 @@ async function placeBuy() {
         console.log('[placeBuy] result:', JSON.stringify(result));
         if (result?.success) {
             const _lot = calculateLot();
-            showToast(`✅ [Pro] ${currentSymbol} BUY ${_lot}lot 체결`, 'buy');
+            showToast(`[Pro]\n종목 : ${currentSymbol}\n타입 : BUY\n랏수 : ${_lot} lot\n\n진입 : 완료`, 'buy');
             playSound('buy');
             window._lastOrderTime = Date.now();  // ★ 마틴 팝업 유효성 체크용
             // ★★★ 포지션 확인 → 쿨다운 즉시 해제 ★★★
@@ -836,7 +836,7 @@ async function placeSell() {
         console.log('[placeSell] result:', JSON.stringify(result));
         if (result?.success) {
             const _lot = calculateLot();
-            showToast(`✅ [Pro] ${currentSymbol} SELL ${_lot}lot 체결`, 'sell');
+            showToast(`[Pro]\n종목 : ${currentSymbol}\n타입 : SELL\n랏수 : ${_lot} lot\n\n진입 : 완료`, 'sell');
             playSound('sell');
             window._lastOrderTime = Date.now();  // ★ 마틴 팝업 유효성 체크용
             // ★★★ 포지션 확인 → 쿨다운 즉시 해제 ★★★
@@ -1142,6 +1142,7 @@ async function closeDemoPosition() {
                 } else if (profit < 0) {
                     // ★★★ 손실 → 팝업으로 유저 선택 (raw_profit: 수수료 미포함, 이전 trade 제외) ★★★
                     updateTodayPL(profit);
+                    window._martinStateUpdating = true;
                     showMartinPopup(rawProfit, _lastDemoTradeId);
                 } else {
                     showToast('청산 완료 (손익 없음)', 'success');
@@ -1151,7 +1152,7 @@ async function closeDemoPosition() {
                 updateTodayPL(profit);
                 const _plSign = profit >= 0 ? '+' : '-';
                 const _plAbs = Math.abs(profit).toFixed(2);
-                showToast(`🔴 [Pro] ${currentSymbol} ${_closingType} ${_closingLot}lot 청산 (${_plSign}$${_plAbs})`, profit >= 0 ? 'success' : 'info');
+                showToast(`✓[Pro]\n종목 : ${currentSymbol}\n타입 : ${_closingType}\n랏수 : ${_closingLot} lot\n\n청산 : ${_plSign}$${_plAbs}`, profit >= 0 ? 'success' : 'info');
             }
             
             updatePositionUI(false, null);
