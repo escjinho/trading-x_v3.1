@@ -499,7 +499,7 @@
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
 }
-.tr-acct-select-icon .material-icons-round { font-size: 22px; color: rgba(255,255,255,0.5); }
+.tr-acct-select-icon .material-icons-round { font-size: 22px; color: var(--accent-cyan); }
 .tr-acct-select-icon.tr-acct-live { background: rgba(0,212,255,0.08); }
 .tr-acct-select-icon.tr-acct-live .material-icons-round { color: var(--accent-cyan); }
 .tr-acct-select-info { flex: 1; }

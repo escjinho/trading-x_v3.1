@@ -223,7 +223,30 @@
       "Bash(do echo \"\" echo \">>> $SYM\" grep -A 5 \"''''$SYM'''':\" /var/www/trading-x/frontend/js/symbol-config.js)",
       "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzcyOTI2ODU3LCJ0eXBlIjoiYWNjZXNzIn0.2NTtkLQK27S865ksGVechRoOW8svWKcyy1DbuyDD2NI\" __NEW_LINE_173cdf5232b3432b__ echo \"===== API 직접 호출 테스트 =====\" curl -s \"http://127.0.0.1:8000/api/mt5/symbol-specs\" -H \"Authorization: Bearer $TOKEN\")",
       "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzcyOTI2ODU3LCJ0eXBlIjoiYWNjZXNzIn0.2NTtkLQK27S865ksGVechRoOW8svWKcyy1DbuyDD2NI\" __NEW_LINE_36c20971991e2e73__ curl -sv \"http://127.0.0.1:8000/api/mt5/symbol-specs\" -H \"Authorization: Bearer $TOKEN\")",
-      "Bash(do echo -n \"$SYM: \" grep \"''''$SYM'''':\" /var/www/trading-x/frontend/js/symbol-config.js)"
+      "Bash(do echo -n \"$SYM: \" grep \"''''$SYM'''':\" /var/www/trading-x/frontend/js/symbol-config.js)",
+      "Bash(git -C /var/www/trading-x log --oneline -7)",
+      "Bash(git -C /var/www/trading-x log --oneline --after=\"2026-03-07 15:00:00\" --before=\"2026-03-08 15:00:00\")",
+      "Bash(git -C /var/www/trading-x log --since=\"12 hours ago\" --format=\"[%ad] %h %s\" --date=format:'%H:%M')",
+      "Bash(git -C /var/www/trading-x log -20 --format=\"[%ad] %h %s\" --date=format:'%H:%M')",
+      "Bash(TZ='Asia/Seoul' git -C /var/www/trading-x log -20 --format=\"[%ad] %h %s\" --date=local)",
+      "Bash(TZ='Asia/Seoul' git -C /var/www/trading-x log:*)",
+      "Bash(git -C /var/www/trading-x log --all --oneline --grep=\"차트\\\\|landscape\\\\|가로\\\\|rotate\\\\|horizontal\")",
+      "Bash(git -C /var/www/trading-x log --format=\"%an <%ae>\")",
+      "Bash(TZ='Asia/Seoul' git -C /var/www/trading-x log --author=\"Trading-X Admin\" --format=\"[%ad] %h %s\" --date=local)",
+      "Bash(git -C /var/www/trading-x tag:*)",
+      "Bash(git -C /var/www/trading-x log --oneline -1 backup-before-checkout-20260308)",
+      "Bash(git -C /var/www/trading-x checkout f33b95a)",
+      "Bash(git -C /var/www/trading-x log --oneline -5)",
+      "Bash(TZ='Asia/Seoul' git -C /var/www/trading-x log --after=\"2026-03-08 03:00:00\" --format=\"[%ad] %h %s\" --date=local)",
+      "Bash(TZ='Asia/Seoul' git -C /var/www/trading-x log --oneline -10)",
+      "Bash(git -C /var/www/trading-x checkout:*)",
+      "Bash(TZ='Asia/Seoul' git -C /var/www/trading-x log --oneline --format=\"[%ad] %h %s\" --date=format:'%H:%M')",
+      "Bash(git -C /var/www/trading-x show 2a3c9b5 --stat)",
+      "Bash(git -C /var/www/trading-x log --all --oneline -- frontend/js/watchlist.js)",
+      "Bash(git -C /var/www/trading-x log --all -S \"enterLandscape\" --oneline -- frontend/js/watchlist.js)",
+      "Bash(git -C /var/www/trading-x branch:*)",
+      "Bash(git -C /var/www/trading-x log --oneline origin/main -3)",
+      "Bash(git merge:*)"
     ]
   }
 }

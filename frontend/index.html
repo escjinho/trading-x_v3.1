@@ -63,8 +63,8 @@
         <link rel="stylesheet" href="css/quickeasy.css?v=20260308a">
     <link rel="stylesheet" href="css/chart.css?v=1772978930">
     <link rel="stylesheet" href="css/account.css?v=20260304d">
-    <link rel="stylesheet" href="css/my.css?v=20260302a">
-    <link rel="stylesheet" href="css/tradingReport.css?v=20260302b">
+    <link rel="stylesheet" href="css/my.css?v=1772987490">
+    <link rel="stylesheet" href="css/tradingReport.css?v=1772989177">
     <link rel="stylesheet" href="css/chartorder.css?v=20260305d">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
@@ -1560,18 +1560,12 @@
                                 <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
                             </div>
                             <div class="my-sub-item" onclick="openMyDetail('kyc')">
-                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">verified_user</span></div><span class="my-sub-item-label">KYC</span></div>
+                                <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">verified_user</span></div><span class="my-sub-item-label">본인 인증</span></div>
                                 <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
                             </div>
                             <div class="my-sub-item last" onclick="openMyDetail('loginHistory')">
                                 <div class="my-sub-item-left"><div class="my-sub-icon-box"><span class="material-icons-round">history</span></div><span class="my-sub-item-label">로그인 기록</span></div>
                                 <span class="material-icons-round my-sub-item-arrow">chevron_right</span>
-                            </div>
-                        </div>
-                        <div class="my-sub-card withdraw-card" style="margin-top:24px;">
-                            <div class="my-sub-item last" onclick="startWithdrawal()">
-                                <div class="my-sub-item-left"><div class="my-sub-icon-box withdraw-icon"><span class="material-icons-round">person_remove</span></div><span class="my-sub-item-label withdraw-label">회원 탈퇴</span></div>
-                                <span class="material-icons-round my-sub-item-arrow withdraw-arrow">chevron_right</span>
                             </div>
                         </div>
                     </div>
@@ -1762,9 +1756,9 @@
                             <div style="font-size:30px;font-weight:700;color:var(--text-primary);margin-bottom:12px;">본인 확인</div>
                             <div style="font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:32px;">개인정보 보호를 위해<br>비밀번호를 입력해주세요.</div>
                             <div style="margin-bottom:12px;">
-                                <input type="password" id="piGatePassword" class="my-form-input" placeholder="비밀번호 입력" style="text-align:center;">
+                                <input type="password" id="piGatePassword" class="my-form-input" placeholder="비밀번호 입력" style="text-align:center; padding:0 14px; font-size:15px; color:#ffffff;">
                             </div>
-                            <button class="my-action-btn primary" onclick="piVerifyPassword()">확인</button>
+                            <button class="my-action-btn primary" onclick="piVerifyPassword()" style="color:#000000; font-size:17px;">확인</button>
                         </div>
 
                         <!-- STEP 2: 개인정보 열람 -->
@@ -1817,6 +1811,12 @@
                             </div>
 
                             <button class="my-action-btn primary" onclick="piShowEditMode()">정보 수정</button>
+                            <div class="my-sub-card withdraw-card" style="margin-top:40px;">
+                                <div class="my-sub-item last" onclick="startWithdrawal()">
+                                    <div class="my-sub-item-left"><div class="my-sub-icon-box withdraw-icon"><span class="material-icons-round">person_remove</span></div><span class="my-sub-item-label withdraw-label">회원 탈퇴</span></div>
+                                    <span class="material-icons-round my-sub-item-arrow withdraw-arrow">chevron_right</span>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- STEP 3: 개인정보 수정 -->
@@ -1996,7 +1996,7 @@
                 <div class="my-view" id="myView-kyc">
                     <div class="my-sub-header">
                         <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
-                        <span class="my-sub-title">KYC</span>
+                        <span class="my-sub-title">본인 인증</span>
                     </div>
                     <div class="my-sub-body">
                         <div class="my-sub-card">
@@ -2231,11 +2231,11 @@
                 <div class="my-view" id="myView-tradingReport">
                     <div class="my-sub-header">
                         <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
-                        <span class="my-sub-title">Trading Report</span>
+                        <span class="my-sub-title">트레이딩 리포트</span>
                     </div>
                     <div class="my-sub-body" style="padding:16px;">
                         <div class="tr-acct-select-card" onclick="openMyDetail('tradingReportDemo')">
-                            <div class="tr-acct-select-icon"><span class="material-icons-round">school</span></div>
+                            <div class="tr-acct-select-icon tr-acct-live"><span class="material-icons-round">school</span></div>
                             <div class="tr-acct-select-info">
                                 <div class="tr-acct-select-title">Demo Account</div>
                                 <div class="tr-acct-select-desc">데모 계정 리포트</div>
@@ -2257,7 +2257,7 @@
                 <div class="my-view" id="myView-tradingReportDemo">
                     <div class="my-sub-header">
                         <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
-                        <span class="my-sub-title">Demo Trading Report</span>
+                        <span class="my-sub-title">데모 계정 리포트</span>
                     </div>
                     <div class="my-sub-body">
 
@@ -2481,7 +2481,7 @@
                 <div class="my-view" id="myView-tradingReportLive">
                     <div class="my-sub-header">
                         <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
-                        <span class="my-sub-title">Live Trading Report</span>
+                        <span class="my-sub-title">라이브 계정 리포트</span>
                     </div>
                     <div class="my-sub-body">
 
@@ -6098,9 +6098,9 @@
     </div>
 
     <script src="js/market-schedule.js?v=20260308b"></script>
-    <script src="js/account.js?v=20260302a"></script>
-    <script src="js/trading.js?v=1772970701"></script>
-    <script src="js/openPositions.js?v=20260307a"></script>
+    <script src="js/account.js?v=1772987162"></script>
+    <script src="js/trading.js?v=1772986167"></script>
+    <script src="js/openPositions.js?v=1772988653"></script>
     <script src="js/panels/chartOrderPanel.js?v=1772967931"></script>
     <script src="js/connection.js?v=20260308j"></script>
     <script src="js/init.js?v=1771992777"></script>

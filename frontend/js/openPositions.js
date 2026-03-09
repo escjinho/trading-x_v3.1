@@ -263,37 +263,33 @@ const OpenPositions = {
 
     // ========== 롱프레스 (개별 청산) ==========
     _onTouchStart(posId, event) {
-        console.log('[OpenPositions] touchstart 감지, posId:', posId, 'closeMode:', this._closeMode);
         if (this._closeMode) return;
-
         // 스크롤 감지용 시작 위치 저장
         this._touchStartY = event.touches ? event.touches[0].clientY : event.clientY;
-        this._longPressId = posId;
-        this._longPressTimer = setTimeout(() => {
-            console.log('[OpenPositions] 롱프레스 600ms 완료, closeSingle 호출:', posId);
-            this._longPressTimer = null;
-            this.closeSingle(posId);
-        }, 600);
+        this._touchPosId = posId;
+        this._touchMoved = false;
     },
 
     _onTouchMove(event) {
-        // 스크롤 시 롱프레스 취소
-        if (this._longPressTimer) {
-            const currentY = event.touches ? event.touches[0].clientY : event.clientY;
-            const deltaY = Math.abs(currentY - (this._touchStartY || 0));
-            if (deltaY > 10) {
-                console.log('[OpenPositions] touchmove 감지, 롱프레스 취소 (스크롤)');
-                clearTimeout(this._longPressTimer);
-                this._longPressTimer = null;
-            }
+        // 스크롤 감지
+        const currentY = event.touches ? event.touches[0].clientY : event.clientY;
+        const deltaY = Math.abs(currentY - (this._touchStartY || 0));
+        if (deltaY > 10) {
+            this._touchMoved = true;
         }
     },
 
     _onTouchEnd(event) {
-        console.log('[OpenPositions] touchend 감지, timer:', this._longPressTimer);
-        if (this._longPressTimer) {
-            clearTimeout(this._longPressTimer);
-            this._longPressTimer = null;
+        if (this._closeMode) return;
+        // 스크롤 없었으면 단순 탭 → 즉시 청산 팝업
+        if (!this._touchMoved && this._touchPosId) {
+            const posId = this._touchPosId;
+            this._touchPosId = null;
+            this._touchMoved = false;
+            this.closeSingle(posId);
+        } else {
+            this._touchPosId = null;
+            this._touchMoved = false;
         }
     },
 

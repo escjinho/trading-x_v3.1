@@ -171,12 +171,14 @@ function initAccountTab() {
     if (_btn) _btn.style.display = (typeof isDemo !== 'undefined' && isDemo) ? 'flex' : 'none';
 }
 
-// ★ 커미션 알림 바 표시/숨김 (라이브 모드 전용)
+// ★ 커미션 알림 바 표시/숨김 (라이브 모드 + Trade History 탭 전용)
 function updateCommissionNotice() {
     const notice = document.getElementById('accCommissionNotice');
     if (!notice) return;
     const isLive = typeof isDemo !== 'undefined' && !isDemo;
-    notice.style.display = isLive ? 'flex' : 'none';
+    const historyTab = document.getElementById('acc-history');
+    const isHistoryActive = historyTab && historyTab.classList.contains('active');
+    notice.style.display = (isLive && isHistoryActive) ? 'flex' : 'none';
 }
 
 

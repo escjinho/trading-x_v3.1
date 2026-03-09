@@ -3482,3 +3482,14 @@
 }
 
 /* ===== 트레이딩 리포트 스타일은 tradingReport.css로 이동됨 ===== */
+
+/* ===== 본인확인 게이트 placeholder 색상 ===== */
+#piGatePassword::placeholder {
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 15px;
+}
+
+/* ===== 회원탈퇴 카드 높이 축소 ===== */
+.my-sub-card.withdraw-card .my-sub-item {
+    padding: 10px 16px;
+}
