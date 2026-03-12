@@ -1,0 +1,22 @@
+DATABASE_URL=postgresql://trading:trading123@localhost:5432/tradingx
+SECRET_KEY=your-super-secret-key-change-this-to-random-string-123
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+REFRESH_TOKEN_EXPIRE_DAYS=7
+
+# MT5 비밀번호 암호화 키 (자동 생성됨)
+MT5_ENCRYPT_KEY=tudQ5z1JUUqcUONNvCufAbZn8O7B-QzWSw_5uCwPYqE=
+
+# SMTP 설정 (Zoho Mail)
+SMTP_HOST=smtppro.zoho.com
+SMTP_PORT=587
+SMTP_USER=admin@trading-x.ai
+SMTP_PASSWORD=QeCYtaAGmXsW
+SMTP_FROM=noreply@trading-x.ai
+SMTP_FROM_NAME=Trading-X
+SMTP_ENABLED=True
+
+# Aligo SMS 설정 (월요일에 API 등록 후 채움)
+ALIGO_API_KEY=j7itm99sowf9z2ttsmxflws44fcnnxni
+ALIGO_USER_ID=escjinho
+ALIGO_SENDER=01083018842
+ALIGO_ENABLED=True

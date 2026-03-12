@@ -59,11 +59,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css?v=1772670900">
+    <link rel="stylesheet" href="css/styles.css?v=1773051139">
         <link rel="stylesheet" href="css/quickeasy.css?v=20260308a">
     <link rel="stylesheet" href="css/chart.css?v=1772978930">
     <link rel="stylesheet" href="css/account.css?v=20260304d">
-    <link rel="stylesheet" href="css/my.css?v=1772987490">
+    <link rel="stylesheet" href="css/my.css?v=1773049396">
     <link rel="stylesheet" href="css/tradingReport.css?v=1772989177">
     <link rel="stylesheet" href="css/chartorder.css?v=20260305d">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -144,7 +144,27 @@
     </div>
 </div>
                         
-                        <!-- 카드 3: 셀퍼럴/리베이트 안내 -->
+                        <!-- 카드 3: PWA 설치 안내 -->
+                        <div class="home-slide">
+                            <div class="home-slide-content pwa-slide">
+                                <div class="pwa-platform">
+                                    <span class="material-icons-round">android</span>Android
+                                    <div class="pwa-platform-sep"></div>
+                                    <span class="material-icons-round">phone_iphone</span>iOS
+                                </div>
+                                <div class="pwa-lines">
+                                    <div class="pwa-line-sm">홈 화면에 추가하고</div>
+                                    <div class="pwa-line-lg">더 빠르고 편리하게</div>
+                                    <div class="pwa-line-sm">이용해보세요</div>
+                                </div>
+                                <button class="pwa-btn" onclick="triggerPWAInstall()">
+                                    <span class="material-icons-round">add_to_home_screen</span>
+                                    <span>홈 화면 추가</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 카드 4: 셀퍼럴/리베이트 안내 -->
                         <div class="home-slide">
                             <div class="home-slide-content referral-slide">
                                 <div class="referral-title">셀퍼럴 리베이트</div>
@@ -167,6 +187,7 @@
                         <span class="home-dot active" data-index="0"></span>
                         <span class="home-dot" data-index="1"></span>
                         <span class="home-dot" data-index="2"></span>
+                        <span class="home-dot" data-index="3"></span>
                     </div>
                 </div>
                 
@@ -2135,7 +2156,7 @@
                             </div>
                             <div class="my-live-cta-note">Trading-X는 MetaTrader 5(MT5) 기반 브로커와 연동하여 주문 편의 기능을 제공하는 도구 플랫폼입니다. 입출금은 HEDGEHOOD 브로커를 통해 직접 진행됩니다.</div>
 
-                            <!-- 입금/출금 가이드 (심플 한줄) -->
+                        
                             <div class="my-deposit-guide-row">
                                 <div class="my-deposit-guide-card compact" onclick="openMyDetail('depositGuide')">
                                     <div class="my-deposit-guide-icon deposit small"><span class="material-icons-round">download</span></div>
@@ -2226,6 +2247,24 @@
 
                     </div>
                 </div>
+
+    <!-- 입금 가이드 뷰 -->
+    <div id="myView-depositGuide" class="my-view" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;background:#070b12;overflow:hidden;">
+        <div class="my-sub-header">
+            <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
+            <span class="my-sub-title">입금 가이드</span>
+        </div>
+        <iframe src="/guide/deposit-guide.html" style="position:absolute;top:56px;left:0;width:100%;height:calc(100% - 56px);border:none;background:#070b12;" scrolling="yes"></iframe>
+    </div>
+    <!-- 출금 가이드 뷰 -->
+    <div id="myView-withdrawGuide" class="my-view" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;background:#070b12;overflow:hidden;">
+        <div class="my-sub-header">
+            <div class="my-back-btn" onclick="myGoBack()"><span class="material-icons-round">arrow_back</span></div>
+            <span class="my-sub-title">출금 가이드</span>
+        </div>
+        <iframe src="/guide/deposit-guide.html?tab=withdraw" style="position:absolute;top:56px;left:0;width:100%;height:calc(100% - 56px);border:none;background:#070b12;" scrolling="yes"></iframe>
+    </div>
+    <!-- 입금/출금 가이드 (심플 한줄) -->
 
                 <!-- ===== 트레이딩 리포트 — 계정 선택 ===== -->
                 <div class="my-view" id="myView-tradingReport">
@@ -4494,39 +4533,39 @@
     </div>
 </div>
 
-    <script src="js/symbol-config.js?v=20260308k"></script>
-    <script src="js/config.js?v=1771777952"></script>
-    <script src="js/state.js?v=20260227a"></script>
-    <script src="js/auth.js?v=1771777952"></script>
-    <script src="js/api.js?v=20260227a"></script>
-    <script src="js/utils.js?v=20260308a"></script>
-    <script src="js/watchlist.js?v=1772978930"></script>
-    <script src="js/navigation.js?v=20260307a"></script>
-    <script src="js/my.js?v=20260302i"></script>
-    <script src="js/tradingReport.js?v=20260302c"></script>
-    <script src="js/tradingReportDemo.js?v=20260302h"></script>
+    <script src="js/symbol-config.js?v=1773051139k"></script>
+    <script src="js/config.js?v=1773051139"></script>
+    <script src="js/state.js?v=1773051139a"></script>
+    <script src="js/auth.js?v=1773051139"></script>
+    <script src="js/api.js?v=1773051139a"></script>
+    <script src="js/utils.js?v=1773051139a"></script>
+    <script src="js/watchlist.js?v=1773051139"></script>
+    <script src="js/navigation.js?v=1773051139a"></script>
+    <script src="js/my.js?v=1773051139i"></script>
+    <script src="js/tradingReport.js?v=1773051139c"></script>
+    <script src="js/tradingReportDemo.js?v=1773051139h"></script>
 
     <!-- Chart Panels (모듈화) -->
-    <script src="js/panels/gaugePanel.js?v=1771777952"></script>
-    <script src="js/panels/chartGaugePanel.js?v=1771777952"></script>
+    <script src="js/panels/gaugePanel.js?v=1773051139"></script>
+    <script src="js/panels/chartGaugePanel.js?v=1773051139"></script>
 
     <!-- Indicator System -->
-    <script src="js/indicators/config.js?v=20260227e"></script>
-    <script src="js/indicators/calculator.js?v=20260227d"></script>
-    <script src="js/indicators/index.js?v=20260227f"></script>
+    <script src="js/indicators/config.js?v=1773051139e"></script>
+    <script src="js/indicators/calculator.js?v=1773051139d"></script>
+    <script src="js/indicators/index.js?v=1773051139f"></script>
 
     <!-- Chart Type System -->
-    <script src="js/chartTypes/index.js?v=20260307g"></script>
+    <script src="js/chartTypes/index.js?v=1773051139g"></script>
 
-    <script src="js/panels/chartPanel.js?v=1772978930"></script>
-    <script src="js/panels/symbolSelectorPanel.js?v=20260308a"></script>
-    <script src="js/panels/randomWalkPanel.js?v=1771777952"></script>
-    <script src="js/panels/multiOrderPanelV5.js?v=1771777952"></script>
-        <script src="js/panels/quickEasyPanel.js?v=1772967931"></script>
-        <script src="js/panels/qeTickChart.js?v=20260308a"></script>
+    <script src="js/panels/chartPanel.js?v=1773051139"></script>
+    <script src="js/panels/symbolSelectorPanel.js?v=1773051139a"></script>
+    <script src="js/panels/randomWalkPanel.js?v=1773051139"></script>
+    <script src="js/panels/multiOrderPanelV5.js?v=1773051139"></script>
+        <script src="js/panels/quickEasyPanel.js?v=1773051139"></script>
+        <script src="js/panels/qeTickChart.js?v=1773051139a"></script>
 
-    <script src="js/chart.js?v=1771777952"></script>
-    <script src="js/settings.js?v=20260308a"></script>
+    <script src="js/chart.js?v=1773051139"></script>
+    <script src="js/settings.js?v=1773051139a"></script>
     <script>
         // ========== 타임프레임 드롭다운 함수 ==========
         function toggleTimeframeDropdown() {
@@ -6097,13 +6136,13 @@
         </div>
     </div>
 
-    <script src="js/market-schedule.js?v=20260308b"></script>
-    <script src="js/account.js?v=1772987162"></script>
-    <script src="js/trading.js?v=1772986167"></script>
-    <script src="js/openPositions.js?v=1772988653"></script>
-    <script src="js/panels/chartOrderPanel.js?v=1772967931"></script>
-    <script src="js/connection.js?v=20260308j"></script>
-    <script src="js/init.js?v=1771992777"></script>
+    <script src="js/market-schedule.js?v=1773051139b"></script>
+    <script src="js/account.js?v=1773051139"></script>
+    <script src="js/trading.js?v=1773051139"></script>
+    <script src="js/openPositions.js?v=1773051139"></script>
+    <script src="js/panels/chartOrderPanel.js?v=1773051139"></script>
+    <script src="js/connection.js?v=1773051139j"></script>
+    <script src="js/init.js?v=1773052189"></script>
 <div id="txDialogContainer"></div>
 </body>
 </html>

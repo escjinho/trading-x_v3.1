@@ -599,7 +599,9 @@ function openMyDetail(detail) {
         theme: '테마',
         support: '고객센터',
         terms: '약관 및 정책',
-        appInfo: '앱 정보'
+        appInfo: '앱 정보',
+        depositGuide: '입금 가이드',
+        withdrawGuide: '출금 가이드'
     };
 
     // 전용 뷰가 있는지 확인

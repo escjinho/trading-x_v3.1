@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>HedgeHood 입출금 가이드</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#070b12;
+  --bg-card:#1b2336;
+  --bg-card2:#141d2e;
+  --bg-card3:#202d42;
+  --border:rgba(255,255,255,0.09);
+  --border-strong:rgba(255,255,255,0.14);
+  --cyan:#00d4ff;
+  --cyan-dim:rgba(0,212,255,0.09);
+  --cyan-line:rgba(0,212,255,0.22);
+  --amber:#e8a020;
+  --red:#e05555;
+  --t1:#dde3ef;
+  --t2:#5a6880;
+  --t3:#2e3f58;
+  --mono:'JetBrains Mono',monospace;
+  --sans:'Noto Sans KR',sans-serif;
+  --r:12px;--rsm:8px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--t1);font-family:var(--sans);min-height:100vh;overflow-x:hidden;}
+.main{position:relative;z-index:1;max-width:560px;margin:0 auto;padding:20px 16px 80px;}
+.brand-badge{display:flex;align-items:center;justify-content:center;margin-bottom:18px;}
+.brand-badge-inner{display:inline-flex;align-items:center;gap:6px;background:var(--bg-card2);border:1px solid var(--border-strong);border-radius:50px;padding:5px 14px 5px 10px;}
+.brand-dot{width:18px;height:18px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:7px;font-weight:900;letter-spacing:-0.3px;flex-shrink:0;}
+.brand-dot.hh{background:#0d1e3a;color:#4a80d0;border:1px solid rgba(74,128,208,0.25);}
+.brand-dot.tx{background:#0a1a10;color:#26a17b;border:1px solid rgba(38,161,123,0.25);}
+.brand-name{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--t1);}
+.brand-x{font-family:var(--mono);font-size:9px;color:var(--t1);margin:0 2px;}
+.hero{text-align:center;padding:0 0 20px;border-bottom:1px solid var(--border);margin-bottom:22px;}
+.hero-title{font-size:26px;font-weight:900;letter-spacing:-0.8px;line-height:1.2;}
+.hero-title .ac{color:var(--cyan);}
+.hero-sub{font-size:11.5px;color:var(--t2);margin-top:6px;line-height:1.5;}
+.mtabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:20px;gap:0;background:transparent;border-radius:0;padding:0;}
+.mtab{flex:1;padding:11px 8px 12px;border:none;background:transparent;color:var(--t2);font-family:var(--sans);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:7px;border-bottom:2px solid transparent;margin-bottom:-1px;}
+.mtab svg{width:15px;height:15px;flex-shrink:0;}
+.mtab.active{color:var(--cyan);border-bottom-color:var(--cyan);font-weight:700;}
+.mtab:not(.active):hover{color:var(--t1);}
+.mselector{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px;background:transparent;border:none;border-radius:0;padding:0;}
+.mbtn{padding:13px 14px;border-radius:var(--r);border:1px solid var(--border);background:var(--bg-card);color:var(--t2);font-family:var(--sans);cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:10px;text-align:left;}
+.mbtn.active{background:var(--bg-card3);color:var(--t1);border-color:var(--cyan-line);box-shadow:0 0 0 1px var(--cyan-line) inset;}
+.mbtn:not(.active):hover{border-color:var(--border-strong);color:var(--t1);}
+.mico{width:34px;height:34px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;font-family:var(--mono);letter-spacing:-0.3px;}
+.mico.dsg{background:#0d1e40;color:#5a90e0;border:1px solid rgba(80,128,200,0.25);}
+.mico.usdt{background:#071a10;color:#26a17b;border:1px solid rgba(38,161,123,0.25);}
+.mbtn-info{display:flex;flex-direction:column;gap:2px;min-width:0;}
+.mbtn-name{font-size:13px;font-weight:700;color:inherit;line-height:1.2;}
+.mbtn-sub{font-size:10.5px;color:var(--t2);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mbtn.active .mbtn-name{color:var(--cyan);}
+.gc{display:none;animation:fi .22s ease;}
+.gc.active{display:block;}
+@keyframes fi{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
+.ghdr{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);margin-bottom:12px;overflow:hidden;position:relative;}
+.ghdr::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px;}
+.ghdr.dsg::before{background:var(--cyan);}
+.ghdr.usdt::before{background:#26a17b;}
+.ghdr.stic::before{background:var(--red);}
+.ghdr-bg{display:none;}
+.ghdr-inner{padding:14px 16px 13px 20px;display:flex;flex-direction:column;gap:8px;}
+.ghdr-top{display:flex;align-items:center;gap:10px;}
+.gico{width:34px;height:34px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;font-family:var(--mono);letter-spacing:-0.5px;}
+.gico.dsg{background:#0d1e40;color:#5a90e0;border:1px solid rgba(80,128,200,0.2);}
+.gico.usdt{background:#071a10;color:#26a17b;border:1px solid rgba(38,161,123,0.2);}
+.gico.stic{background:#1a0808;color:#c05050;border:1px solid rgba(192,80,80,0.2);}
+.ginfo-title{font-size:15px;font-weight:800;line-height:1.2;letter-spacing:-0.3px;}
+.ginfo-desc{font-size:11.5px;color:var(--t2);line-height:1.6;padding-left:1px;}
+.gbadges{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;}
+.gbadges::-webkit-scrollbar{display:none;}
+.b{flex-shrink:0;padding:3px 9px;border-radius:50px;font-size:10px;font-weight:600;letter-spacing:0.1px;white-space:nowrap;}
+.bc{background:var(--cyan-dim);color:var(--cyan);border:1px solid var(--cyan-line);}
+.bg{background:rgba(38,161,123,0.08);color:#26a17b;border:1px solid rgba(38,161,123,0.2);}
+.bo{background:rgba(255,255,255,0.04);color:#7a8ca8;border:1px solid var(--border);}
+.br{background:rgba(224,85,85,0.07);color:#b05858;border:1px solid rgba(224,85,85,0.18);}
+.notice{display:flex;gap:10px;align-items:flex-start;background:rgba(232,160,32,0.05);border:1px solid rgba(232,160,32,0.14);border-left:3px solid rgba(232,160,32,0.5);border-radius:var(--rsm);padding:11px 14px;margin-bottom:14px;}
+.ni{font-size:13px;flex-shrink:0;margin-top:1px;}
+.notice p{font-size:11.5px;color:#906a20;line-height:1.8;}
+.notice p strong{color:var(--amber);}
+.qf{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:14px 14px 13px;margin-bottom:14px;}
+.qf-title{display:flex;align-items:center;gap:6px;font-size:9px;letter-spacing:2.5px;text-transform:uppercase;font-family:var(--mono);color:var(--t2);margin-bottom:13px;}
+.qf-title::before{content:'';width:2px;height:10px;background:var(--cyan);border-radius:2px;}
+.qf-row{display:flex;align-items:flex-start;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;gap:0;}
+.qf-row::-webkit-scrollbar{display:none;}
+.qf-item{display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;min-width:44px;}
+.qf-num{font-family:var(--mono);font-size:8px;font-weight:700;color:var(--t2);letter-spacing:0.3px;}
+.qf-chip{width:100%;background:var(--bg-card2);border:1px solid var(--border-strong);border-radius:7px;padding:7px 4px;font-size:10.5px;font-weight:600;color:var(--t1);text-align:center;line-height:1.35;}
+.qf-arr{color:var(--t3);font-size:13px;flex-shrink:0;padding:0 1px;font-family:var(--mono);align-self:center;margin-top:13px;}
+.exbtn{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--t2);background:none;border:none;cursor:pointer;padding:2px 0;margin-bottom:9px;font-family:var(--sans);transition:color .2s;}
+.exbtn:hover{color:var(--cyan);}
+.exbtn svg{width:11px;height:11px;}
+.steps{display:flex;flex-direction:column;gap:6px;}
+.step{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:border-color .18s,background .18s;}
+.step:hover{border-color:var(--border-strong);}
+.step.open{border-color:var(--cyan-line);background:var(--bg-card3);}
+.step-hd{padding:11px 13px;display:flex;align-items:center;gap:11px;cursor:pointer;user-select:none;}
+.snum{width:28px;height:28px;border-radius:50%;background:var(--cyan-dim);border:1.5px solid var(--cyan-line);color:var(--cyan);font-family:var(--mono);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;}
+.step.open .snum{background:var(--cyan);color:#050c14;border-color:var(--cyan);box-shadow:0 0 10px rgba(0,212,255,0.25);}
+.stitle{flex:1;font-size:12.5px;font-weight:700;line-height:1.45;letter-spacing:-0.1px;color:var(--t1);}
+.step.open .stitle{color:#ddf4ff;}
+.schev{color:var(--t3);flex-shrink:0;transition:transform .22s;}
+.schev svg{width:13px;height:13px;display:block;}
+.step.open .schev{transform:rotate(180deg);color:var(--t2);}
+.sbody{display:none;padding:0 13px 13px 52px;}
+.step.open .sbody{display:block;}
+.sbody p{font-size:12px;color:var(--t2);line-height:1.85;}
+.sbody p+p{margin-top:7px;}
+.subs{display:flex;flex-direction:column;gap:6px;margin-top:4px;}
+.si{display:flex;gap:9px;align-items:flex-start;font-size:12px;color:var(--t2);line-height:1.75;}
+.sd{width:3px;height:3px;border-radius:50%;background:var(--t3);margin-top:9px;flex-shrink:0;}
+.tip{margin-top:9px;padding:9px 12px;background:var(--cyan-dim);border-left:2px solid var(--cyan);border-radius:0 6px 6px 0;font-size:11.5px;color:rgba(0,212,255,0.7);line-height:1.7;}
+.warn{margin-top:9px;padding:9px 12px;background:rgba(232,160,32,0.05);border-left:2px solid rgba(232,160,32,0.45);border-radius:0 6px 6px 0;font-size:11.5px;color:#806020;line-height:1.7;}
+.danger{margin-top:9px;padding:9px 12px;background:rgba(224,85,85,0.05);border-left:2px solid rgba(224,85,85,0.4);border-radius:0 6px 6px 0;font-size:11.5px;color:#904040;line-height:1.7;}
+.tp{display:none;}
+.tp.active{display:block;}
+.btt{position:fixed;bottom:18px;right:16px;width:36px;height:36px;background:var(--bg-card3);border:1px solid var(--border-strong);border-radius:50%;cursor:pointer;color:var(--t2);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,0.4);z-index:99;transition:all .2s;opacity:0;pointer-events:none;}
+.btt:hover{color:var(--cyan);border-color:var(--cyan-line);}
+.btt svg{width:14px;height:14px;}
+.btt.vis{opacity:1;pointer-events:all;}
+</style>
+</head>
+<body>
+<main class="main">
+
+  <!-- ── Brand Badge ── -->
+  <div class="brand-badge">
+    <div class="brand-badge-inner">
+      <span class="brand-name">HedgeHood</span>
+      <span class="brand-x">×</span>
+      <span class="brand-name">Trading-X</span>
+    </div>
+  </div>
+  <!-- ── Hero ── -->
+  <div class="hero">
+    <div class="hero-title">입출금 <span class="ac">이용 가이드</span></div>
+    <div class="hero-sub">헤지후드 포털을 통한 입출금 방법을 안내합니다</div>
+  </div>
+
+  <!-- ── 메인 탭 ── -->
+  <div class="mtabs">
+    <button class="mtab active" onclick="sT('deposit',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      입금
+    </button>
+    <button class="mtab" onclick="sT('withdraw',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      출금
+    </button>
+  </div>
+
+  <!-- ═══════ 입금 패널 ═══════ -->
+  <div class="tp active" id="deposit-panel">
+    <div class="mselector">
+      <button class="mbtn active" onclick="sM('deposit','dsg',this)">
+        <span class="mico dsg">DSG</span>
+        <span class="mbtn-info"><span class="mbtn-name">DSG Pay</span><span class="mbtn-sub">국내 은행 계좌</span></span>
+      </button>
+      <button class="mbtn" onclick="sM('deposit','usdt',this)">
+        <span class="mico usdt">USDT</span>
+        <span class="mbtn-info"><span class="mbtn-name">USDT</span><span class="mbtn-sub">암호화폐 지갑</span></span>
+      </button>
+    </div>
+
+    <!-- DSG Pay 입금 -->
+    <div class="gc active" id="deposit-dsg">
+      <div class="ghdr dsg">
+        <div class="ghdr-bg"></div>
+        <div class="ghdr-inner">
+          <div class="ghdr-top">
+            <div class="gico dsg">DSG</div>
+            <div class="ginfo-title">달러스마트 DSG Pay 입금</div>
+          </div>
+          <div class="ginfo-desc">국내 은행 계좌로 간편 입금<br>가입 절차 없이 24시간 즉시 처리</div>
+          <div class="gbadges">
+            <span class="b bg">수수료 무료</span>
+            <span class="b bc">24/7 즉시</span>
+            <span class="b bo">1회 650만원 / 일 2,500만원</span>
+            <span class="b bc">연간 한도 없음</span>
+          </div>
+        </div>
+      </div>
+      <div class="notice"><span class="ni">⚠️</span><p><strong>처음 입금 시 사용한 은행 계좌를 이후에도 동일하게 사용</strong>하셔야 합니다. 변경 시 고객센터 문의.<br>반드시 <strong>본인 명의 계좌</strong>만 사용하세요.</p></div>
+      <div class="qf">
+        <div class="qf-title">Quick Flow</div>
+        <div class="qf-row">
+          <div class="qf-item"><div class="qf-num">01</div><div class="qf-chip">포털<br>로그인</div></div>
+          <div class="qf-arr">›</div>
+          <div class="qf-item"><div class="qf-num">02</div><div class="qf-chip">지갑<br>아이콘</div></div>
+          <div class="qf-arr">›</div>
+          <div class="qf-item"><div class="qf-num">03</div><div class="qf-chip">입금<br>선택</div></div>
+          <div class="qf-arr">›</div>
+          <div class="qf-item"><div class="qf-num">04</div><div class="qf-chip">KRW<br>금액입력</div></div>
+          <div class="qf-arr">›</div>
+          <div class="qf-item"><div class="qf-num">05</div><div class="qf-chip">DSG<br>선택</div></div>
+          <div class="qf-arr">›</div>
+          <div class="qf-item"><div class="qf-num">06</div><div class="qf-chip">계좌<br>이체</div></div>
+        </div>
+      </div>
+      <button class="exbtn" onclick="eA('deposit-dsg',this)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg>전체 펼치기</button>
+      <div class="steps">
+        <div class="step" onclick="tS(this)"><div class="step-hd"><div class="snum">01</div><div class="stitle">헤지후드 고객포털에 로그인합니다</div><div class="schev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg></div></div><div class="sbody"><p>hedgehood.com 에 접속하여 로그인합니다. 로그인 후 대시보드에서 라이브 계좌를 확인할 수 있습니다.</p></div></div>
+        <div class="step" onclick="tS(this)"><div class="step-hd"><div class="snum">02</div><div class="stitle">라이브 계좌 카드에서 지갑 아이콘을 클릭합니다</div><div class="schev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg></div></div><div class="sbody"><p>대시보드의 라이브 계좌 카드 상단에 있는 <strong>지갑 아이콘</strong>을 클릭하면 드롭다운 메뉴가 나타납니다.</p></div></div>
+        <div class="step" onclick="tS(this)"><div class="step-hd"><div class="snum">03</div><div class="stitle">드롭다운에서 입금(Deposit) 버튼을 클릭합니다</div><div class="schev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg></div></div><div class="sbody"><p>드롭다운 메뉴에서 <strong>입금</strong> 버튼을 클릭합니다. 입금 방법 선택 화면으로 이동합니다.</p></div></div>
+        <div class="step" onclick="tS(this)"><div class="step-hd"><div class="snum">04</div><div class="stitle">환율계산기에서 '입금하실 화폐'를 KRW로 선택한 후, 원화 입금액을 기재합니다</div><div class="schev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg></div></div><div class="sbody"><p>왼쪽 환율계산기에서 <strong>'입금하실 화폐'를 KRW</strong>로 선택하고, <strong>'잔액'</strong>란에 입금할 원화금액을 기재하면, <strong>'계좌에 입금 될 금액'</strong>에 미달러(USD)로 환산된 금액이 표시됩니다.</p></div></div>
+        <div class="step" onclick="tS(this)"><div class="step-hd"><div class="snum">05</div><div class="stitle">입금 방법에서 DSG Pay를 선택합니다</div><div class="schev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg></div></div><div class="sbody"><p>입금 방법 목록에서 <strong>DSG Pay (KRW, 수수료: 0 KRW)</strong>를 찾아 <strong>선택</strong>을 클릭합니다. 확인 후 <strong>입금하기</strong> 버튼을 클릭합니다.</p></div></div>
+        <div class="step" onclick="tS(this)"><div class="step-hd"><div class="snum">06</div><div class="stitle">화면에 표시된 국내 은행 계좌로 이체 후 영수증을 지참합니다</div><div class="schev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg></div></div><div class="sbody"><p>화면에 입금 전용 국내 은행 계좌 정보가 표시됩니다. 해당 계좌로 <strong>정확한 금액을 이체</strong>합니다.</p><div class="warn">⚠️ 처음 입금 시 사용한 계좌를 이후에도 반드시 동일하게 사용해야 합니다.</div><div class="tip">✅ 이체 완료 후 영수증을 캡처해 두세요.</div></div></div>
+      </div>
+    </div>
+
+    <!-- USDT 입금 -->
+    <div class="gc" id="deposit-usdt">
+      <div class="ghdr usdt">
+        <div class="ghdr-bg"></div>
+        <div class="ghdr-inner">
+          <div class="ghdr-top">
+            <div class="gico usdt">USDT</div>
+            <div class="ginfo-title">USDT 입금 이용가이드</div>
+          </div>
+          <div class="ginfo-desc">암호화폐 지갑에서 간편 입금<br>TRC20 / ERC20 네트워크 지원</div>
+          <div class="gbadges">
+            <span class="b bc">TRC20</span>
+            <span class="b bc">ERC20</span>
+            <span class="b bo">즉시~30분</span>
+          </div>
+        </div>
+      </div>
+      <div class="notice"><span class="ni">⚠️</span><p><strong>반드시 동일 네트워크</strong>로 전송하세요 (TRC20↔TRC20, ERC20↔ERC20).<br>잘못된 네트워크로 전송 시 <strong>복구 불가</strong>합니다.</p></div>
+      <div class="qf">
+        <div class="qf-title">Quick Flow</div>
+        <div class="qf-row">
+          <div class="qf-item"><div class="qf-num">01</div><div class="qf-chip">포털<br>로그인</div></div><div class="qf-arr">›</div>
+          <div class="qf-item"><div class="qf-num">02</div><div class="qf-chip">지갑<br>입금</div></div><div class="qf-arr">›</div>
+          <div class="qf-item"><div class="qf-num">03</div><div class="qf-chip">USDT<br>선택</div></div><div class="qf-arr">›</div>
+          <div class="qf-item"><div class="qf-num">04</div><div class="qf-chip">네트워크 선택</div></div><div class="qf-arr">›</div>
+          <div class="qf-item"><div class="qf-num">05</div><div class="qf-chip">동의</div></div><div class="qf-arr">›</div>
+          <div class="qf-item"><div class="qf-num">06</div><div class="qf-chip">주소<br>복사</div></div><div class="qf-arr">›</div>
+          <div class="qf-item"><div class="qf-num">07~08</div><div class="qf-chip">전송<br>확인</div></div>
+        </div>
+      </div>
+      <button class="exbtn" onclick="eA('deposit-usdt',this)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg>전체 펼치기</button>
+      <div class="steps">
+        <div class="step" onclick="tS(this)"><div class="step-hd"><div class="snum">01</div><div class="stitle">헤지후드 고객포털에 로그인합니다</div><div class="schev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg></div></div><div class="sbody"><p>hedgehood.com 에 접속하여 로그인 후 대시보드에서 라이브 계좌를 확인합니다.</p></div></div>
+        <div class="step" onclick="tS(this)"><div class="step-hd"><div class="snum">02</div><div class="stitle">라이브 계좌 지갑 아이콘 → 입금 버튼을 클릭합니다</div><div class="schev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg></div></div><div class="sbody"><p>라이브 계좌 카드에서 지갑 아이콘 클릭 후 드롭다운에서 <strong>입금</strong>을 선택합니다.</p></div></div>
+        <div class="step" onclick="tS(this)"><div class="step-hd"><div class="snum">03</div><div class="stitle">환율계산기에서 '입금하실 화폐'를 USDT를 선택한 후, 입금할 금액을 기재합니다</div><div class="schev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg></div></div><div class="sbody"><p>환율계산기에서 <strong>'입금하실 화폐'를 USDT</strong>로 선택하신 후, <strong>'잔액'</strong>란에 입금할 USDT 금액을 기재하면 <strong>'계좌에 입금 될 금액'</strong>에 미달러(USD)로 환산된 금액이 표시됩니다.</p></div></div>
+        <div class="step" onclick="tS(this)"><div class="step-hd"><div class="snum">04</div><div class="stitle">입금방법 목록에서 네트워크 유형(TRC20 / ERC20)을 선택합니다</div><div class="schev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg></div></div><div class="sbody"><div class="subs"><div class="si"><div class="sd"></div><span><strong>네트워크 유형</strong> : TRC20(트론) 또는 ERC20(이더리움) — 본인 지갑과 동일한 네트워크 선택</span></div></div><div class="danger">🚨 네트워크 불일치 시 자산 영구 손실 — 반드시 지갑 네트워크 확인 후 선택</div></div></div>
+        <div class="step" onclick="tS(this)"><div class="step-hd"><div class="snum">05</div><div class="stitle">면책 조항에 동의합니다</div><div class="schev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg></div></div><div class="sbody"><p>화면에 표시되는 면책 조항을 확인하고 <strong>동의</strong> 버튼을 클릭합니다.</p></div></div>
+        <div class="step" onclick="tS(this)"><div class="step-hd"><div class="snum">06</div><div class="stitle">헤지후드 USDT 입금 지갑 주소를 복사합니다</div><div class="schev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg></div></div><div class="sbody"><p>화면에 헤지후드 USDT 입금 전용 <strong>지갑 주소</strong>와 <strong>QR 코드</strong>가 표시됩니다.</p><div class="tip">💡 주소를 복사하거나 QR 코드를 스캔하여 본인 지갑 앱에서 전송을 진행하세요.</div></div></div>
+        <div class="step" onclick="tS(this)"><div class="step-hd"><div class="snum">07</div><div class="stitle">본인 USDT 지갑에서 해당 주소로 전송합니다</div><div class="schev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg></div></div><div class="sbody"><p>본인 USDT 지갑 앱(Binance, OKX 등)에서 복사한 헤지후드 주소로 정확한 금액을 전송합니다.</p></div></div>
+        <div class="step" onclick="tS(this)"><div class="step-hd"><div class="snum">08</div><div class="stitle">전송 완료 후 헤지후드 포털에서 입금 내역을 확인합니다</div><div class="schev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg></div></div><div class="sbody"><p>헤지후드 포털 → <strong>자금예치기록</strong>에서 입금 처리 상황을 확인할 수 있습니다.</p><div class="tip">✅ 블록체인 네트워크 상황에 따라 처리 시간이 달라질 수 있습니다 (즉시~수십 분)</div></div></div>
+      </div>
+    </div>
+
+
+  </div><!-- /deposit-panel -->
+
+  <!-- ═══════ 출금 패널 ═══════ -->
+  <div class="tp" id="withdraw-panel">
+    <div class="mselector">
+      <button class="mbtn active" onclick="sM('withdraw','dsg',this)">
+        <span class="mico dsg">DSG</span>
+        <span class="mbtn-info"><span class="mbtn-name">DSG Pay</span><span class="mbtn-sub">국내 은행 계좌</span></span>
+      </button>
+      <button class="mbtn" onclick="sM('withdraw','usdt',this)">
+        <span class="mico usdt">USDT</span>
+        <span class="mbtn-info"><span class="mbtn-name">USDT</span><span class="mbtn-sub">암호화폐 지갑</span></span>
+      </button>
+    </div>
+
+    <!-- DSG Pay 출금 -->
+    <div class="gc active" id="withdraw-dsg">
+      <div class="ghdr dsg">
+        <div class="ghdr-bg"></div>
+        <div class="ghdr-inner">
+          <div class="ghdr-top">
+            <div class="gico dsg">DSG</div>
+            <div class="ginfo-title">달러스마트 DSG Pay 출금</div>
+          </div>
+          <div class="ginfo-desc">국내 은행 계좌로 원화 출금<br>최초 계좌 등록 후 간편 출금</div>
+          <div class="gbadges">
+            <span class="b br">수수료 $3</span>
+            <span class="b bo">리베이트 +2%</span>
+            <span class="b bc">본인 계좌만</span>
+          </div>
+        </div>
+      </div>
+      <div class="notice"><span class="ni">⚠️</span><p>출금 수수료: <strong>$3 고정</strong> (리베이트/수익금 출금 시 추가 2%)<br>헤지후드는 <strong>제3자에게 출금하지 않습니다</strong>. 본인 명의 계좌만 등록 가능합니다.</p></div>
+      <div class="qf">
+        <div class="qf-title">Quick Flow</div>
+        <div class="qf-row">
+          <div class="qf-item"><div class="qf-num">01</div><div class="qf-chip">포털<br>로그인</div></div><div class="qf-arr">›</div>
+          <div class="qf-item"><div class="qf-num">02</div><div class="qf-chip">지갑<br>출금</div></div><div class="qf-arr">›</div>
+          <div class="qf-item"><div class="qf-num">03</div><div class="qf-chip">새계좌<br>추가</div></div><div class="qf-arr">›</div>
+          <div class="qf-item"><div class="qf-num">04</div><div class="qf-chip">DSG<br>선택</div></div><div class="qf-arr">›</div>
+          <div class="qf-item"><div class="qf-num">05</div><div class="qf-chip">계좌<br>입력</div></div><div class="qf-arr">›</div>
+          <div class="qf-item"><div class="qf-num">06</div><div class="qf-chip">금액<br>입력</div></div><div class="qf-arr">›</div>
+          <div class="qf-item"><div class="qf-num">07~08</div><div class="qf-chip">출금<br>완료</div></div>
+        </div>
+      </div>
+      <button class="exbtn" onclick="eA('withdraw-dsg',this)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg>전체 펼치기</button>
+      <div class="steps">
+        <div class="step" onclick="tS(this)"><div class="step-hd"><div class="snum">01</div><div class="stitle">헤지후드 고객포털에 로그인 후 대시보드를 클릭합니다</div><div class="schev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg></div></div><div class="sbody"><p>hedgehood.com 에 로그인 후 대시보드에서 라이브 계좌를 확인합니다.</p></div></div>
+        <div class="step" onclick="tS(this)"><div class="step-hd"><div class="snum">02</div><div class="stitle">라이브 계좌 지갑 아이콘 → 출금 버튼을 클릭합니다</div><div class="schev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg></div></div><div class="sbody"><p>라이브 계좌 카드에서 지갑 아이콘 클릭 후 드롭다운에서 <strong>출금</strong>을 선택합니다.</p></div></div>
+        <div class="step" onclick="tS(this)"><div class="step-hd"><div class="snum">03</div><div class="stitle">새로운 계좌(+) 버튼을 클릭하여 출금 계좌를 등록합니다 (최초 1회)</div><div class="schev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg></div></div><div class="sbody"><p>출금 화면에서 <strong>새로운 계좌(+)</strong> 버튼을 클릭합니다. 이미 DSG 계좌가 등록된 경우 이 단계를 건너뜁니다.</p></div></div>
+        <div class="step" onclick="tS(this)"><div class="step-hd"><div class="snum">04</div><div class="stitle">출금 방법에서 DSG Pay를 선택합니다</div><div class="schev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg></div></div><div class="sbody"><p>출금 방법 목록에서 <strong>DSG Pay (KRW, 수수료: $3)</strong>를 찾아 <strong>선택</strong>을 클릭합니다.</p></div></div>
+        <div class="step" onclick="tS(this)"><div class="step-hd"><div class="snum">05</div><div class="stitle">출금 계좌 정보를 입력하고 저장합니다</div><div class="schev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg></div></div><div class="sbody"><div class="subs"><div class="si"><div class="sd"></div><span><strong>은행명</strong> 선택</span></div><div class="si"><div class="sd"></div><span><strong>계좌번호</strong> 입력</span></div><div class="si"><div class="sd"></div><span><strong>계좌주 성명</strong> 입력 (본인 명의)</span></div><div class="si"><div class="sd"></div><span><strong>핸드폰 번호/이메일</strong> → 인증코드 → <strong>저장하기</strong></span></div></div><div class="warn">⚠️ 반드시 본인 명의 계좌만 등록 가능합니다.</div></div></div>
+        <div class="step" onclick="tS(this)"><div class="step-hd"><div class="snum">06</div><div class="stitle">출금 화면으로 돌아와 출금할 금액을 입력합니다</div><div class="schev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg></div></div><div class="sbody"><p>등록된 DSG 계좌를 선택하고 출금할 금액(USD)을 입력합니다. 수수료 포함 최종 금액을 확인합니다.</p></div></div>
+        <div class="step" onclick="tS(this)"><div class="step-hd"><div class="snum">07</div><div class="stitle">출금 신청 내역을 확인 후 출금하기 버튼을 클릭합니다</div><div class="schev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg></div></div><div class="sbody"><p>출금 계좌, 금액, 수수료($3) 등 최종 내역을 확인 후 <strong>출금하기</strong> 버튼을 클릭합니다.</p></div></div>
+        <div class="step" onclick="tS(this)"><div class="step-hd"><div class="snum">08</div><div class="stitle">최종 확인 후 출금 완료</div><div class="schev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg></div></div><div class="sbody"><p>최종 확인 화면에서 출금 정보를 검토하고 <strong>확인</strong> 버튼을 클릭합니다.</p><div class="tip">✅ 헤지후드는 제3자에게 출금하지 않습니다. 본인 명의 계좌로만 출금 가능합니다.</div></div></div>
+      </div>
+    </div>
+
+    <!-- USDT 출금 -->
+    <div class="gc" id="withdraw-usdt">
+      <div class="ghdr usdt">
+        <div class="ghdr-bg"></div>
+        <div class="ghdr-inner">
+          <div class="ghdr-top">
+            <div class="gico usdt">USDT</div>
+            <div class="ginfo-title">USDT 출금 이용가이드</div>
+          </div>
+          <div class="ginfo-desc">USDT 지갑으로 간편 출금<br>TRC20 또는 ERC20 선택</div>
+          <div class="gbadges">
+            <span class="b br">TRC20 4 USDT / ERC-20 5 USDT</span>
+            <span class="b bc">24/7 신청</span>
+            <span class="b bo">당일~최대 2영업일</span>
+          </div>
+        </div>
+      </div>
+      <div class="notice"><span class="ni">⚠️</span><p>잘못된 지갑 주소 또는 네트워크 선택 시 <strong>복구 불가</strong>합니다.<br>환율 변동 1.2% 이상 시 출금 취소 또는 시장 환율 계속 진행 여부를 선택하게 됩니다.</p></div>
+      <div class="qf">
+        <div class="qf-title">Quick Flow</div>
+        <div class="qf-row">
+          <div class="qf-item"><div class="qf-num">01</div><div class="qf-chip">대시<br>보드</div></div><div class="qf-arr">›</div>
+          <div class="qf-item"><div class="qf-num">02</div><div class="qf-chip">지갑<br>출금</div></div><div class="qf-arr">›</div>
+          <div class="qf-item"><div class="qf-num">03~05</div><div class="qf-chip">USDT<br>계좌등록</div></div><div class="qf-arr">›</div>
+          <div class="qf-item"><div class="qf-num">06~07</div><div class="qf-chip">계좌·<br>주소확인</div></div><div class="qf-arr">›</div>
+          <div class="qf-item"><div class="qf-num">08~09</div><div class="qf-chip">금액·<br>신청</div></div><div class="qf-arr">›</div>
+          <div class="qf-item"><div class="qf-num">10</div><div class="qf-chip">처리<br>대기</div></div>
+        </div>
+      </div>
+      <button class="exbtn" onclick="eA('withdraw-usdt',this)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg>전체 펼치기</button>
+      <div class="steps">
+        <div class="step" onclick="tS(this)"><div class="step-hd"><div class="snum">01</div><div class="stitle">고객포털 로그인 후 대시보드를 클릭합니다</div><div class="schev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg></div></div><div class="sbody"><p>hedgehood.com 에 로그인 후 좌측 메뉴 <strong>대시보드</strong>를 클릭합니다.</p></div></div>
+        <div class="step" onclick="tS(this)"><div class="step-hd"><div class="snum">02</div><div class="stitle">라이브 계좌 지갑 아이콘 → 출금 버튼을 클릭합니다</div><div class="schev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg></div></div><div class="sbody"><p>라이브 계좌 카드에서 지갑 아이콘 클릭 → 드롭다운에서 <strong>출금</strong>을 선택합니다.</p></div></div>
+        <div class="step" onclick="tS(this)"><div class="step-hd"><div class="snum">03</div><div class="stitle">새로운 계좌(+) 버튼으로 USDT 출금 계좌를 생성합니다 (최초 1회)</div><div class="schev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg></div></div><div class="sbody"><p>출금 화면에서 <strong>새로운 계좌(+)</strong> 버튼 클릭. 이미 USDT 계좌가 등록된 경우 건너뜁니다.</p></div></div>
+        <div class="step" onclick="tS(this)"><div class="step-hd"><div class="snum">04</div><div class="stitle">출금 방법에서 USDT를 선택합니다</div><div class="schev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg></div></div><div class="sbody"><p>출금 방법 목록에서 <strong>USDT (USD, TRC-20 수수료: 4 USDT / ERC-20 수수료: 5 USDT)</strong>를 찾아 <strong>선택</strong>을 클릭합니다.</p></div></div>
+        <div class="step" onclick="tS(this)"><div class="step-hd"><div class="snum">05</div><div class="stitle">USDT 출금 계좌 정보를 입력하고 저장합니다</div><div class="schev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg></div></div><div class="sbody"><div class="subs"><div class="si"><div class="sd"></div><span><strong>네트워크</strong>: TRC2.0(트론) 또는 ERC-20(이더리움) — 받으실 지갑 네트워크와 반드시 일치</span></div><div class="si"><div class="sd"></div><span><strong>USDT 전자지갑 주소</strong> 정확히 입력</span></div><div class="si"><div class="sd"></div><span><strong>인증코드</strong> 수신 → 입력 → <strong>새로운 계좌 저장하기</strong></span></div></div><div class="danger">🚨 잘못된 지갑 주소 또는 네트워크 입력 시 USDT 영구 분실 — 반드시 재확인</div></div></div>
+        <div class="step" onclick="tS(this)"><div class="step-hd"><div class="snum">06</div><div class="stitle">출금 화면으로 돌아와 등록된 USDT 계좌를 확인합니다</div><div class="schev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg></div></div><div class="sbody"><p>출금 화면의 받을 계좌 목록에 등록된 USDT 계좌가 표시됩니다.</p></div></div>
+        <div class="step" onclick="tS(this)"><div class="step-hd"><div class="snum">07</div><div class="stitle">받을계좌에서 [USDT]를 선택하고 지갑 주소 및 네트워크를 확인합니다</div><div class="schev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg></div></div><div class="sbody"><p>받을 계좌 드롭다운에서 <strong>[USDT]</strong>를 선택하면 우측 요약에 지갑 주소와 네트워크가 표시됩니다. 반드시 재확인하세요.</p></div></div>
+        <div class="step" onclick="tS(this)"><div class="step-hd"><div class="snum">08</div><div class="stitle">출금 신청 금액을 입력하거나 전액출금을 클릭합니다</div><div class="schev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg></div></div><div class="sbody"><p>출금할 금액(USD)을 입력하거나 <strong>전액출금</strong> 버튼을 클릭합니다.</p></div></div>
+        <div class="step" onclick="tS(this)"><div class="step-hd"><div class="snum">09</div><div class="stitle">출금 신청 내역 확인 후 출금하기 버튼을 클릭합니다</div><div class="schev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg></div></div><div class="sbody"><p>최종 요약(지갑 주소, 네트워크, 금액, 수수료 TRC-20: 4 USDT / ERC-20: 5 USDT)을 확인하고 <strong>출금하기 ✓</strong> 버튼을 클릭합니다.</p></div></div>
+        <div class="step" onclick="tS(this)"><div class="step-hd"><div class="snum">10</div><div class="stitle">출금 신청 완료 — 처리 소요 시간을 확인하세요</div><div class="schev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg></div></div><div class="sbody"><p>출금 신청 완료. <strong>빠르면 당일, 늦으면 최대 2영업일</strong> 소요될 수 있습니다.</p><div class="tip">✅ 처리 상황은 헤지후드 포털 → 자금예치기록에서 확인 가능합니다</div></div></div>
+      </div>
+    </div>
+  </div><!-- /withdraw-panel -->
+
+</main>
+
+<button class="btt" id="btt" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 15l-6-6-6 6"/></svg>
+</button>
+
+<script>
+function sT(t,b){document.querySelectorAll('.mtab').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.tp').forEach(x=>x.classList.remove('active'));document.getElementById(t+'-panel').classList.add('active');window.scrollTo({top:0,behavior:'smooth'});}
+function sM(p,m,b){const el=document.getElementById(p+'-panel');el.querySelectorAll('.mbtn').forEach(x=>x.classList.remove('active'));b.classList.add('active');el.querySelectorAll('.gc').forEach(x=>x.classList.remove('active'));const t=document.getElementById(p+'-'+m);if(t)t.classList.add('active');}
+function tS(c){c.classList.toggle('open');}
+function eA(id,btn){const g=document.getElementById(id);const cs=g.querySelectorAll('.step');const ao=Array.from(cs).every(c=>c.classList.contains('open'));cs.forEach(c=>ao?c.classList.remove('open'):c.classList.add('open'));if(btn){btn.innerHTML=ao?'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l5 5 5-5"/></svg>전체 펼치기':'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10l5-5 5 5"/></svg>전체 접기';}}
+const btt=document.getElementById('btt');
+const _p=new URLSearchParams(window.location.search);if(_p.get('tab')==='withdraw'){setTimeout(()=>{document.querySelectorAll('.mtab')[1].click();},100);}
+window.addEventListener('scroll',()=>btt.classList.toggle('vis',scrollY>150));
+</script>
+</body>
+</html>

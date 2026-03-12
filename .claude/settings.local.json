@@ -246,7 +246,8 @@
       "Bash(git -C /var/www/trading-x log --all -S \"enterLandscape\" --oneline -- frontend/js/watchlist.js)",
       "Bash(git -C /var/www/trading-x branch:*)",
       "Bash(git -C /var/www/trading-x log --oneline origin/main -3)",
-      "Bash(git merge:*)"
+      "Bash(git merge:*)",
+      "Bash(ssh root@158.247.251.146 \"echo ''✅ 서버 접속 OK'' && ls /var/www/trading-x/frontend/\")"
     ]
   }
 }

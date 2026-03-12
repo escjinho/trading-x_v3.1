@@ -258,3 +258,48 @@ function openReferralPage() {
 
 // 홈 슬라이더 초기화 실행
 initHomeSlider();
+
+// PWA 설치 프롬프트
+let _pwaInstallPrompt = null;
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').then((reg) => {
+            console.log('[SW] 등록 완료:', reg.scope);
+        }).catch((err) => {
+            console.log('[SW] 등록 실패:', err);
+        });
+    });
+}
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    _pwaInstallPrompt = e;
+});
+
+function triggerPWAInstall() {
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+    if (isInStandaloneMode) {
+        showToast('✅ 이미 설치됨\n앱이 이미 홈 화면에 추가되어 있어요!', 'info');
+        return;
+    }
+
+    if (_pwaInstallPrompt) {
+        _pwaInstallPrompt.prompt();
+        _pwaInstallPrompt.userChoice.then((result) => {
+            if (result.outcome === 'accepted') {
+                showToast('✅ 설치 완료\n홈 화면에 Trading-X가 추가되었어요!', 'success');
+            }
+            _pwaInstallPrompt = null;
+        });
+    } else if (isIOS) {
+        showToast('📱 iOS 홈 화면 추가\n하단 공유 버튼(□↑) → "홈 화면에 추가" 선택', 'info');
+    } else {
+        showToast('📱 홈 화면 추가\n브라우저 메뉴 → "홈 화면에 추가"를 선택하세요', 'info');
+    }
+}
+
+function showPlayStoreSoon() {
+    showToast('🎮 Google Play Store\n곧 출시 예정입니다! 기대해주세요 🚀', 'info');
+}

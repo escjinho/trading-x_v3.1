@@ -1,0 +1,51 @@
+[Unit]
+Description=Trading-X Backend
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+User=root
+WorkingDirectory=/var/www/trading-x/backend
+Environment="PATH=/var/www/trading-x/backend/venv/bin:/usr/local/bin:/usr/bin:/bin"
+
+# ★★★ 시작 전 포트 정리 (핵심!) ★★★
+ExecStartPre=/bin/bash -c 'fuser -k 8000/tcp 2>/dev/null || true; sleep 1'
+
+# ★ 워커 2개, graceful timeout 30초, keep-alive 65초 (nginx 60초보다 길게)
+ExecStart=/var/www/trading-x/backend/venv/bin/uvicorn app.main:app \
+    --host 0.0.0.0 \
+    --port 8000 \
+    --workers 4 \
+    --timeout-keep-alive 65 \
+    --timeout-graceful-shutdown 30 \
+    --limit-max-requests 50000 \
+    --limit-concurrency 200 \
+    --backlog 128
+
+# ★★★ 자동 재시작 설정 ★★★
+Restart=always
+RestartSec=5
+StartLimitIntervalSec=300
+StartLimitBurst=10
+
+# ★★★ 프로세스 종료 설정 (핵심!) ★★★
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=30
+TimeoutStartSec=120
+
+# ★★★ WatchdogSec 제거! (uvicorn은 sd_notify 미지원) ★★★
+# WatchdogSec=30  ← 이것이 랜덤 서버 종료의 원인!
+
+# 로깅
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=trading-x
+
+# 리소스 제한
+LimitNOFILE=65535
+LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target

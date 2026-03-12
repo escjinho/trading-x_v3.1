@@ -556,10 +556,13 @@
 /* 뷰 시스템 */
 .my-view {
     display: none;
+    position: relative;
+    height: 100%;
 }
 
 .my-view.active {
     display: block;
+    height: 100%;
     animation: mySlideIn 0.2s ease-out;
 }
 

@@ -1,0 +1,17 @@
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    _pwaInstallPrompt = e;
+});
+
+function triggerPWAInstall() {
+    if (_pwaInstallPrompt) {
+        _pwaInstallPrompt.prompt();
+        _pwaInstallPrompt.userChoice.then(() => { _pwaInstallPrompt = null; });
+    } else {
+        showToast('📱 홈 화면 추가\n브라우저 메뉴 → "홈 화면에 추가"를 선택하세요', 'info');
+    }
+}
+
+function showPlayStoreSoon() {
+    showToast('🎮 Google Play Store\n곧 출시 예정입니다! 기대해주세요 🚀', 'info');
+}
